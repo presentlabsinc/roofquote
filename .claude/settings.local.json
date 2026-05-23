@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --yes)",
       "Bash(Move-Item roofing_app_spec.md ..\\\\roofing_app_spec_temp.md)",
-      "Bash(Move-Item ..\\\\roofing_app_spec_temp.md roofing_app_spec.md)"
+      "Bash(Move-Item ..\\\\roofing_app_spec_temp.md roofing_app_spec.md)",
+      "PowerShell(New-Item -ItemType Directory -Force \"D:\\\\VINCE HOME FILES\\\\Documents\\\\Claude Code\\\\roofquote\\\\app\\\\settings\")"
     ]
   }
 }
