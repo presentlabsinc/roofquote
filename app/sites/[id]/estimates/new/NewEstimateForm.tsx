@@ -4,11 +4,12 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { PricingSettings } from "@/app/generated/prisma/client";
 import type { ScopeFlags } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { StickySubmit } from "@/app/sites/new/NewSiteForm";
+import { Ruler, ListChecks, Users, Calculator } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -27,19 +28,23 @@ const DEFAULT_SCOPE: ScopeFlags = {
   ladderTruck: false,
 };
 
+const SCOPE_ITEMS: { key: keyof ScopeFlags; label: string; icon?: string }[] = [
+  { key: "colorSteel", label: "칼라강판 시공", icon: "🔩" },
+  { key: "overlay", label: "기존 지붕 덧씌우기", icon: "📋" },
+  { key: "removal", label: "기존 지붕 철거", icon: "🛠️" },
+  { key: "ridge", label: "용마루 마감", icon: "📐" },
+  { key: "eave", label: "처마 마감", icon: "✂️" },
+  { key: "waste", label: "폐기물 처리", icon: "🗑️" },
+];
+
 export function NewEstimateForm({ siteId, settings }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
-  // Area — two synced fields. Track which was last edited so rounding
-  // doesn't jitter the field the user is currently typing in.
   const [sqmInput, setSqmInput] = useState("");
   const [pyeongInput, setPyeongInput] = useState("");
 
-  // Scope
   const [scope, setScope] = useState<ScopeFlags>(DEFAULT_SCOPE);
-
-  // Work details
   const [workerCount, setWorkerCount] = useState(String(settings.defaultWorkerCount));
   const [workDays, setWorkDays] = useState("2");
   const [gutterLength, setGutterLength] = useState("");
@@ -48,10 +53,6 @@ export function NewEstimateForm({ siteId, settings }: Props) {
 
   function toggleScope(key: keyof ScopeFlags) {
     setScope((s) => ({ ...s, [key]: !s[key] }));
-  }
-
-  function getAreaM2(): number {
-    return parseFloat(sqmInput) || 0;
   }
 
   function handleSqmChange(val: string) {
@@ -67,9 +68,9 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   }
 
   async function handleCreate() {
-    const areaM2 = getAreaM2();
-    if (areaM2 <= 0) { toast.error("면적을 입력해 주세요."); return; }
-    if (scope.gutter && !gutterLength) { toast.error("물받이 길이를 입력해 주세요."); return; }
+    const areaM2 = parseFloat(sqmInput) || 0;
+    if (areaM2 <= 0) { toast.error("면적을 입력해 주세요"); return; }
+    if (scope.gutter && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
 
     setSaving(true);
     try {
@@ -91,161 +92,178 @@ export function NewEstimateForm({ siteId, settings }: Props) {
         throw new Error(err.error ?? "실패");
       }
       const est = await res.json();
-      toast.success("견적이 생성되었습니다.");
+      toast.success("견적이 생성되었습니다");
       router.push(`/sites/${siteId}/estimates/${est.id}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "견적 생성에 실패했습니다.");
+      toast.error(e instanceof Error ? e.message : "견적 생성에 실패했습니다");
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <div className="space-y-5">
-      {/* Area — two synced fields, type in either */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="font-semibold text-gray-800 mb-1">면적 입력</h2>
-        <p className="text-xs text-gray-400 mb-4">㎡ 또는 평 어디든 입력하면 자동 변환됩니다 (1평 = 3.3058㎡)</p>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label className="text-xs text-gray-500 mb-1 block">제곱미터</Label>
-            <div className="relative">
-              <Input
-                type="number"
-                inputMode="decimal"
-                value={sqmInput}
-                onChange={(e) => handleSqmChange(e.target.value)}
-                placeholder="0"
-                className="text-xl font-bold h-14 pr-10 text-center"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">㎡</span>
-            </div>
+    <>
+      <div className="space-y-3 pb-28">
+        {/* Area — dual synced inputs */}
+        <Section icon={<Ruler size={18} />} title="면적">
+          <p className="text-[11px] text-muted-foreground -mt-1 mb-1">㎡ 또는 평 어느 쪽에 입력해도 자동 변환됩니다</p>
+          <div className="grid grid-cols-2 gap-2.5">
+            <UnitInput label="제곱미터" unit="㎡" value={sqmInput} onChange={handleSqmChange} />
+            <UnitInput label="평" unit="평" value={pyeongInput} onChange={handlePyeongChange} />
           </div>
-          <div>
-            <Label className="text-xs text-gray-500 mb-1 block">평</Label>
-            <div className="relative">
-              <Input
-                type="number"
-                inputMode="decimal"
-                value={pyeongInput}
-                onChange={(e) => handlePyeongChange(e.target.value)}
-                placeholder="0"
-                className="text-xl font-bold h-14 pr-10 text-center"
+        </Section>
+
+        {/* Scope */}
+        <Section icon={<ListChecks size={18} />} title="공사 범위">
+          <div className="grid grid-cols-2 gap-2">
+            {SCOPE_ITEMS.map(({ key, label, icon }) => (
+              <ScopeChip
+                key={key}
+                active={scope[key]}
+                onClick={() => toggleScope(key)}
+                icon={icon}
+                label={label}
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">평</span>
-            </div>
+            ))}
           </div>
+
+          <div className="space-y-2 mt-3 pt-3 border-t border-border/40">
+            <ScopeWithInput
+              active={scope.gutter}
+              onToggle={() => toggleScope("gutter")}
+              label="물받이 교체"
+              icon="💧"
+              inputValue={gutterLength}
+              onInputChange={setGutterLength}
+              unit="m"
+            />
+            <ScopeWithInput
+              active={scope.skylift}
+              onToggle={() => toggleScope("skylift")}
+              label="스카이차 사용"
+              icon="🏗️"
+              inputValue={skyliftDays}
+              onInputChange={setSkyliftDays}
+              unit="일"
+            />
+            <ScopeWithInput
+              active={scope.ladderTruck}
+              onToggle={() => toggleScope("ladderTruck")}
+              label="사다리차 사용"
+              icon="🚛"
+              inputValue={ladderTruckDays}
+              onInputChange={setLadderTruckDays}
+              unit="일"
+            />
+          </div>
+        </Section>
+
+        {/* Work details */}
+        <Section icon={<Users size={18} />} title="작업 정보">
+          <div className="grid grid-cols-2 gap-2.5">
+            <UnitInput label="작업 일수" unit="일" value={workDays} onChange={setWorkDays} />
+            <UnitInput label="작업 인원" unit="명" value={workerCount} onChange={setWorkerCount} />
+          </div>
+        </Section>
+
+        {/* Hint */}
+        <div className="bg-primary/5 border border-primary/15 rounded-2xl p-4 flex items-start gap-2.5">
+          <Calculator size={16} className="text-primary mt-0.5 shrink-0" />
+          <p className="text-xs text-primary leading-relaxed">
+            계산하면 원가·마진을 즉시 확인하고 항목별 금액과 마진율을 자유롭게 조정할 수 있습니다
+          </p>
         </div>
       </div>
 
-      {/* Scope */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="font-semibold text-gray-800 mb-4">공사 범위</h2>
-        <div className="space-y-4">
-          {(
-            [
-              { key: "colorSteel", label: "칼라강판 시공" },
-              { key: "overlay", label: "기존 지붕 덧씌우기" },
-              { key: "removal", label: "기존 지붕 철거" },
-              { key: "ridge", label: "용마루 마감" },
-              { key: "eave", label: "처마 마감" },
-              { key: "waste", label: "폐기물 처리" },
-            ] as { key: keyof ScopeFlags; label: string }[]
-          ).map(({ key, label }) => (
-            <div key={key} className="flex items-center gap-3">
-              <Checkbox
-                id={key}
-                checked={scope[key]}
-                onCheckedChange={() => toggleScope(key)}
-                className="w-5 h-5"
-              />
-              <Label htmlFor={key} className="text-base text-gray-700">{label}</Label>
-            </div>
-          ))}
+      <StickySubmit
+        onClick={handleCreate}
+        disabled={saving}
+        label={saving ? "계산 중..." : "견적 계산하기"}
+      />
+    </>
+  );
+}
 
-          {/* Gutter with length */}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Checkbox
-                id="gutter"
-                checked={scope.gutter}
-                onCheckedChange={() => toggleScope("gutter")}
-                className="w-5 h-5"
-              />
-              <Label htmlFor="gutter" className="text-base text-gray-700">물받이 교체</Label>
-            </div>
-            {scope.gutter && (
-              <div className="ml-8 flex items-center gap-2">
-                <Input type="number" inputMode="numeric" value={gutterLength} onChange={(e) => setGutterLength(e.target.value)} placeholder="0" className="w-28" />
-                <span className="text-sm text-gray-500">m</span>
-              </div>
-            )}
-          </div>
-
-          {/* Skylift with days */}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Checkbox
-                id="skylift"
-                checked={scope.skylift}
-                onCheckedChange={() => toggleScope("skylift")}
-                className="w-5 h-5"
-              />
-              <Label htmlFor="skylift" className="text-base text-gray-700">스카이차 사용</Label>
-            </div>
-            {scope.skylift && (
-              <div className="ml-8 flex items-center gap-2">
-                <Input type="number" inputMode="numeric" value={skyliftDays} onChange={(e) => setSkyliftDays(e.target.value)} placeholder="1" className="w-28" />
-                <span className="text-sm text-gray-500">일</span>
-              </div>
-            )}
-          </div>
-
-          {/* Ladder truck with days */}
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Checkbox
-                id="ladderTruck"
-                checked={scope.ladderTruck}
-                onCheckedChange={() => toggleScope("ladderTruck")}
-                className="w-5 h-5"
-              />
-              <Label htmlFor="ladderTruck" className="text-base text-gray-700">사다리차 사용</Label>
-            </div>
-            {scope.ladderTruck && (
-              <div className="ml-8 flex items-center gap-2">
-                <Input type="number" inputMode="numeric" value={ladderTruckDays} onChange={(e) => setLadderTruckDays(e.target.value)} placeholder="1" className="w-28" />
-                <span className="text-sm text-gray-500">일</span>
-              </div>
-            )}
-          </div>
-        </div>
+function Section({ icon, title, children }: { icon?: React.ReactNode; title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        {icon && <span className="text-primary">{icon}</span>}
+        <h2 className="font-semibold text-foreground text-sm">{title}</h2>
       </div>
+      {children}
+    </div>
+  );
+}
 
-      {/* Work details */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="font-semibold text-gray-800 mb-4">작업 정보</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm text-gray-600 mb-1 block">작업 일수</Label>
-            <div className="relative">
-              <Input type="number" inputMode="numeric" value={workDays} onChange={(e) => setWorkDays(e.target.value)} className="pr-6" />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">일</span>
-            </div>
-          </div>
-          <div>
-            <Label className="text-sm text-gray-600 mb-1 block">작업 인원</Label>
-            <div className="relative">
-              <Input type="number" inputMode="numeric" value={workerCount} onChange={(e) => setWorkerCount(e.target.value)} className="pr-6" />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">명</span>
-            </div>
-          </div>
-        </div>
+function UnitInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div>
+      <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">{label}</Label>
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="decimal"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0"
+          className="h-14 text-xl font-bold text-center pr-10 rounded-2xl tabular-nums"
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium pointer-events-none">{unit}</span>
       </div>
+    </div>
+  );
+}
 
-      <Button onClick={handleCreate} disabled={saving} className="w-full h-14 text-base font-semibold rounded-2xl">
-        {saving ? "계산 중..." : "견적 계산하기"}
-      </Button>
+function ScopeChip({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon?: string; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      type="button"
+      className={`pressable rounded-2xl px-3 py-3 text-left flex items-center gap-2 border ${
+        active
+          ? "bg-primary text-primary-foreground border-primary shadow-sm shadow-primary/20"
+          : "bg-card text-foreground border-border/60"
+      }`}
+    >
+      {icon && <span className="text-base">{icon}</span>}
+      <span className="text-sm font-medium leading-tight">{label}</span>
+    </button>
+  );
+}
+
+function ScopeWithInput({
+  active, onToggle, label, icon, inputValue, onInputChange, unit,
+}: {
+  active: boolean; onToggle: () => void; label: string; icon?: string;
+  inputValue: string; onInputChange: (v: string) => void; unit: string;
+}) {
+  return (
+    <div className={`rounded-2xl border ${active ? "border-primary/40 bg-primary/5" : "border-border/60 bg-card"} overflow-hidden`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2.5 pressable"
+      >
+        <div className="flex items-center gap-2.5">
+          <Checkbox checked={active} className="w-5 h-5 pointer-events-none" />
+          {icon && <span className="text-base">{icon}</span>}
+          <span className="text-sm font-medium text-foreground">{label}</span>
+        </div>
+      </button>
+      {active && (
+        <div className="px-3 pb-3 pt-1 flex items-center gap-2">
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={inputValue}
+            onChange={(e) => onInputChange(e.target.value)}
+            placeholder="0"
+            className="h-11 rounded-xl tabular-nums flex-1"
+          />
+          <span className="text-sm text-muted-foreground font-medium w-6">{unit}</span>
+        </div>
+      )}
     </div>
   );
 }
