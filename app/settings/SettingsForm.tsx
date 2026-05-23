@@ -286,8 +286,10 @@ function PriceCalculator({ onApply }: { onApply: (perSqm: number) => void }) {
         <span className="text-sm">📐</span>
         <span className="text-xs font-semibold text-primary">㎡당 단가 계산기</span>
       </div>
-      <div className="grid grid-cols-[1fr_auto_1fr] gap-1.5 items-center text-xs">
-        <div className="relative">
+      {/* 1m × [너비] m = [m단가] 원  →  ㎡당 = m단가 / 너비 */}
+      <div className="flex items-center gap-1.5 text-xs">
+        <span className="text-sm font-semibold text-foreground tabular-nums whitespace-nowrap">1m ×</span>
+        <div className="relative flex-1">
           <Input
             type="number" inputMode="decimal" step={0.05}
             value={width} onChange={(e) => setWidth(e.target.value)}
@@ -295,8 +297,8 @@ function PriceCalculator({ onApply }: { onApply: (perSqm: number) => void }) {
           />
           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">m</span>
         </div>
-        <span className="text-muted-foreground px-0.5">×</span>
-        <div className="relative">
+        <span className="text-sm font-semibold text-foreground px-0.5">=</span>
+        <div className="relative flex-1">
           <Input
             type="number" inputMode="numeric"
             value={perM} onChange={(e) => setPerM(e.target.value)}
