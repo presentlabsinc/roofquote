@@ -1,4 +1,4 @@
-import type { ConstructionType, MaterialType, ScopeFlags, Thickness } from "./types";
+import type { ConstructionType, ExtraCost, MaterialType, ScopeFlags, Thickness } from "./types";
 import { MATERIAL_TYPES } from "./types";
 import type { PricingSettings } from "@prisma/client";
 
@@ -44,40 +44,73 @@ function constructionLabel(type: ConstructionType): string {
   return "지붕";
 }
 
-export function buildLineItems(
-  settings: PricingSettings,
-  constructionType: ConstructionType,
-  materialType: MaterialType | null,
-  thickness: Thickness | null,
-  areaM2: number,
-  scope: ScopeFlags,
-  workerCount: number,
-  workDays: number,
-  gutterLengthM: number,
-  skyliftDays: number,
-  ladderTruckDays: number,
-  scaffoldDays: number,
-): LineItemDraft[] {
+export interface BuildLineItemsInput {
+  settings: PricingSettings;
+  constructionType: ConstructionType;
+  materialType: MaterialType | null;
+  thickness: Thickness | null;
+  areaM2: number;
+  scope: ScopeFlags;
+  workerCount: number;
+  workDays: number;
+  gutterLengthM: number;
+  warehouseAreaM2: number;
+  stairwellAreaM2: number;
+  skyliftDays: number;
+  ladderTruckDays: number;
+  scaffoldDays: number;
+  extraCosts?: ExtraCost[];
+}
+
+export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
+  const {
+    settings, constructionType, materialType, thickness,
+    areaM2, scope, workerCount, workDays, gutterLengthM,
+    warehouseAreaM2, stairwellAreaM2,
+    skyliftDays, ladderTruckDays, scaffoldDays, extraCosts = [],
+  } = input;
   const items: LineItemDraft[] = [];
   let order = 0;
 
-  // Material line — always the main one
+  // Material line — always the main one. For steelWaterproof with 난간/두겁,
+  // multiply the effective area by parapetMultiplier (default 1.4) since
+  // material wraps up the parapets and over the cap.
   {
     const mult = thickness ? THICKNESS_MULT[thickness] : 1;
     const unitPrice = Math.round(settings.materialPricePerSqm * mult);
-    const name = `${materialLabel(materialType)}${thickness ? ` ${thickness}t` : ""} ${constructionLabel(constructionType)} 시공`;
+    const parapetActive = scope.handrailAndCap === true;
+    const parapetMult = parapetActive ? settings.parapetMultiplier : 1;
+    const effectiveArea = Math.round(areaM2 * parapetMult * 100) / 100;
+    const parapetNote = parapetActive ? ` (난간/두겁 포함 ×${settings.parapetMultiplier})` : "";
+    const name = `${materialLabel(materialType)}${thickness ? ` ${thickness}t` : ""} ${constructionLabel(constructionType)} 시공${parapetNote}`;
     items.push({
-      category: "material", name, quantity: areaM2, unit: "㎡", unitPrice,
-      total: Math.round(areaM2 * unitPrice), sortOrder: order++,
+      category: "material", name, quantity: effectiveArea, unit: "㎡", unitPrice,
+      total: Math.round(effectiveArea * unitPrice), sortOrder: order++,
     });
 
     // Accessory material
-    const matTotal = Math.round(areaM2 * unitPrice);
+    const matTotal = Math.round(effectiveArea * unitPrice);
     const accessoryTotal = Math.round(matTotal * settings.accessoryRate);
     items.push({
       category: "material", name: "부자재", quantity: settings.accessoryRate * 100,
       unit: "%", unitPrice: matTotal, total: accessoryTotal, sortOrder: order++,
     });
+
+    // Warehouse / stairwell — only for rooftopRoof / steelWaterproof
+    if (constructionType !== "roof") {
+      if (scope.warehouse && warehouseAreaM2 > 0) {
+        items.push({
+          category: "material", name: "창고 추가 시공", quantity: warehouseAreaM2, unit: "㎡",
+          unitPrice, total: Math.round(warehouseAreaM2 * unitPrice), sortOrder: order++,
+        });
+      }
+      if (scope.stairwell && stairwellAreaM2 > 0) {
+        items.push({
+          category: "material", name: "계단실 추가 시공", quantity: stairwellAreaM2, unit: "㎡",
+          unitPrice, total: Math.round(stairwellAreaM2 * unitPrice), sortOrder: order++,
+        });
+      }
+    }
   }
 
   // Ridge / Eave — only for roof / rooftopRoof
@@ -126,16 +159,10 @@ export function buildLineItems(
     });
   }
 
-  // Steel-waterproof-specific items
+  // Steel-waterproof-specific items.
+  // Note: 난간 및 두겁 is now folded into the material line via parapetMultiplier
+  // (see top of function). So we don't emit a separate line item for it.
   if (constructionType === "steelWaterproof") {
-    if (scope.handrailAndCap) {
-      const perimeter = Math.round(Math.sqrt(areaM2) * 4);
-      items.push({
-        category: "material", name: "난간 및 두겁", quantity: perimeter, unit: "m",
-        unitPrice: settings.eavePricePerM, total: Math.round(perimeter * settings.eavePricePerM),
-        sortOrder: order++,
-      });
-    }
     if (scope.existingWaterproofRemoval) {
       items.push({
         category: "removal", name: "기존 방수재 철거", quantity: areaM2, unit: "㎡",
@@ -212,6 +239,16 @@ export function buildLineItems(
     items.push({
       category: "lodging", name: "숙박비", quantity: lodgingQty, unit: "명·박",
       unitPrice: settings.lodgingCostPerPersonNight, total: Math.round(lodgingQty * settings.lodgingCostPerPersonNight),
+      sortOrder: order++,
+    });
+  }
+
+  // Extra (misc) costs added by the user — always last
+  for (const ec of extraCosts) {
+    if (!ec.name?.trim() || !ec.amount || ec.amount <= 0) continue;
+    items.push({
+      category: "other", name: ec.note ? `${ec.name} (${ec.note})` : ec.name,
+      quantity: 1, unit: "식", unitPrice: ec.amount, total: ec.amount,
       sortOrder: order++,
     });
   }

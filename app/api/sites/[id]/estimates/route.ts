@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
-import type { ConstructionType, MaterialType, ScopeFlags, Thickness } from "@/lib/types";
+import type { ConstructionType, ExtraCost, MaterialType, ScopeFlags, Thickness } from "@/lib/types";
 import type { PricingSettings } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -19,14 +19,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     materialThickness = "0.45",
     materialColor = null,
     areaM2,
+    buildingAreaM2 = null,
     workerCount,
     workDays,
     gutterLengthM = 0,
+    warehouseAreaM2 = 0,
+    stairwellAreaM2 = 0,
     skyliftDays = 0,
     ladderTruckDays = 0,
     scaffoldDays = 0,
     otherEquipment = null,
     scopeFlags,
+    extraCosts = [],
     marginRate: inputMarginRate,
     vatIncluded,
     paymentTerms,
@@ -37,20 +41,23 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const marginRate = inputMarginRate ?? settings.defaultMarginRate;
   const vatIncl = vatIncluded ?? settings.vatIncludedByDefault;
 
-  const lineItemDrafts = buildLineItems(
+  const lineItemDrafts = buildLineItems({
     settings,
-    constructionType as ConstructionType,
-    materialType as MaterialType | null,
-    materialThickness as Thickness | null,
+    constructionType: constructionType as ConstructionType,
+    materialType: materialType as MaterialType | null,
+    thickness: materialThickness as Thickness | null,
     areaM2,
     scope,
     workerCount,
     workDays,
     gutterLengthM,
+    warehouseAreaM2,
+    stairwellAreaM2,
     skyliftDays,
     ladderTruckDays,
     scaffoldDays,
-  );
+    extraCosts: extraCosts as ExtraCost[],
+  });
 
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
 
@@ -62,9 +69,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       materialThickness,
       materialColor,
       areaM2,
+      buildingAreaM2: buildingAreaM2 || null,
       workerCount,
       workDays,
       gutterLengthM: gutterLengthM || null,
+      warehouseAreaM2: warehouseAreaM2 || null,
+      stairwellAreaM2: stairwellAreaM2 || null,
       skyliftDays: skyliftDays || null,
       ladderTruckDays: ladderTruckDays || null,
       scaffoldDays: scaffoldDays || null,

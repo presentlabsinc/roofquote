@@ -7,8 +7,12 @@ import { cn } from "@/lib/utils";
 export function BottomNav() {
   const pathname = usePathname();
 
-  // Hide on the new-site / new-estimate forms — they're focused tasks
-  if (pathname === "/sites/new" || pathname.endsWith("/estimates/new")) return null;
+  // Hide on focused task flows
+  if (
+    pathname === "/sites/new" ||
+    pathname.endsWith("/estimates/new") ||
+    pathname.endsWith("/preview")
+  ) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 safe-x">

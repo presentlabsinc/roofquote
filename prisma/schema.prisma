@@ -32,6 +32,7 @@ model PricingSettings {
   ladderTruckDailyCost      Int   // 사다리차 1일
   scaffoldDailyCost         Int   @default(150000) // 비계 1일
   baseTransportCost         Int   // 기본 운송비
+  parapetMultiplier         Float @default(1.4) // 난간/두겁 포함 시 자재 면적 배수
   mealCostPerPersonMeal     Int   // 1인 1식 식비
   lodgingCostPerPersonNight Int   // 1인 1박 숙박비
 
@@ -65,10 +66,13 @@ model Estimate {
   materialColor     String?
 
   // Input snapshots
-  areaM2          Float
+  areaM2          Float   // 시공 면적
+  buildingAreaM2  Float?  // 건물 면적 (옵션, 참고용)
   workerCount     Int
   workDays        Float
   gutterLengthM   Float?
+  warehouseAreaM2 Float?  // 창고 추가 시공 면적
+  stairwellAreaM2 Float?  // 계단실 추가 시공 면적
   skyliftDays     Float?
   ladderTruckDays Float?
   scaffoldDays    Float?  // 비계 사용 일수

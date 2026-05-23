@@ -5,21 +5,26 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import type { PricingSettings } from "@prisma/client";
 import {
   type ConstructionType,
   type MaterialType,
   type ScopeFlags,
   type Thickness,
+  type ExtraCost,
   CONSTRUCTION_TYPES,
   MATERIAL_TYPES,
   THICKNESSES,
   SCOPE_BY_TYPE,
   SCOPE_LABELS,
+  SCOPE_WITH_INPUT,
+  COLOR_PRESETS,
+  DEFAULT_COLOR,
 } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2 } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -30,31 +35,42 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
-  // Step 1: Construction type
-  const [constructionType, setConstructionType] = useState<ConstructionType | null>(null);
-
-  // Step 2-4: Material
-  const [materialType, setMaterialType] = useState<MaterialType>("slate");
-  const [thickness, setThickness] = useState<Thickness>("0.45");
-  const [materialColor, setMaterialColor] = useState("");
-
-  // Area
+  // Step 1: Area (시공 면적 first, optional building area)
   const [sqmInput, setSqmInput] = useState("");
   const [pyeongInput, setPyeongInput] = useState("");
+  const [showBuildingArea, setShowBuildingArea] = useState(false);
+  const [buildingSqmInput, setBuildingSqmInput] = useState("");
+  const [buildingPyeongInput, setBuildingPyeongInput] = useState("");
 
-  // Scope
+  // Step 2: Construction type
+  const [constructionType, setConstructionType] = useState<ConstructionType | null>(null);
+
+  // Step 3-5: Material
+  const [materialType, setMaterialType] = useState<MaterialType>("slate");
+  const [thickness, setThickness] = useState<Thickness>("0.45");
+  const [colorChoice, setColorChoice] = useState<string>(DEFAULT_COLOR);
+  const [colorCustom, setColorCustom] = useState("");
+
+  // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>({});
 
-  // Lengths / days
+  // Inline scope inputs (length / area)
   const [gutterLength, setGutterLength] = useState("");
+  const [warehouseArea, setWarehouseArea] = useState("");
+  const [stairwellArea, setStairwellArea] = useState("");
+
+  // Step 7: Equipment days
   const [skyliftDays, setSkyliftDays] = useState("1");
   const [ladderTruckDays, setLadderTruckDays] = useState("1");
   const [scaffoldDays, setScaffoldDays] = useState("3");
   const [otherEquipment, setOtherEquipment] = useState("");
 
-  // Work info
+  // Step 8: Work info
   const [workerCount, setWorkerCount] = useState(String(settings.defaultWorkerCount));
   const [workDays, setWorkDays] = useState("2");
+
+  // Step 9: 기타 비용
+  const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
 
   // When construction type changes, reset scope to sensible defaults for that type
   function pickConstructionType(t: ConstructionType) {
@@ -92,21 +108,59 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     setSqmInput(Number.isFinite(n) && n > 0 ? String(pyeongToSqm(n)) : "");
   }
 
+  function handleBuildingSqmChange(val: string) {
+    setBuildingSqmInput(val);
+    const n = parseFloat(val);
+    setBuildingPyeongInput(Number.isFinite(n) && n > 0 ? String(sqmToPyeong(n)) : "");
+  }
+
+  function handleBuildingPyeongChange(val: string) {
+    setBuildingPyeongInput(val);
+    const n = parseFloat(val);
+    setBuildingSqmInput(Number.isFinite(n) && n > 0 ? String(pyeongToSqm(n)) : "");
+  }
+
+  function getInlineInputValue(key: keyof ScopeFlags): string {
+    if (key === "gutter") return gutterLength;
+    if (key === "warehouse") return warehouseArea;
+    if (key === "stairwell") return stairwellArea;
+    return "";
+  }
+
+  function setInlineInputValue(key: keyof ScopeFlags, v: string) {
+    if (key === "gutter") setGutterLength(v);
+    else if (key === "warehouse") setWarehouseArea(v);
+    else if (key === "stairwell") setStairwellArea(v);
+  }
+
   const scopeItems = useMemo(
     () => (constructionType ? SCOPE_BY_TYPE[constructionType] : []),
     [constructionType],
   );
 
-  const materialOptions = useMemo(() => {
-    // Steel waterproof is usually 슬레이트골; show options but highlight default
-    return MATERIAL_TYPES;
-  }, []);
+  function addExtraCost() {
+    setExtraCosts((arr) => [...arr, { name: "", amount: 0, note: "" }]);
+  }
+
+  function updateExtraCost(idx: number, patch: Partial<ExtraCost>) {
+    setExtraCosts((arr) => arr.map((ec, i) => (i === idx ? { ...ec, ...patch } : ec)));
+  }
+
+  function removeExtraCost(idx: number) {
+    setExtraCosts((arr) => arr.filter((_, i) => i !== idx));
+  }
+
+  const showRest = constructionType !== null;
 
   async function handleCreate() {
-    if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
     const areaM2 = parseFloat(sqmInput) || 0;
-    if (areaM2 <= 0) { toast.error("면적을 입력해 주세요"); return; }
+    if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
+    if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
     if (scope.gutter && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    if (scope.warehouse && !warehouseArea) { toast.error("창고 면적을 입력해 주세요"); return; }
+    if (scope.stairwell && !stairwellArea) { toast.error("계단실 면적을 입력해 주세요"); return; }
+
+    const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
 
     setSaving(true);
     try {
@@ -117,16 +171,20 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           constructionType,
           materialType,
           materialThickness: thickness,
-          materialColor: materialColor || null,
+          materialColor: finalColor,
           areaM2,
+          buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
           workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
           workDays: parseFloat(workDays) || 2,
           gutterLengthM: scope.gutter ? parseFloat(gutterLength) || 0 : 0,
+          warehouseAreaM2: scope.warehouse ? parseFloat(warehouseArea) || 0 : 0,
+          stairwellAreaM2: scope.stairwell ? parseFloat(stairwellArea) || 0 : 0,
           skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
           ladderTruckDays: scope.ladderTruck ? parseFloat(ladderTruckDays) || 1 : 0,
           scaffoldDays: scope.scaffold ? parseFloat(scaffoldDays) || 1 : 0,
           otherEquipment: otherEquipment || null,
           scopeFlags: scope,
+          extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
         }),
       });
       if (!res.ok) {
@@ -143,14 +201,43 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     }
   }
 
-  const showMaterialSection = constructionType !== null;
-  const showRestOfForm = constructionType !== null;
-
   return (
     <>
-      <div className="space-y-3 pb-28">
-        {/* STEP 1: Construction type */}
-        <Section icon={<Building2 size={18} />} title="공사 유형" step={1}>
+      <div className="space-y-3 pb-32">
+        {/* STEP 1: Area (FIRST — most important, measured first on site) */}
+        <Section icon={<Ruler size={18} />} title="면적" step={1}>
+          <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">시공 면적</Label>
+          <div className="grid grid-cols-2 gap-2.5">
+            <UnitInput label="㎡" unit="㎡" value={sqmInput} onChange={handleSqmChange} />
+            <UnitInput label="평" unit="평" value={pyeongInput} onChange={handlePyeongChange} />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1.5">㎡ 또는 평 어디든 입력하면 자동 변환</p>
+
+          <button
+            type="button"
+            onClick={() => setShowBuildingArea((v) => !v)}
+            className="mt-4 flex items-center gap-2 text-xs font-medium text-primary pressable"
+          >
+            <span className="w-5 h-5 rounded-md border border-primary/40 flex items-center justify-center text-[11px]">
+              {showBuildingArea ? "−" : "+"}
+            </span>
+            건물 면적도 함께 기입 (옵션 — 참고용)
+          </button>
+
+          {showBuildingArea && (
+            <div className="mt-3 pt-3 border-t border-border/40">
+              <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">건물 면적</Label>
+              <div className="grid grid-cols-2 gap-2.5">
+                <UnitInput label="㎡" unit="㎡" value={buildingSqmInput} onChange={handleBuildingSqmChange} />
+                <UnitInput label="평" unit="평" value={buildingPyeongInput} onChange={handleBuildingPyeongChange} />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1.5">견적에는 사용되지 않고 견적서에 정보로만 표시됩니다</p>
+            </div>
+          )}
+        </Section>
+
+        {/* STEP 2: Construction type */}
+        <Section icon={<Building2 size={18} />} title="공사 유형" step={2}>
           <div className="space-y-2">
             {CONSTRUCTION_TYPES.map((t) => (
               <button
@@ -158,9 +245,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                 type="button"
                 onClick={() => pickConstructionType(t.value)}
                 className={`w-full text-left rounded-2xl px-4 py-3.5 border-2 pressable flex items-center gap-3 ${
-                  constructionType === t.value
-                    ? "border-primary bg-primary/5"
-                    : "border-border/60 bg-card"
+                  constructionType === t.value ? "border-primary bg-primary/5" : "border-border/60 bg-card"
                 }`}
               >
                 <span className="text-2xl">{t.icon}</span>
@@ -171,9 +256,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                   <div className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</div>
                 </div>
                 <div className={`w-5 h-5 rounded-full border-2 shrink-0 ${
-                  constructionType === t.value
-                    ? "border-primary bg-primary"
-                    : "border-border"
+                  constructionType === t.value ? "border-primary bg-primary" : "border-border"
                 }`}>
                   {constructionType === t.value && (
                     <div className="w-full h-full flex items-center justify-center text-white text-xs">✓</div>
@@ -184,17 +267,15 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           </div>
         </Section>
 
-        {/* STEP 2-4: Material (depends on construction type) */}
-        {showMaterialSection && (
+        {showRest && (
           <>
-            <Section icon={<Hammer size={18} />} title="자재 종류" step={2}>
+            {/* STEP 3: Material type */}
+            <Section icon={<Hammer size={18} />} title="자재 종류" step={3}>
               {constructionType === "steelWaterproof" && (
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                  바닥형은 보통 슬레이트골을 사용합니다
-                </p>
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">바닥형은 보통 슬레이트골을 사용합니다</p>
               )}
               <div className="grid grid-cols-2 gap-2">
-                {materialOptions.map((m) => (
+                {MATERIAL_TYPES.map((m) => (
                   <ChipBtn
                     key={m.value}
                     active={materialType === m.value}
@@ -205,7 +286,8 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               </div>
             </Section>
 
-            <Section icon={<Layers size={18} />} title="자재 두께" step={3}>
+            {/* STEP 4: Thickness */}
+            <Section icon={<Layers size={18} />} title="자재 두께" step={4}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">기본 0.45t</p>
               <div className="grid grid-cols-4 gap-2">
                 {THICKNESSES.map((t) => (
@@ -225,51 +307,69 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               </div>
             </Section>
 
-            <Section icon={<Palette size={18} />} title="색상 / 텍스처" step={4}>
-              <Input
-                value={materialColor}
-                onChange={(e) => setMaterialColor(e.target.value)}
-                placeholder="예: 차콜, 진회색, 적갈색"
-                className="h-12 rounded-xl text-base"
-              />
-            </Section>
-          </>
-        )}
-
-        {showRestOfForm && (
-          <>
-            {/* Area */}
-            <Section icon={<Ruler size={18} />} title="면적" step={5}>
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">㎡ 또는 평 어디든 입력하면 자동 변환</p>
-              <div className="grid grid-cols-2 gap-2.5">
-                <UnitInput label="제곱미터" unit="㎡" value={sqmInput} onChange={handleSqmChange} />
-                <UnitInput label="평" unit="평" value={pyeongInput} onChange={handlePyeongChange} />
+            {/* STEP 5: Color */}
+            <Section icon={<Palette size={18} />} title="색상 / 텍스처" step={5}>
+              <div className="grid grid-cols-3 gap-1.5">
+                {COLOR_PRESETS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColorChoice(c)}
+                    className={`pressable rounded-xl px-2 py-2.5 text-xs font-medium border ${
+                      colorChoice === c
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border/60"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setColorChoice("기타")}
+                  className={`pressable rounded-xl px-2 py-2.5 text-xs font-medium border ${
+                    colorChoice === "기타"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-foreground border-border/60"
+                  }`}
+                >
+                  기타 (직접 입력)
+                </button>
               </div>
+              {colorChoice === "기타" && (
+                <Input
+                  value={colorCustom}
+                  onChange={(e) => setColorCustom(e.target.value)}
+                  placeholder="색상명 입력"
+                  className="mt-2.5 h-12 rounded-xl text-base"
+                />
+              )}
             </Section>
 
-            {/* Scope */}
+            {/* STEP 6: Scope */}
             <Section icon={<ListChecks size={18} />} title="공사 범위" step={6}>
               <div className="space-y-2">
                 {scopeItems.map((key) => {
-                  const isGutter = key === "gutter";
+                  const withInput = SCOPE_WITH_INPUT[key];
                   return (
                     <div key={key}>
                       <ScopeRow
                         active={!!scope[key]}
                         label={SCOPE_LABELS[key]}
+                        hint={key === "handrailAndCap" ? `자재 면적이 ×${settings.parapetMultiplier} 자동 적용됩니다` : undefined}
                         onToggle={() => toggleScope(key)}
                       />
-                      {isGutter && scope.gutter && (
+                      {withInput && scope[key] && (
                         <div className="mt-2 ml-3 flex items-center gap-2">
                           <Input
                             type="number"
-                            inputMode="numeric"
-                            value={gutterLength}
-                            onChange={(e) => setGutterLength(e.target.value)}
-                            placeholder="0"
+                            inputMode="decimal"
+                            value={getInlineInputValue(key)}
+                            onChange={(e) => setInlineInputValue(key, e.target.value)}
+                            placeholder={withInput.placeholder}
                             className="h-11 rounded-xl tabular-nums flex-1"
                           />
-                          <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                          <span className="text-sm text-muted-foreground font-medium w-6">{withInput.unit}</span>
                         </div>
                       )}
                     </div>
@@ -278,49 +378,82 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               </div>
             </Section>
 
-            {/* Equipment */}
+            {/* STEP 7: Equipment */}
             <Section icon={<Wrench size={18} />} title="장비대" step={7}>
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">사용하는 장비를 선택하고 사용 일수를 입력하세요</p>
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">사용 장비를 체크하고 일수를 입력하세요</p>
               <div className="space-y-2">
                 <EquipmentRow
-                  active={!!scope.skylift}
-                  label="스카이차"
-                  onToggle={() => toggleScope("skylift")}
-                  days={skyliftDays}
-                  onDaysChange={setSkyliftDays}
+                  active={!!scope.skylift} label="스카이차" onToggle={() => toggleScope("skylift")}
+                  days={skyliftDays} onDaysChange={setSkyliftDays}
                 />
                 <EquipmentRow
-                  active={!!scope.ladderTruck}
-                  label="사다리차"
-                  onToggle={() => toggleScope("ladderTruck")}
-                  days={ladderTruckDays}
-                  onDaysChange={setLadderTruckDays}
+                  active={!!scope.ladderTruck} label="사다리차" onToggle={() => toggleScope("ladderTruck")}
+                  days={ladderTruckDays} onDaysChange={setLadderTruckDays}
                 />
                 <EquipmentRow
-                  active={!!scope.scaffold}
-                  label="비계 / 발판"
-                  onToggle={() => toggleScope("scaffold")}
-                  days={scaffoldDays}
-                  onDaysChange={setScaffoldDays}
+                  active={!!scope.scaffold} label="비계 / 발판" onToggle={() => toggleScope("scaffold")}
+                  days={scaffoldDays} onDaysChange={setScaffoldDays}
                 />
                 <div className="pt-2">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 (자유 입력)</Label>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 "기타 비용" 에 추가)</Label>
                   <Input
-                    value={otherEquipment}
-                    onChange={(e) => setOtherEquipment(e.target.value)}
-                    placeholder="예: 크레인 1일, 지게차 2일"
-                    className="h-11 rounded-xl text-sm"
+                    value={otherEquipment} onChange={(e) => setOtherEquipment(e.target.value)}
+                    placeholder="예: 크레인 1일, 지게차 2일" className="h-11 rounded-xl text-sm"
                   />
                 </div>
               </div>
             </Section>
 
-            {/* Work info */}
+            {/* STEP 8: Work info */}
             <Section icon={<Users size={18} />} title="작업 정보" step={8}>
               <div className="grid grid-cols-2 gap-2.5">
                 <UnitInput label="작업 일수" unit="일" value={workDays} onChange={setWorkDays} />
                 <UnitInput label="작업 인원" unit="명" value={workerCount} onChange={setWorkerCount} />
               </div>
+            </Section>
+
+            {/* STEP 9: 기타 비용 */}
+            <Section icon={<Receipt size={18} />} title="기타 비용" step={9}>
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">크레인, 추가 자재, 잡비 등 직접 추가</p>
+              {extraCosts.length > 0 && (
+                <div className="space-y-2 mb-2">
+                  {extraCosts.map((ec, i) => (
+                    <div key={i} className="bg-muted/40 rounded-2xl p-2.5 flex items-start gap-2">
+                      <div className="flex-1 space-y-2">
+                        <Input
+                          value={ec.name}
+                          onChange={(e) => updateExtraCost(i, { name: e.target.value })}
+                          placeholder="항목명 (예: 크레인 사용료)"
+                          className="h-11 rounded-xl text-sm bg-card"
+                        />
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number" inputMode="numeric"
+                            value={ec.amount || ""}
+                            onChange={(e) => updateExtraCost(i, { amount: parseInt(e.target.value) || 0 })}
+                            placeholder="금액"
+                            className="h-11 rounded-xl tabular-nums flex-1 bg-card"
+                          />
+                          <span className="text-xs text-muted-foreground font-medium w-6">원</span>
+                        </div>
+                      </div>
+                      <button
+                        type="button" onClick={() => removeExtraCost(i)}
+                        className="w-9 h-9 flex items-center justify-center rounded-full bg-background pressable shrink-0 mt-1"
+                      >
+                        <X size={15} className="text-muted-foreground" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button" onClick={addExtraCost}
+                variant="outline"
+                className="w-full h-11 rounded-2xl text-sm font-semibold pressable border-dashed border-primary/40 text-primary"
+              >
+                <Plus size={16} className="mr-1" /> 항목 추가
+              </Button>
             </Section>
           </>
         )}
@@ -387,17 +520,20 @@ function ChipBtn({ active, onClick, label }: { active: boolean; onClick: () => v
   );
 }
 
-function ScopeRow({ active, label, onToggle }: { active: boolean; label: string; onToggle: () => void }) {
+function ScopeRow({ active, label, hint, onToggle }: { active: boolean; label: string; hint?: string; onToggle: () => void }) {
   return (
     <button
       type="button"
       onClick={onToggle}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl pressable border ${
+      className={`w-full flex items-start gap-3 px-3 py-2.5 rounded-2xl pressable border ${
         active ? "border-primary/40 bg-primary/5" : "border-border/60 bg-card"
       }`}
     >
-      <Checkbox checked={active} className="w-5 h-5 pointer-events-none" />
-      <span className="text-sm font-medium text-foreground">{label}</span>
+      <Checkbox checked={active} className="w-5 h-5 pointer-events-none mt-0.5" />
+      <div className="text-left">
+        <div className="text-sm font-medium text-foreground">{label}</div>
+        {hint && <div className="text-[10px] text-muted-foreground mt-0.5">{hint}</div>}
+      </div>
     </button>
   );
 }

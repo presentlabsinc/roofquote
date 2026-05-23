@@ -29,6 +29,28 @@ export type Thickness = "0.4" | "0.45" | "0.5" | "0.6";
 
 export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
 
+/** Standard color presets for color steel. The user picks one or "기타" for free input. */
+export const COLOR_PRESETS = [
+  "다크브라운",   // 기본
+  "진밤색",
+  "차콜",
+  "진회색",
+  "은회색",
+  "적갈색",
+  "녹색",
+  "청색",
+  "백색",
+] as const;
+
+export const DEFAULT_COLOR = "다크브라운";
+
+/** Free-form misc line item added by the user (기타 비용). */
+export interface ExtraCost {
+  name: string;
+  amount: number;
+  note?: string;
+}
+
 /**
  * Wide ScopeFlags union — fields are nullable; only the ones relevant
  * to the chosen ConstructionType are shown in the form and used in
@@ -44,9 +66,13 @@ export interface ScopeFlags {
   frameReinforcement?: boolean;  // 골조 보강 (rooftopRoof only)
 
   // — Steel Waterproof (옥상방수 바닥형) —
-  handrailAndCap?: boolean;      // 난간 및 두겁
+  handrailAndCap?: boolean;      // 난간 및 두겁 → 면적 ×parapetMultiplier
   existingWaterproofRemoval?: boolean; // 기존 방수재 철거
   drainage?: boolean;            // 배수구 처리
+
+  // — Rooftop add-ons (rooftopRoof / steelWaterproof) — with size inputs —
+  warehouse?: boolean;           // 창고 추가 시공
+  stairwell?: boolean;           // 계단실 추가 시공
 
   // — Common —
   waste?: boolean;               // 폐기물 처리
@@ -67,6 +93,8 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   handrailAndCap: "난간 및 두겁",
   existingWaterproofRemoval: "기존 방수재 철거",
   drainage: "배수구 처리",
+  warehouse: "창고 추가 시공",
+  stairwell: "계단실 추가 시공",
   waste: "폐기물 처리",
   skylift: "스카이차",
   ladderTruck: "사다리차",
@@ -76,8 +104,15 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
 /** Which scope items are shown for each construction type, in display order. */
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
   roof: ["overlay", "removal", "ridge", "eave", "gutter", "waste"],
-  rooftopRoof: ["frameReinforcement", "ridge", "eave", "gutter", "waste"],
-  steelWaterproof: ["handrailAndCap", "existingWaterproofRemoval", "drainage", "waste"],
+  rooftopRoof: ["frameReinforcement", "ridge", "eave", "gutter", "warehouse", "stairwell", "waste"],
+  steelWaterproof: ["handrailAndCap", "existingWaterproofRemoval", "drainage", "warehouse", "stairwell", "waste"],
+};
+
+/** Scope items that need an inline numeric input (length / area in ㎡ or m). */
+export const SCOPE_WITH_INPUT: Partial<Record<keyof ScopeFlags, { unit: string; placeholder: string }>> = {
+  gutter: { unit: "m", placeholder: "길이" },
+  warehouse: { unit: "㎡", placeholder: "면적" },
+  stairwell: { unit: "㎡", placeholder: "면적" },
 };
 
 export interface PhotoItem {

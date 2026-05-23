@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground antialiased">
-        <main className="flex-1 pb-24 safe-x">{children}</main>
+        <main className="flex-1 pb-32 safe-x">{children}</main>
         <BottomNav />
         <Toaster richColors position="top-center" />
       </body>

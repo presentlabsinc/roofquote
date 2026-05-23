@@ -1,6 +1,30 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calcTotals, calcFromFinalPrice } from "@/lib/calculations";
+import type { Estimate } from "@prisma/client";
+
+/**
+ * Recompute totals from current line items and return the full estimate.
+ * Used after any line-item-level mutation (edit / undo / delete / add).
+ */
+async function recalcAndReturn(eid: string, estimate: Estimate) {
+  const items = await prisma.estimateLineItem.findMany({ where: { estimateId: eid } });
+  let totals;
+  if (estimate.marginMode === "finalPrice") {
+    // Keep the user's finalPrice fixed; re-derive marginRate/Amount from new totalCost
+    const totalCost = items.reduce((s, i) => s + i.total, 0);
+    const derived = calcFromFinalPrice(totalCost, estimate.finalPrice, estimate.vatIncluded);
+    totals = { totalCost, ...derived, finalPrice: estimate.finalPrice };
+  } else {
+    totals = calcTotals(items, estimate.marginRate, estimate.vatIncluded);
+  }
+  const updated = await prisma.estimate.update({
+    where: { id: eid },
+    data: { ...totals, marginMode: estimate.marginMode, updatedAt: new Date() },
+    include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+  });
+  return NextResponse.json(updated);
+}
 
 export async function GET(_: Request, { params }: { params: Promise<{ eid: string }> }) {
   const { eid } = await params;
@@ -22,21 +46,52 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
   });
   if (!estimate) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Update a line item's total
+  // ─── Line item actions ─────────────────────────────────────────────
+  // 1. Update line item total (manual edit)
   if (body.lineItemId && body.total !== undefined) {
     await prisma.estimateLineItem.update({
       where: { id: body.lineItemId },
       data: { total: body.total, isUserEdited: true },
     });
-    // Recalculate totals from current line items
-    const updatedItems = await prisma.estimateLineItem.findMany({ where: { estimateId: eid } });
-    const totals = calcTotals(updatedItems, estimate.marginRate, estimate.vatIncluded);
-    const updated = await prisma.estimate.update({
-      where: { id: eid },
-      data: { ...totals, marginMode: estimate.marginMode, updatedAt: new Date() },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+    return recalcAndReturn(eid, estimate);
+  }
+
+  // 2. Undo line item edit → restore total = quantity × unitPrice
+  if (body.lineItemId && body.action === "undo") {
+    const line = estimate.lineItems.find((l) => l.id === body.lineItemId);
+    if (!line) return NextResponse.json({ error: "Line not found" }, { status: 404 });
+    await prisma.estimateLineItem.update({
+      where: { id: body.lineItemId },
+      data: { total: Math.round(line.quantity * line.unitPrice), isUserEdited: false },
     });
-    return NextResponse.json(updated);
+    return recalcAndReturn(eid, estimate);
+  }
+
+  // 3. Delete a line item
+  if (body.lineItemId && body.action === "delete") {
+    await prisma.estimateLineItem.delete({ where: { id: body.lineItemId } });
+    return recalcAndReturn(eid, estimate);
+  }
+
+  // 4. Add a new line item (free-form, isUserEdited=true)
+  if (body.action === "add" && body.newLineItem) {
+    const { name, quantity, unit, unitPrice, category } = body.newLineItem;
+    const total = Math.round((quantity ?? 1) * (unitPrice ?? 0));
+    const maxOrder = Math.max(0, ...estimate.lineItems.map((l) => l.sortOrder));
+    await prisma.estimateLineItem.create({
+      data: {
+        estimateId: eid,
+        category: category ?? "other",
+        name: name || "기타 항목",
+        quantity: quantity ?? 1,
+        unit: unit ?? "식",
+        unitPrice: unitPrice ?? 0,
+        total,
+        isUserEdited: true,
+        sortOrder: maxOrder + 1,
+      },
+    });
+    return recalcAndReturn(eid, estimate);
   }
 
   // Update margin rate

@@ -25,6 +25,7 @@ const DEFAULTS = {
   skyliftDailyCost: 500000,
   ladderTruckDailyCost: 300000,
   scaffoldDailyCost: 150000,
+  parapetMultiplier: 1.4,
   baseTransportCost: 250000,
   mealCostPerPersonMeal: 10000,
   lodgingCostPerPersonNight: 50000,
@@ -84,6 +85,13 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     ],
   },
   {
+    section: "공사 계산 기본값",
+    emoji: "📐",
+    items: [
+      { key: "parapetMultiplier", label: "난간/두겁 면적 배수", unit: "×", step: 0.01 },
+    ],
+  },
+  {
     section: "마진 기본값",
     emoji: "💰",
     items: [
@@ -117,6 +125,7 @@ export function SettingsForm({ defaultValues }: Props) {
       skyliftDailyCost: defaultValues.skyliftDailyCost,
       ladderTruckDailyCost: defaultValues.ladderTruckDailyCost,
       scaffoldDailyCost: defaultValues.scaffoldDailyCost,
+      parapetMultiplier: defaultValues.parapetMultiplier,
       baseTransportCost: defaultValues.baseTransportCost,
       mealCostPerPersonMeal: defaultValues.mealCostPerPersonMeal,
       lodgingCostPerPersonNight: defaultValues.lodgingCostPerPersonNight,
@@ -185,6 +194,9 @@ export function SettingsForm({ defaultValues }: Props) {
                             setField(key as "companyName", e.target.value);
                           } else if (pct) {
                             setField(key as "accessoryRate", parseFloat(e.target.value) / 100 || 0);
+                          } else if (step && step < 1) {
+                            // Float field (e.g. parapetMultiplier)
+                            setField(key as "parapetMultiplier", parseFloat(e.target.value) || 0);
                           } else {
                             setField(key as "materialPricePerSqm", parseInt(e.target.value) || 0);
                           }
@@ -216,8 +228,8 @@ export function SettingsForm({ defaultValues }: Props) {
         </div>
       </div>
 
-      {/* Sticky save bar */}
-      <div className="fixed bottom-24 left-0 right-0 z-30 safe-x pointer-events-none">
+      {/* Sticky save bar — sits above the BottomNav */}
+      <div className="fixed bottom-28 left-0 right-0 z-30 safe-x pointer-events-none">
         <div className="max-w-lg mx-auto px-4 pointer-events-auto">
           <Button
             onClick={handleSave}
