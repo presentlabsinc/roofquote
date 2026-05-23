@@ -30,6 +30,7 @@ model PricingSettings {
   defaultWorkerCount        Int   // 기본 작업 인원
   skyliftDailyCost          Int   // 스카이차 1일
   ladderTruckDailyCost      Int   // 사다리차 1일
+  scaffoldDailyCost         Int   @default(150000) // 비계 1일
   baseTransportCost         Int   // 기본 운송비
   mealCostPerPersonMeal     Int   // 1인 1식 식비
   lodgingCostPerPersonNight Int   // 1인 1박 숙박비
@@ -57,6 +58,12 @@ model Estimate {
   siteId String
   site   Site   @relation(fields: [siteId], references: [id])
 
+  // Construction details (snapshotted)
+  constructionType  String  @default("roof") // 'roof' | 'steelWaterproof' | 'rooftopRoof'
+  materialType      String? // 'slate' | 'v250' | 'zinc250' | 'generalTile' | 'traditionalTile' | 'realZinc' | 'other'
+  materialThickness String? @default("0.45") // '0.4' | '0.45' | '0.5' | '0.6'
+  materialColor     String?
+
   // Input snapshots
   areaM2          Float
   workerCount     Int
@@ -64,6 +71,8 @@ model Estimate {
   gutterLengthM   Float?
   skyliftDays     Float?
   ladderTruckDays Float?
+  scaffoldDays    Float?  // 비계 사용 일수
+  otherEquipment  String? // 자유 텍스트 — 예: "크레인 1일, 지게차 2일"
   scopeFlags      Json    @default("{}") // ScopeFlags shape — see lib/types.ts
 
   // Line items in separate table (each holds its own unitPrice snapshot)

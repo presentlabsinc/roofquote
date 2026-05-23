@@ -24,6 +24,7 @@ const DEFAULTS = {
   defaultWorkerCount: 3,
   skyliftDailyCost: 500000,
   ladderTruckDailyCost: 300000,
+  scaffoldDailyCost: 150000,
   baseTransportCost: 250000,
   mealCostPerPersonMeal: 10000,
   lodgingCostPerPersonNight: 50000,
@@ -47,7 +48,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     section: "자재 단가",
     emoji: "🧱",
     items: [
-      { key: "materialPricePerSqm", label: "칼라강판 ㎡당", unit: "원" },
+      { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (0.45t 기준)", unit: "원" },
       { key: "accessoryRate", label: "부자재 비율", unit: "%", step: 0.01, pct: true },
       { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
@@ -70,6 +71,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     items: [
       { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
       { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
+      { key: "scaffoldDailyCost", label: "비계 1일", unit: "원" },
     ],
   },
   {
@@ -114,6 +116,7 @@ export function SettingsForm({ defaultValues }: Props) {
       defaultWorkerCount: defaultValues.defaultWorkerCount,
       skyliftDailyCost: defaultValues.skyliftDailyCost,
       ladderTruckDailyCost: defaultValues.ladderTruckDailyCost,
+      scaffoldDailyCost: defaultValues.scaffoldDailyCost,
       baseTransportCost: defaultValues.baseTransportCost,
       mealCostPerPersonMeal: defaultValues.mealCostPerPersonMeal,
       lodgingCostPerPersonNight: defaultValues.lodgingCostPerPersonNight,

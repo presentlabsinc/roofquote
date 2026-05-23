@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
-import type { ScopeFlags } from "@/lib/types";
+import type { ConstructionType, MaterialType, ScopeFlags, Thickness } from "@/lib/types";
 import type { PricingSettings } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -14,12 +14,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   }
 
   const {
+    constructionType = "roof",
+    materialType = null,
+    materialThickness = "0.45",
+    materialColor = null,
     areaM2,
     workerCount,
     workDays,
     gutterLengthM = 0,
     skyliftDays = 0,
     ladderTruckDays = 0,
+    scaffoldDays = 0,
+    otherEquipment = null,
     scopeFlags,
     marginRate: inputMarginRate,
     vatIncluded,
@@ -27,12 +33,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     validityDays,
   } = body;
 
-  const scope: ScopeFlags = scopeFlags;
+  const scope: ScopeFlags = scopeFlags ?? {};
   const marginRate = inputMarginRate ?? settings.defaultMarginRate;
   const vatIncl = vatIncluded ?? settings.vatIncludedByDefault;
 
   const lineItemDrafts = buildLineItems(
     settings,
+    constructionType as ConstructionType,
+    materialType as MaterialType | null,
+    materialThickness as Thickness | null,
     areaM2,
     scope,
     workerCount,
@@ -40,6 +49,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     gutterLengthM,
     skyliftDays,
     ladderTruckDays,
+    scaffoldDays,
   );
 
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
@@ -47,12 +57,18 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const estimate = await prisma.estimate.create({
     data: {
       siteId,
+      constructionType,
+      materialType,
+      materialThickness,
+      materialColor,
       areaM2,
       workerCount,
       workDays,
       gutterLengthM: gutterLengthM || null,
       skyliftDays: skyliftDays || null,
       ladderTruckDays: ladderTruckDays || null,
+      scaffoldDays: scaffoldDays || null,
+      otherEquipment,
       scopeFlags: scope as object,
       totalCost: totals.totalCost,
       marginMode: "percent",

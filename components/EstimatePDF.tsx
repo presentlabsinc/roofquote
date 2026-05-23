@@ -8,7 +8,8 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
-import type { ScopeFlags } from "@/lib/types";
+import type { ScopeFlags, ConstructionType, MaterialType } from "@/lib/types";
+import { MATERIAL_TYPES, SCOPE_LABELS } from "@/lib/types";
 
 Font.register({
   family: "Noto Sans KR",
@@ -39,25 +40,49 @@ const styles = StyleSheet.create({
   vatBadge: { fontSize: 8, color: "#d97706", backgroundColor: "#fffbeb", padding: "3 6", borderRadius: 3, alignSelf: "flex-start", marginTop: 4 },
 });
 
-function scopeLabel(scope: ScopeFlags): string[] {
-  const lines: string[] = [];
-  if (scope.colorSteel) lines.push("• 칼라강판 시공 및 주요 마감");
-  if (scope.overlay) lines.push("• 기존 지붕 덧씌우기 방식 시공");
-  if (scope.removal) lines.push("• 기존 지붕 철거 및 처리");
-  if (scope.ridge) lines.push("• 용마루 마감");
-  if (scope.eave) lines.push("• 처마 마감");
-  if (scope.gutter) lines.push("• 물받이 교체");
-  if (scope.waste) lines.push("• 폐기물 처리 및 현장 정리");
-  if (scope.skylift || scope.ladderTruck) lines.push("• 장비 및 안전 작업");
-  if (lines.length === 0) lines.push("• 지붕공사 관련 작업 일체");
-  return lines;
+function materialLabel(type: string | null): string {
+  if (!type) return "칼라강판";
+  return MATERIAL_TYPES.find((m) => m.value === type)?.label ?? "칼라강판";
 }
 
-function buildWorkTitle(scope: ScopeFlags): string {
-  if (scope.colorSteel && scope.removal) return "기존 지붕 철거 후 칼라강판 지붕공사";
-  if (scope.colorSteel && scope.overlay) return "칼라강판 지붕 덧씌우기 공사";
-  if (scope.colorSteel) return "칼라강판 지붕공사";
+function constructionTypeLabel(t: string): string {
+  if (t === "steelWaterproof") return "옥상 스틸방수 (바닥형)";
+  if (t === "rooftopRoof") return "옥상지붕 (지붕형)";
   return "지붕공사";
+}
+
+function buildWorkTitle(estimate: Estimate, scope: ScopeFlags): string {
+  const mat = materialLabel(estimate.materialType ?? null);
+  const thick = estimate.materialThickness ? ` ${estimate.materialThickness}t` : "";
+  if (estimate.constructionType === "steelWaterproof") {
+    return `${mat}${thick} 옥상 스틸방수`;
+  }
+  if (estimate.constructionType === "rooftopRoof") {
+    return `${mat}${thick} 옥상지붕 시공`;
+  }
+  // roof
+  if (scope.removal) return `기존 지붕 철거 후 ${mat}${thick} 지붕공사`;
+  if (scope.overlay) return `${mat}${thick} 지붕 덧씌우기 공사`;
+  return `${mat}${thick} 지붕공사`;
+}
+
+function scopeLabel(estimate: Estimate, scope: ScopeFlags): string[] {
+  const lines: string[] = [];
+  const showKeys: (keyof ScopeFlags)[] = (() => {
+    const ct = estimate.constructionType as ConstructionType;
+    if (ct === "roof") return ["overlay", "removal", "ridge", "eave", "gutter", "waste"];
+    if (ct === "rooftopRoof") return ["frameReinforcement", "ridge", "eave", "gutter", "waste"];
+    return ["handrailAndCap", "existingWaterproofRemoval", "drainage", "waste"];
+  })();
+
+  for (const key of showKeys) {
+    if (scope[key]) lines.push(`• ${SCOPE_LABELS[key]}`);
+  }
+  if (scope.skylift || scope.ladderTruck || scope.scaffold) {
+    lines.push("• 장비 및 안전 작업");
+  }
+  if (lines.length === 0) lines.push("• 관련 작업 일체");
+  return lines;
 }
 
 interface Props {
@@ -66,7 +91,7 @@ interface Props {
 }
 
 export function EstimatePDFDoc({ estimate, scopeFlags }: Props) {
-  const workTitle = buildWorkTitle(scopeFlags);
+  const workTitle = buildWorkTitle(estimate, scopeFlags);
   const finalPriceFormatted = estimate.finalPrice.toLocaleString("ko-KR") + "원";
   const supplyPriceFormatted = estimate.supplyPrice.toLocaleString("ko-KR") + "원";
   const vatFormatted = estimate.vat.toLocaleString("ko-KR") + "원";
@@ -119,9 +144,23 @@ export function EstimatePDFDoc({ estimate, scopeFlags }: Props) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>공사 내용</Text>
           <View style={styles.row}>
+            <Text style={styles.label}>공사 유형</Text>
+            <Text style={styles.value}>{constructionTypeLabel(estimate.constructionType)}</Text>
+          </View>
+          <View style={styles.row}>
             <Text style={styles.label}>공사명</Text>
             <Text style={styles.value}>{workTitle}</Text>
           </View>
+          {estimate.materialType && (
+            <View style={styles.row}>
+              <Text style={styles.label}>사용 자재</Text>
+              <Text style={styles.value}>
+                {materialLabel(estimate.materialType)}
+                {estimate.materialThickness ? ` · ${estimate.materialThickness}t` : ""}
+                {estimate.materialColor ? ` · ${estimate.materialColor}` : ""}
+              </Text>
+            </View>
+          )}
           <View style={styles.row}>
             <Text style={styles.label}>예상 면적</Text>
             <Text style={styles.value}>{estimate.areaM2}㎡ ({Math.round(estimate.areaM2 / 3.3058 * 10) / 10}평)</Text>
@@ -129,7 +168,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags }: Props) {
           <View style={[styles.row, { marginTop: 6 }]}>
             <Text style={styles.label}>공사 범위</Text>
             <View style={{ flex: 1 }}>
-              {scopeLabel(scopeFlags).map((line, i) => (
+              {scopeLabel(estimate, scopeFlags).map((line, i) => (
                 <Text key={i} style={styles.scopeItem}>{line}</Text>
               ))}
             </View>
