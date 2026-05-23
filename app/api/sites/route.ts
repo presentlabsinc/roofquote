@@ -16,7 +16,7 @@ export async function POST(req: Request) {
       customerName,
       customerPhone: customerPhone ?? null,
       siteAddress,
-      photos: JSON.stringify(photos ?? []),
+      photos: photos ?? [],
       generalMemo: generalMemo ?? null,
     },
   });

@@ -40,9 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/app/generated/prisma
-
-# SQLite database
+# SQLite (legacy — was used during local dev before Supabase)
 *.db
 *.db-journal
 

@@ -1,5 +1,5 @@
 import type { ScopeFlags } from "./types";
-import type { PricingSettings } from "@/app/generated/prisma/client";
+import type { PricingSettings } from "@prisma/client";
 
 export interface LineItemDraft {
   category: string;

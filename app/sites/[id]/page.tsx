@@ -15,7 +15,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
   });
   if (!site) notFound();
 
-  const photos: PhotoItem[] = JSON.parse(site.photos as string);
+  const photos = (site.photos as unknown as PhotoItem[]) ?? [];
 
   return (
     <>

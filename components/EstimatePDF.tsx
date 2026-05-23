@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
-import type { Estimate, EstimateLineItem, Site } from "@/app/generated/prisma/client";
+import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 import type { ScopeFlags } from "@/lib/types";
 
 Font.register({

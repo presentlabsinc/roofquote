@@ -14,7 +14,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ eid: strin
   });
   if (!estimate) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const scopeFlags = JSON.parse(estimate.scopeFlags as string);
+  const scopeFlags = estimate.scopeFlags as unknown as import("@/lib/types").ScopeFlags;
 
   const element = createElement(EstimatePDFDoc, { estimate, scopeFlags }) as ReactElement<DocumentProps>;
   const buffer = await renderToBuffer(element);

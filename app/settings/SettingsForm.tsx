@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Check } from "lucide-react";
-import type { PricingSettings } from "@/app/generated/prisma/client";
+import type { PricingSettings } from "@prisma/client";
 
 const DEFAULTS = {
   companyName: "",

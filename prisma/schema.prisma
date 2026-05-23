@@ -1,13 +1,15 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// Live config — never FK-linked to Estimate
+// Live config — never FK-linked to Estimate.
+// At estimate creation time, values are COPIED (snapshotted) into EstimateLineItem.
 model PricingSettings {
   id String @id @default(cuid())
 
@@ -17,20 +19,20 @@ model PricingSettings {
   companyAddress String?
 
   // Unit prices (all in Korean Won, integers)
-  materialPricePerSqm     Int   // 칼라강판 ㎡당
-  accessoryRate           Float // 부자재 비율 (e.g. 0.15 = 15%)
-  ridgePricePerM          Int   // 용마루 m당
-  eavePricePerM           Int   // 처마 마감 m당
-  gutterPricePerM         Int   // 물받이 m당
-  removalPricePerSqm      Int   // 철거 ㎡당
-  wasteDisposalCost       Int   // 폐기물 처리비 (fixed)
-  dailyWage               Int   // 1인 1일 인건비
-  defaultWorkerCount      Int   // 기본 작업 인원
-  skyliftDailyCost        Int   // 스카이차 1일
-  ladderTruckDailyCost    Int   // 사다리차 1일
-  baseTransportCost       Int   // 기본 운송비
-  mealCostPerPersonMeal   Int   // 1인 1식 식비
-  lodgingCostPerPersonNight Int // 1인 1박 숙박비
+  materialPricePerSqm       Int   // 칼라강판 ㎡당
+  accessoryRate             Float // 부자재 비율 (e.g. 0.15 = 15%)
+  ridgePricePerM            Int   // 용마루 m당
+  eavePricePerM             Int   // 처마 마감 m당
+  gutterPricePerM           Int   // 물받이 m당
+  removalPricePerSqm        Int   // 철거 ㎡당
+  wasteDisposalCost         Int   // 폐기물 처리비 (fixed)
+  dailyWage                 Int   // 1인 1일 인건비
+  defaultWorkerCount        Int   // 기본 작업 인원
+  skyliftDailyCost          Int   // 스카이차 1일
+  ladderTruckDailyCost      Int   // 사다리차 1일
+  baseTransportCost         Int   // 기본 운송비
+  mealCostPerPersonMeal     Int   // 1인 1식 식비
+  lodgingCostPerPersonNight Int   // 1인 1박 숙박비
 
   // Defaults
   defaultMarginRate    Float   // e.g. 0.25 = 25%
@@ -44,7 +46,7 @@ model Site {
   customerName  String
   customerPhone String?
   siteAddress   String
-  photos        String     @default("[]") // JSON: [{url, memo?}, ...]
+  photos        Json       @default("[]") // [{url: string, memo?: string}, ...]
   generalMemo   String?
   estimates     Estimate[]
   createdAt     DateTime   @default(now())
@@ -62,36 +64,38 @@ model Estimate {
   gutterLengthM   Float?
   skyliftDays     Float?
   ladderTruckDays Float?
-  scopeFlags      String @default("{}") // JSON: which scope checkboxes are on
+  scopeFlags      Json    @default("{}") // ScopeFlags shape — see lib/types.ts
 
-  // Line items in separate table
+  // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]
 
-  // Summary snapshot (must match sum of lineItems)
+  // Summary snapshot (must equal sum of lineItems)
   totalCost    Int
-  marginMode   String // 'percent' | 'amount' | 'finalPrice'
-  marginRate   Float  // final applied margin rate (including back-calculation)
-  marginAmount Int    // final applied margin amount
-  supplyPrice  Int    // = totalCost + marginAmount
-  vat          Int    // VAT amount
-  finalPrice   Int    // final estimate price
+  marginMode   String  // 'percent' | 'amount' | 'finalPrice'
+  marginRate   Float   // final applied margin rate (incl. back-calculation result)
+  marginAmount Int     // final applied margin in won
+  supplyPrice  Int     // totalCost + marginAmount
+  vat          Int     // VAT amount in won
+  finalPrice   Int     // final quoted price
   vatIncluded  Boolean
 
-  // PDF metadata
+  // Quote metadata
   paymentTerms String @default("계약금 30% / 잔금 70%")
   validityDays Int    @default(30)
 
-  // Company info snapshot (permanent, as of estimate creation)
+  // Company info snapshot — frozen at estimate creation, never updated after
   companyNameSnapshot    String
   companyPhoneSnapshot   String?
   companyAddressSnapshot String?
 
-  // Send record
-  pdfUrl    String?
-  pdfSentAt DateTime?
+  // PDF record
+  pdfUrl    String?   // Supabase Storage URL of generated PDF
+  pdfSentAt DateTime? // timestamp when sent to customer
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([siteId])
 }
 
 model EstimateLineItem {
@@ -100,12 +104,14 @@ model EstimateLineItem {
   estimate   Estimate @relation(fields: [estimateId], references: [id], onDelete: Cascade)
 
   category  String  // 'material' | 'labor' | 'equipment' | 'transport' | 'meals' | 'lodging' | 'waste' | 'removal' | 'other'
-  name      String  // human-readable label: "칼라강판", "인건비", "스카이차"
+  name      String  // human-readable: "칼라강판", "인건비", "스카이차"
   quantity  Float
   unit      String? // "㎡", "m", "일", "명·일"
-  unitPrice Int     // snapshot of unit price at estimate creation time
-  total     Int     // quantity × unitPrice (user-editable)
+  unitPrice Int     // SNAPSHOT: copied from PricingSettings at estimate creation — never recalculated
+  total     Int     // quantity × unitPrice at creation; user may override directly
 
-  isUserEdited Boolean @default(false)
+  isUserEdited Boolean @default(false) // true if user manually changed this line
   sortOrder    Int
+
+  @@index([estimateId])
 }

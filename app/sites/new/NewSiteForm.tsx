@@ -17,17 +17,27 @@ export function NewSiteForm() {
   const [siteAddress, setSiteAddress] = useState("");
   const [generalMemo, setGeneralMemo] = useState("");
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [uploading, setUploading] = useState(0);
 
-  function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    files.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPhotos((prev) => [...prev, { url: ev.target?.result as string, memo: "" }]);
-      };
-      reader.readAsDataURL(file);
-    });
     e.target.value = "";
+    if (files.length === 0) return;
+    setUploading((n) => n + files.length);
+    await Promise.all(files.map(async (file) => {
+      const fd = new FormData();
+      fd.append("file", file);
+      try {
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!res.ok) throw new Error();
+        const { url } = await res.json();
+        setPhotos((prev) => [...prev, { url, memo: "" }]);
+      } catch {
+        toast.error(`${file.name} 업로드 실패`);
+      } finally {
+        setUploading((n) => n - 1);
+      }
+    }));
   }
 
   function updateMemo(idx: number, memo: string) {
@@ -83,8 +93,8 @@ export function NewSiteForm() {
         <Section icon={<Camera size={18} />} title={`현장 사진${photos.length > 0 ? ` (${photos.length})` : ""}`}>
           <label className="flex items-center justify-center gap-2 h-16 border-2 border-dashed border-primary/30 bg-primary/5 rounded-2xl text-primary text-sm font-semibold cursor-pointer pressable">
             <Camera size={20} />
-            <span>사진 추가 / 촬영</span>
-            <input type="file" accept="image/*" multiple capture="environment" className="hidden" onChange={handlePhotoChange} />
+            <span>{uploading > 0 ? `업로드 중... (${uploading})` : "사진 추가 / 촬영"}</span>
+            <input type="file" accept="image/*" multiple capture="environment" className="hidden" onChange={handlePhotoChange} disabled={uploading > 0} />
           </label>
           {photos.length > 0 && (
             <div className="space-y-2.5 mt-3">
@@ -122,7 +132,11 @@ export function NewSiteForm() {
       </div>
 
       {/* Sticky submit */}
-      <StickySubmit onClick={handleSubmit} disabled={saving} label={saving ? "등록 중..." : "현장 등록하기"} />
+      <StickySubmit
+        onClick={handleSubmit}
+        disabled={saving || uploading > 0}
+        label={uploading > 0 ? "사진 업로드 중..." : saving ? "등록 중..." : "현장 등록하기"}
+      />
     </>
   );
 }

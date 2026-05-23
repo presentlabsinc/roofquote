@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { PricingSettings } from "@/app/generated/prisma/client";
+import type { PricingSettings } from "@prisma/client";
 import type { ScopeFlags } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";

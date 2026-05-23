@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Edit2, Check, Share2, FileText, Pencil } from "lucide-react";
-import type { Estimate, EstimateLineItem, Site } from "@/app/generated/prisma/client";
+import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 
 type FullEstimate = Estimate & { lineItems: EstimateLineItem[]; site: Site };
 

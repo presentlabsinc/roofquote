@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
 import type { ScopeFlags } from "@/lib/types";
-import type { PricingSettings } from "@/app/generated/prisma/client";
+import type { PricingSettings } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: siteId } = await params;
@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       gutterLengthM: gutterLengthM || null,
       skyliftDays: skyliftDays || null,
       ladderTruckDays: ladderTruckDays || null,
-      scopeFlags: JSON.stringify(scope),
+      scopeFlags: scope as object,
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,
