@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
-import type { ConstructionType, ExtraCost, MaterialType, ScopeFlags, Thickness } from "@/lib/types";
+import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { CatalogSelection } from "@/lib/catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -23,10 +23,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     buildingAreaM2 = null,
     workerCount,
     workDays,
+    gutterMode = null,
     gutterLengthM = 0,
     skyliftDays = 0,
     ladderTruckDays = 0,
     scaffoldDays = 0,
+    scaffoldAreaM2 = 0,
+    wasteTruckCount = 1,
+    substructureType = null,
     otherEquipment = null,
     scopeFlags,
     extraCosts = [],
@@ -53,10 +57,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     scope,
     workerCount,
     workDays,
+    gutterMode: gutterMode as GutterMode | null,
     gutterLengthM,
     skyliftDays,
     ladderTruckDays,
     scaffoldDays,
+    scaffoldAreaM2,
+    wasteTruckCount,
+    substructureType: substructureType as SubstructureType | null,
     extraCosts: extraCosts as ExtraCost[],
     catalogSelections: catalogSelections as CatalogSelection[],
     applyLossRate,
@@ -76,7 +84,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       buildingAreaM2: buildingAreaM2 || null,
       workerCount,
       workDays,
+      gutterMode: gutterMode || null,
       gutterLengthM: gutterLengthM || null,
+      substructureType: substructureType || null,
+      wasteTruckCount: wasteTruckCount || 1,
+      scaffoldAreaM2: scaffoldAreaM2 || null,
       skyliftDays: skyliftDays || null,
       ladderTruckDays: ladderTruckDays || null,
       scaffoldDays: scaffoldDays || null,

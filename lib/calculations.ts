@@ -1,4 +1,4 @@
-import type { ConstructionType, ExtraCost, MaterialType, ScopeFlags, Thickness } from "./types";
+import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "./types";
 import { MATERIAL_TYPES } from "./types";
 import { categoryToLineItemCategory, type CatalogSelection } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
@@ -54,10 +54,16 @@ export interface BuildLineItemsInput {
   scope: ScopeFlags;
   workerCount: number;
   workDays: number;
+  gutterMode?: GutterMode | null;
   gutterLengthM: number;
   skyliftDays: number;
   ladderTruckDays: number;
   scaffoldDays: number;
+  scaffoldAreaM2?: number;
+  /** 폐기물 트럭 수 (waste-disposal truck count); cost = wasteDisposalCost × truck count */
+  wasteTruckCount?: number;
+  /** 하지작업: null/undefined = 안함, 'wood' = 목재, 'steel' = 철재 */
+  substructureType?: SubstructureType | null;
   extraCosts?: ExtraCost[];
   /** Catalog items the user picked with their quantities + snapshot prices. */
   catalogSelections?: CatalogSelection[];
@@ -70,9 +76,11 @@ export interface BuildLineItemsInput {
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   const {
     settings, constructionType, materialType, thickness,
-    areaM2, scope, workerCount, workDays, gutterLengthM,
-    skyliftDays, ladderTruckDays, scaffoldDays, extraCosts = [],
-    catalogSelections = [],
+    areaM2, scope, workerCount, workDays,
+    gutterMode = null, gutterLengthM,
+    skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
+    wasteTruckCount = 1, substructureType = null,
+    extraCosts = [], catalogSelections = [],
     applyLossRate = false, lossRate = 0,
   } = input;
   const items: LineItemDraft[] = [];
@@ -122,13 +130,29 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         sortOrder: order++,
       });
     }
-    if (scope.gutter && gutterLengthM > 0) {
-      items.push({
-        category: "material", name: "물받이 교체", quantity: gutterLengthM, unit: "m",
-        unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
-        sortOrder: order++,
-      });
-    }
+  }
+
+  // 물받이 — driven by gutterMode picker (안함/전체/앞만/뒤만), not scope flags
+  if (gutterMode && gutterMode !== "none" && gutterLengthM > 0) {
+    const modeLabel = gutterMode === "full" ? "전체" : gutterMode === "front" ? "앞만" : "뒤만";
+    items.push({
+      category: "material", name: `물받이 교체 (${modeLabel})`, quantity: gutterLengthM, unit: "m",
+      unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
+      sortOrder: order++,
+    });
+  }
+
+  // 하지작업 (substructure) — wood or steel, priced per ㎡ of construction area
+  if (substructureType) {
+    const sUnit = substructureType === "wood"
+      ? settings.substructureWoodPricePerSqm
+      : settings.substructureSteelPricePerSqm;
+    const sLabel = substructureType === "wood" ? "목재 하지" : "철재 하지";
+    items.push({
+      category: "material", name: sLabel, quantity: areaM2, unit: "㎡",
+      unitPrice: sUnit, total: Math.round(areaM2 * sUnit),
+      sortOrder: order++,
+    });
   }
 
   // Removal — roof only
@@ -170,11 +194,13 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // Waste disposal
+  // Waste disposal — per-truck pricing
   if (scope.waste) {
+    const trucks = Math.max(1, wasteTruckCount);
     items.push({
-      category: "waste", name: "폐기물 처리", quantity: 1, unit: "식",
-      unitPrice: settings.wasteDisposalCost, total: settings.wasteDisposalCost, sortOrder: order++,
+      category: "waste", name: "폐기물 처리", quantity: trucks, unit: "차",
+      unitPrice: settings.wasteDisposalCost, total: trucks * settings.wasteDisposalCost,
+      sortOrder: order++,
     });
   }
 
@@ -202,11 +228,22 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
   if (scope.scaffold && scaffoldDays > 0) {
-    items.push({
-      category: "equipment", name: "비계", quantity: scaffoldDays, unit: "일",
-      unitPrice: settings.scaffoldDailyCost, total: Math.round(scaffoldDays * settings.scaffoldDailyCost),
-      sortOrder: order++,
-    });
+    // Prefer the ㎡·일 model when scaffold area is provided. Fall back to
+    // the legacy daily-lump-sum (scaffoldDailyCost × days) if no area set.
+    if (scaffoldAreaM2 > 0) {
+      const qty = Math.round(scaffoldAreaM2 * scaffoldDays * 10) / 10;
+      items.push({
+        category: "equipment", name: "비계", quantity: qty, unit: "㎡·일",
+        unitPrice: settings.scaffoldPricePerSqmDay, total: Math.round(qty * settings.scaffoldPricePerSqmDay),
+        sortOrder: order++,
+      });
+    } else {
+      items.push({
+        category: "equipment", name: "비계", quantity: scaffoldDays, unit: "일",
+        unitPrice: settings.scaffoldDailyCost, total: Math.round(scaffoldDays * settings.scaffoldDailyCost),
+        sortOrder: order++,
+      });
+    }
   }
 
   // Transport

@@ -29,6 +29,23 @@ export type Thickness = "0.4" | "0.45" | "0.5" | "0.6";
 
 export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
 
+export type SubstructureType = "wood" | "steel";
+
+export const SUBSTRUCTURE_OPTIONS: { value: SubstructureType | "none"; label: string; icon: string }[] = [
+  { value: "none",  label: "없음",  icon: "—" },
+  { value: "wood",  label: "목재",  icon: "🪵" },
+  { value: "steel", label: "철재",  icon: "🔩" },
+];
+
+export type GutterMode = "none" | "full" | "front" | "back";
+
+export const GUTTER_MODE_OPTIONS: { value: GutterMode; label: string }[] = [
+  { value: "none",  label: "안함" },
+  { value: "full",  label: "전체" },
+  { value: "front", label: "앞만" },
+  { value: "back",  label: "뒤만" },
+];
+
 /** Standard color presets for color steel. The user picks one or "기타" for free input. */
 export const COLOR_PRESETS = [
   "진밤색",   // 기본 (= 다크브라운)
@@ -117,18 +134,24 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
   rooftopRoom: "시공면적에 포함하여 입력하세요",
 };
 
-/** Which scope items are shown for each construction type, in display order. */
+/** Which scope items are shown for each construction type, in display order.
+ *  Note: 물받이 was moved out of scope flags into its own GutterMode picker (안함/전체/앞만/뒤만). */
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
-  roof: ["overlay", "removal", "ridge", "eave", "gutter", "waste"],
-  rooftopRoof: ["frameReinforcement", "ridge", "eave", "gutter", "warehouse", "stairwell", "rooftopRoom", "waste"],
+  roof: ["overlay", "removal", "ridge", "eave", "waste"],
+  rooftopRoof: ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"],
   steelWaterproof: ["handrailAndCap", "existingWaterproofRemoval", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"],
 };
 
-/** Scope items that need an inline numeric input. (Only 물받이 — others are
- *  now annotations that say "이미 시공면적에 포함됨".) */
-export const SCOPE_WITH_INPUT: Partial<Record<keyof ScopeFlags, { unit: string; placeholder: string }>> = {
-  gutter: { unit: "m", placeholder: "길이" },
+/** Mutually exclusive scope item pairs — checking one auto-unchecks the other.
+ *  e.g. 덧씌우기 and 철거 — you do one or the other, never both. */
+export const SCOPE_MUTEX: Partial<Record<keyof ScopeFlags, keyof ScopeFlags>> = {
+  overlay: "removal",
+  removal: "overlay",
 };
+
+/** Scope items that need an inline numeric input. (None right now — 물받이 was
+ *  moved to its own picker. Kept for future use.) */
+export const SCOPE_WITH_INPUT: Partial<Record<keyof ScopeFlags, { unit: string; placeholder: string }>> = {};
 
 export interface PhotoItem {
   url: string;

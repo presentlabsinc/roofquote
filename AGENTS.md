@@ -94,9 +94,15 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 ### Adding a new construction type / scope item
 - Construction types: extend `ConstructionType` and `CONSTRUCTION_TYPES` in [lib/types.ts](lib/types.ts), then handle in `buildLineItems` ([lib/calculations.ts](lib/calculations.ts)), `SCOPE_BY_TYPE`, the form, and the PDF helpers (`buildWorkTitle`, `scopeLabel`, `constructionTypeLabel`).
 - Scope items: extend `ScopeFlags`, add to `SCOPE_LABELS`, add to `SCOPE_BY_TYPE` under the right construction type, and add the calculation branch in `buildLineItems`.
-  - If the item needs an inline numeric input (like 물받이 length), add it to `SCOPE_WITH_INPUT` with `{ unit, placeholder }`.
   - If the item is an "이미 시공면적에 포함됨" annotation (like 난간/두겁, 창고, 계단실, 옥탑방), add a hint to `SCOPE_HINTS` instead — the form shows the hint below the label so the user knows it doesn't add to the calculation.
+  - If two scope items are mutually exclusive (like 덧씌우기 ↔ 철거), add an entry to `SCOPE_MUTEX` mapping each to the other — `toggleScope` auto-unchecks the partner.
   - **Do not add multipliers** that auto-inflate the material area based on scope flags. User feedback: they prefer to enter the actual 시공면적 themselves and use these flags as annotations only.
+
+### Special non-scope-flag pickers
+- **물받이** uses its own `GutterMode` enum (`none | full | front | back`) with a 4-button radio in the 공사 범위 section. Length input appears when not "none". Stored on `Estimate.gutterMode` + `gutterLengthM`.
+- **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option. Priced per ㎡ of construction area using `PricingSettings.substructureWoodPricePerSqm` / `substructureSteelPricePerSqm`.
+- **폐기물** uses `wasteTruckCount` (defaults 1). When 폐기물 scope is checked, a stepper appears. Cost = `wasteDisposalCost × wasteTruckCount`. (The `wasteDisposalCost` field is now interpreted as "per truck" — default updated to ₩1,000,000.)
+- **비계** uses two inputs (days + area in ㎡) → `area × days × scaffoldPricePerSqmDay`. If area is 0, falls back to legacy `scaffoldDailyCost × days` lump-sum model.
 
 ### Numeric stepper
 - `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.

@@ -25,6 +25,10 @@ const DEFAULTS = {
   skyliftDailyCost: 500000,
   ladderTruckDailyCost: 300000,
   scaffoldDailyCost: 150000,
+  scaffoldPricePerSqmDay: 3000,
+  substructureMode: "wood",
+  substructureWoodPricePerSqm: 30000,
+  substructureSteelPricePerSqm: 40000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.10,
   useLossRateByDefault: false,
@@ -57,7 +61,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
-      { key: "wasteDisposalCost", label: "폐기물 처리비", unit: "원" },
+      { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
     ],
   },
   {
@@ -74,7 +78,15 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     items: [
       { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
       { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
-      { key: "scaffoldDailyCost", label: "비계 1일", unit: "원" },
+      { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
+    ],
+  },
+  {
+    section: "하지 작업 단가",
+    emoji: "🪵",
+    items: [
+      { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
+      { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
     ],
   },
   {
@@ -127,6 +139,10 @@ export function SettingsForm({ defaultValues }: Props) {
       skyliftDailyCost: defaultValues.skyliftDailyCost,
       ladderTruckDailyCost: defaultValues.ladderTruckDailyCost,
       scaffoldDailyCost: defaultValues.scaffoldDailyCost,
+      scaffoldPricePerSqmDay: defaultValues.scaffoldPricePerSqmDay,
+      substructureMode: defaultValues.substructureMode,
+      substructureWoodPricePerSqm: defaultValues.substructureWoodPricePerSqm,
+      substructureSteelPricePerSqm: defaultValues.substructureSteelPricePerSqm,
       parapetMultiplier: defaultValues.parapetMultiplier,
       defaultLossRate: defaultValues.defaultLossRate,
       useLossRateByDefault: defaultValues.useLossRateByDefault,
@@ -245,6 +261,29 @@ export function SettingsForm({ defaultValues }: Props) {
               <span className="block text-xs text-muted-foreground mt-0.5">새 견적 만들 때 로스율 토글이 켜진 상태로 시작</span>
             </span>
           </label>
+          <div className="pt-2 border-t border-border/40">
+            <div className="font-medium text-foreground text-sm mb-2">기본 하지 자재</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "wood", label: "목재" },
+                { value: "steel", label: "철재" },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setField("substructureMode", opt.value)}
+                  className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                    values.substructureMode === opt.value
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border/60 bg-card text-foreground"
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">새 견적 만들 때 지붕/옥상지붕 공사의 하지 기본값</p>
+          </div>
         </div>
       </div>
 

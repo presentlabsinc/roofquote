@@ -30,13 +30,19 @@ model PricingSettings {
   defaultWorkerCount        Int   // 기본 작업 인원
   skyliftDailyCost          Int   // 스카이차 1일
   ladderTruckDailyCost      Int   // 사다리차 1일
-  scaffoldDailyCost         Int   @default(150000) // 비계 1일
+  scaffoldDailyCost         Int   @default(150000) // (legacy lump-sum per-day; superseded by scaffoldPricePerSqmDay)
+  scaffoldPricePerSqmDay    Int   @default(3000)  // 비계 ㎡·일당 단가 (primary model)
   baseTransportCost         Int   // 기본 운송비
-  parapetMultiplier         Float @default(1.4) // (현재 미사용 — 면적은 시공면적에 포함된 것으로 가정)
+  parapetMultiplier         Float @default(1.4)   // (현재 미사용 — 면적은 시공면적에 포함된 것으로 가정)
 
   // 자재 로스율 — 시공 시 자투리/낭비분
   defaultLossRate      Float   @default(0.10) // 10%
   useLossRateByDefault Boolean @default(false)
+
+  // 하지작업 단가
+  substructureMode             String @default("wood")  // 'wood' | 'steel' — 새 견적 기본값
+  substructureWoodPricePerSqm  Int    @default(30000)
+  substructureSteelPricePerSqm Int    @default(40000)
   mealCostPerPersonMeal     Int   // 1인 1식 식비
   lodgingCostPerPersonNight Int   // 1인 1박 숙박비
 
@@ -90,6 +96,18 @@ model Estimate {
   // Selected catalog items (마감재 / 물받이 부속 / 부자재 / 절곡) with snapshot prices
   // Shape: [{ category, key, label, unit, quantity, unitPrice }]
   catalogSelections Json @default("[]")
+
+  // 하지작업 (substructure)
+  substructureType  String? // null = 안함, 'wood' = 목재, 'steel' = 철재
+
+  // 폐기물 — 트럭당 단가 × 차 수
+  wasteTruckCount   Int     @default(1)
+
+  // 물받이 모드
+  gutterMode        String? // null/'none' | 'full' | 'front' | 'back'
+
+  // 비계 면적 (㎡·일 모델에서 사용)
+  scaffoldAreaM2    Float?
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]

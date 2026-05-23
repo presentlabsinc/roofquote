@@ -14,21 +14,25 @@ import {
   type ScopeFlags,
   type Thickness,
   type ExtraCost,
+  type GutterMode,
+  type SubstructureType,
   CONSTRUCTION_TYPES,
   MATERIAL_TYPES,
   THICKNESSES,
   SCOPE_BY_TYPE,
   SCOPE_LABELS,
   SCOPE_HINTS,
-  SCOPE_WITH_INPUT,
+  SCOPE_MUTEX,
   COLOR_PRESETS,
   DEFAULT_COLOR,
+  SUBSTRUCTURE_OPTIONS,
+  GUTTER_MODE_OPTIONS,
 } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2 } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -59,14 +63,26 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   const [applyLossRate, setApplyLossRate] = useState(settings.useLossRateByDefault);
   const [lossRatePct, setLossRatePct] = useState(String(Math.round(settings.defaultLossRate * 100)));
 
+  // 하지작업 (NEW — between 색상 and 로스율)
+  const [substructureType, setSubstructureType] = useState<SubstructureType | "none">(
+    settings.substructureMode === "steel" ? "steel" : "wood",
+  );
+
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>({});
+
+  // 물받이 mode (replaces scope.gutter)
+  const [gutterMode, setGutterMode] = useState<GutterMode>("full");
   const [gutterLength, setGutterLength] = useState("");
+
+  // 폐기물 트럭 수
+  const [wasteTrucks, setWasteTrucks] = useState("1");
 
   // Step 7: Equipment days (use steppers — small numeric range)
   const [skyliftDays, setSkyliftDays] = useState("1");
   const [ladderTruckDays, setLadderTruckDays] = useState("1");
   const [scaffoldDays, setScaffoldDays] = useState("3");
+  const [scaffoldArea, setScaffoldArea] = useState("");
   const [otherEquipment, setOtherEquipment] = useState("");
 
   // Step 8: Work info (steppers)
@@ -86,20 +102,34 @@ export function NewEstimateForm({ siteId, settings }: Props) {
       defaults.ridge = true;
       defaults.eave = true;
       defaults.waste = true;
+      setGutterMode("full");
+      setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "rooftopRoof") {
       defaults.frameReinforcement = true;
       defaults.ridge = true;
       defaults.eave = true;
       defaults.waste = true;
+      setGutterMode("full");
+      setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
       defaults.handrailAndCap = true;
       defaults.waste = true;
+      setGutterMode("none");
+      setSubstructureType("none");
     }
     setScope(defaults);
   }
 
   function toggleScope(key: keyof ScopeFlags) {
-    setScope((s) => ({ ...s, [key]: !s[key] }));
+    setScope((s) => {
+      const next = { ...s, [key]: !s[key] };
+      // Mutex: e.g. checking 덧씌우기 auto-unchecks 철거
+      const mutexKey = SCOPE_MUTEX[key];
+      if (mutexKey && next[key]) {
+        next[mutexKey] = false;
+      }
+      return next;
+    });
   }
 
   function handleSqmChange(val: string) {
@@ -149,7 +179,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     const areaM2 = parseFloat(sqmInput) || 0;
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
-    if (scope.gutter && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    if (gutterMode !== "none" && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
     const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
@@ -168,10 +198,14 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
           workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
           workDays: parseFloat(workDays) || 2,
-          gutterLengthM: scope.gutter ? parseFloat(gutterLength) || 0 : 0,
+          gutterMode: gutterMode === "none" ? null : gutterMode,
+          gutterLengthM: gutterMode !== "none" ? parseFloat(gutterLength) || 0 : 0,
+          substructureType: substructureType === "none" ? null : substructureType,
+          wasteTruckCount: scope.waste ? Math.max(1, parseInt(wasteTrucks) || 1) : 1,
           skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
           ladderTruckDays: scope.ladderTruck ? parseFloat(ladderTruckDays) || 1 : 0,
           scaffoldDays: scope.scaffold ? parseFloat(scaffoldDays) || 1 : 0,
+          scaffoldAreaM2: scope.scaffold && scaffoldArea ? parseFloat(scaffoldArea) || 0 : 0,
           otherEquipment: otherEquipment || null,
           scopeFlags: scope,
           extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
@@ -201,10 +235,10 @@ export function NewEstimateForm({ siteId, settings }: Props) {
         <Section icon={<Ruler size={18} />} title="면적" step={1}>
           <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">시공 면적</Label>
           <div className="grid grid-cols-2 gap-2.5">
-            <UnitInput label="㎡" unit="㎡" value={sqmInput} onChange={handleSqmChange} />
             <UnitInput label="평" unit="평" value={pyeongInput} onChange={handlePyeongChange} />
+            <UnitInput label="㎡" unit="㎡" value={sqmInput} onChange={handleSqmChange} />
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1.5">㎡ 또는 평 어디든 입력하면 자동 변환</p>
+          <p className="text-[10px] text-muted-foreground mt-1.5">평 또는 ㎡ 어디든 입력하면 자동 변환</p>
 
           <button
             type="button"
@@ -221,8 +255,8 @@ export function NewEstimateForm({ siteId, settings }: Props) {
             <div className="mt-3 pt-3 border-t border-border/40">
               <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">건물 면적</Label>
               <div className="grid grid-cols-2 gap-2.5">
-                <UnitInput label="㎡" unit="㎡" value={buildingSqmInput} onChange={handleBuildingSqmChange} />
                 <UnitInput label="평" unit="평" value={buildingPyeongInput} onChange={handleBuildingPyeongChange} />
+                <UnitInput label="㎡" unit="㎡" value={buildingSqmInput} onChange={handleBuildingSqmChange} />
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5">견적 계산에는 사용되지 않습니다</p>
             </div>
@@ -339,6 +373,35 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               )}
             </Section>
 
+            {/* 하지작업 (Substructure) */}
+            <Section icon={<Pickaxe size={18} />} title="하지 작업">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                강판 아래 시공되는 하지. ㎡당 단가로 자동 계산
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {SUBSTRUCTURE_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSubstructureType(opt.value)}
+                    className={`pressable rounded-2xl py-3 px-2 text-sm font-semibold border-2 flex flex-col items-center gap-1 ${
+                      substructureType === opt.value
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border/60 bg-card text-foreground"
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{opt.icon}</span>
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+              {substructureType !== "none" && (
+                <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
+                  ≈ 시공면적 × {(substructureType === "wood" ? settings.substructureWoodPricePerSqm : settings.substructureSteelPricePerSqm).toLocaleString("ko-KR")}원/㎡
+                </p>
+              )}
+            </Section>
+
             {/* Loss rate toggle */}
             <Section icon={<Percent size={18} />} title="자재 로스율">
               <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
@@ -376,8 +439,8 @@ export function NewEstimateForm({ siteId, settings }: Props) {
             <Section icon={<ListChecks size={18} />} title="공사 범위" step={6}>
               <div className="space-y-2">
                 {scopeItems.map((key) => {
-                  const withInput = SCOPE_WITH_INPUT[key];
                   const hint = SCOPE_HINTS[key];
+                  const isWaste = key === "waste";
                   return (
                     <div key={key}>
                       <ScopeRow
@@ -386,22 +449,55 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                         hint={hint}
                         onToggle={() => toggleScope(key)}
                       />
-                      {withInput && scope[key] && (
-                        <div className="mt-2 ml-3 flex items-center gap-2">
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            value={gutterLength}
-                            onChange={(e) => setGutterLength(e.target.value)}
-                            placeholder={withInput.placeholder}
-                            className="h-11 rounded-xl tabular-nums flex-1"
+                      {/* 폐기물 트럭 수 stepper */}
+                      {isWaste && scope.waste && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">트럭 수 ({(settings.wasteDisposalCost).toLocaleString("ko-KR")}원/차)</Label>
+                          <NumberStepper
+                            value={wasteTrucks}
+                            onChange={setWasteTrucks}
+                            min={1} max={20} step={1}
+                            unit="차"
                           />
-                          <span className="text-sm text-muted-foreground font-medium w-6">{withInput.unit}</span>
                         </div>
                       )}
                     </div>
                   );
                 })}
+              </div>
+
+              {/* 물받이 mode picker — separate from scope flags */}
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <Label className="text-xs text-muted-foreground mb-2 block font-medium">물받이</Label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {GUTTER_MODE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setGutterMode(opt.value)}
+                      className={`pressable rounded-xl py-2 text-xs font-semibold border ${
+                        gutterMode === opt.value
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-foreground border-border/60"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {gutterMode !== "none" && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      value={gutterLength}
+                      onChange={(e) => setGutterLength(e.target.value)}
+                      placeholder="길이"
+                      className="h-11 rounded-xl tabular-nums flex-1"
+                    />
+                    <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                  </div>
+                )}
               </div>
             </Section>
 
@@ -428,9 +524,12 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                   active={!!scope.ladderTruck} label="사다리차" onToggle={() => toggleScope("ladderTruck")}
                   days={ladderTruckDays} onDaysChange={setLadderTruckDays}
                 />
-                <EquipmentRow
-                  active={!!scope.scaffold} label="비계 / 발판" onToggle={() => toggleScope("scaffold")}
+                <ScaffoldRow
+                  active={!!scope.scaffold}
+                  onToggle={() => toggleScope("scaffold")}
                   days={scaffoldDays} onDaysChange={setScaffoldDays}
+                  area={scaffoldArea} onAreaChange={setScaffoldArea}
+                  pricePerSqmDay={settings.scaffoldPricePerSqmDay}
                 />
                 <div className="pt-2">
                   <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 "기타 비용" 에)</Label>
@@ -612,6 +711,55 @@ function EquipmentRow({
             min={0.5} max={60} step={0.5}
             unit="일"
           />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScaffoldRow({
+  active, onToggle, days, onDaysChange, area, onAreaChange, pricePerSqmDay,
+}: {
+  active: boolean; onToggle: () => void;
+  days: string; onDaysChange: (v: string) => void;
+  area: string; onAreaChange: (v: string) => void;
+  pricePerSqmDay: number;
+}) {
+  const d = parseFloat(days) || 0;
+  const a = parseFloat(area) || 0;
+  const total = Math.round(d * a * pricePerSqmDay);
+  return (
+    <div className={`rounded-2xl border ${active ? "border-primary/40 bg-primary/5" : "border-border/60 bg-card"} overflow-hidden`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center gap-3 px-3 py-2.5 pressable"
+      >
+        <Checkbox checked={active} className="w-5 h-5 pointer-events-none" />
+        <span className="text-sm font-medium text-foreground flex-1 text-left">비계 / 발판</span>
+      </button>
+      {active && (
+        <div className="px-3 pb-3 pt-1 space-y-2">
+          <div>
+            <Label className="text-[10px] text-muted-foreground mb-1 block">사용 일수</Label>
+            <NumberStepper value={days} onChange={onDaysChange} min={0.5} max={60} step={0.5} unit="일" />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground mb-1 block">비계 면적 (벽면 면적 — 층수 × 둘레 등)</Label>
+            <div className="relative">
+              <Input
+                type="number" inputMode="decimal"
+                value={area} onChange={(e) => onAreaChange(e.target.value)}
+                placeholder="0" className="h-12 text-center text-lg font-bold pr-10 rounded-2xl tabular-nums"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium pointer-events-none">㎡</span>
+            </div>
+          </div>
+          {a > 0 && d > 0 && (
+            <p className="text-[11px] text-muted-foreground text-center tabular-nums">
+              {a}㎡ × {d}일 × {pricePerSqmDay.toLocaleString("ko-KR")}원 = <span className="font-bold text-primary">{total.toLocaleString("ko-KR")}원</span>
+            </p>
+          )}
         </div>
       )}
     </div>
