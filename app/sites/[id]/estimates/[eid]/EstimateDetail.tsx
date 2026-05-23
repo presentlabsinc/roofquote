@@ -109,7 +109,7 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
   const marginRatePct = Math.round(est.marginRate * 1000) / 10;
 
   return (
-    <div className="space-y-3 pb-32">
+    <div className="space-y-3 pb-48">
       {/* Client-safe view toggle bar */}
       <div className="flex items-center justify-between bg-card rounded-2xl border border-border/60 px-3 py-2.5">
         <div className="flex items-center gap-2 text-xs">
@@ -347,9 +347,9 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         </p>
       )}
 
-      {/* Sticky action: single "견적서 미리보기" — preview screen handles save/share */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 safe-x bg-gradient-to-t from-background via-background/95 to-transparent pt-6 pb-4">
-        <div className="max-w-lg mx-auto px-4 safe-bottom">
+      {/* Sticky action — sits above the BottomNav (which is at bottom-0). */}
+      <div className="fixed bottom-24 left-0 right-0 z-30 safe-x pointer-events-none">
+        <div className="max-w-lg mx-auto px-4 pointer-events-auto">
           <Button
             onClick={() => router.push(`/sites/${est.siteId}/estimates/${est.id}/preview`)}
             className="w-full h-14 rounded-2xl text-base font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary/25 pressable"
