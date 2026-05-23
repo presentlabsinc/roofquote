@@ -32,7 +32,11 @@ model PricingSettings {
   ladderTruckDailyCost      Int   // 사다리차 1일
   scaffoldDailyCost         Int   @default(150000) // 비계 1일
   baseTransportCost         Int   // 기본 운송비
-  parapetMultiplier         Float @default(1.4) // 난간/두겁 포함 시 자재 면적 배수
+  parapetMultiplier         Float @default(1.4) // (현재 미사용 — 면적은 시공면적에 포함된 것으로 가정)
+
+  // 자재 로스율 — 시공 시 자투리/낭비분
+  defaultLossRate      Float   @default(0.10) // 10%
+  useLossRateByDefault Boolean @default(false)
   mealCostPerPersonMeal     Int   // 1인 1식 식비
   lodgingCostPerPersonNight Int   // 1인 1박 숙박비
 
@@ -78,6 +82,10 @@ model Estimate {
   scaffoldDays    Float?  // 비계 사용 일수
   otherEquipment  String? // 자유 텍스트 — 예: "크레인 1일, 지게차 2일"
   scopeFlags      Json    @default("{}") // ScopeFlags shape — see lib/types.ts
+
+  // Loss rate snapshot (when applyLossRate, material area is multiplied by 1+lossRate)
+  applyLossRate Boolean @default(false)
+  lossRate      Float?  // snapshot of the rate used at creation time
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]

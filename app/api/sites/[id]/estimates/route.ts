@@ -23,14 +23,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     workerCount,
     workDays,
     gutterLengthM = 0,
-    warehouseAreaM2 = 0,
-    stairwellAreaM2 = 0,
     skyliftDays = 0,
     ladderTruckDays = 0,
     scaffoldDays = 0,
     otherEquipment = null,
     scopeFlags,
     extraCosts = [],
+    applyLossRate = false,
+    lossRate = null,
     marginRate: inputMarginRate,
     vatIncluded,
     paymentTerms,
@@ -40,6 +40,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const scope: ScopeFlags = scopeFlags ?? {};
   const marginRate = inputMarginRate ?? settings.defaultMarginRate;
   const vatIncl = vatIncluded ?? settings.vatIncludedByDefault;
+  const effectiveLossRate = lossRate ?? settings.defaultLossRate;
 
   const lineItemDrafts = buildLineItems({
     settings,
@@ -51,12 +52,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     workerCount,
     workDays,
     gutterLengthM,
-    warehouseAreaM2,
-    stairwellAreaM2,
     skyliftDays,
     ladderTruckDays,
     scaffoldDays,
     extraCosts: extraCosts as ExtraCost[],
+    applyLossRate,
+    lossRate: effectiveLossRate,
   });
 
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
@@ -73,13 +74,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       workerCount,
       workDays,
       gutterLengthM: gutterLengthM || null,
-      warehouseAreaM2: warehouseAreaM2 || null,
-      stairwellAreaM2: stairwellAreaM2 || null,
       skyliftDays: skyliftDays || null,
       ladderTruckDays: ladderTruckDays || null,
       scaffoldDays: scaffoldDays || null,
       otherEquipment,
       scopeFlags: scope as object,
+      applyLossRate,
+      lossRate: applyLossRate ? effectiveLossRate : null,
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,

@@ -26,6 +26,8 @@ const DEFAULTS = {
   ladderTruckDailyCost: 300000,
   scaffoldDailyCost: 150000,
   parapetMultiplier: 1.4,
+  defaultLossRate: 0.10,
+  useLossRateByDefault: false,
   baseTransportCost: 250000,
   mealCostPerPersonMeal: 10000,
   lodgingCostPerPersonNight: 50000,
@@ -88,7 +90,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     section: "공사 계산 기본값",
     emoji: "📐",
     items: [
-      { key: "parapetMultiplier", label: "난간/두겁 면적 배수", unit: "×", step: 0.01 },
+      { key: "defaultLossRate", label: "기본 자재 로스율", unit: "%", step: 0.01, pct: true },
     ],
   },
   {
@@ -126,6 +128,8 @@ export function SettingsForm({ defaultValues }: Props) {
       ladderTruckDailyCost: defaultValues.ladderTruckDailyCost,
       scaffoldDailyCost: defaultValues.scaffoldDailyCost,
       parapetMultiplier: defaultValues.parapetMultiplier,
+      defaultLossRate: defaultValues.defaultLossRate,
+      useLossRateByDefault: defaultValues.useLossRateByDefault,
       baseTransportCost: defaultValues.baseTransportCost,
       mealCostPerPersonMeal: defaultValues.mealCostPerPersonMeal,
       lodgingCostPerPersonNight: defaultValues.lodgingCostPerPersonNight,
@@ -170,6 +174,11 @@ export function SettingsForm({ defaultValues }: Props) {
               <span className="text-lg">{emoji}</span>
               <h2 className="font-semibold text-foreground">{section}</h2>
             </div>
+            {section === "자재 단가" && (
+              <PriceCalculator
+                onApply={(perSqm) => setField("materialPricePerSqm", perSqm)}
+              />
+            )}
             <div className="divide-y divide-border/40">
               {items.map(({ key, label, unit, step, pct }) => {
                 const rawVal = values[key];
@@ -212,8 +221,8 @@ export function SettingsForm({ defaultValues }: Props) {
           </div>
         ))}
 
-        {/* VAT toggle */}
-        <div className="bg-card rounded-2xl border border-border/60 p-5">
+        {/* Boolean defaults */}
+        <div className="bg-card rounded-2xl border border-border/60 p-5 space-y-4">
           <label className="flex items-center gap-3 cursor-pointer">
             <Checkbox
               checked={values.vatIncludedByDefault}
@@ -223,6 +232,17 @@ export function SettingsForm({ defaultValues }: Props) {
             <span className="flex-1">
               <span className="block font-medium text-foreground text-sm">VAT 포함을 기본값으로</span>
               <span className="block text-xs text-muted-foreground mt-0.5">새 견적의 부가세 표시 방식</span>
+            </span>
+          </label>
+          <label className="flex items-center gap-3 cursor-pointer">
+            <Checkbox
+              checked={values.useLossRateByDefault}
+              onCheckedChange={(c) => setField("useLossRateByDefault", c === true)}
+              className="w-5 h-5"
+            />
+            <span className="flex-1">
+              <span className="block font-medium text-foreground text-sm">자재 로스율을 기본 적용</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">새 견적 만들 때 로스율 토글이 켜진 상태로 시작</span>
             </span>
           </label>
         </div>
@@ -241,5 +261,63 @@ export function SettingsForm({ defaultValues }: Props) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * Helper widget: convert (강판 너비 × m단가) → ㎡당 단가.
+ * Different material models come in different widths (e.g. 슬레이트골 1.0m,
+ * 징크250 0.75m, 기와형 0.7m). Suppliers usually quote per-meter, so this
+ * lets the user input the supplier's number and auto-derive the ㎡ price.
+ */
+function PriceCalculator({ onApply }: { onApply: (perSqm: number) => void }) {
+  const [width, setWidth] = useState("1.0");
+  const [perM, setPerM] = useState("");
+
+  const w = parseFloat(width);
+  const pm = parseFloat(perM);
+  const perSqm = Number.isFinite(w) && Number.isFinite(pm) && w > 0
+    ? Math.round(pm / w)
+    : 0;
+
+  return (
+    <div className="bg-primary/5 border-t border-b border-primary/10 px-5 py-3 space-y-2.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm">📐</span>
+        <span className="text-xs font-semibold text-primary">㎡당 단가 계산기</span>
+      </div>
+      <div className="grid grid-cols-[1fr_auto_1fr] gap-1.5 items-center text-xs">
+        <div className="relative">
+          <Input
+            type="number" inputMode="decimal" step={0.05}
+            value={width} onChange={(e) => setWidth(e.target.value)}
+            placeholder="너비" className="h-10 pr-6 text-right text-sm tabular-nums rounded-lg"
+          />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">m</span>
+        </div>
+        <span className="text-muted-foreground px-0.5">×</span>
+        <div className="relative">
+          <Input
+            type="number" inputMode="numeric"
+            value={perM} onChange={(e) => setPerM(e.target.value)}
+            placeholder="m단가" className="h-10 pr-6 text-right text-sm tabular-nums rounded-lg"
+          />
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">원</span>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <div className="text-xs text-muted-foreground">
+          ㎡당 = <span className="font-bold text-foreground tabular-nums">{perSqm.toLocaleString("ko-KR")}원</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => perSqm > 0 && onApply(perSqm)}
+          disabled={perSqm <= 0}
+          className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full pressable disabled:opacity-40"
+        >
+          이 값으로 설정
+        </button>
+      </div>
+    </div>
   );
 }

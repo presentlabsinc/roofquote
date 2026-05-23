@@ -31,8 +31,8 @@ export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
 
 /** Standard color presets for color steel. The user picks one or "기타" for free input. */
 export const COLOR_PRESETS = [
-  "다크브라운",   // 기본
-  "진밤색",
+  "진밤색",   // 기본 (= 다크브라운)
+  "밤색",
   "차콜",
   "진회색",
   "은회색",
@@ -42,7 +42,7 @@ export const COLOR_PRESETS = [
   "백색",
 ] as const;
 
-export const DEFAULT_COLOR = "다크브라운";
+export const DEFAULT_COLOR = "진밤색";
 
 /** Free-form misc line item added by the user (기타 비용). */
 export interface ExtraCost {
@@ -70,9 +70,12 @@ export interface ScopeFlags {
   existingWaterproofRemoval?: boolean; // 기존 방수재 철거
   drainage?: boolean;            // 배수구 처리
 
-  // — Rooftop add-ons (rooftopRoof / steelWaterproof) — with size inputs —
-  warehouse?: boolean;           // 창고 추가 시공
-  stairwell?: boolean;           // 계단실 추가 시공
+  // — Rooftop "included in 시공면적" annotations —
+  // These are just notes that say "the user-entered 시공면적 already covers this".
+  // No multipliers, no separate area calculation.
+  warehouse?: boolean;     // 창고 포함
+  stairwell?: boolean;     // 계단실 포함
+  rooftopRoom?: boolean;   // 옥탑방 포함
 
   // — Common —
   waste?: boolean;               // 폐기물 처리
@@ -90,29 +93,41 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   eave: "처마 마감",
   gutter: "물받이 교체",
   frameReinforcement: "골조 보강",
-  handrailAndCap: "난간 및 두겁",
+  handrailAndCap: "난간 및 두겁 포함",
   existingWaterproofRemoval: "기존 방수재 철거",
   drainage: "배수구 처리",
-  warehouse: "창고 추가 시공",
-  stairwell: "계단실 추가 시공",
+  warehouse: "창고 포함",
+  stairwell: "계단실 포함",
+  rooftopRoom: "옥탑방 포함",
   waste: "폐기물 처리",
   skylift: "스카이차",
   ladderTruck: "사다리차",
   scaffold: "비계",
 };
 
+/**
+ * Hint text for scope items that are "이 면적은 시공면적에 포함됨" annotations.
+ * Shown under the label so the user knows these don't add to the calculation —
+ * they're notes that flow into the work scope description on the PDF.
+ */
+export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
+  handrailAndCap: "시공면적에 포함하여 입력하세요",
+  warehouse: "시공면적에 포함하여 입력하세요",
+  stairwell: "시공면적에 포함하여 입력하세요",
+  rooftopRoom: "시공면적에 포함하여 입력하세요",
+};
+
 /** Which scope items are shown for each construction type, in display order. */
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
   roof: ["overlay", "removal", "ridge", "eave", "gutter", "waste"],
-  rooftopRoof: ["frameReinforcement", "ridge", "eave", "gutter", "warehouse", "stairwell", "waste"],
-  steelWaterproof: ["handrailAndCap", "existingWaterproofRemoval", "drainage", "warehouse", "stairwell", "waste"],
+  rooftopRoof: ["frameReinforcement", "ridge", "eave", "gutter", "warehouse", "stairwell", "rooftopRoom", "waste"],
+  steelWaterproof: ["handrailAndCap", "existingWaterproofRemoval", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"],
 };
 
-/** Scope items that need an inline numeric input (length / area in ㎡ or m). */
+/** Scope items that need an inline numeric input. (Only 물받이 — others are
+ *  now annotations that say "이미 시공면적에 포함됨".) */
 export const SCOPE_WITH_INPUT: Partial<Record<keyof ScopeFlags, { unit: string; placeholder: string }>> = {
   gutter: { unit: "m", placeholder: "길이" },
-  warehouse: { unit: "㎡", placeholder: "면적" },
-  stairwell: { unit: "㎡", placeholder: "면적" },
 };
 
 export interface PhotoItem {

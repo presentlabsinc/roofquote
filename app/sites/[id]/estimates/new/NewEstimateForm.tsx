@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { NumberStepper } from "@/components/ui/number-stepper";
 import type { PricingSettings } from "@prisma/client";
 import {
   type ConstructionType,
@@ -18,13 +19,14 @@ import {
   THICKNESSES,
   SCOPE_BY_TYPE,
   SCOPE_LABELS,
+  SCOPE_HINTS,
   SCOPE_WITH_INPUT,
   COLOR_PRESETS,
   DEFAULT_COLOR,
 } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -35,7 +37,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
-  // Step 1: Area (시공 면적 first, optional building area)
+  // Step 1: Area
   const [sqmInput, setSqmInput] = useState("");
   const [pyeongInput, setPyeongInput] = useState("");
   const [showBuildingArea, setShowBuildingArea] = useState(false);
@@ -51,28 +53,27 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   const [colorChoice, setColorChoice] = useState<string>(DEFAULT_COLOR);
   const [colorCustom, setColorCustom] = useState("");
 
+  // Loss rate (per-estimate override)
+  const [applyLossRate, setApplyLossRate] = useState(settings.useLossRateByDefault);
+  const [lossRatePct, setLossRatePct] = useState(String(Math.round(settings.defaultLossRate * 100)));
+
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>({});
-
-  // Inline scope inputs (length / area)
   const [gutterLength, setGutterLength] = useState("");
-  const [warehouseArea, setWarehouseArea] = useState("");
-  const [stairwellArea, setStairwellArea] = useState("");
 
-  // Step 7: Equipment days
+  // Step 7: Equipment days (use steppers — small numeric range)
   const [skyliftDays, setSkyliftDays] = useState("1");
   const [ladderTruckDays, setLadderTruckDays] = useState("1");
   const [scaffoldDays, setScaffoldDays] = useState("3");
   const [otherEquipment, setOtherEquipment] = useState("");
 
-  // Step 8: Work info
+  // Step 8: Work info (steppers)
   const [workerCount, setWorkerCount] = useState(String(settings.defaultWorkerCount));
   const [workDays, setWorkDays] = useState("2");
 
   // Step 9: 기타 비용
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
 
-  // When construction type changes, reset scope to sensible defaults for that type
   function pickConstructionType(t: ConstructionType) {
     setConstructionType(t);
     const defaults: ScopeFlags = {};
@@ -120,19 +121,6 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     setBuildingSqmInput(Number.isFinite(n) && n > 0 ? String(pyeongToSqm(n)) : "");
   }
 
-  function getInlineInputValue(key: keyof ScopeFlags): string {
-    if (key === "gutter") return gutterLength;
-    if (key === "warehouse") return warehouseArea;
-    if (key === "stairwell") return stairwellArea;
-    return "";
-  }
-
-  function setInlineInputValue(key: keyof ScopeFlags, v: string) {
-    if (key === "gutter") setGutterLength(v);
-    else if (key === "warehouse") setWarehouseArea(v);
-    else if (key === "stairwell") setStairwellArea(v);
-  }
-
   const scopeItems = useMemo(
     () => (constructionType ? SCOPE_BY_TYPE[constructionType] : []),
     [constructionType],
@@ -157,10 +145,9 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
     if (scope.gutter && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
-    if (scope.warehouse && !warehouseArea) { toast.error("창고 면적을 입력해 주세요"); return; }
-    if (scope.stairwell && !stairwellArea) { toast.error("계단실 면적을 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
+    const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
 
     setSaving(true);
     try {
@@ -177,14 +164,14 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
           workDays: parseFloat(workDays) || 2,
           gutterLengthM: scope.gutter ? parseFloat(gutterLength) || 0 : 0,
-          warehouseAreaM2: scope.warehouse ? parseFloat(warehouseArea) || 0 : 0,
-          stairwellAreaM2: scope.stairwell ? parseFloat(stairwellArea) || 0 : 0,
           skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
           ladderTruckDays: scope.ladderTruck ? parseFloat(ladderTruckDays) || 1 : 0,
           scaffoldDays: scope.scaffold ? parseFloat(scaffoldDays) || 1 : 0,
           otherEquipment: otherEquipment || null,
           scopeFlags: scope,
           extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
+          applyLossRate,
+          lossRate,
         }),
       });
       if (!res.ok) {
@@ -204,7 +191,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   return (
     <>
       <div className="space-y-3 pb-32">
-        {/* STEP 1: Area (FIRST — most important, measured first on site) */}
+        {/* STEP 1: Area */}
         <Section icon={<Ruler size={18} />} title="면적" step={1}>
           <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">시공 면적</Label>
           <div className="grid grid-cols-2 gap-2.5">
@@ -231,7 +218,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                 <UnitInput label="㎡" unit="㎡" value={buildingSqmInput} onChange={handleBuildingSqmChange} />
                 <UnitInput label="평" unit="평" value={buildingPyeongInput} onChange={handleBuildingPyeongChange} />
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5">견적에는 사용되지 않고 견적서에 정보로만 표시됩니다</p>
+              <p className="text-[10px] text-muted-foreground mt-1.5">견적 계산에는 사용되지 않습니다</p>
             </div>
           )}
         </Section>
@@ -346,17 +333,51 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               )}
             </Section>
 
+            {/* Loss rate toggle */}
+            <Section icon={<Percent size={18} />} title="자재 로스율">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
+                시공 시 자투리/낭비분을 자재 비용에 반영. 보통 10~15%
+              </p>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setApplyLossRate((v) => !v)}
+                  className={`w-12 h-7 rounded-full flex items-center px-0.5 pressable ${
+                    applyLossRate ? "bg-primary justify-end" : "bg-muted justify-start"
+                  }`}
+                >
+                  <span className="w-6 h-6 rounded-full bg-white shadow-sm" />
+                </button>
+                <span className="text-sm font-medium text-foreground flex-1">
+                  {applyLossRate ? "로스율 적용 중" : "로스율 미적용"}
+                </span>
+                {applyLossRate && (
+                  <div className="relative w-20">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      value={lossRatePct}
+                      onChange={(e) => setLossRatePct(e.target.value)}
+                      className="h-10 pr-7 text-right tabular-nums rounded-xl"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                  </div>
+                )}
+              </div>
+            </Section>
+
             {/* STEP 6: Scope */}
             <Section icon={<ListChecks size={18} />} title="공사 범위" step={6}>
               <div className="space-y-2">
                 {scopeItems.map((key) => {
                   const withInput = SCOPE_WITH_INPUT[key];
+                  const hint = SCOPE_HINTS[key];
                   return (
                     <div key={key}>
                       <ScopeRow
                         active={!!scope[key]}
                         label={SCOPE_LABELS[key]}
-                        hint={key === "handrailAndCap" ? `자재 면적이 ×${settings.parapetMultiplier} 자동 적용됩니다` : undefined}
+                        hint={hint}
                         onToggle={() => toggleScope(key)}
                       />
                       {withInput && scope[key] && (
@@ -364,8 +385,8 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                           <Input
                             type="number"
                             inputMode="decimal"
-                            value={getInlineInputValue(key)}
-                            onChange={(e) => setInlineInputValue(key, e.target.value)}
+                            value={gutterLength}
+                            onChange={(e) => setGutterLength(e.target.value)}
                             placeholder={withInput.placeholder}
                             className="h-11 rounded-xl tabular-nums flex-1"
                           />
@@ -378,9 +399,9 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               </div>
             </Section>
 
-            {/* STEP 7: Equipment */}
+            {/* STEP 7: Equipment — steppers */}
             <Section icon={<Wrench size={18} />} title="장비대" step={7}>
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">사용 장비를 체크하고 일수를 입력하세요</p>
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">사용 장비 체크 + 일수 (− / + 로 조정)</p>
               <div className="space-y-2">
                 <EquipmentRow
                   active={!!scope.skylift} label="스카이차" onToggle={() => toggleScope("skylift")}
@@ -395,7 +416,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                   days={scaffoldDays} onDaysChange={setScaffoldDays}
                 />
                 <div className="pt-2">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 "기타 비용" 에 추가)</Label>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 "기타 비용" 에)</Label>
                   <Input
                     value={otherEquipment} onChange={(e) => setOtherEquipment(e.target.value)}
                     placeholder="예: 크레인 1일, 지게차 2일" className="h-11 rounded-xl text-sm"
@@ -404,17 +425,29 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               </div>
             </Section>
 
-            {/* STEP 8: Work info */}
+            {/* STEP 8: Work info — steppers */}
             <Section icon={<Users size={18} />} title="작업 정보" step={8}>
-              <div className="grid grid-cols-2 gap-2.5">
-                <UnitInput label="작업 일수" unit="일" value={workDays} onChange={setWorkDays} />
-                <UnitInput label="작업 인원" unit="명" value={workerCount} onChange={setWorkerCount} />
+              <div className="grid grid-cols-2 gap-3">
+                <NumberStepper
+                  label="작업 일수"
+                  value={workDays}
+                  onChange={setWorkDays}
+                  min={0.5} max={60} step={0.5}
+                  unit="일"
+                />
+                <NumberStepper
+                  label="작업 인원"
+                  value={workerCount}
+                  onChange={setWorkerCount}
+                  min={1} max={30} step={1}
+                  unit="명"
+                />
               </div>
             </Section>
 
             {/* STEP 9: 기타 비용 */}
             <Section icon={<Receipt size={18} />} title="기타 비용" step={9}>
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">크레인, 추가 자재, 잡비 등 직접 추가</p>
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">크레인, 추가 자재, 절곡비, 잡비 등 직접 추가</p>
               {extraCosts.length > 0 && (
                 <div className="space-y-2 mb-2">
                   {extraCosts.map((ec, i) => (
@@ -423,7 +456,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                         <Input
                           value={ec.name}
                           onChange={(e) => updateExtraCost(i, { name: e.target.value })}
-                          placeholder="항목명 (예: 크레인 사용료)"
+                          placeholder="항목명 (예: 절곡비, 크레인 사용료)"
                           className="h-11 rounded-xl text-sm bg-card"
                         />
                         <div className="flex items-center gap-2">
@@ -555,16 +588,13 @@ function EquipmentRow({
         <span className="text-sm font-medium text-foreground flex-1 text-left">{label}</span>
       </button>
       {active && (
-        <div className="px-3 pb-3 pt-1 flex items-center gap-2">
-          <Input
-            type="number"
-            inputMode="numeric"
+        <div className="px-3 pb-3 pt-1">
+          <NumberStepper
             value={days}
-            onChange={(e) => onDaysChange(e.target.value)}
-            placeholder="0"
-            className="h-11 rounded-xl tabular-nums flex-1"
+            onChange={onDaysChange}
+            min={0.5} max={60} step={0.5}
+            unit="일"
           />
-          <span className="text-sm text-muted-foreground font-medium w-6">일</span>
         </div>
       )}
     </div>

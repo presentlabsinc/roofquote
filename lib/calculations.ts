@@ -54,35 +54,38 @@ export interface BuildLineItemsInput {
   workerCount: number;
   workDays: number;
   gutterLengthM: number;
-  warehouseAreaM2: number;
-  stairwellAreaM2: number;
   skyliftDays: number;
   ladderTruckDays: number;
   scaffoldDays: number;
   extraCosts?: ExtraCost[];
+  /** When true, multiply material area by (1 + lossRate) */
+  applyLossRate?: boolean;
+  /** Loss rate to apply (e.g. 0.10 = 10%). Used only when applyLossRate is true. */
+  lossRate?: number;
 }
 
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   const {
     settings, constructionType, materialType, thickness,
     areaM2, scope, workerCount, workDays, gutterLengthM,
-    warehouseAreaM2, stairwellAreaM2,
     skyliftDays, ladderTruckDays, scaffoldDays, extraCosts = [],
+    applyLossRate = false, lossRate = 0,
   } = input;
   const items: LineItemDraft[] = [];
   let order = 0;
 
-  // Material line — always the main one. For steelWaterproof with 난간/두겁,
-  // multiply the effective area by parapetMultiplier (default 1.4) since
-  // material wraps up the parapets and over the cap.
+  // Material line — always the main one.
+  // 시공면적은 사용자가 입력한 그대로 사용 (난간/두겁/창고/계단실/옥탑방은 시공면적에 포함된 것으로 가정).
+  // Optional 자재 로스율 — 시공 시 자투리/낭비분을 반영하면 자재 면적이 증가.
   {
     const mult = thickness ? THICKNESS_MULT[thickness] : 1;
     const unitPrice = Math.round(settings.materialPricePerSqm * mult);
-    const parapetActive = scope.handrailAndCap === true;
-    const parapetMult = parapetActive ? settings.parapetMultiplier : 1;
-    const effectiveArea = Math.round(areaM2 * parapetMult * 100) / 100;
-    const parapetNote = parapetActive ? ` (난간/두겁 포함 ×${settings.parapetMultiplier})` : "";
-    const name = `${materialLabel(materialType)}${thickness ? ` ${thickness}t` : ""} ${constructionLabel(constructionType)} 시공${parapetNote}`;
+    const lossMult = applyLossRate && lossRate > 0 ? 1 + lossRate : 1;
+    const effectiveArea = Math.round(areaM2 * lossMult * 100) / 100;
+    const lossNote = applyLossRate && lossRate > 0
+      ? ` (로스율 ${Math.round(lossRate * 100)}% 포함)`
+      : "";
+    const name = `${materialLabel(materialType)}${thickness ? ` ${thickness}t` : ""} ${constructionLabel(constructionType)} 시공${lossNote}`;
     items.push({
       category: "material", name, quantity: effectiveArea, unit: "㎡", unitPrice,
       total: Math.round(effectiveArea * unitPrice), sortOrder: order++,
@@ -95,22 +98,6 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       category: "material", name: "부자재", quantity: settings.accessoryRate * 100,
       unit: "%", unitPrice: matTotal, total: accessoryTotal, sortOrder: order++,
     });
-
-    // Warehouse / stairwell — only for rooftopRoof / steelWaterproof
-    if (constructionType !== "roof") {
-      if (scope.warehouse && warehouseAreaM2 > 0) {
-        items.push({
-          category: "material", name: "창고 추가 시공", quantity: warehouseAreaM2, unit: "㎡",
-          unitPrice, total: Math.round(warehouseAreaM2 * unitPrice), sortOrder: order++,
-        });
-      }
-      if (scope.stairwell && stairwellAreaM2 > 0) {
-        items.push({
-          category: "material", name: "계단실 추가 시공", quantity: stairwellAreaM2, unit: "㎡",
-          unitPrice, total: Math.round(stairwellAreaM2 * unitPrice), sortOrder: order++,
-        });
-      }
-    }
   }
 
   // Ridge / Eave — only for roof / rooftopRoof

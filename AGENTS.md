@@ -93,7 +93,14 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 
 ### Adding a new construction type / scope item
 - Construction types: extend `ConstructionType` and `CONSTRUCTION_TYPES` in [lib/types.ts](lib/types.ts), then handle in `buildLineItems` ([lib/calculations.ts](lib/calculations.ts)), `SCOPE_BY_TYPE`, the form, and the PDF helpers (`buildWorkTitle`, `scopeLabel`, `constructionTypeLabel`).
-- Scope items: extend `ScopeFlags`, add to `SCOPE_LABELS`, add to `SCOPE_BY_TYPE` under the right construction type, and add the calculation branch in `buildLineItems`. If the item needs an inline numeric input on the form (like 물받이/창고/계단실), also add an entry to `SCOPE_WITH_INPUT` with the unit and placeholder.
+- Scope items: extend `ScopeFlags`, add to `SCOPE_LABELS`, add to `SCOPE_BY_TYPE` under the right construction type, and add the calculation branch in `buildLineItems`.
+  - If the item needs an inline numeric input (like 물받이 length), add it to `SCOPE_WITH_INPUT` with `{ unit, placeholder }`.
+  - If the item is an "이미 시공면적에 포함됨" annotation (like 난간/두겁, 창고, 계단실, 옥탑방), add a hint to `SCOPE_HINTS` instead — the form shows the hint below the label so the user knows it doesn't add to the calculation.
+  - **Do not add multipliers** that auto-inflate the material area based on scope flags. User feedback: they prefer to enter the actual 시공면적 themselves and use these flags as annotations only.
+
+### Numeric stepper
+- `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수.
+- Don't use for wide-range numerics (면적, 가격) — plain inputs are better.
 
 ### Estimate-detail line-item actions
 - `/api/estimates/[eid]` PATCH supports five line-item actions via the request body:
