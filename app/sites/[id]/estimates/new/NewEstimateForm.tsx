@@ -31,9 +31,10 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
 
-  // Area
-  const [areaUnit, setAreaUnit] = useState<"sqm" | "pyeong">("sqm");
-  const [areaInput, setAreaInput] = useState("");
+  // Area — two synced fields. Track which was last edited so rounding
+  // doesn't jitter the field the user is currently typing in.
+  const [sqmInput, setSqmInput] = useState("");
+  const [pyeongInput, setPyeongInput] = useState("");
 
   // Scope
   const [scope, setScope] = useState<ScopeFlags>(DEFAULT_SCOPE);
@@ -50,23 +51,19 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   }
 
   function getAreaM2(): number {
-    const n = parseFloat(areaInput) || 0;
-    return areaUnit === "pyeong" ? pyeongToSqm(n) : n;
+    return parseFloat(sqmInput) || 0;
   }
 
-  function handleAreaChange(val: string) {
-    setAreaInput(val);
+  function handleSqmChange(val: string) {
+    setSqmInput(val);
+    const n = parseFloat(val);
+    setPyeongInput(Number.isFinite(n) && n > 0 ? String(sqmToPyeong(n)) : "");
   }
 
-  function switchUnit() {
-    const n = parseFloat(areaInput) || 0;
-    if (areaUnit === "sqm") {
-      setAreaUnit("pyeong");
-      setAreaInput(n > 0 ? String(sqmToPyeong(n)) : "");
-    } else {
-      setAreaUnit("sqm");
-      setAreaInput(n > 0 ? String(pyeongToSqm(n)) : "");
-    }
+  function handlePyeongChange(val: string) {
+    setPyeongInput(val);
+    const n = parseFloat(val);
+    setSqmInput(Number.isFinite(n) && n > 0 ? String(pyeongToSqm(n)) : "");
   }
 
   async function handleCreate() {
@@ -103,38 +100,42 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     }
   }
 
-  const areaM2 = getAreaM2();
-
   return (
     <div className="space-y-5">
-      {/* Area */}
+      {/* Area — two synced fields, type in either */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <h2 className="font-semibold text-gray-800 mb-4">면적 입력</h2>
-        <div className="flex items-center gap-2">
-          <div className="flex-1 relative">
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={areaInput}
-              onChange={(e) => handleAreaChange(e.target.value)}
-              placeholder="0"
-              className="text-xl font-bold h-14 pr-16 text-center"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">
-              {areaUnit === "sqm" ? "㎡" : "평"}
-            </span>
+        <h2 className="font-semibold text-gray-800 mb-1">면적 입력</h2>
+        <p className="text-xs text-gray-400 mb-4">㎡ 또는 평 어디든 입력하면 자동 변환됩니다 (1평 = 3.3058㎡)</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">제곱미터</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={sqmInput}
+                onChange={(e) => handleSqmChange(e.target.value)}
+                placeholder="0"
+                className="text-xl font-bold h-14 pr-10 text-center"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">㎡</span>
+            </div>
           </div>
-          <Button variant="outline" onClick={switchUnit} className="h-14 px-3 text-sm shrink-0">
-            {areaUnit === "sqm" ? "평 단위로" : "㎡ 단위로"}
-          </Button>
+          <div>
+            <Label className="text-xs text-gray-500 mb-1 block">평</Label>
+            <div className="relative">
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={pyeongInput}
+                onChange={(e) => handlePyeongChange(e.target.value)}
+                placeholder="0"
+                className="text-xl font-bold h-14 pr-10 text-center"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium">평</span>
+            </div>
+          </div>
         </div>
-        {areaInput && areaM2 > 0 && (
-          <p className="text-sm text-gray-500 mt-2 text-center">
-            {areaUnit === "sqm"
-              ? `≈ ${sqmToPyeong(areaM2)}평`
-              : `≈ ${areaM2}㎡`}
-          </p>
-        )}
       </div>
 
       {/* Scope */}
