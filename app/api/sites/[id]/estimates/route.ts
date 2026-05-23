@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
 import type { ConstructionType, ExtraCost, MaterialType, ScopeFlags, Thickness } from "@/lib/types";
+import type { CatalogSelection } from "@/lib/catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -29,6 +30,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     otherEquipment = null,
     scopeFlags,
     extraCosts = [],
+    catalogSelections = [],
     applyLossRate = false,
     lossRate = null,
     marginRate: inputMarginRate,
@@ -56,6 +58,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     ladderTruckDays,
     scaffoldDays,
     extraCosts: extraCosts as ExtraCost[],
+    catalogSelections: catalogSelections as CatalogSelection[],
     applyLossRate,
     lossRate: effectiveLossRate,
   });
@@ -81,6 +84,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       scopeFlags: scope as object,
       applyLossRate,
       lossRate: applyLossRate ? effectiveLossRate : null,
+      catalogSelections: (catalogSelections as CatalogSelection[])
+        .filter((s) => s.quantity > 0) as unknown as object,
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,

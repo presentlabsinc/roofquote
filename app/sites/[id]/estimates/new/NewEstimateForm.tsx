@@ -25,8 +25,10 @@ import {
   DEFAULT_COLOR,
 } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { CatalogPicker } from "@/components/CatalogPicker";
+import type { CatalogSelection } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -70,6 +72,9 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   // Step 8: Work info (steppers)
   const [workerCount, setWorkerCount] = useState(String(settings.defaultWorkerCount));
   const [workDays, setWorkDays] = useState("2");
+
+  // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡)
+  const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>([]);
 
   // Step 9: 기타 비용
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
@@ -170,6 +175,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           otherEquipment: otherEquipment || null,
           scopeFlags: scope,
           extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
+          catalogSelections: catalogSelections.filter((s) => s.quantity > 0 && s.label.trim()),
           applyLossRate,
           lossRate,
         }),
@@ -397,6 +403,17 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                   );
                 })}
               </div>
+            </Section>
+
+            {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}
+            <Section icon={<Package size={18} />} title="추가 자재 / 부속">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                필요한 항목만 펼쳐서 수량 입력. 단가는 인라인 수정 가능. 카탈로그에 없으면 "직접 추가".
+              </p>
+              <CatalogPicker
+                selections={catalogSelections}
+                onChange={setCatalogSelections}
+              />
             </Section>
 
             {/* STEP 7: Equipment — steppers */}

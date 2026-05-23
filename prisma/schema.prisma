@@ -87,6 +87,10 @@ model Estimate {
   applyLossRate Boolean @default(false)
   lossRate      Float?  // snapshot of the rate used at creation time
 
+  // Selected catalog items (마감재 / 물받이 부속 / 부자재 / 절곡) with snapshot prices
+  // Shape: [{ category, key, label, unit, quantity, unitPrice }]
+  catalogSelections Json @default("[]")
+
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]
 

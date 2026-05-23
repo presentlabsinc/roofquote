@@ -99,8 +99,16 @@ These are real constraints. Violating them silently corrupts past quotes — a u
   - **Do not add multipliers** that auto-inflate the material area based on scope flags. User feedback: they prefer to enter the actual 시공면적 themselves and use these flags as annotations only.
 
 ### Numeric stepper
-- `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수.
+- `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.
 - Don't use for wide-range numerics (면적, 가격) — plain inputs are better.
+
+### Catalog system (부자재 / 마감재 / 물받이 부속 / 절곡)
+- Catalog defined in [lib/catalog.ts](lib/catalog.ts) — `DEFAULT_CATALOG` with ~30 prepopulated items spanning 4 categories. Default prices are reasonable Korean market guesses; user can override per-estimate inline.
+- UI: [components/CatalogPicker.tsx](components/CatalogPicker.tsx) — 4 collapsible category cards. Each row has a quantity stepper + inline-editable unit price (so a price override on a specific job doesn't pollute the catalog defaults).
+- "+ 직접 추가" per category creates a custom row (key starts with `custom_`) with user-defined label/unit/price.
+- Selections flow through `Estimate.catalogSelections Json @default("[]")` as snapshots, then `buildLineItems` emits one `EstimateLineItem` per selection with quantity > 0.
+- `categoryToLineItemCategory` in `lib/catalog.ts` maps catalog categories to existing line-item categories (finishing/gutter/accessory → "material", bending → "other") so the UI category colors and customer PDF grouping work consistently.
+- A catalog editor in 단가 설정 is not built yet — for now the catalog is read-only at the source, but every estimate can override prices inline. When we add an editor, store the edited catalog in `PricingSettings.catalog` (Json), falling back to `DEFAULT_CATALOG` when null/empty.
 
 ### Estimate-detail line-item actions
 - `/api/estimates/[eid]` PATCH supports five line-item actions via the request body:

@@ -1,5 +1,6 @@
 import type { ConstructionType, ExtraCost, MaterialType, ScopeFlags, Thickness } from "./types";
 import { MATERIAL_TYPES } from "./types";
+import { categoryToLineItemCategory, type CatalogSelection } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export interface LineItemDraft {
@@ -58,6 +59,8 @@ export interface BuildLineItemsInput {
   ladderTruckDays: number;
   scaffoldDays: number;
   extraCosts?: ExtraCost[];
+  /** Catalog items the user picked with their quantities + snapshot prices. */
+  catalogSelections?: CatalogSelection[];
   /** When true, multiply material area by (1 + lossRate) */
   applyLossRate?: boolean;
   /** Loss rate to apply (e.g. 0.10 = 10%). Used only when applyLossRate is true. */
@@ -69,6 +72,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     settings, constructionType, materialType, thickness,
     areaM2, scope, workerCount, workDays, gutterLengthM,
     skyliftDays, ladderTruckDays, scaffoldDays, extraCosts = [],
+    catalogSelections = [],
     applyLossRate = false, lossRate = 0,
   } = input;
   const items: LineItemDraft[] = [];
@@ -226,6 +230,21 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     items.push({
       category: "lodging", name: "숙박비", quantity: lodgingQty, unit: "명·박",
       unitPrice: settings.lodgingCostPerPersonNight, total: Math.round(lodgingQty * settings.lodgingCostPerPersonNight),
+      sortOrder: order++,
+    });
+  }
+
+  // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡) chosen by the user.
+  // Each becomes its own line item with snapshot price.
+  for (const sel of catalogSelections) {
+    if (!sel.quantity || sel.quantity <= 0) continue;
+    items.push({
+      category: categoryToLineItemCategory(sel.category),
+      name: sel.label,
+      quantity: sel.quantity,
+      unit: sel.unit,
+      unitPrice: sel.unitPrice,
+      total: Math.round(sel.quantity * sel.unitPrice),
       sortOrder: order++,
     });
   }
