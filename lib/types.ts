@@ -76,6 +76,80 @@ export interface ExtraCost {
 }
 
 /**
+ * Per-estimate price overrides — these temporarily replace fields from
+ * PricingSettings for one estimate only. Settings itself is never modified.
+ * Only price fields are overridable; non-price config (companyName, etc.)
+ * is not in this shape.
+ */
+export interface PricingOverrides {
+  materialPricePerSqm?: number;
+  accessoryRate?: number;
+  ridgePricePerM?: number;
+  eavePricePerM?: number;
+  gutterPricePerM?: number;
+  removalPricePerSqm?: number;
+  wasteDisposalCost?: number;
+  dailyWage?: number;
+  skyliftDailyCost?: number;
+  ladderTruckDailyCost?: number;
+  scaffoldDailyCost?: number;
+  scaffoldPricePerSqmDay?: number;
+  baseTransportCost?: number;
+  mealCostPerPersonMeal?: number;
+  lodgingCostPerPersonNight?: number;
+  substructureWoodPricePerSqm?: number;
+  substructureSteelPricePerSqm?: number;
+  drainHolePrice?: number;
+  capBendingPricePerM?: number;
+}
+
+/** Field definitions for the override UI — grouped by concern. */
+export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { key: keyof PricingOverrides; label: string; unit: string; pct?: boolean }[] }[] = [
+  {
+    group: "자재 단가",
+    icon: "🧱",
+    fields: [
+      { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (0.45t 기준)", unit: "원" },
+      { key: "accessoryRate", label: "부자재 비율", unit: "%", pct: true },
+      { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
+      { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
+      { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
+      { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
+      { key: "wasteDisposalCost", label: "폐기물 트럭 1차당", unit: "원" },
+    ],
+  },
+  {
+    group: "하지 / 스틸방수",
+    icon: "🪵",
+    fields: [
+      { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
+      { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
+      { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
+      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
+    ],
+  },
+  {
+    group: "인건 / 체류",
+    icon: "👷",
+    fields: [
+      { key: "dailyWage", label: "1인 1일 인건비", unit: "원" },
+      { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
+      { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
+    ],
+  },
+  {
+    group: "장비 / 운송",
+    icon: "🏗️",
+    fields: [
+      { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
+      { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
+      { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
+      { key: "baseTransportCost", label: "기본 운송비", unit: "원" },
+    ],
+  },
+];
+
+/**
  * Wide ScopeFlags union — fields are nullable; only the ones relevant
  * to the chosen ConstructionType are shown in the form and used in
  * line-item calculation.

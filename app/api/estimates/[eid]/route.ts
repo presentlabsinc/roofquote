@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals, calcFromFinalPrice } from "@/lib/calculations";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
-import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { Estimate } from "@prisma/client";
 
 /**
@@ -119,7 +119,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       skyliftDays = 0, ladderTruckDays = 0, scaffoldDays = 0, scaffoldAreaM2 = 0,
       wasteTruckCount = 1, substructureType = null,
       otherEquipment = null,
-      scopeFlags, extraCosts = [], catalogSelections = [], catalogModes = {},
+      scopeFlags, extraCosts = [], pricingOverrides = {},
+      catalogSelections = [], catalogModes = {},
       applyLossRate = false, lossRate = null,
       marginRate: inputMarginRate, vatIncluded,
       paymentTerms, validityDays,
@@ -142,6 +143,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       wasteTruckCount,
       substructureType: substructureType as SubstructureType | null,
       extraCosts: extraCosts as ExtraCost[],
+      pricingOverrides: pricingOverrides as PricingOverrides,
       catalogSelections: catalogSelections as CatalogSelection[],
       catalogModes: catalogModes as CategoryModesMap,
       applyLossRate, lossRate: effectiveLossRate,
@@ -173,6 +175,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
           catalogSelections: (catalogSelections as CatalogSelection[])
             .filter((s) => s.quantity > 0) as unknown as object,
           catalogModes: catalogModes as object,
+          pricingOverrides: pricingOverrides as object,
           ...totals,
           marginMode: "percent",
           marginRate,

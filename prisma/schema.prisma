@@ -121,6 +121,12 @@ model Estimate {
   // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
   catalogModes      Json @default("{}")
 
+  // Per-estimate price overrides — apply only to this estimate.
+  // Shape: Partial<PricingSettings> with only price fields the user changed.
+  // buildLineItems merges this over PricingSettings before calculation.
+  // PricingSettings itself is never modified.
+  pricingOverrides  Json @default("{}")
+
   // 하지작업 (substructure)
   substructureType  String? // null = 안함, 'wood' = 목재, 'steel' = 철재
 

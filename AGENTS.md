@@ -169,6 +169,15 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 ### Client-safe view
 - The estimate detail UI has a "고객 보기" toggle that hides line items, margin controls, and the cost breakdown. Used when the salesperson hands the phone to the customer. Toggle lives in `EstimateDetail.tsx` (`clientView` state).
 
+### Pricing overrides (per-estimate price changes)
+- `Estimate.pricingOverrides Json @default("{}")` — shape: `Partial<PricingOverrides>` with only the price fields the user changed for this specific estimate.
+- `applyOverrides(settings, overrides)` in `lib/calculations.ts` returns a merged `PricingSettings`-shaped object. `buildLineItems` calls this on `input.settings + input.pricingOverrides` and uses the merged object everywhere internally.
+- `lib/types.ts` defines `PricingOverrides` type and `PRICING_OVERRIDE_GROUPS` (UI structure for the form — 자재 / 하지·스틸방수 / 인건·체류 / 장비·운송).
+- Form: `PricingOverridesSection` at the end of the new-estimate form (collapsed by default, badge shows N개 변경됨 when any). Empty field = use settings default; filled = override for this estimate.
+- Inline price hints in the form (e.g. "트럭 수 (1,000,000원/차)") use `eff` = `applyOverrides(settings, pricingOverrides)` so they reflect the override live.
+- **Critical:** `PricingSettings` itself is never modified by an override — the snapshot rule still holds. Old estimates with no overrides keep the original behavior.
+- API: POST + PATCH replace both accept `pricingOverrides` and persist it. Edit-mode prefills from the existing estimate's `pricingOverrides`.
+
 ### Edit mode (full edit of an existing estimate)
 - Triggered from EstimateDetail → "입력값 수정" button (with confirmation explaining what gets reset).
 - Navigates to `/sites/[id]/estimates/new?edit={eid}`.

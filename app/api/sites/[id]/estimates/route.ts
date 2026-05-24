@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
-import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -47,6 +47,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     otherEquipment = null,
     scopeFlags,
     extraCosts = [],
+    pricingOverrides = {},
     catalogSelections = [],
     catalogModes = {},
     applyLossRate = false,
@@ -82,6 +83,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     wasteTruckCount,
     substructureType: substructureType as SubstructureType | null,
     extraCosts: extraCosts as ExtraCost[],
+    pricingOverrides: pricingOverrides as PricingOverrides,
     catalogSelections: catalogSelections as CatalogSelection[],
     catalogModes: catalogModes as CategoryModesMap,
     applyLossRate,
@@ -120,6 +122,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       catalogSelections: (catalogSelections as CatalogSelection[])
         .filter((s) => s.quantity > 0) as unknown as object,
       catalogModes: catalogModes as object,
+      pricingOverrides: pricingOverrides as object,
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,

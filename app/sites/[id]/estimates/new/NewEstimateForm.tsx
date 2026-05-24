@@ -16,6 +16,7 @@ import {
   type ExtraCost,
   type GutterMode,
   type SubstructureType,
+  type PricingOverrides,
   CONSTRUCTION_TYPES,
   MATERIAL_TYPES,
   THICKNESSES,
@@ -29,12 +30,13 @@ import {
   TEXTURE_PRESETS,
   SUBSTRUCTURE_OPTIONS,
   GUTTER_MODE_OPTIONS,
+  PRICING_OVERRIDE_GROUPS,
 } from "@/lib/types";
-import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { applyOverrides, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar, Coins, ChevronDown, ChevronUp } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -144,6 +146,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   // Step 9: 기타 비용 — not stored separately on Estimate; only relevant for new creation.
   // On edit, we don't preserve these (they were already turned into line items at create time).
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
+
+  // Pricing overrides — per-estimate price replacements (settings stay unchanged)
+  const [pricingOverrides, setPricingOverrides] = useState<PricingOverrides>(
+    (existing?.pricingOverrides as unknown as PricingOverrides) ?? {},
+  );
 
   function pickConstructionType(t: ConstructionType) {
     setConstructionType(t);
@@ -269,6 +276,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
       catalogSelections: catalogSelections.filter((s) => s.quantity > 0 && s.label.trim()),
       catalogModes,
+      pricingOverrides,
       applyLossRate,
       lossRate,
     };
@@ -303,6 +311,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       setSaving(false);
     }
   }
+
+  // Effective prices for inline display — settings with overrides merged on top
+  const eff = applyOverrides(settings, pricingOverrides);
 
   return (
     <>
@@ -511,7 +522,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </div>
               {substructureType !== "none" && (
                 <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
-                  ≈ 시공면적 × {(substructureType === "wood" ? settings.substructureWoodPricePerSqm : settings.substructureSteelPricePerSqm).toLocaleString("ko-KR")}원/㎡
+                  ≈ 시공면적 × {(substructureType === "wood" ? eff.substructureWoodPricePerSqm : eff.substructureSteelPricePerSqm).toLocaleString("ko-KR")}원/㎡
                 </p>
               )}
             </Section>
@@ -565,7 +576,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       {/* 폐기물 트럭 수 */}
                       {key === "waste" && scope.waste && (
                         <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">트럭 수 ({(settings.wasteDisposalCost).toLocaleString("ko-KR")}원/차)</Label>
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">트럭 수 ({eff.wasteDisposalCost.toLocaleString("ko-KR")}원/차)</Label>
                           <NumberStepper
                             value={wasteTrucks}
                             onChange={setWasteTrucks}
@@ -578,7 +589,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       {key === "cap" && scope.cap && (
                         <div className="mt-2 ml-3">
                           <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            절곡 길이 ({(settings.capBendingPricePerM).toLocaleString("ko-KR")}원/m)
+                            절곡 길이 ({eff.capBendingPricePerM.toLocaleString("ko-KR")}원/m)
                           </Label>
                           <div className="flex items-center gap-2">
                             <Input
@@ -594,7 +605,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       {key === "drainHole" && scope.drainHole && (
                         <div className="mt-2 ml-3">
                           <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            개수 ({(settings.drainHolePrice).toLocaleString("ko-KR")}원/개)
+                            개수 ({eff.drainHolePrice.toLocaleString("ko-KR")}원/개)
                           </Label>
                           <NumberStepper
                             value={drainHoles}
@@ -676,7 +687,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   onToggle={() => toggleScope("scaffold")}
                   days={scaffoldDays} onDaysChange={setScaffoldDays}
                   area={scaffoldArea} onAreaChange={setScaffoldArea}
-                  pricePerSqmDay={settings.scaffoldPricePerSqmDay}
+                  pricePerSqmDay={eff.scaffoldPricePerSqmDay}
                 />
                 <div className="pt-2">
                   <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 "기타 비용" 에)</Label>
@@ -764,6 +775,13 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 <Plus size={16} className="mr-1" /> 항목 추가
               </Button>
             </Section>
+
+            {/* Pricing overrides — at the very end. Collapsed by default. */}
+            <PricingOverridesSection
+              overrides={pricingOverrides}
+              onChange={setPricingOverrides}
+              settings={settings}
+            />
           </>
         )}
       </div>
@@ -794,6 +812,114 @@ function Section({ icon, title, step, children }: { icon?: React.ReactNode; titl
         <h2 className="font-semibold text-foreground text-sm">{title}</h2>
       </div>
       {children}
+    </div>
+  );
+}
+
+/**
+ * Collapsible section listing all overridable price fields, grouped by
+ * concern (자재 / 하지·스틸방수 / 인건·체류 / 장비·운송). Each field's
+ * placeholder shows the current settings default. Filling it in records
+ * an override for this estimate only.
+ */
+function PricingOverridesSection({
+  overrides, onChange, settings,
+}: {
+  overrides: PricingOverrides;
+  onChange: (o: PricingOverrides) => void;
+  settings: PricingSettings;
+}) {
+  const [open, setOpen] = useState(false);
+  const overrideCount = Object.values(overrides).filter((v) => v !== undefined && v !== null && !Number.isNaN(v)).length;
+
+  function setField<K extends keyof PricingOverrides>(key: K, raw: string, pct?: boolean) {
+    const next = { ...overrides };
+    if (raw === "") {
+      delete next[key];
+    } else {
+      const num = pct ? parseFloat(raw) / 100 : parseFloat(raw);
+      if (Number.isFinite(num)) next[key] = num;
+      else delete next[key];
+    }
+    onChange(next);
+  }
+
+  function clearAll() {
+    onChange({});
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3.5 pressable"
+      >
+        <span className="text-primary"><Coins size={18} /></span>
+        <div className="flex-1 text-left">
+          <div className="text-sm font-semibold text-foreground">단가 임시 조정</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">이 견적에만 적용 · 단가 설정은 안 바뀜</div>
+        </div>
+        {overrideCount > 0 && (
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 tabular-nums">
+            {overrideCount}개 변경됨
+          </span>
+        )}
+        {open ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 border-t border-border/40 pt-3 space-y-4">
+          {overrideCount > 0 && (
+            <button
+              type="button"
+              onClick={clearAll}
+              className="text-[11px] text-muted-foreground underline pressable"
+            >
+              모두 초기화 (단가 설정 기본값 사용)
+            </button>
+          )}
+          {PRICING_OVERRIDE_GROUPS.map((g) => (
+            <div key={g.group}>
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-base">{g.icon}</span>
+                <span className="text-xs font-semibold text-muted-foreground">{g.group}</span>
+              </div>
+              <div className="space-y-2">
+                {g.fields.map((f) => {
+                  const overrideVal = overrides[f.key];
+                  const settingsVal = settings[f.key as keyof PricingSettings] as number;
+                  const displayDefault = f.pct
+                    ? `${Math.round(settingsVal * 100)}`
+                    : settingsVal.toLocaleString("ko-KR");
+                  const displayValue = overrideVal !== undefined && overrideVal !== null
+                    ? (f.pct ? String(Math.round(overrideVal * 100)) : String(overrideVal))
+                    : "";
+                  const isOverridden = displayValue !== "";
+                  return (
+                    <div key={f.key} className="flex items-center gap-2">
+                      <Label className="flex-1 text-xs text-muted-foreground">{f.label}</Label>
+                      <div className="relative w-32 shrink-0">
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          value={displayValue}
+                          onChange={(e) => setField(f.key, e.target.value, f.pct)}
+                          placeholder={`기본 ${displayDefault}`}
+                          className={`h-10 pr-9 text-right text-sm tabular-nums rounded-lg ${
+                            isOverridden ? "border-amber-300 bg-amber-50/40" : ""
+                          }`}
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">{f.unit}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

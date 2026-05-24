@@ -1,4 +1,4 @@
-import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "./types";
+import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "./types";
 import { MATERIAL_TYPES } from "./types";
 import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
@@ -45,6 +45,22 @@ function constructionLabel(type: ConstructionType): string {
   return "지붕";
 }
 
+/**
+ * Merge per-estimate pricing overrides over the live PricingSettings.
+ * Only fields the user explicitly overrode (non-null/non-undefined) replace
+ * the settings value. Used by buildLineItems and the form's inline price
+ * displays so both see the same effective price.
+ */
+export function applyOverrides(settings: PricingSettings, overrides: PricingOverrides | null | undefined): PricingSettings {
+  if (!overrides) return settings;
+  const merged: PricingSettings = { ...settings };
+  for (const [k, v] of Object.entries(overrides)) {
+    if (v === undefined || v === null || (typeof v === "number" && Number.isNaN(v))) continue;
+    (merged as Record<string, unknown>)[k] = v;
+  }
+  return merged;
+}
+
 export interface BuildLineItemsInput {
   settings: PricingSettings;
   constructionType: ConstructionType;
@@ -67,6 +83,9 @@ export interface BuildLineItemsInput {
   /** 하지작업: null/undefined = 안함, 'wood' = 목재, 'steel' = 철재 */
   substructureType?: SubstructureType | null;
   extraCosts?: ExtraCost[];
+  /** Per-estimate price overrides. Merged over settings so individual prices
+   *  can be changed for this estimate without modifying PricingSettings. */
+  pricingOverrides?: PricingOverrides;
   /** Catalog items the user picked with their quantities + snapshot prices.
    *  Only used for categories whose mode === "detailed". */
   catalogSelections?: CatalogSelection[];
@@ -81,15 +100,21 @@ export interface BuildLineItemsInput {
 
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   const {
-    settings, constructionType, materialType, thickness,
+    settings: rawSettings, constructionType, materialType, thickness,
     areaM2, scope, workerCount, workDays,
     gutterMode = null, gutterLengthM,
     capLengthM = 0, drainHoleCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
-    extraCosts = [], catalogSelections = [], catalogModes,
+    extraCosts = [], pricingOverrides = {},
+    catalogSelections = [], catalogModes,
     applyLossRate = false, lossRate = 0,
   } = input;
+
+  // Apply per-estimate pricing overrides on top of the live PricingSettings.
+  // The result has the same shape as PricingSettings so the rest of this
+  // function can use it transparently.
+  const settings: PricingSettings = applyOverrides(rawSettings, pricingOverrides);
 
   // Resolve effective category modes by layering: defaults → settings → estimate override
   const settingsDefaults = (settings.catalogDefaults as CategoryModesMap | null) ?? null;
