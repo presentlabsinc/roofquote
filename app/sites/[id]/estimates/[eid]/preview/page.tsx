@@ -53,7 +53,17 @@ export default async function PreviewPage({
             title="견적서 미리보기"
           />
         </div>
-        <p className="text-[11px] text-muted-foreground text-center mt-3">
+        {/* iOS Safari often refuses to render PDFs inside iframes — show a
+            fallback link that always opens the PDF in a new tab. */}
+        <a
+          href={pdfUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-center text-xs font-semibold text-primary bg-primary/5 rounded-xl py-3 mt-3 pressable"
+        >
+          📄 PDF 가 안 보이면 — 새 탭에서 열기
+        </a>
+        <p className="text-[11px] text-muted-foreground text-center mt-2">
           위 미리보기는 고객에게 발송될 견적서입니다. 원가·마진은 포함되지 않습니다.
         </p>
       </div>
