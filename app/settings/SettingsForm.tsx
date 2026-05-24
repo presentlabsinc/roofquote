@@ -13,6 +13,8 @@ const DEFAULTS = {
   companyName: "",
   companyPhone: "",
   companyAddress: "",
+  businessRegistrationNumber: "",
+  sealImageUrl: "",
   materialPricePerSqm: 30000,
   accessoryRate: 0.15,
   ridgePricePerM: 25000,
@@ -51,6 +53,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
       { key: "companyName", label: "회사명" },
       { key: "companyPhone", label: "대표 연락처" },
       { key: "companyAddress", label: "회사 주소" },
+      { key: "businessRegistrationNumber", label: "사업자등록번호" },
     ],
   },
   {
@@ -137,6 +140,8 @@ export function SettingsForm({ defaultValues }: Props) {
       companyName: defaultValues.companyName,
       companyPhone: defaultValues.companyPhone ?? "",
       companyAddress: defaultValues.companyAddress ?? "",
+      businessRegistrationNumber: defaultValues.businessRegistrationNumber ?? "",
+      sealImageUrl: defaultValues.sealImageUrl ?? "",
       materialPricePerSqm: defaultValues.materialPricePerSqm,
       accessoryRate: defaultValues.accessoryRate,
       ridgePricePerM: defaultValues.ridgePricePerM,
@@ -181,6 +186,8 @@ export function SettingsForm({ defaultValues }: Props) {
         ...values,
         companyPhone: values.companyPhone || null,
         companyAddress: values.companyAddress || null,
+        businessRegistrationNumber: values.businessRegistrationNumber || null,
+        sealImageUrl: values.sealImageUrl || null,
       };
       const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error("저장 실패");
@@ -210,7 +217,7 @@ export function SettingsForm({ defaultValues }: Props) {
             <div className="divide-y divide-border/40">
               {items.map(({ key, label, unit, step, pct }) => {
                 const rawVal = values[key];
-                const isStr = key === "companyName" || key === "companyPhone" || key === "companyAddress";
+                const isStr = key === "companyName" || key === "companyPhone" || key === "companyAddress" || key === "businessRegistrationNumber" || key === "sealImageUrl" || key === "substructureMode";
                 const displayVal = isStr
                   ? String(rawVal)
                   : pct

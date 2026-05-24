@@ -169,9 +169,22 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 - The estimate detail UI has a "고객 보기" toggle that hides line items, margin controls, and the cost breakdown. Used when the salesperson hands the phone to the customer. Toggle lives in `EstimateDetail.tsx` (`clientView` state).
 
 ### PDF preview flow
-- Estimate detail → "견적서 미리보기" button navigates to `/sites/[id]/estimates/[eid]/preview`
-- That page embeds `/api/estimates/[eid]/pdf` (no `?download=1`) in an iframe — the PDF route returns `inline` disposition by default.
-- The preview page has its own sticky action bar with PDF 저장 + 카톡 보내기. Only the share action marks `pdfSentAt`.
+- Estimate detail → "견적서 미리보기" button navigates to `/sites/[id]/estimates/[eid]/preview?detail=simple` (default).
+- Preview page embeds `/api/estimates/[eid]/pdf?detail=simple|detailed` in an iframe — the PDF route returns `inline` disposition by default, `?download=1` forces attachment.
+- A 간단/상세 toggle at the top of the preview switches `?detail=` query — Next router replaces the URL so back-button doesn't pile up history. The iframe `key={detailLevel}` forces a reload on toggle.
+- The preview page has its own sticky action bar with PDF 저장 + 카톡 보내기. Save respects the current detail level (filename suffix 간단/상세). Only the share action marks `pdfSentAt`.
+
+### Customer PDF layout (components/EstimatePDF.tsx)
+- **Header**: company name + 사업자등록번호 + phone + address (left); 견적일 + 유효기간 (right).
+- **공사 내용**: 공사명, 유형, 시공/건물 면적, 공사 일정 ("YYYY년 MM월 중" via `formatMonth()`), 공사 범위 bullet list, 사용 자재 pills (제품명 / 두께 / 텍스처 / 색상).
+- **견적 내역 table**: 4 columns (품명 / 규격 / 수량 / 금액). Two grouping strategies:
+  - `groupForSimpleCustomerView()` — 5 buckets (자재 및 마감 / 시공비 / 장비 및 운송 / 철거 및 폐기 / 기타).
+  - `groupForDetailedCustomerView()` — material items individually, labor+meals+lodging rolled into one "시공비" line (the 3 invisible-to-customer categories per the spec).
+- **합계 row** (single line): "합계 (부가세 포함/별도)" + final price. No separate 공급가 + VAT lines.
+- **결제 조건 / 안내 / 직인**: standard. Seal area shows `sealImageUrlSnapshot` (Image) or "(직인)" placeholder text in a dashed circle.
+
+### 공사 일정 field
+- `Estimate.constructionMonth` is a `YYYY-MM` string snapshot (e.g. "2026-06"). PDF renders as "2026년 6월 중" via `formatMonth()`. No precise start/end dates — roofing is too weather-dependent.
 
 ### Visual polish
 - Default font is Pretendard. Don't reintroduce Geist for body text.

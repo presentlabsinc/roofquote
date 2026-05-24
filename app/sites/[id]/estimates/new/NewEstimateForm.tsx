@@ -26,6 +26,7 @@ import {
   SCOPE_FORCES,
   COLOR_PRESETS,
   DEFAULT_COLOR,
+  TEXTURE_PRESETS,
   SUBSTRUCTURE_OPTIONS,
   GUTTER_MODE_OPTIONS,
 } from "@/lib/types";
@@ -33,7 +34,7 @@ import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2 } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -57,8 +58,17 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   // Step 3-5: Material
   const [materialType, setMaterialType] = useState<MaterialType>("slate");
   const [thickness, setThickness] = useState<Thickness>("0.45");
+  const [textureChoice, setTextureChoice] = useState<string>("매트");
+  const [textureCustom, setTextureCustom] = useState("");
   const [colorChoice, setColorChoice] = useState<string>(DEFAULT_COLOR);
   const [colorCustom, setColorCustom] = useState("");
+
+  // 공사 일정 — default to next month (지붕공사는 보통 다음 달 이후 시작)
+  const [constructionMonth, setConstructionMonth] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
 
   // Loss rate (per-estimate override)
   const [applyLossRate, setApplyLossRate] = useState(settings.useLossRateByDefault);
@@ -198,6 +208,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     if (scope.cap && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
+    const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
     const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
 
     setSaving(true);
@@ -209,7 +220,9 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           constructionType,
           materialType,
           materialThickness: thickness,
+          materialTexture: finalTexture,
           materialColor: finalColor,
+          constructionMonth,
           areaM2,
           buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
           workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
@@ -353,8 +366,46 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               </div>
             </Section>
 
-            {/* STEP 5: Color */}
+            {/* STEP 5: Texture + Color */}
             <Section icon={<Palette size={18} />} title="색상 / 텍스처" step={5}>
+              <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">텍스처</Label>
+              <div className="grid grid-cols-5 gap-1.5 mb-3">
+                {TEXTURE_PRESETS.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTextureChoice(t)}
+                    className={`pressable rounded-xl px-2 py-2 text-xs font-medium border ${
+                      textureChoice === t
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border/60"
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setTextureChoice("기타")}
+                  className={`pressable rounded-xl px-2 py-2 text-xs font-medium border ${
+                    textureChoice === "기타"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-foreground border-border/60"
+                  }`}
+                >
+                  기타
+                </button>
+              </div>
+              {textureChoice === "기타" && (
+                <Input
+                  value={textureCustom}
+                  onChange={(e) => setTextureCustom(e.target.value)}
+                  placeholder="텍스처명 입력"
+                  className="mb-3 h-11 rounded-xl text-sm"
+                />
+              )}
+
+              <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">색상</Label>
               <div className="grid grid-cols-3 gap-1.5">
                 {COLOR_PRESETS.map((c) => (
                   <button
@@ -611,6 +662,19 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                   unit="명"
                 />
               </div>
+            </Section>
+
+            {/* Construction month — 지붕공사는 날씨 영향 커서 "월" 단위로만 */}
+            <Section icon={<Calendar size={18} />} title="공사 일정">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                "YYYY년 MM월 중" 형식으로 견적서에 표시됨. 착공/준공일은 분리하지 않음.
+              </p>
+              <Input
+                type="month"
+                value={constructionMonth}
+                onChange={(e) => setConstructionMonth(e.target.value)}
+                className="h-12 rounded-xl text-base tabular-nums"
+              />
             </Section>
 
             {/* STEP 9: 기타 비용 */}

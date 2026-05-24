@@ -14,9 +14,11 @@ model PricingSettings {
   id String @id @default(cuid())
 
   // Company info (snapshot-copied into Estimate at creation)
-  companyName    String
-  companyPhone   String?
-  companyAddress String?
+  companyName               String
+  companyPhone              String?
+  companyAddress            String?
+  businessRegistrationNumber String? // 사업자등록번호 (10자리, 하이픈 포함 가능)
+  sealImageUrl              String?  // 직인 이미지 URL (Supabase Storage); null이면 PDF에서 "(직인)" 텍스트 placeholder
 
   // Unit prices (all in Korean Won, integers)
   materialPricePerSqm       Int   // 칼라강판 ㎡당
@@ -84,7 +86,12 @@ model Estimate {
   constructionType  String  @default("roof") // 'roof' | 'steelWaterproof' | 'rooftopRoof'
   materialType      String? // 'slate' | 'v250' | 'zinc250' | 'generalTile' | 'traditionalTile' | 'realZinc' | 'other'
   materialThickness String? @default("0.45") // '0.4' | '0.45' | '0.5' | '0.6'
+  materialTexture   String? // '매트' | '광택' | '반광' | '엠보싱' | custom (free text)
   materialColor     String?
+
+  // 공사 일정 — "YYYY-MM" format (snapshot); PDF renders as "YYYY년 MM월 중"
+  // 지붕공사는 날씨로 일정이 자주 밀려서 정확한 착공/준공일은 안 잡음
+  constructionMonth String?
 
   // Input snapshots
   areaM2          Float   // 시공 면적
@@ -148,9 +155,11 @@ model Estimate {
   validityDays Int    @default(30)
 
   // Company info snapshot — frozen at estimate creation, never updated after
-  companyNameSnapshot    String
-  companyPhoneSnapshot   String?
-  companyAddressSnapshot String?
+  companyNameSnapshot                String
+  companyPhoneSnapshot               String?
+  companyAddressSnapshot             String?
+  businessRegistrationNumberSnapshot String?
+  sealImageUrlSnapshot               String?
 
   // PDF record
   pdfUrl    String?   // Supabase Storage URL of generated PDF
