@@ -14,6 +14,15 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "단가 설정이 없습니다. 먼저 단가 설정을 완료해 주세요." }, { status: 400 });
   }
 
+  // 견적 번호 자동 생성 — "YYYY-NNN" (연도별 카운터, 3자리 패딩)
+  const year = new Date().getFullYear();
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year + 1, 0, 1);
+  const countThisYear = await prisma.estimate.count({
+    where: { createdAt: { gte: yearStart, lt: yearEnd } },
+  });
+  const estimateNumber = `${year}-${String(countThisYear + 1).padStart(3, "0")}`;
+
   const {
     constructionType = "roof",
     materialType = null,
@@ -121,11 +130,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       vatIncluded: vatIncl,
       paymentTerms: paymentTerms ?? "계약금 30% / 잔금 70%",
       validityDays: validityDays ?? 30,
+      estimateNumber,
       companyNameSnapshot: settings.companyName,
       companyPhoneSnapshot: settings.companyPhone ?? null,
       companyAddressSnapshot: settings.companyAddress ?? null,
       businessRegistrationNumberSnapshot: settings.businessRegistrationNumber ?? null,
       sealImageUrlSnapshot: settings.sealImageUrl ?? null,
+      bankAccountSnapshot: settings.bankAccount ?? null,
+      noticeTextSnapshot: settings.noticeText ?? null,
       lineItems: {
         create: lineItemDrafts,
       },

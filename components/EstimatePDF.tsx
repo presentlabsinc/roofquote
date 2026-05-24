@@ -17,75 +17,96 @@ Font.register({
   src: "https://fonts.gstatic.com/s/notosanskr/v36/PbykFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzuoyeLTq8H4hfeE.woff2",
 });
 
+// v4 color palette (matches the kickoff mockup)
 const C = {
-  primary: "#1a56db",
+  ink: "#1e2530",        // dark navy header + total
   text: "#1a1a1a",
+  textOnDark: "#ffffff",
+  metaOnDark: "#8a9bb0",  // light grey-blue for header meta
   muted: "#666",
+  mutedLight: "#888",
   border: "#e5e7eb",
-  bg: "#ffffff",
-  pillBg: "#eef2ff",
-  pillText: "#1e40af",
-  rowAlt: "#f9fafb",
+  pillBg: "#e8ecf0",
+  pillText: "#3a4a5c",
+  totalBg: "#f5f7fa",
+  notice: "#888",
+  sealBorder: "#c5d0de",
+  sealText: "#8a9bb0",
 };
 
 const styles = StyleSheet.create({
-  page: { fontFamily: "Noto Sans KR", fontSize: 10, padding: 36, color: C.text, backgroundColor: C.bg },
+  page: { fontFamily: "Noto Sans KR", fontSize: 10, padding: 0, color: C.text, backgroundColor: "#ffffff" },
+  body: { padding: 24, paddingTop: 0 },
 
-  // Header
-  header: { marginBottom: 18, borderBottom: `1.5pt solid ${C.primary}`, paddingBottom: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  headerLeft: { flex: 1 },
-  companyName: { fontSize: 17, fontWeight: "bold", color: C.primary, marginBottom: 4 },
-  companyMeta: { fontSize: 8.5, color: C.muted, lineHeight: 1.4 },
-  bizNo: { fontSize: 8, color: C.muted, fontWeight: "bold" },
+  // — Header (dark navy)
+  header: { backgroundColor: C.ink, padding: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  companyName: { color: C.textOnDark, fontSize: 15, fontWeight: "bold", letterSpacing: 0.4 },
+  headerMeta: { color: C.metaOnDark, fontSize: 9, lineHeight: 1.5, marginTop: 4 },
   headerRight: { alignItems: "flex-end" },
-  docDate: { fontSize: 8.5, color: C.muted },
+  headerRightLine: { color: C.metaOnDark, fontSize: 9, marginBottom: 2 },
 
-  // Title
-  title: { fontSize: 16, fontWeight: "bold", textAlign: "center", marginVertical: 14, color: C.text, letterSpacing: 6 },
+  // — Customer + site row (two columns)
+  topRow: { flexDirection: "row", justifyContent: "space-between", borderBottom: `0.5pt solid ${C.border}`, padding: 16 },
+  topCol: { flex: 1 },
+  topColRight: { flex: 1, alignItems: "flex-end" },
+  labelTiny: { fontSize: 9, color: C.muted, marginBottom: 2 },
+  labelTinyTop: { fontSize: 9, color: C.muted, marginTop: 8, marginBottom: 2 },
+  valueLarge: { fontSize: 12, fontWeight: "bold", color: C.text },
+  valueRegular: { fontSize: 10, color: C.text },
 
-  // Sections
-  section: { marginBottom: 14 },
-  sectionTitle: { fontSize: 10.5, fontWeight: "bold", marginBottom: 6, color: C.primary, paddingBottom: 3, borderBottom: `0.5pt solid ${C.border}` },
-  row: { flexDirection: "row", marginBottom: 3.5 },
-  label: { width: 80, fontSize: 9, color: C.muted },
-  value: { flex: 1, fontSize: 9.5 },
-  scopeItem: { fontSize: 9.5, marginBottom: 2, paddingLeft: 6 },
+  // — Section: scope + pills
+  scopeSection: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
+  sectionLabel: { fontSize: 9, color: C.muted, letterSpacing: 0.5, marginBottom: 6 },
+  scopeText: { fontSize: 10.5, color: C.text, lineHeight: 1.5, marginBottom: 8 },
+  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
+  pill: { fontSize: 9, color: C.pillText, backgroundColor: C.pillBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
 
-  // Pills for material spec
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 4 },
-  pill: { backgroundColor: C.pillBg, color: C.pillText, fontSize: 8.5, fontWeight: "bold", paddingVertical: 3, paddingHorizontal: 8, borderRadius: 10 },
+  // — Simple view
+  simpleSection: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
+  simpleRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  simpleLabel: { fontSize: 11, color: C.text },
+  simpleValue: { fontSize: 11, fontWeight: "bold", color: C.text },
 
-  // Simple total
-  simpleTotalBox: { backgroundColor: "#f0f4ff", padding: 14, borderRadius: 6, marginVertical: 6, alignItems: "center", borderLeft: `3pt solid ${C.primary}` },
-  simpleTotalLabel: { fontSize: 10, color: C.muted, marginBottom: 4 },
-  simpleTotalValue: { fontSize: 22, fontWeight: "bold", color: C.primary },
-  simpleTotalNote: { fontSize: 8.5, color: C.muted, marginTop: 4 },
+  // — Detailed table
+  detailSection: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
+  tableHeaderRow: { flexDirection: "row", borderBottom: `0.5pt solid ${C.border}`, paddingBottom: 4, marginBottom: 4 },
+  tableGroupHeader: { fontSize: 9.5, color: C.muted, paddingTop: 6, paddingBottom: 4 },
+  tableRow: { flexDirection: "row", paddingVertical: 2.5 },
+  cellName: { flex: 3.5, fontSize: 10, color: C.text },
+  cellSpec: { flex: 1.7, fontSize: 10, color: C.muted, textAlign: "right" },
+  cellQty:  { flex: 1.2, fontSize: 10, color: C.muted, textAlign: "right" },
+  cellAmount: { flex: 1.8, fontSize: 10, color: C.text, textAlign: "right" },
+  subtotalRow: { flexDirection: "row", marginTop: 6, paddingTop: 6, borderTop: `0.5pt solid ${C.border}` },
+  subtotalLabel: { flex: 1, fontSize: 10.5, color: C.muted },
+  subtotalAmount: { fontSize: 10.5, color: C.muted, textAlign: "right" },
 
-  // Detailed table
-  tableHeader: { flexDirection: "row", backgroundColor: C.primary, paddingVertical: 5, paddingHorizontal: 6, marginTop: 4 },
-  tableHeaderCell: { color: "#fff", fontSize: 9, fontWeight: "bold" },
-  tableRow: { flexDirection: "row", paddingVertical: 5, paddingHorizontal: 6, borderBottom: `0.5pt solid ${C.border}` },
-  tableRowAlt: { backgroundColor: C.rowAlt },
-  tableCell: { fontSize: 9 },
-  cellName: { flex: 3 },
-  cellSpec: { flex: 2 },
-  cellQty: { width: 50, textAlign: "right" },
-  cellAmount: { width: 75, textAlign: "right" },
-  tableTotalRow: { flexDirection: "row", paddingVertical: 6, paddingHorizontal: 6, borderTop: `1pt solid ${C.primary}`, marginTop: 2 },
-  tableTotalLabel: { flex: 1, fontSize: 10, fontWeight: "bold", color: C.text },
-  tableTotalValue: { width: 75, fontSize: 10, fontWeight: "bold", color: C.primary, textAlign: "right" },
+  // — Final total (filled card)
+  totalRow: { backgroundColor: C.totalBg, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottom: `0.5pt solid ${C.border}` },
+  totalLeft: { flexDirection: "row", alignItems: "baseline" },
+  totalLabel: { fontSize: 12, fontWeight: "bold", color: C.ink },
+  totalVatNote: { fontSize: 9, color: C.mutedLight, marginLeft: 6 },
+  totalAmount: { fontSize: 17, fontWeight: "bold", color: C.ink },
 
-  // Notice
-  notice: { fontSize: 8.5, color: C.muted, backgroundColor: "#fffbf0", padding: 8, borderRadius: 4, marginTop: 10 },
+  // — Payment (two cards)
+  payment: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
+  paymentCards: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  paymentCard: { flex: 1, padding: 10, border: `0.5pt solid ${C.border}`, borderRadius: 6, alignItems: "center" },
+  paymentLabel: { fontSize: 8.5, color: C.muted, marginBottom: 4 },
+  paymentAmount: { fontSize: 12, fontWeight: "bold", color: C.text, marginBottom: 2 },
+  paymentPercent: { fontSize: 8.5, color: C.muted },
+  paymentText: { fontSize: 10, color: C.text, marginBottom: 6, fontWeight: "bold" },
+  paymentBank: { fontSize: 9.5, color: C.muted },
 
-  // Seal area
-  sealRow: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginTop: 30, paddingTop: 16 },
-  sealStatement: { fontSize: 11, fontWeight: "bold", marginRight: 20, color: C.text },
-  sealCircle: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, borderColor: "#9ca3af", borderStyle: "dashed", alignItems: "center", justifyContent: "center" },
-  sealCirclePlaceholder: { fontSize: 9, color: "#9ca3af" },
-  sealImage: { width: 58, height: 58, borderRadius: 29 },
-
-  footer: { fontSize: 7.5, color: "#a3a3a3", marginTop: 14, textAlign: "center" },
+  // — Notice + signature
+  notice: { padding: 16 },
+  noticeText: { fontSize: 9.5, color: C.muted, lineHeight: 1.6, marginBottom: 12 },
+  signatureRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4 },
+  signatureLeft: { fontSize: 9.5, color: C.muted },
+  signatureRight: { alignItems: "center" },
+  companyAbove: { fontSize: 9.5, color: C.muted, marginBottom: 6 },
+  sealCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 0.7, borderColor: C.sealBorder, alignItems: "center", justifyContent: "center" },
+  sealPlaceholder: { fontSize: 9, color: C.sealText },
+  sealImage: { width: 48, height: 48, borderRadius: 24 },
 });
 
 function materialLabel(type: string | null): string {
@@ -101,29 +122,41 @@ function constructionTypeLabel(t: string): string {
 
 function buildWorkTitle(estimate: Estimate, scope: ScopeFlags): string {
   const mat = materialLabel(estimate.materialType ?? null);
-  const thick = estimate.materialThickness ? ` ${estimate.materialThickness}t` : "";
-  if (estimate.constructionType === "steelWaterproof") return `${mat}${thick} 옥상 스틸방수`;
-  if (estimate.constructionType === "rooftopRoof") return `${mat}${thick} 옥상지붕 시공`;
-  if (scope.removal) return `기존 지붕 철거 후 ${mat}${thick} 지붕공사`;
-  if (scope.overlay) return `${mat}${thick} 지붕 덧씌우기 공사`;
-  return `${mat}${thick} 지붕공사`;
+  if (estimate.constructionType === "steelWaterproof") return `${mat} 옥상 스틸방수`;
+  if (estimate.constructionType === "rooftopRoof") return `${mat} 옥상지붕 시공`;
+  if (scope.removal) return `${mat} 지붕공사 (기존 지붕 철거)`;
+  if (scope.overlay) return `${mat} 지붕공사 (기존 지붕 덧씌우기)`;
+  return `${mat} 지붕공사`;
 }
 
-function scopeLabel(estimate: Estimate, scope: ScopeFlags): string[] {
-  const lines: string[] = [];
-  const showKeys: (keyof ScopeFlags)[] = (() => {
-    const ct = estimate.constructionType as ConstructionType;
-    if (ct === "roof") return ["overlay", "removal", "ridge", "eave", "waste"];
+function scopeOneLine(estimate: Estimate, scope: ScopeFlags): string {
+  // Builds one comma-joined sentence like the v4 mockup, including the work title.
+  const parts: string[] = [];
+  parts.push(buildWorkTitle(estimate, scope));
+
+  const ct = estimate.constructionType as ConstructionType;
+  const keys: (keyof ScopeFlags)[] = (() => {
+    if (ct === "roof") return ["ridge", "eave", "waste"];
     if (ct === "rooftopRoof") return ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"];
     return ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"];
   })();
-
-  for (const key of showKeys) {
-    if (scope[key]) lines.push(`• ${SCOPE_LABELS[key]}`);
+  // Combine ridge+eave nicely if both
+  if (scope.ridge && scope.eave) parts.push("용마루 및 처마 마감");
+  else if (scope.ridge) parts.push("용마루 마감");
+  else if (scope.eave) parts.push("처마 마감");
+  // Gutter — from mode
+  if (estimate.gutterMode && estimate.gutterMode !== "none") {
+    parts.push("물받이 교체");
   }
-  if (scope.skylift || scope.ladderTruck || scope.scaffold) lines.push("• 장비 및 안전 작업");
-  if (lines.length === 0) lines.push("• 관련 작업 일체");
-  return lines;
+  for (const k of keys) {
+    if (k === "ridge" || k === "eave") continue; // already handled
+    if (scope[k]) parts.push(SCOPE_LABELS[k]);
+  }
+  // Always include waste/safety blurbs as in mockup
+  if (scope.skylift || scope.ladderTruck || scope.scaffold) parts.push("장비 및 안전 작업");
+
+  // dedupe + join
+  return Array.from(new Set(parts)).join(" · ");
 }
 
 function formatMonth(yyyymm: string | null): string | null {
@@ -133,249 +166,304 @@ function formatMonth(yyyymm: string | null): string | null {
   return `${y}년 ${parseInt(m)}월 중`;
 }
 
-function fmtKrw(n: number): string {
-  return n.toLocaleString("ko-KR") + "원";
+function fmt(n: number): string {
+  return n.toLocaleString("ko-KR");
 }
 
-/**
- * Group line items for customer view. Internal categories (labor / meals / lodging)
- * get rolled up into "시공비" so the customer sees a clean line without per-worker detail.
- * Material items stay individually visible.
- */
-interface CustomerLine {
-  name: string;
-  spec: string;
-  qty: string;
-  amount: number;
-}
+// ─── Cost grouping ─────────────────────────────────────────────────────
+interface SimpleLine { name: string; amount: number; }
+interface DetailedLine { group: string; name: string; spec: string; qty: string; amount: number; }
 
-function groupForSimpleCustomerView(items: EstimateLineItem[]): CustomerLine[] {
-  // 4-5 buckets covering scope items, per spec
+function groupForSimple(items: EstimateLineItem[]): SimpleLine[] {
   const buckets = {
-    materialMain: 0,        // 강판 + 부자재 + 마감재 + 하지 → "자재 및 마감"
-    construction: 0,        // 인건비 + 식비 + 숙박비 → "시공비"
-    equipment: 0,           // 장비 + 운송 → "장비 및 운송"
-    waste: 0,               // 폐기 + 철거 → "철거 및 폐기물 처리"
-    other: 0,               // 기타
+    material: 0,   // 자재 + 마감재 + 부자재 + 하지
+    construction: 0, // 인건 + 식비 + 숙박비
+    equipment: 0,  // 장비 + 운송
+    waste: 0,      // 폐기 + 철거
+    other: 0,      // 기타
   };
   for (const i of items) {
-    if (i.category === "material") buckets.materialMain += i.total;
+    if (i.category === "material") buckets.material += i.total;
     else if (i.category === "labor" || i.category === "meals" || i.category === "lodging") buckets.construction += i.total;
     else if (i.category === "equipment" || i.category === "transport") buckets.equipment += i.total;
     else if (i.category === "waste" || i.category === "removal") buckets.waste += i.total;
     else buckets.other += i.total;
   }
-  const lines: CustomerLine[] = [];
-  if (buckets.materialMain) lines.push({ name: "자재 및 마감", spec: "강판·부자재·마감재 일체", qty: "1식", amount: buckets.materialMain });
-  if (buckets.construction) lines.push({ name: "시공비", spec: "인력·현장 관리 일체", qty: "1식", amount: buckets.construction });
-  if (buckets.equipment) lines.push({ name: "장비 및 운송", spec: "장비 사용·자재 운송", qty: "1식", amount: buckets.equipment });
-  if (buckets.waste) lines.push({ name: "철거 및 폐기물 처리", spec: "기존 자재 철거·폐기물 처리", qty: "1식", amount: buckets.waste });
-  if (buckets.other) lines.push({ name: "기타", spec: "추가 작업·잡비", qty: "1식", amount: buckets.other });
+  const lines: SimpleLine[] = [];
+  if (buckets.material) lines.push({ name: "자재 및 마감 일체", amount: buckets.material });
+  if (buckets.construction) lines.push({ name: "시공비 (현장 관리 포함)", amount: buckets.construction });
+  if (buckets.equipment) lines.push({ name: "장비 및 운송", amount: buckets.equipment });
+  if (buckets.waste) lines.push({ name: "철거 및 폐기물 처리", amount: buckets.waste });
+  if (buckets.other) lines.push({ name: "기타 비용", amount: buckets.other });
   return lines;
 }
 
 /**
- * Detailed customer view: show material lines individually (with their names + units),
- * but roll up labor/meals/lodging into a single "시공비" line — these are internal costs
- * the customer shouldn't see itemized.
+ * Detail view groups by 자재공사 / 노무비 / 기타경비 (Korean industry-standard).
+ * Material items are shown individually. Labor/meals/lodging are rolled up into
+ * one "인건비 (기공·조공)" line under 노무비 (no per-worker breakdown for customer).
+ * Everything else (equipment, transport, waste, removal, other) goes under 기타경비.
  */
-function groupForDetailedCustomerView(items: EstimateLineItem[]): CustomerLine[] {
-  const result: CustomerLine[] = [];
-  let constructionBucket = 0;
-
+function groupForDetailed(items: EstimateLineItem[]): DetailedLine[] {
+  const out: DetailedLine[] = [];
+  const laborItems: EstimateLineItem[] = [];
   for (const item of items) {
     if (item.category === "labor" || item.category === "meals" || item.category === "lodging") {
-      // Hide individually; roll into 시공비
-      constructionBucket += item.total;
+      laborItems.push(item);
       continue;
     }
-    // For visible items: spec = "수량 × 단가" hint; qty = "{qty}{unit}"
+    const group = item.category === "material" ? "자재공사" : "기타경비";
     const qty = `${item.quantity}${item.unit ?? ""}`;
-    const spec = item.unitPrice > 0 ? `${item.unitPrice.toLocaleString("ko-KR")}원/${item.unit ?? "식"}` : "";
-    result.push({ name: item.name, spec, qty, amount: item.total });
+    // Spec column: derive a brief spec from unit or unit price
+    const spec = item.unitPrice > 0 && item.unit && item.unit !== "%" && item.unit !== "식"
+      ? `${fmt(item.unitPrice)}/${item.unit}`
+      : "—";
+    out.push({ group, name: item.name, spec, qty, amount: item.total });
   }
-  if (constructionBucket > 0) {
-    result.push({ name: "시공비", spec: "인력·현장 관리 일체", qty: "1식", amount: constructionBucket });
+  // Roll up labor into one line under 노무비
+  if (laborItems.length) {
+    const laborTotal = laborItems.reduce((s, i) => s + i.total, 0);
+    // Try to find a "person·day" type quantity
+    const laborQty = laborItems
+      .filter((i) => i.category === "labor")
+      .reduce((s, i) => s + i.quantity, 0);
+    const qty = laborQty > 0 ? `${laborQty}인일` : "1식";
+    out.push({ group: "노무비", name: "인건비 (기공·조공)", spec: "—", qty, amount: laborTotal });
   }
-  return result;
+  // Sort by group order: 자재공사 → 노무비 → 기타경비
+  const order = { "자재공사": 1, "노무비": 2, "기타경비": 3 } as Record<string, number>;
+  out.sort((a, b) => (order[a.group] ?? 99) - (order[b.group] ?? 99));
+  return out;
 }
 
+// ─── Payment parsing ───────────────────────────────────────────────────
+interface PaymentStage { label: string; percent: number; amount: number; }
+
+/**
+ * Parse the paymentTerms string into structured stages. Supports patterns like:
+ *   "계약금 30% / 잔금 70%"
+ *   "계약금 30% · 계약 시 / 잔금 70% · 완공 시"
+ *   "계약금 30% / 중도금 40% / 잔금 30%"
+ * Returns null if parsing fails or no percentages found.
+ */
+function parsePaymentStages(terms: string, finalPrice: number): PaymentStage[] | null {
+  if (!terms) return null;
+  const parts = terms.split(/\s*\/\s*/);
+  const stages: PaymentStage[] = [];
+  for (const part of parts) {
+    const match = part.match(/^(.+?)\s+(\d+)\s*%\s*(.*)$/);
+    if (!match) return null;
+    const baseLabel = match[1].trim();
+    const percent = parseInt(match[2]);
+    const timing = match[3].trim().replace(/^[·\-\s]+/, "").trim();
+    const label = timing ? `${baseLabel} · ${timing}` : baseLabel;
+    stages.push({
+      label,
+      percent: percent / 100,
+      amount: Math.round(finalPrice * percent / 100),
+    });
+  }
+  if (stages.length === 0) return null;
+  return stages;
+}
+
+// ─── PDF Doc ───────────────────────────────────────────────────────────
 interface Props {
   estimate: Estimate & { lineItems: EstimateLineItem[]; site: Site };
   scopeFlags: ScopeFlags;
-  /** "simple" = 4~5 grouped lines; "detailed" = per-item table (internal items still grouped) */
   detailLevel?: "simple" | "detailed";
 }
 
 export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }: Props) {
-  const workTitle = buildWorkTitle(estimate, scopeFlags);
-  const finalPriceFormatted = fmtKrw(estimate.finalPrice);
-  const vatNote = estimate.vatIncluded ? "(부가세 포함)" : "(부가세 별도)";
-  const validUntil = new Date(estimate.createdAt);
-  validUntil.setDate(validUntil.getDate() + estimate.validityDays);
-  const validUntilStr = validUntil.toLocaleDateString("ko-KR");
-  const createdStr = new Date(estimate.createdAt).toLocaleDateString("ko-KR");
+  const vatNote = estimate.vatIncluded ? "부가세 포함" : "부가세 별도";
+  const createdStr = new Date(estimate.createdAt).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\.$/, "");
   const constructionMonthStr = formatMonth(estimate.constructionMonth ?? null);
-
-  const customerLines = detailLevel === "detailed"
-    ? groupForDetailedCustomerView(estimate.lineItems)
-    : groupForSimpleCustomerView(estimate.lineItems);
+  const pyeong = Math.round(estimate.areaM2 / 3.3058);
 
   // Material spec pills
   const pills: string[] = [];
   if (estimate.materialType) pills.push(materialLabel(estimate.materialType));
-  if (estimate.materialThickness) pills.push(`${estimate.materialThickness}t`);
+  if (estimate.materialThickness) pills.push(`${estimate.materialThickness}T`);
   if (estimate.materialTexture) pills.push(estimate.materialTexture);
   if (estimate.materialColor) pills.push(estimate.materialColor);
+
+  // Cost lines
+  const simpleLines = groupForSimple(estimate.lineItems);
+  const detailedLines = groupForDetailed(estimate.lineItems);
+  const detailedSubtotal = detailedLines.reduce((s, l) => s + l.amount, 0);
+
+  // Payment stages
+  const paymentStages = parsePaymentStages(estimate.paymentTerms ?? "", estimate.finalPrice);
+
+  // Notice lines (split by newline, strip leading numbers since we add them ourselves)
+  const noticeLines = (estimate.noticeTextSnapshot ?? "")
+    .split("\n")
+    .map((l) => l.trim().replace(/^\d+[.)]\s*/, ""))
+    .filter(Boolean);
 
   return (
     <Document title={`견적서 - ${estimate.site.customerName}`}>
       <Page size="A4" style={styles.page}>
-        {/* Header */}
+        {/* ─── Header (dark navy) ─── */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
+          <View>
             <Text style={styles.companyName}>{estimate.companyNameSnapshot}</Text>
-            {estimate.businessRegistrationNumberSnapshot && (
-              <Text style={styles.bizNo}>사업자등록번호 {estimate.businessRegistrationNumberSnapshot}</Text>
-            )}
-            {estimate.companyPhoneSnapshot && (
-              <Text style={styles.companyMeta}>연락처 {estimate.companyPhoneSnapshot}</Text>
-            )}
-            {estimate.companyAddressSnapshot && (
-              <Text style={styles.companyMeta}>{estimate.companyAddressSnapshot}</Text>
-            )}
-          </View>
-          <View style={styles.headerRight}>
-            <Text style={styles.docDate}>견적일 {createdStr}</Text>
-            <Text style={styles.docDate}>유효기간 {validUntilStr}까지</Text>
-          </View>
-        </View>
-
-        <Text style={styles.title}>견 적 서</Text>
-
-        {/* Customer Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>고객 정보</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>고객명</Text>
-            <Text style={styles.value}>{estimate.site.customerName} 귀하</Text>
-          </View>
-          {estimate.site.customerPhone && (
-            <View style={styles.row}>
-              <Text style={styles.label}>연락처</Text>
-              <Text style={styles.value}>{estimate.site.customerPhone}</Text>
-            </View>
-          )}
-          <View style={styles.row}>
-            <Text style={styles.label}>현장 주소</Text>
-            <Text style={styles.value}>{estimate.site.siteAddress}</Text>
-          </View>
-        </View>
-
-        {/* Work Scope */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>공사 내용</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>공사명</Text>
-            <Text style={styles.value}>{workTitle}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>공사 유형</Text>
-            <Text style={styles.value}>{constructionTypeLabel(estimate.constructionType)}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>시공 면적</Text>
-            <Text style={styles.value}>
-              {estimate.areaM2}㎡ ({Math.round(estimate.areaM2 / 3.3058 * 10) / 10}평)
+            <Text style={styles.headerMeta}>
+              {estimate.businessRegistrationNumberSnapshot && `사업자등록번호: ${estimate.businessRegistrationNumberSnapshot}`}
+              {estimate.businessRegistrationNumberSnapshot && "\n"}
+              {estimate.companyPhoneSnapshot}
+              {estimate.companyAddressSnapshot && ` · ${estimate.companyAddressSnapshot}`}
             </Text>
           </View>
-          {estimate.buildingAreaM2 && (
-            <View style={styles.row}>
-              <Text style={styles.label}>건물 면적</Text>
-              <Text style={styles.value}>
-                {estimate.buildingAreaM2}㎡ ({Math.round(estimate.buildingAreaM2 / 3.3058 * 10) / 10}평)
-              </Text>
-            </View>
-          )}
-          {constructionMonthStr && (
-            <View style={styles.row}>
-              <Text style={styles.label}>공사 일정</Text>
-              <Text style={styles.value}>{constructionMonthStr}</Text>
-            </View>
-          )}
-          <View style={[styles.row, { marginTop: 4 }]}>
-            <Text style={styles.label}>공사 범위</Text>
-            <View style={{ flex: 1 }}>
-              {scopeLabel(estimate, scopeFlags).map((line, i) => (
-                <Text key={i} style={styles.scopeItem}>{line}</Text>
-              ))}
-            </View>
-          </View>
-          {pills.length > 0 && (
-            <View style={[styles.row, { marginTop: 6 }]}>
-              <Text style={styles.label}>사용 자재</Text>
-              <View style={[styles.pillRow, { flex: 1 }]}>
-                {pills.map((p, i) => (<Text key={i} style={styles.pill}>{p}</Text>))}
-              </View>
-            </View>
-          )}
-        </View>
-
-        {/* Cost — detailed table */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>견적 내역</Text>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.cellName]}>품명</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellSpec]}>규격</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellQty]}>수량</Text>
-            <Text style={[styles.tableHeaderCell, styles.cellAmount]}>금액</Text>
-          </View>
-          {customerLines.map((line, i) => (
-            <View key={i} style={[styles.tableRow, i % 2 === 1 ? styles.tableRowAlt : {}]}>
-              <Text style={[styles.tableCell, styles.cellName]}>{line.name}</Text>
-              <Text style={[styles.tableCell, styles.cellSpec, { color: C.muted }]}>{line.spec}</Text>
-              <Text style={[styles.tableCell, styles.cellQty, { color: C.muted }]}>{line.qty}</Text>
-              <Text style={[styles.tableCell, styles.cellAmount]}>{line.amount.toLocaleString("ko-KR")}</Text>
-            </View>
-          ))}
-          <View style={styles.tableTotalRow}>
-            <Text style={styles.tableTotalLabel}>합계 {vatNote}</Text>
-            <Text style={styles.tableTotalValue}>{finalPriceFormatted}</Text>
+          <View style={styles.headerRight}>
+            {estimate.estimateNumber && <Text style={styles.headerRightLine}>No. {estimate.estimateNumber}</Text>}
+            <Text style={styles.headerRightLine}>{createdStr} 발행</Text>
+            <Text style={styles.headerRightLine}>{estimate.validityDays}일간 유효</Text>
           </View>
         </View>
 
-        {/* Payment Terms */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>결제 조건</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>결제 방식</Text>
-            <Text style={styles.value}>{estimate.paymentTerms}</Text>
+        {/* ─── Customer + Site (two columns) ─── */}
+        <View style={styles.topRow}>
+          <View style={styles.topCol}>
+            <Text style={styles.labelTiny}>고객명</Text>
+            <Text style={styles.valueLarge}>{estimate.site.customerName} 님</Text>
+            <Text style={styles.labelTinyTop}>공사위치</Text>
+            <Text style={styles.valueRegular}>{estimate.site.siteAddress}</Text>
           </View>
-        </View>
-
-        {/* Notice */}
-        <View style={styles.notice}>
-          <Text>• 본 견적은 현장 조건 및 추가 요청 사항에 따라 변경될 수 있습니다.</Text>
-          <Text>• 공사 일정은 날씨·자재 수급 상황에 따라 조정될 수 있습니다.</Text>
-        </View>
-
-        {/* Seal */}
-        <View style={styles.sealRow}>
-          <Text style={styles.sealStatement}>위와 같이 견적합니다.</Text>
-          <View style={styles.sealCircle}>
-            {estimate.sealImageUrlSnapshot ? (
-              // eslint-disable-next-line jsx-a11y/alt-text
-              <Image src={estimate.sealImageUrlSnapshot} style={styles.sealImage} />
-            ) : (
-              <Text style={styles.sealCirclePlaceholder}>(직인)</Text>
+          <View style={styles.topColRight}>
+            <Text style={styles.labelTiny}>시공면적</Text>
+            <Text style={styles.valueLarge}>{estimate.areaM2}㎡ (약 {pyeong}평)</Text>
+            {estimate.buildingAreaM2 && (
+              <>
+                <Text style={styles.labelTinyTop}>건물면적</Text>
+                <Text style={styles.valueRegular}>{estimate.buildingAreaM2}㎡ (약 {Math.round(estimate.buildingAreaM2 / 3.3058)}평)</Text>
+              </>
+            )}
+            {constructionMonthStr && (
+              <>
+                <Text style={styles.labelTinyTop}>공사일정</Text>
+                <Text style={styles.valueRegular}>{constructionMonthStr}</Text>
+              </>
             )}
           </View>
         </View>
 
-        <Text style={styles.footer}>
-          {estimate.companyNameSnapshot}
-          {estimate.companyPhoneSnapshot ? ` · ${estimate.companyPhoneSnapshot}` : ""}
-        </Text>
+        {/* ─── Scope + pills ─── */}
+        <View style={styles.scopeSection}>
+          <Text style={styles.sectionLabel}>공사 범위</Text>
+          <Text style={styles.scopeText}>{scopeOneLine(estimate, scopeFlags)}</Text>
+          {pills.length > 0 && (
+            <View style={styles.pillRow}>
+              {pills.map((p, i) => (<Text key={i} style={styles.pill}>{p}</Text>))}
+            </View>
+          )}
+        </View>
+
+        {/* ─── Cost: simple or detailed ─── */}
+        {detailLevel === "simple" ? (
+          <View style={styles.simpleSection}>
+            <Text style={styles.sectionLabel}>견적 내역</Text>
+            {simpleLines.map((line, i) => (
+              <View key={i} style={styles.simpleRow}>
+                <Text style={styles.simpleLabel}>{line.name}</Text>
+                <Text style={styles.simpleValue}>{fmt(line.amount)}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.detailSection}>
+            <Text style={styles.sectionLabel}>상세 내역</Text>
+            <View style={styles.tableHeaderRow}>
+              <Text style={styles.cellName}><Text style={{ color: C.muted, fontSize: 9 }}>품명</Text></Text>
+              <Text style={styles.cellSpec}><Text style={{ color: C.muted, fontSize: 9 }}>규격</Text></Text>
+              <Text style={styles.cellQty}><Text style={{ color: C.muted, fontSize: 9 }}>수량</Text></Text>
+              <Text style={styles.cellAmount}><Text style={{ color: C.muted, fontSize: 9 }}>금액</Text></Text>
+            </View>
+            {(() => {
+              const blocks: React.ReactElement[] = [];
+              let currentGroup = "";
+              detailedLines.forEach((line, i) => {
+                if (line.group !== currentGroup) {
+                  currentGroup = line.group;
+                  blocks.push(
+                    <Text key={`g-${i}`} style={styles.tableGroupHeader}>{line.group}</Text>
+                  );
+                }
+                blocks.push(
+                  <View key={`r-${i}`} style={styles.tableRow}>
+                    <Text style={styles.cellName}>{line.name}</Text>
+                    <Text style={styles.cellSpec}>{line.spec}</Text>
+                    <Text style={styles.cellQty}>{line.qty}</Text>
+                    <Text style={styles.cellAmount}>{fmt(line.amount)}</Text>
+                  </View>
+                );
+              });
+              return blocks;
+            })()}
+            <View style={styles.subtotalRow}>
+              <Text style={styles.subtotalLabel}>소계 ({vatNote})</Text>
+              <Text style={styles.subtotalAmount}>{fmt(detailedSubtotal)}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* ─── Final total ─── */}
+        <View style={styles.totalRow}>
+          <View style={styles.totalLeft}>
+            <Text style={styles.totalLabel}>최종 견적 금액</Text>
+            <Text style={styles.totalVatNote}>{vatNote}</Text>
+          </View>
+          <Text style={styles.totalAmount}>{fmt(estimate.finalPrice)}원</Text>
+        </View>
+
+        {/* ─── Payment ─── */}
+        <View style={styles.payment}>
+          {paymentStages && paymentStages.length > 1 ? (
+            <View style={styles.paymentCards}>
+              {paymentStages.map((s, i) => (
+                <View key={i} style={styles.paymentCard}>
+                  <Text style={styles.paymentLabel}>{s.label}</Text>
+                  <Text style={styles.paymentAmount}>{fmt(s.amount)}원</Text>
+                  <Text style={styles.paymentPercent}>{Math.round(s.percent * 100)}%</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.paymentText}>{estimate.paymentTerms}</Text>
+          )}
+          {estimate.bankAccountSnapshot && (
+            <Text style={styles.paymentBank}>입금계좌: {estimate.bankAccountSnapshot}</Text>
+          )}
+        </View>
+
+        {/* ─── Notice + Signature ─── */}
+        <View style={styles.notice}>
+          {noticeLines.length > 0 ? (
+            <View style={styles.noticeText}>
+              {noticeLines.map((l, i) => (
+                <Text key={i}>{i + 1}. {l}</Text>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.noticeText}>
+              본 견적은 현장 조건 및 추가 요청 사항에 따라 변경될 수 있습니다.
+            </Text>
+          )}
+          <View style={styles.signatureRow}>
+            <Text style={styles.signatureLeft}>위와 같이 견적합니다.</Text>
+            <View style={styles.signatureRight}>
+              <Text style={styles.companyAbove}>{estimate.companyNameSnapshot}</Text>
+              <View style={styles.sealCircle}>
+                {estimate.sealImageUrlSnapshot ? (
+                  // eslint-disable-next-line jsx-a11y/alt-text
+                  <Image src={estimate.sealImageUrlSnapshot} style={styles.sealImage} />
+                ) : (
+                  <Text style={styles.sealPlaceholder}>(인)</Text>
+                )}
+              </View>
+            </View>
+          </View>
+        </View>
       </Page>
     </Document>
   );

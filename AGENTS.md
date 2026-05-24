@@ -174,14 +174,27 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 - A 간단/상세 toggle at the top of the preview switches `?detail=` query — Next router replaces the URL so back-button doesn't pile up history. The iframe `key={detailLevel}` forces a reload on toggle.
 - The preview page has its own sticky action bar with PDF 저장 + 카톡 보내기. Save respects the current detail level (filename suffix 간단/상세). Only the share action marks `pdfSentAt`.
 
-### Customer PDF layout (components/EstimatePDF.tsx)
-- **Header**: company name + 사업자등록번호 + phone + address (left); 견적일 + 유효기간 (right).
-- **공사 내용**: 공사명, 유형, 시공/건물 면적, 공사 일정 ("YYYY년 MM월 중" via `formatMonth()`), 공사 범위 bullet list, 사용 자재 pills (제품명 / 두께 / 텍스처 / 색상).
-- **견적 내역 table**: 4 columns (품명 / 규격 / 수량 / 금액). Two grouping strategies:
-  - `groupForSimpleCustomerView()` — 5 buckets (자재 및 마감 / 시공비 / 장비 및 운송 / 철거 및 폐기 / 기타).
-  - `groupForDetailedCustomerView()` — material items individually, labor+meals+lodging rolled into one "시공비" line (the 3 invisible-to-customer categories per the spec).
-- **합계 row** (single line): "합계 (부가세 포함/별도)" + final price. No separate 공급가 + VAT lines.
-- **결제 조건 / 안내 / 직인**: standard. Seal area shows `sealImageUrlSnapshot` (Image) or "(직인)" placeholder text in a dashed circle.
+### Customer PDF layout (components/EstimatePDF.tsx) — v4
+- **Header (dark navy `#1e2530`)**: company name + 사업자등록번호 + phone + address on left; 견적 번호 (`No. YYYY-NNN` auto-generated) + 발행일 + "X일간 유효" on right.
+- **Customer + Site row** (two columns): 고객명 / 공사위치 on left; 시공면적 / 건물면적 / 공사일정 on right.
+- **공사 범위**: single line of text joined by " · " (e.g. "칼라강판 지붕공사 (기존 지붕 덧씌우기) · 용마루 및 처마 마감 · 물받이 교체 · 폐기물 처리"). Built by `scopeOneLine()` which combines title + ridge/eave merge + gutter mode + scope flags + equipment blurb.
+- **자재 spec pills**: pill row under scope — 제품명 / 두께 / 텍스처 / 색상.
+- **견적 내역**: two modes (toggle via `?detail=` on the PDF route):
+  - **simple** (`groupForSimple()`) — flat list of 5 buckets (자재 및 마감 / 시공비 / 장비 및 운송 / 철거 및 폐기 / 기타).
+  - **detailed** (`groupForDetailed()`) — table with group subheaders: **자재공사 → 노무비 → 기타경비** (Korean industry-standard 3-category structure). Material items shown individually with 품명 / 규격 / 수량 / 금액 columns. Labor + meals + lodging rolled into one "인건비 (기공·조공)" line under 노무비. Subtotal row at bottom: "소계 (부가세 별도/포함)".
+- **최종 견적 금액** card (`#f5f7fa` background): single line "최종 견적 금액 · 부가세 포함/별도" + amount on right.
+- **결제 조건**: `parsePaymentStages()` parses the free-text paymentTerms into structured stages (e.g. "계약금 30% · 계약 시 / 잔금 70% · 완공 시"). When 2+ stages parsed, renders as side-by-side cards with derived amount + percent. Otherwise plain text fallback. Bank account (`bankAccountSnapshot`) appears below.
+- **안내 + 서명**: numbered list of `noticeTextSnapshot` lines (auto-numbered 1, 2, …). Bottom-right: company name above + dashed 48px seal circle. If `sealImageUrlSnapshot` set, image renders inside; otherwise "(인)" placeholder text.
+
+### Seal image upload
+- Settings page → `SealAndNoticeCard` component → file picker → POSTs to `/api/upload` (same as photo upload, uses `supabaseAdmin()` to bypass RLS) → returned URL stored in `PricingSettings.sealImageUrl`.
+- PDF embeds via `@react-pdf/renderer`'s `<Image src={url}>`. Must be a publicly accessible URL (Supabase Storage public bucket OK).
+- User can clear the seal by clicking the X overlay (sets URL to empty string, server stores null).
+
+### Estimate number auto-generation
+- API: `POST /api/sites/[id]/estimates` queries `prisma.estimate.count({ where: { createdAt: yearRange } })` and assigns `YYYY-NNN` (3-digit pad).
+- Low race-condition risk for v0 single-user app. Could add a unique constraint + retry later if it becomes an issue.
+- Stored in `Estimate.estimateNumber` (snapshot — does not regenerate on edit).
 
 ### 공사 일정 field
 - `Estimate.constructionMonth` is a `YYYY-MM` string snapshot (e.g. "2026-06"). PDF renders as "2026년 6월 중" via `formatMonth()`. No precise start/end dates — roofing is too weather-dependent.

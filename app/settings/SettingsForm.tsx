@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Check } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, Upload, X } from "lucide-react";
 import type { PricingSettings } from "@prisma/client";
 
 const DEFAULTS = {
@@ -15,6 +16,8 @@ const DEFAULTS = {
   companyAddress: "",
   businessRegistrationNumber: "",
   sealImageUrl: "",
+  bankAccount: "",
+  noticeText: "1. 견적 외 공사 발생 시 추가 정산합니다.\n2. 공사 하자 A/S 기간은 3년입니다.",
   materialPricePerSqm: 30000,
   accessoryRate: 0.15,
   ridgePricePerM: 25000,
@@ -54,6 +57,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
       { key: "companyPhone", label: "대표 연락처" },
       { key: "companyAddress", label: "회사 주소" },
       { key: "businessRegistrationNumber", label: "사업자등록번호" },
+      { key: "bankAccount", label: "입금 계좌" },
     ],
   },
   {
@@ -142,6 +146,8 @@ export function SettingsForm({ defaultValues }: Props) {
       companyAddress: defaultValues.companyAddress ?? "",
       businessRegistrationNumber: defaultValues.businessRegistrationNumber ?? "",
       sealImageUrl: defaultValues.sealImageUrl ?? "",
+      bankAccount: defaultValues.bankAccount ?? "",
+      noticeText: defaultValues.noticeText ?? "1. 견적 외 공사 발생 시 추가 정산합니다.\n2. 공사 하자 A/S 기간은 3년입니다.",
       materialPricePerSqm: defaultValues.materialPricePerSqm,
       accessoryRate: defaultValues.accessoryRate,
       ridgePricePerM: defaultValues.ridgePricePerM,
@@ -188,6 +194,8 @@ export function SettingsForm({ defaultValues }: Props) {
         companyAddress: values.companyAddress || null,
         businessRegistrationNumber: values.businessRegistrationNumber || null,
         sealImageUrl: values.sealImageUrl || null,
+        bankAccount: values.bankAccount || null,
+        noticeText: values.noticeText || null,
       };
       const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       if (!res.ok) throw new Error("저장 실패");
@@ -217,7 +225,7 @@ export function SettingsForm({ defaultValues }: Props) {
             <div className="divide-y divide-border/40">
               {items.map(({ key, label, unit, step, pct }) => {
                 const rawVal = values[key];
-                const isStr = key === "companyName" || key === "companyPhone" || key === "companyAddress" || key === "businessRegistrationNumber" || key === "sealImageUrl" || key === "substructureMode";
+                const isStr = key === "companyName" || key === "companyPhone" || key === "companyAddress" || key === "businessRegistrationNumber" || key === "sealImageUrl" || key === "substructureMode" || key === "bankAccount" || key === "noticeText";
                 const displayVal = isStr
                   ? String(rawVal)
                   : pct
@@ -255,6 +263,14 @@ export function SettingsForm({ defaultValues }: Props) {
             </div>
           </div>
         ))}
+
+        {/* Seal image + Notice text */}
+        <SealAndNoticeCard
+          sealImageUrl={values.sealImageUrl}
+          onSealChange={(url) => setField("sealImageUrl", url)}
+          noticeText={values.noticeText}
+          onNoticeChange={(t) => setField("noticeText", t)}
+        />
 
         {/* Boolean defaults */}
         <div className="bg-card rounded-2xl border border-border/60 p-5 space-y-4">
@@ -319,6 +335,98 @@ export function SettingsForm({ defaultValues }: Props) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * 직인 이미지 업로드 + 견적서 안내 문구 카드.
+ * 직인은 Supabase Storage 의 site-photos 버킷에 올라감 (PDF에 embedded).
+ * 안내 문구는 줄바꿈으로 구분된 자유 텍스트; PDF에서 번호 매김.
+ */
+function SealAndNoticeCard({
+  sealImageUrl, onSealChange, noticeText, onNoticeChange,
+}: {
+  sealImageUrl: string;
+  onSealChange: (url: string) => void;
+  noticeText: string;
+  onNoticeChange: (t: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      if (!res.ok) throw new Error();
+      const { url } = await res.json();
+      onSealChange(url);
+      toast.success("직인 이미지가 업로드되었습니다");
+    } catch {
+      toast.error("업로드에 실패했습니다");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📜</span>
+        <h2 className="font-semibold text-foreground">견적서 디테일</h2>
+      </div>
+      <div className="divide-y divide-border/40">
+        {/* Seal upload */}
+        <div className="px-5 py-3">
+          <Label className="text-sm text-muted-foreground mb-2 block">직인 이미지</Label>
+          <div className="flex items-center gap-3">
+            {sealImageUrl ? (
+              <div className="relative shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sealImageUrl} alt="직인" className="w-16 h-16 rounded-full object-cover border border-border" />
+                <button
+                  type="button"
+                  onClick={() => onSealChange("")}
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-black/80 text-white rounded-full flex items-center justify-center pressable"
+                  aria-label="제거"
+                >
+                  <X size={13} strokeWidth={3} />
+                </button>
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-full border-2 border-dashed border-border flex items-center justify-center text-xs text-muted-foreground shrink-0">
+                (직인)
+              </div>
+            )}
+            <div className="flex-1">
+              <label className="inline-flex items-center gap-1.5 px-3 h-10 rounded-xl bg-primary/10 text-primary text-xs font-semibold cursor-pointer pressable">
+                <Upload size={14} />
+                {uploading ? "업로드 중..." : sealImageUrl ? "다시 업로드" : "직인 이미지 업로드"}
+                <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+              </label>
+              <p className="text-[10px] text-muted-foreground mt-1.5">PNG 권장. 배경 투명하면 더 깔끔하게 보임</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Notice text */}
+        <div className="px-5 py-3">
+          <Label className="text-sm text-muted-foreground mb-2 block">안내 문구</Label>
+          <Textarea
+            value={noticeText}
+            onChange={(e) => onNoticeChange(e.target.value)}
+            rows={3}
+            placeholder="견적서 하단 안내 문구. 줄바꿈으로 항목 구분."
+            className="text-sm rounded-xl resize-none"
+          />
+          <p className="text-[10px] text-muted-foreground mt-1">PDF에 1, 2, ... 자동 번호 매겨짐</p>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -18,7 +18,9 @@ model PricingSettings {
   companyPhone              String?
   companyAddress            String?
   businessRegistrationNumber String? // 사업자등록번호 (10자리, 하이픈 포함 가능)
-  sealImageUrl              String?  // 직인 이미지 URL (Supabase Storage); null이면 PDF에서 "(직인)" 텍스트 placeholder
+  sealImageUrl              String?  // 직인 이미지 URL (Supabase Storage); null이면 PDF에서 "(인)" 텍스트 placeholder
+  bankAccount               String?  // 입금 계좌 안내 (예: "신한 110-471-880754 · 광스틸")
+  noticeText                String?  // 견적서 안내 문구 (줄바꿈 = \n 으로 구분, 자동 번호 매김)
 
   // Unit prices (all in Korean Won, integers)
   materialPricePerSqm       Int   // 칼라강판 ㎡당
@@ -160,6 +162,11 @@ model Estimate {
   companyAddressSnapshot             String?
   businessRegistrationNumberSnapshot String?
   sealImageUrlSnapshot               String?
+  bankAccountSnapshot                String?
+  noticeTextSnapshot                 String?
+
+  // 견적 번호 — "YYYY-NNN" 형식, 연도별 자동 채번 (created at the API)
+  estimateNumber  String?
 
   // PDF record
   pdfUrl    String?   // Supabase Storage URL of generated PDF

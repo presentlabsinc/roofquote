@@ -48,10 +48,9 @@ export const GUTTER_MODE_OPTIONS: { value: GutterMode; label: string }[] = [
 
 /** Standard texture presets. The user picks one or "기타" for free input. */
 export const TEXTURE_PRESETS = [
-  "매트",
-  "광택",
-  "반광",
-  "엠보싱",
+  "유광",
+  "무광",
+  "스톤",
 ] as const;
 
 /** Standard color presets for color steel. The user picks one or "기타" for free input. */
