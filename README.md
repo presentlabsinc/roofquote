@@ -131,6 +131,10 @@ PricingSettings (live config — 절대 FK로 연결 안 함, 견적 생성 시�
     substructureWoodPricePerSqm  # 목재 하지 ㎡당
     substructureSteelPricePerSqm # 철재 하지 ㎡당
 
+  스틸방수 단가
+    drainHolePrice               # 새 배수구 타공 1개당 (기본 200,000)
+    capBendingPricePerM          # 두겁 절곡 m당 (난간 시공 시 필수, 기본 5,000)
+
   인건비/체류비
     dailyWage                    # 1인 1일
     defaultWorkerCount           # 기본 작업 인원
@@ -178,6 +182,8 @@ Estimate (모든 입력값과 합계는 snapshot)
     scopeFlags          Json    # 체크된 항목들 (ScopeFlags 모양, lib/types.ts 참고)
     gutterMode          # null/'none' | 'full' | 'front' | 'back'
     gutterLengthM       # 물받이 길이 (gutterMode != 'none' 일 때)
+    capLengthM          # 두겁 절곡 길이 (난간 시공 시 필수)
+    drainHoleCount      # 새 배수구 타공 개수 (default 0)
     wasteTruckCount     # 폐기물 차 수 (기본 1)
 
   로스율 snapshot
@@ -319,9 +325,9 @@ PDF에 나가는 항목:
 8. **공사 범위** — 공사 유형에 따라 옵션 다름:
    - `roof`: 덧씌우기 ↔ 철거 (mutually exclusive), 용마루, 처마, 폐기물 (+ 트럭 수)
    - `rooftopRoof`: 골조보강, 용마루, 처마, 창고/계단실/옥탑방 포함, 폐기물
-   - `steelWaterproof`: 난간및두겁, 기존방수재철거, 배수구, 창고/계단실/옥탑방 포함, 폐기물
+   - `steelWaterproof`: 난간 → 두겁 (forced dependency, 두겁 절곡 m당 비용), 새 배수구 타공 (+ 개수), 배수구 처리, 창고/계단실/옥탑방 포함, 폐기물
    - **물받이**는 별도 라디오: 안함 / 전체 / 앞만 / 뒤만 + 길이 입력
-   - **포함 항목들**(난간/두겁, 창고, 계단실, 옥탑방)은 시공면적에 포함된 것으로 가정
+   - **포함 항목들**(난간, 창고, 계단실, 옥탑방)은 시공면적에 포함된 것으로 가정. **두겁만 예외** — 절곡이라 m당 별도 단가 적용
 9. **추가 자재 / 부속 (카탈로그)** — 마감재 / 물받이 부속 / 부자재 / 절곡, 각 항목별 수량 + 인라인 단가
 10. **장비대** — 스카이차/사다리차 (일수 −/+), **비계** (일수 + 비계 면적 → ㎡·일 단가로 자동 계산) + 기타 장비 메모
 11. **작업 정보** — 작업 일수, 작업 인원 (−/+ 스테퍼)

@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "Estimate" ADD COLUMN     "capLengthM" DOUBLE PRECISION,
+ADD COLUMN     "drainHoleCount" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "PricingSettings" ADD COLUMN     "capBendingPricePerM" INTEGER NOT NULL DEFAULT 5000,
+ADD COLUMN     "drainHolePrice" INTEGER NOT NULL DEFAULT 200000;

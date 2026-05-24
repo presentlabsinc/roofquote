@@ -29,6 +29,8 @@ const DEFAULTS = {
   substructureMode: "wood",
   substructureWoodPricePerSqm: 30000,
   substructureSteelPricePerSqm: 40000,
+  drainHolePrice: 200000,
+  capBendingPricePerM: 5000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.10,
   useLossRateByDefault: false,
@@ -90,6 +92,14 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     ],
   },
   {
+    section: "스틸방수 단가",
+    emoji: "🟦",
+    items: [
+      { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
+      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
+    ],
+  },
+  {
     section: "운송·체류비",
     emoji: "🚚",
     items: [
@@ -143,6 +153,8 @@ export function SettingsForm({ defaultValues }: Props) {
       substructureMode: defaultValues.substructureMode,
       substructureWoodPricePerSqm: defaultValues.substructureWoodPricePerSqm,
       substructureSteelPricePerSqm: defaultValues.substructureSteelPricePerSqm,
+      drainHolePrice: defaultValues.drainHolePrice,
+      capBendingPricePerM: defaultValues.capBendingPricePerM,
       parapetMultiplier: defaultValues.parapetMultiplier,
       defaultLossRate: defaultValues.defaultLossRate,
       useLossRateByDefault: defaultValues.useLossRateByDefault,

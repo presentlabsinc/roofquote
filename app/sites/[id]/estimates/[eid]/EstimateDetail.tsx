@@ -326,20 +326,19 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         </>
       )}
 
-      {/* Terms — visible in both views */}
-      <div className="bg-card rounded-2xl border border-border/60 p-4">
-        <h2 className="font-semibold text-foreground text-sm mb-3">견적 조건</h2>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">결제 조건</span>
-            <span className="font-medium text-foreground">{est.paymentTerms}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">유효기간</span>
-            <span className="font-medium text-foreground tabular-nums">{est.validityDays}일</span>
-          </div>
-        </div>
-      </div>
+      {/* Terms — visible in both views, inline editable */}
+      <TermsCard
+        paymentTerms={est.paymentTerms}
+        validityDays={est.validityDays}
+        onSavePayment={async (v) => {
+          try { await patch({ paymentTerms: v }); toast.success("결제 조건이 수정되었습니다"); }
+          catch { toast.error("수정에 실패했습니다"); }
+        }}
+        onSaveValidity={async (v) => {
+          try { await patch({ validityDays: v }); toast.success("유효기간이 수정되었습니다"); }
+          catch { toast.error("수정에 실패했습니다"); }
+        }}
+      />
 
       {est.pdfSentAt && (
         <p className="text-center text-[11px] text-muted-foreground py-1">
@@ -408,6 +407,89 @@ function BreakdownRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function TermsCard({
+  paymentTerms, validityDays, onSavePayment, onSaveValidity,
+}: {
+  paymentTerms: string;
+  validityDays: number;
+  onSavePayment: (v: string) => Promise<void>;
+  onSaveValidity: (v: number) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState<"payment" | "validity" | null>(null);
+  const [paymentInput, setPaymentInput] = useState(paymentTerms);
+  const [validityInput, setValidityInput] = useState(String(validityDays));
+
+  async function savePayment() {
+    await onSavePayment(paymentInput.trim() || paymentTerms);
+    setEditing(null);
+  }
+  async function saveValidity() {
+    const n = parseInt(validityInput) || validityDays;
+    await onSaveValidity(n);
+    setEditing(null);
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 p-4">
+      <h2 className="font-semibold text-foreground text-sm mb-3">견적 조건</h2>
+      <div className="space-y-1 divide-y divide-border/40">
+        <div className="py-2 first:pt-0">
+          {editing === "payment" ? (
+            <div className="flex items-center gap-2">
+              <Input
+                autoFocus value={paymentInput}
+                onChange={(e) => setPaymentInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && savePayment()}
+                placeholder="예: 계약금 30% / 잔금 70%"
+                className="h-10 text-sm rounded-lg flex-1"
+              />
+              <Button size="sm" onClick={savePayment} className="h-10 w-10 p-0 rounded-lg"><Check size={15} /></Button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setPaymentInput(paymentTerms); setEditing("payment"); }}
+              className="w-full flex items-center justify-between pressable rounded-lg px-1 py-1 -mx-1"
+            >
+              <span className="text-sm text-muted-foreground">결제 조건</span>
+              <span className="flex items-center gap-1">
+                <span className="text-sm font-medium text-foreground">{paymentTerms}</span>
+                <Edit2 size={12} className="text-muted-foreground/50" />
+              </span>
+            </button>
+          )}
+        </div>
+        <div className="py-2">
+          {editing === "validity" ? (
+            <div className="flex items-center gap-2 justify-end">
+              <div className="relative w-24">
+                <Input
+                  autoFocus type="number" value={validityInput}
+                  onChange={(e) => setValidityInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && saveValidity()}
+                  className="h-10 pr-7 text-right text-sm tabular-nums rounded-lg"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">일</span>
+              </div>
+              <Button size="sm" onClick={saveValidity} className="h-10 w-10 p-0 rounded-lg"><Check size={15} /></Button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { setValidityInput(String(validityDays)); setEditing("validity"); }}
+              className="w-full flex items-center justify-between pressable rounded-lg px-1 py-1 -mx-1"
+            >
+              <span className="text-sm text-muted-foreground">유효기간</span>
+              <span className="flex items-center gap-1">
+                <span className="text-sm font-medium text-foreground tabular-nums">{validityDays}일</span>
+                <Edit2 size={12} className="text-muted-foreground/50" />
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

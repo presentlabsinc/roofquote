@@ -83,8 +83,11 @@ export interface ScopeFlags {
   frameReinforcement?: boolean;  // 골조 보강 (rooftopRoof only)
 
   // — Steel Waterproof (옥상방수 바닥형) —
-  handrailAndCap?: boolean;      // 난간 및 두겁 → 면적 ×parapetMultiplier
-  existingWaterproofRemoval?: boolean; // 기존 방수재 철거
+  handrailAndCap?: boolean;      // [DEPRECATED] legacy combined flag — kept for back-compat
+  handrail?: boolean;            // 난간 (시공면적에 포함된 것으로 가정)
+  cap?: boolean;                 // 두겁 (절곡 — m당 별도 단가)
+  drainHole?: boolean;           // 새 배수구 타공 (개당 단가 × 개수)
+  existingWaterproofRemoval?: boolean; // [DEPRECATED] 기존 방수재 철거 — 사용자가 빼달라고 함
   drainage?: boolean;            // 배수구 처리
 
   // — Rooftop "included in 시공면적" annotations —
@@ -111,6 +114,9 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   gutter: "물받이 교체",
   frameReinforcement: "골조 보강",
   handrailAndCap: "난간 및 두겁 포함",
+  handrail: "난간 포함",
+  cap: "두겁 (절곡)",
+  drainHole: "새 배수구 타공",
   existingWaterproofRemoval: "기존 방수재 철거",
   drainage: "배수구 처리",
   warehouse: "창고 포함",
@@ -128,10 +134,12 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
  * they're notes that flow into the work scope description on the PDF.
  */
 export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
-  handrailAndCap: "시공면적에 포함하여 입력하세요",
+  handrail: "시공면적에 포함하여 입력하세요 (난간 시공 시 두겁 자동 추가)",
+  cap: "절곡 길이 × m당 단가로 별도 계산",
   warehouse: "시공면적에 포함하여 입력하세요",
   stairwell: "시공면적에 포함하여 입력하세요",
   rooftopRoom: "시공면적에 포함하여 입력하세요",
+  drainHole: "1개당 단가 × 개수",
 };
 
 /** Which scope items are shown for each construction type, in display order.
@@ -139,7 +147,7 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
   roof: ["overlay", "removal", "ridge", "eave", "waste"],
   rooftopRoof: ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"],
-  steelWaterproof: ["handrailAndCap", "existingWaterproofRemoval", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"],
+  steelWaterproof: ["handrail", "cap", "drainHole", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"],
 };
 
 /** Mutually exclusive scope item pairs — checking one auto-unchecks the other.
@@ -147,6 +155,12 @@ export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
 export const SCOPE_MUTEX: Partial<Record<keyof ScopeFlags, keyof ScopeFlags>> = {
   overlay: "removal",
   removal: "overlay",
+};
+
+/** Forced dependencies — checking the key auto-checks the value.
+ *  e.g. 난간 공사하면 두겁이 필수 (water leaks otherwise). */
+export const SCOPE_FORCES: Partial<Record<keyof ScopeFlags, keyof ScopeFlags>> = {
+  handrail: "cap",
 };
 
 /** Scope items that need an inline numeric input. (None right now — 물받이 was

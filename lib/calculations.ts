@@ -56,6 +56,8 @@ export interface BuildLineItemsInput {
   workDays: number;
   gutterMode?: GutterMode | null;
   gutterLengthM: number;
+  capLengthM?: number;
+  drainHoleCount?: number;
   skyliftDays: number;
   ladderTruckDays: number;
   scaffoldDays: number;
@@ -78,6 +80,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     settings, constructionType, materialType, thickness,
     areaM2, scope, workerCount, workDays,
     gutterMode = null, gutterLengthM,
+    capLengthM = 0, drainHoleCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
     extraCosts = [], catalogSelections = [],
@@ -175,13 +178,22 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   }
 
   // Steel-waterproof-specific items.
-  // Note: 난간 및 두겁 is now folded into the material line via parapetMultiplier
-  // (see top of function). So we don't emit a separate line item for it.
   if (constructionType === "steelWaterproof") {
-    if (scope.existingWaterproofRemoval) {
+    // 두겁 절곡 — 난간 시공 시 필수 (SCOPE_FORCES enforces this in the form)
+    if (scope.cap && capLengthM > 0) {
       items.push({
-        category: "removal", name: "기존 방수재 철거", quantity: areaM2, unit: "㎡",
-        unitPrice: settings.removalPricePerSqm, total: Math.round(areaM2 * settings.removalPricePerSqm),
+        category: "material", name: "두겁 (절곡)", quantity: capLengthM, unit: "m",
+        unitPrice: settings.capBendingPricePerM,
+        total: Math.round(capLengthM * settings.capBendingPricePerM),
+        sortOrder: order++,
+      });
+    }
+    // 새 배수구 타공
+    if (scope.drainHole && drainHoleCount > 0) {
+      items.push({
+        category: "other", name: "새 배수구 타공", quantity: drainHoleCount, unit: "개",
+        unitPrice: settings.drainHolePrice,
+        total: drainHoleCount * settings.drainHolePrice,
         sortOrder: order++,
       });
     }
@@ -190,6 +202,14 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       items.push({
         category: "other", name: "배수구 처리", quantity: 1, unit: "식",
         unitPrice: lumpSum, total: lumpSum, sortOrder: order++,
+      });
+    }
+    // Legacy: 기존 방수재 철거 (DEPRECATED — removed from UI, but still computed if flag present in old data)
+    if (scope.existingWaterproofRemoval) {
+      items.push({
+        category: "removal", name: "기존 방수재 철거", quantity: areaM2, unit: "㎡",
+        unitPrice: settings.removalPricePerSqm, total: Math.round(areaM2 * settings.removalPricePerSqm),
+        sortOrder: order++,
       });
     }
   }

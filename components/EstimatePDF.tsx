@@ -70,9 +70,9 @@ function scopeLabel(estimate: Estimate, scope: ScopeFlags): string[] {
   const lines: string[] = [];
   const showKeys: (keyof ScopeFlags)[] = (() => {
     const ct = estimate.constructionType as ConstructionType;
-    if (ct === "roof") return ["overlay", "removal", "ridge", "eave", "gutter", "waste"];
-    if (ct === "rooftopRoof") return ["frameReinforcement", "ridge", "eave", "gutter", "waste"];
-    return ["handrailAndCap", "existingWaterproofRemoval", "drainage", "waste"];
+    if (ct === "roof") return ["overlay", "removal", "ridge", "eave", "waste"];
+    if (ct === "rooftopRoof") return ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"];
+    return ["handrail", "cap", "drainHole", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"];
   })();
 
   for (const key of showKeys) {
@@ -162,9 +162,17 @@ export function EstimatePDFDoc({ estimate, scopeFlags }: Props) {
             </View>
           )}
           <View style={styles.row}>
-            <Text style={styles.label}>예상 면적</Text>
+            <Text style={styles.label}>시공 면적</Text>
             <Text style={styles.value}>{estimate.areaM2}㎡ ({Math.round(estimate.areaM2 / 3.3058 * 10) / 10}평)</Text>
           </View>
+          {estimate.buildingAreaM2 && (
+            <View style={styles.row}>
+              <Text style={styles.label}>건물 면적</Text>
+              <Text style={styles.value}>
+                {estimate.buildingAreaM2}㎡ ({Math.round(estimate.buildingAreaM2 / 3.3058 * 10) / 10}평)
+              </Text>
+            </View>
+          )}
           <View style={[styles.row, { marginTop: 6 }]}>
             <Text style={styles.label}>공사 범위</Text>
             <View style={{ flex: 1 }}>

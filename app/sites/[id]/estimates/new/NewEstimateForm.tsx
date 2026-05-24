@@ -23,6 +23,7 @@ import {
   SCOPE_LABELS,
   SCOPE_HINTS,
   SCOPE_MUTEX,
+  SCOPE_FORCES,
   COLOR_PRESETS,
   DEFAULT_COLOR,
   SUBSTRUCTURE_OPTIONS,
@@ -75,6 +76,12 @@ export function NewEstimateForm({ siteId, settings }: Props) {
   const [gutterMode, setGutterMode] = useState<GutterMode>("full");
   const [gutterLength, setGutterLength] = useState("");
 
+  // 두겁 절곡 길이 (난간 시공 시 필수)
+  const [capLength, setCapLength] = useState("");
+
+  // 새 배수구 타공 개수
+  const [drainHoles, setDrainHoles] = useState("1");
+
   // 폐기물 트럭 수
   const [wasteTrucks, setWasteTrucks] = useState("1");
 
@@ -112,7 +119,9 @@ export function NewEstimateForm({ siteId, settings }: Props) {
       setGutterMode("full");
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
-      defaults.handrailAndCap = true;
+      // 난간 + 두겁 (forced by SCOPE_FORCES) + 폐기물 default
+      defaults.handrail = true;
+      defaults.cap = true;
       defaults.waste = true;
       setGutterMode("none");
       setSubstructureType("none");
@@ -127,6 +136,11 @@ export function NewEstimateForm({ siteId, settings }: Props) {
       const mutexKey = SCOPE_MUTEX[key];
       if (mutexKey && next[key]) {
         next[mutexKey] = false;
+      }
+      // Forces: e.g. checking 난간 auto-checks 두겁 (waterproofing dependency)
+      const forcedKey = SCOPE_FORCES[key];
+      if (forcedKey && next[key]) {
+        next[forcedKey] = true;
       }
       return next;
     });
@@ -180,6 +194,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
     if (gutterMode !== "none" && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    if (scope.cap && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
     const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
@@ -200,6 +215,8 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           workDays: parseFloat(workDays) || 2,
           gutterMode: gutterMode === "none" ? null : gutterMode,
           gutterLengthM: gutterMode !== "none" ? parseFloat(gutterLength) || 0 : 0,
+          capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
+          drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
           substructureType: substructureType === "none" ? null : substructureType,
           wasteTruckCount: scope.waste ? Math.max(1, parseInt(wasteTrucks) || 1) : 1,
           skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
@@ -440,7 +457,6 @@ export function NewEstimateForm({ siteId, settings }: Props) {
               <div className="space-y-2">
                 {scopeItems.map((key) => {
                   const hint = SCOPE_HINTS[key];
-                  const isWaste = key === "waste";
                   return (
                     <div key={key}>
                       <ScopeRow
@@ -449,8 +465,8 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                         hint={hint}
                         onToggle={() => toggleScope(key)}
                       />
-                      {/* 폐기물 트럭 수 stepper */}
-                      {isWaste && scope.waste && (
+                      {/* 폐기물 트럭 수 */}
+                      {key === "waste" && scope.waste && (
                         <div className="mt-2 ml-3">
                           <Label className="text-[10px] text-muted-foreground mb-1 block">트럭 수 ({(settings.wasteDisposalCost).toLocaleString("ko-KR")}원/차)</Label>
                           <NumberStepper
@@ -458,6 +474,36 @@ export function NewEstimateForm({ siteId, settings }: Props) {
                             onChange={setWasteTrucks}
                             min={1} max={20} step={1}
                             unit="차"
+                          />
+                        </div>
+                      )}
+                      {/* 두겁 절곡 길이 */}
+                      {key === "cap" && scope.cap && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            절곡 길이 ({(settings.capBendingPricePerM).toLocaleString("ko-KR")}원/m)
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number" inputMode="decimal"
+                              value={capLength} onChange={(e) => setCapLength(e.target.value)}
+                              placeholder="0" className="h-11 rounded-xl tabular-nums flex-1"
+                            />
+                            <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                          </div>
+                        </div>
+                      )}
+                      {/* 새 배수구 타공 개수 */}
+                      {key === "drainHole" && scope.drainHole && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            개수 ({(settings.drainHolePrice).toLocaleString("ko-KR")}원/개)
+                          </Label>
+                          <NumberStepper
+                            value={drainHoles}
+                            onChange={setDrainHoles}
+                            min={1} max={20} step={1}
+                            unit="개"
                           />
                         </div>
                       )}
