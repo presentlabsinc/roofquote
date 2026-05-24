@@ -116,12 +116,37 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 - Don't use for wide-range numerics (면적, 가격) — plain inputs are better.
 
 ### Catalog system (부자재 / 마감재 / 물받이 부속 / 절곡)
-- Catalog defined in [lib/catalog.ts](lib/catalog.ts) — `DEFAULT_CATALOG` with ~30 prepopulated items spanning 4 categories. Default prices are reasonable Korean market guesses; user can override per-estimate inline.
-- UI: [components/CatalogPicker.tsx](components/CatalogPicker.tsx) — 4 collapsible category cards. Each row has a quantity stepper + inline-editable unit price (so a price override on a specific job doesn't pollute the catalog defaults).
-- "+ 직접 추가" per category creates a custom row (key starts with `custom_`) with user-defined label/unit/price.
-- Selections flow through `Estimate.catalogSelections Json @default("[]")` as snapshots, then `buildLineItems` emits one `EstimateLineItem` per selection with quantity > 0.
-- `categoryToLineItemCategory` in `lib/catalog.ts` maps catalog categories to existing line-item categories (finishing/gutter/accessory → "material", bending → "other") so the UI category colors and customer PDF grouping work consistently.
-- A catalog editor in 단가 설정 is not built yet — for now the catalog is read-only at the source, but every estimate can override prices inline. When we add an editor, store the edited catalog in `PricingSettings.catalog` (Json), falling back to `DEFAULT_CATALOG` when null/empty.
+Each catalog category has **two modes** — the user toggles per category:
+
+**심플 모드 (default)** — one auto-calculated line per category:
+- `simpleType` is one of: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
+- `simpleValue` is the multiplier or amount
+- Defaults in `lib/catalog.ts` `DEFAULT_CATEGORY_MODES`:
+  - finishing → perSqm 5,000원/㎡
+  - gutter → perM 3,000원/m
+  - accessory → percent 15%  (replaces the old auto-added 부자재 line)
+  - bending → total 0원 (user fills in if needed)
+- Settings override: `PricingSettings.catalogDefaults` (Json), merged on top of `DEFAULT_CATEGORY_MODES` via `resolveCategoryDefaults()`.
+
+**상세 모드** — itemized from [lib/catalog.ts](lib/catalog.ts) `DEFAULT_CATALOG` (~30 prepopulated items):
+- Each row in [components/CatalogPicker.tsx](components/CatalogPicker.tsx) has a quantity stepper + inline-editable unit price snapshot (so a job-specific price override doesn't change the defaults).
+- "+ 직접 추가" per category creates a custom row (key starts with `custom_`).
+
+**Snapshot storage** (both modes coexist on `Estimate`):
+- `Estimate.catalogSelections Json @default("[]")` — itemized picks (used when mode === "detailed")
+- `Estimate.catalogModes Json @default("{}")` — per-category mode + simple value (used when mode === "simple")
+
+**Calculation flow** (`buildLineItems` in `lib/calculations.ts`):
+- For each of the 4 categories, look up effective mode (estimate override → settings default → built-in default)
+- Simple mode → emit one `EstimateLineItem` via `simpleModeLineItem()` (returns null if value ≤ 0)
+- Detailed mode → emit one item per `catalogSelections[]` row in that category with quantity > 0
+- `categoryToLineItemCategory()` maps catalog categories to line-item categories (finishing/gutter/accessory → "material", bending → "other") so colors + customer PDF grouping work consistently.
+
+**Note:** The old auto-added 부자재 line (materialTotal × accessoryRate) has been removed — it's now expressed as the accessory category's simple-mode percent. `PricingSettings.accessoryRate` is left in the DB for back-compat but no longer drives calculations.
+
+**Settings catalog editor** is still TODO. For now, defaults are configured per-estimate inline.
+
+**Auto-fill for detailed mode** (per user request, deferred): each catalog item could carry a `perSqm` coefficient so switching to 상세 모드 auto-populates quantities based on construction area. Needs industry-standard data the user said they'd supply.
 
 ### Estimate edit API — 9 actions total
 `PATCH /api/estimates/[eid]` dispatches on the request body shape. Order in the route handler matters (first match wins):

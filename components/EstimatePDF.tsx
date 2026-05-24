@@ -72,7 +72,7 @@ function scopeLabel(estimate: Estimate, scope: ScopeFlags): string[] {
     const ct = estimate.constructionType as ConstructionType;
     if (ct === "roof") return ["overlay", "removal", "ridge", "eave", "waste"];
     if (ct === "rooftopRoof") return ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"];
-    return ["handrail", "cap", "drainHole", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"];
+    return ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"];
   })();
 
   for (const key of showKeys) {

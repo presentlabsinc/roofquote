@@ -160,3 +160,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
 
   return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
 }
+
+export async function DELETE(_: Request, { params }: { params: Promise<{ eid: string }> }) {
+  const { eid } = await params;
+  // EstimateLineItem has onDelete: Cascade in the schema, so children go automatically
+  await prisma.estimate.delete({ where: { id: eid } });
+  return NextResponse.json({ ok: true });
+}

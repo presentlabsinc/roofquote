@@ -31,7 +31,7 @@ import {
 } from "@/lib/types";
 import { pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
-import type { CatalogSelection } from "@/lib/catalog";
+import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
 import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2 } from "lucide-react";
 
@@ -98,6 +98,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
 
   // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡)
   const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>([]);
+  const [catalogModes, setCatalogModes] = useState<CategoryModesMap>({});
 
   // Step 9: 기타 비용
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
@@ -227,6 +228,7 @@ export function NewEstimateForm({ siteId, settings }: Props) {
           scopeFlags: scope,
           extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
           catalogSelections: catalogSelections.filter((s) => s.quantity > 0 && s.label.trim()),
+          catalogModes,
           applyLossRate,
           lossRate,
         }),
@@ -550,11 +552,15 @@ export function NewEstimateForm({ siteId, settings }: Props) {
             {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}
             <Section icon={<Package size={18} />} title="추가 자재 / 부속">
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                필요한 항목만 펼쳐서 수량 입력. 단가는 인라인 수정 가능. 카탈로그에 없으면 "직접 추가".
+                각 카테고리는 <b>심플</b>(한 줄 자동 계산) 또는 <b>상세</b>(항목별) 모드 토글.
+                심플 = 빠름, 상세 = 정확. 단가는 모두 인라인 수정 가능.
               </p>
               <CatalogPicker
                 selections={catalogSelections}
                 onChange={setCatalogSelections}
+                modes={catalogModes}
+                onModesChange={setCatalogModes}
+                defaults={(settings.catalogDefaults as CategoryModesMap | null) ?? undefined}
               />
             </Section>
 

@@ -38,6 +38,57 @@ export interface CatalogSelection {
   unitPrice: number;           // snapshot (may be overridden by user)
 }
 
+/** How a category's cost is summarized in 심플 모드. */
+export type SimpleType = "percent" | "perSqm" | "perM" | "total";
+
+/** Per-category mode configuration. */
+export interface CategoryMode {
+  mode: "simple" | "detailed";
+  /** Used when mode === "simple" */
+  simpleType?: SimpleType;
+  simpleValue?: number;
+}
+
+export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;
+
+/**
+ * Industry-typical defaults. New estimates start in 심플 모드 so the user
+ * gets a sensible auto-calculated cost without picking individual items.
+ * Switching to 상세 모드 reveals the catalog picker for that category.
+ *
+ * - finishing (마감재): per-㎡ of construction area (~5,000원/㎡ rough avg)
+ * - gutter (물받이 부속): per-m of gutter length (~3,000원/m)
+ * - accessory (부자재): percent of main material cost (~15%)
+ * - bending (절곡): 총금액 lump sum (user enters when needed)
+ *
+ * Each can be overridden via PricingSettings.catalogDefaults (JSON), and
+ * a specific estimate can override any category via Estimate.catalogModes.
+ */
+export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
+  finishing: { mode: "simple", simpleType: "perSqm",  simpleValue: 5000 },
+  gutter:    { mode: "simple", simpleType: "perM",    simpleValue: 3000 },
+  accessory: { mode: "simple", simpleType: "percent", simpleValue: 0.15 },
+  bending:   { mode: "simple", simpleType: "total",   simpleValue: 0 },
+};
+
+/** Merge user-defined defaults (from PricingSettings.catalogDefaults) over the built-in defaults. */
+export function resolveCategoryDefaults(savedDefaults: CategoryModesMap | null | undefined): Record<CatalogCategory, CategoryMode> {
+  const saved = savedDefaults ?? {};
+  return {
+    finishing: { ...DEFAULT_CATEGORY_MODES.finishing, ...saved.finishing },
+    gutter:    { ...DEFAULT_CATEGORY_MODES.gutter,    ...saved.gutter },
+    accessory: { ...DEFAULT_CATEGORY_MODES.accessory, ...saved.accessory },
+    bending:   { ...DEFAULT_CATEGORY_MODES.bending,   ...saved.bending },
+  };
+}
+
+export const SIMPLE_TYPE_LABELS: Record<SimpleType, { label: string; suffix: string }> = {
+  percent: { label: "자재비 %",  suffix: "%" },
+  perSqm:  { label: "㎡당",      suffix: "원/㎡" },
+  perM:    { label: "m당",       suffix: "원/m" },
+  total:   { label: "총금액",    suffix: "원" },
+};
+
 export const DEFAULT_CATALOG: CatalogItem[] = [
   // ─── 마감재 (finishing) ──────────────────────────────────────────────
   { key: "ridge",        category: "finishing", label: "용마루",     unit: "m", price: 25000, sortOrder: 10 },

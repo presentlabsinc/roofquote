@@ -346,6 +346,10 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         </p>
       )}
 
+      {/* Destructive: delete this whole estimate. Two-tap confirm to prevent accidents. */}
+      <DeleteEstimateButton estimateId={est.id} siteId={est.siteId} />
+
+
       {/* Sticky action — sits above the BottomNav (which is at bottom-0). */}
       <div className="fixed bottom-24 left-0 right-0 z-30 safe-x pointer-events-none">
         <div className="max-w-lg mx-auto px-4 pointer-events-auto">
@@ -407,6 +411,62 @@ function BreakdownRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function DeleteEstimateButton({ estimateId, siteId }: { estimateId: string; siteId: string }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function doDelete() {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/estimates/${estimateId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("견적이 삭제되었습니다");
+      router.push(`/sites/${siteId}`);
+    } catch {
+      toast.error("삭제에 실패했습니다");
+      setDeleting(false);
+      setConfirming(false);
+    }
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-destructive/20 p-4">
+      {confirming ? (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-destructive text-center">
+            이 견적을 삭제하시겠습니까? 되돌릴 수 없습니다.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirming(false)}
+              disabled={deleting}
+              className="flex-1 h-11 rounded-xl text-sm"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={doDelete}
+              disabled={deleting}
+              className="flex-1 h-11 rounded-xl text-sm font-semibold bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deleting ? "삭제 중..." : "예, 삭제"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-destructive/80 py-2 pressable"
+        >
+          <Trash2 size={15} /> 견적 삭제
+        </button>
+      )}
     </div>
   );
 }

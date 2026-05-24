@@ -109,6 +109,17 @@
     -webkit-user-select: none;
     user-select: none;
   }
+  /* Make all interactive elements touch-responsive on mobile.
+     touch-action: manipulation removes the 300ms tap delay on iOS Safari
+     and prevents double-tap-to-zoom from swallowing the first tap. */
+  button:not(:disabled), [role="button"], a, label, summary {
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+  /* Ensure icons/svgs inside buttons don't intercept the tap target */
+  button svg, [role="button"] svg, a svg {
+    pointer-events: none;
+  }
   input, textarea {
     -webkit-user-select: text;
     user-select: text;

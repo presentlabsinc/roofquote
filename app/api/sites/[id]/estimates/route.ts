@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
 import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
-import type { CatalogSelection } from "@/lib/catalog";
+import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -37,6 +37,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     scopeFlags,
     extraCosts = [],
     catalogSelections = [],
+    catalogModes = {},
     applyLossRate = false,
     lossRate = null,
     marginRate: inputMarginRate,
@@ -71,6 +72,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     substructureType: substructureType as SubstructureType | null,
     extraCosts: extraCosts as ExtraCost[],
     catalogSelections: catalogSelections as CatalogSelection[],
+    catalogModes: catalogModes as CategoryModesMap,
     applyLossRate,
     lossRate: effectiveLossRate,
   });
@@ -104,6 +106,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       lossRate: applyLossRate ? effectiveLossRate : null,
       catalogSelections: (catalogSelections as CatalogSelection[])
         .filter((s) => s.quantity > 0) as unknown as object,
+      catalogModes: catalogModes as object,
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,

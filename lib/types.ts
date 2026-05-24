@@ -32,9 +32,9 @@ export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
 export type SubstructureType = "wood" | "steel";
 
 export const SUBSTRUCTURE_OPTIONS: { value: SubstructureType | "none"; label: string; icon: string }[] = [
-  { value: "none",  label: "없음",  icon: "—" },
   { value: "wood",  label: "목재",  icon: "🪵" },
   { value: "steel", label: "철재",  icon: "🔩" },
+  { value: "none",  label: "없음",  icon: "—" },
 ];
 
 export type GutterMode = "none" | "full" | "front" | "back";
@@ -147,7 +147,7 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
   roof: ["overlay", "removal", "ridge", "eave", "waste"],
   rooftopRoof: ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"],
-  steelWaterproof: ["handrail", "cap", "drainHole", "drainage", "warehouse", "stairwell", "rooftopRoom", "waste"],
+  steelWaterproof: ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"],
 };
 
 /** Mutually exclusive scope item pairs — checking one auto-unchecks the other.

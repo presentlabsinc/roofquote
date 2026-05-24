@@ -49,6 +49,11 @@ model PricingSettings {
 
   // 두겁 — 절곡 작업 m당 단가 (난간 시공 시 두겁 필수)
   capBendingPricePerM          Int    @default(5000)
+
+  // Catalog category defaults (mode + simple-mode preset per category).
+  // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
+  // When null/empty, defaults from lib/catalog.ts DEFAULT_CATEGORY_MODES apply.
+  catalogDefaults              Json   @default("{}")
   mealCostPerPersonMeal     Int   // 1인 1식 식비
   lodgingCostPerPersonNight Int   // 1인 1박 숙박비
 
@@ -102,6 +107,10 @@ model Estimate {
   // Selected catalog items (마감재 / 물받이 부속 / 부자재 / 절곡) with snapshot prices
   // Shape: [{ category, key, label, unit, quantity, unitPrice }]
   catalogSelections Json @default("[]")
+
+  // Per-category mode + simple-mode value snapshot.
+  // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
+  catalogModes      Json @default("{}")
 
   // 하지작업 (substructure)
   substructureType  String? // null = 안함, 'wood' = 목재, 'steel' = 철재

@@ -1,6 +1,6 @@
 import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "./types";
 import { MATERIAL_TYPES } from "./types";
-import { categoryToLineItemCategory, type CatalogSelection } from "./catalog";
+import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export interface LineItemDraft {
@@ -67,8 +67,12 @@ export interface BuildLineItemsInput {
   /** 하지작업: null/undefined = 안함, 'wood' = 목재, 'steel' = 철재 */
   substructureType?: SubstructureType | null;
   extraCosts?: ExtraCost[];
-  /** Catalog items the user picked with their quantities + snapshot prices. */
+  /** Catalog items the user picked with their quantities + snapshot prices.
+   *  Only used for categories whose mode === "detailed". */
   catalogSelections?: CatalogSelection[];
+  /** Per-category mode + simple-mode value. Falls back to PricingSettings.catalogDefaults
+   *  (and ultimately DEFAULT_CATEGORY_MODES) when a category is missing. */
+  catalogModes?: CategoryModesMap;
   /** When true, multiply material area by (1 + lossRate) */
   applyLossRate?: boolean;
   /** Loss rate to apply (e.g. 0.10 = 10%). Used only when applyLossRate is true. */
@@ -83,9 +87,16 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     capLengthM = 0, drainHoleCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
-    extraCosts = [], catalogSelections = [],
+    extraCosts = [], catalogSelections = [], catalogModes,
     applyLossRate = false, lossRate = 0,
   } = input;
+
+  // Resolve effective category modes by layering: defaults → settings → estimate override
+  const settingsDefaults = (settings.catalogDefaults as CategoryModesMap | null) ?? null;
+  const effectiveModes = resolveCategoryDefaults({
+    ...settingsDefaults,
+    ...(catalogModes ?? {}),
+  });
   const items: LineItemDraft[] = [];
   let order = 0;
 
@@ -105,15 +116,15 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       category: "material", name, quantity: effectiveArea, unit: "㎡", unitPrice,
       total: Math.round(effectiveArea * unitPrice), sortOrder: order++,
     });
-
-    // Accessory material
-    const matTotal = Math.round(effectiveArea * unitPrice);
-    const accessoryTotal = Math.round(matTotal * settings.accessoryRate);
-    items.push({
-      category: "material", name: "부자재", quantity: settings.accessoryRate * 100,
-      unit: "%", unitPrice: matTotal, total: accessoryTotal, sortOrder: order++,
-    });
+    // Note: 부자재 used to be auto-added here at materialTotal × accessoryRate.
+    // That's now handled by the accessory catalog category (simple mode =
+    // "percent" default 0.15). See "Catalog categories — simple/detailed" below.
   }
+
+  // Compute material subtotal once — needed by simple-mode "percent" calculations
+  const materialTotalForCategoryPercent = items
+    .filter((i) => i.category === "material")
+    .reduce((s, i) => s + i.total, 0);
 
   // Ridge / Eave — only for roof / rooftopRoof
   if (constructionType !== "steelWaterproof") {
@@ -291,19 +302,38 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
-  // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡) chosen by the user.
-  // Each becomes its own line item with snapshot price.
-  for (const sel of catalogSelections) {
-    if (!sel.quantity || sel.quantity <= 0) continue;
-    items.push({
-      category: categoryToLineItemCategory(sel.category),
-      name: sel.label,
-      quantity: sel.quantity,
-      unit: sel.unit,
-      unitPrice: sel.unitPrice,
-      total: Math.round(sel.quantity * sel.unitPrice),
-      sortOrder: order++,
-    });
+  // Catalog categories (마감재 / 물받이 부속 / 부자재 / 절곡)
+  // Each category is either:
+  //   - 심플 (simple) mode: one auto-calculated line based on simpleType + simpleValue
+  //   - 상세 (detailed) mode: individual line items from catalogSelections
+  //
+  // The user toggles mode per-category in the form. Sensible defaults are
+  // applied for categories the user hasn't explicitly configured.
+  for (const cat of CATALOG_CATEGORIES) {
+    const m: CategoryMode = effectiveModes[cat.value];
+    if (m.mode === "simple") {
+      const sline = simpleModeLineItem(cat.value, cat.label, m, {
+        materialTotal: materialTotalForCategoryPercent,
+        areaM2,
+        gutterLengthM,
+      });
+      if (sline) items.push({ ...sline, sortOrder: order++ });
+    } else {
+      // detailed — emit from catalogSelections (filter to this category)
+      for (const sel of catalogSelections) {
+        if (sel.category !== cat.value) continue;
+        if (!sel.quantity || sel.quantity <= 0) continue;
+        items.push({
+          category: categoryToLineItemCategory(sel.category),
+          name: sel.label,
+          quantity: sel.quantity,
+          unit: sel.unit,
+          unitPrice: sel.unitPrice,
+          total: Math.round(sel.quantity * sel.unitPrice),
+          sortOrder: order++,
+        });
+      }
+    }
   }
 
   // Extra (misc) costs added by the user — always last
@@ -317,6 +347,65 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   }
 
   return items;
+}
+
+/**
+ * Generate one line item for a category in 심플 모드.
+ * Returns null if the configured value resolves to ₩0 (so we don't pollute
+ * the line-items list with zero-cost entries).
+ */
+function simpleModeLineItem(
+  category: CatalogCategory,
+  categoryLabel: string,
+  m: CategoryMode,
+  ctx: { materialTotal: number; areaM2: number; gutterLengthM: number },
+): Omit<LineItemDraft, "sortOrder"> | null {
+  const v = m.simpleValue ?? 0;
+  if (!v || v <= 0) return null;
+
+  let qty = 0;
+  let unit = "식";
+  let unitPrice = 0;
+
+  switch (m.simpleType) {
+    case "percent":
+      qty = Math.round(v * 100) / 100;
+      unit = "%";
+      unitPrice = ctx.materialTotal;
+      break;
+    case "perSqm":
+      qty = ctx.areaM2;
+      unit = "㎡";
+      unitPrice = Math.round(v);
+      break;
+    case "perM":
+      qty = ctx.gutterLengthM;
+      unit = "m";
+      unitPrice = Math.round(v);
+      break;
+    case "total":
+    default:
+      qty = 1;
+      unit = "식";
+      unitPrice = Math.round(v);
+      break;
+  }
+
+  // For percent: total = materialTotal × percent. For perSqm/perM/total: qty × unitPrice.
+  const total = m.simpleType === "percent"
+    ? Math.round(ctx.materialTotal * v)
+    : Math.round(qty * unitPrice);
+
+  if (total <= 0) return null;
+
+  return {
+    category: categoryToLineItemCategory(category),
+    name: `${categoryLabel} (심플)`,
+    quantity: qty,
+    unit,
+    unitPrice,
+    total,
+  };
 }
 
 export function calcTotals(
