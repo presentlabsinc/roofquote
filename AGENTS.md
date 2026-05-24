@@ -60,16 +60,20 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | Concern | File |
 |---|---|
 | DB schema | [prisma/schema.prisma](prisma/schema.prisma) |
-| Pricing/calculation logic | [lib/calculations.ts](lib/calculations.ts) — `buildLineItems`, `calcTotals`, `calcFromFinalPrice`, `THICKNESS_MULT` |
-| Construction-type definitions, scope flag shapes, material types | [lib/types.ts](lib/types.ts) |
+| Pricing / calc logic | [lib/calculations.ts](lib/calculations.ts) — `buildLineItems`, `calcTotals`, `calcFromFinalPrice`, `THICKNESS_MULT` |
+| Type defs (ConstructionType, MaterialType, ScopeFlags, GutterMode, SubstructureType, ExtraCost, color presets, scope maps) | [lib/types.ts](lib/types.ts) |
+| Catalog defaults + helpers | [lib/catalog.ts](lib/catalog.ts) — `DEFAULT_CATALOG`, `CATALOG_CATEGORIES`, `groupCatalog`, `categoryToLineItemCategory` |
 | Prisma client | [lib/prisma.ts](lib/prisma.ts) — singleton, no adapter |
 | Supabase clients | [lib/supabase.ts](lib/supabase.ts) — `supabase` (anon, browser-safe) and `supabaseAdmin()` (service role, server-only) |
 | Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
-| Estimate edit API (5 cases) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) |
-| PDF generation | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) |
+| Estimate edit API (9 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate-detail line-item actions" below |
+| PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
 | Photo upload | [app/api/upload/route.ts](app/api/upload/route.ts) — uses `supabaseAdmin()` to bypass RLS |
 | Main mobile UI screens | `app/{page,settings,sites/...}/*.tsx` |
 | Shared chrome | `components/AppHeader.tsx`, `components/BottomNav.tsx` |
+| Reusable widgets | `components/CatalogPicker.tsx`, `components/ui/number-stepper.tsx` |
+| PDF document component | [components/EstimatePDF.tsx](components/EstimatePDF.tsx) — `EstimatePDFDoc`, helpers: `buildWorkTitle`, `scopeLabel`, `constructionTypeLabel`, `materialLabel` |
+| PWA shell | `app/layout.tsx`, `app/manifest.ts`, `app/globals.css` |
 
 ## Convention notes
 
@@ -116,14 +120,22 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 - `categoryToLineItemCategory` in `lib/catalog.ts` maps catalog categories to existing line-item categories (finishing/gutter/accessory → "material", bending → "other") so the UI category colors and customer PDF grouping work consistently.
 - A catalog editor in 단가 설정 is not built yet — for now the catalog is read-only at the source, but every estimate can override prices inline. When we add an editor, store the edited catalog in `PricingSettings.catalog` (Json), falling back to `DEFAULT_CATALOG` when null/empty.
 
-### Estimate-detail line-item actions
-- `/api/estimates/[eid]` PATCH supports five line-item actions via the request body:
-  - `{ lineItemId, total }` — manual edit (sets `isUserEdited = true`)
-  - `{ lineItemId, action: "undo" }` — restore total = quantity × unitPrice
-  - `{ lineItemId, action: "delete" }` — remove the line
-  - `{ action: "add", newLineItem: { name, quantity, unit, unitPrice, category } }` — add a free-form line
-  - Plus the existing margin/finalPrice/VAT updates.
-- All of the above call `recalcAndReturn` which re-sums totals. When `marginMode === "finalPrice"`, the user's `finalPrice` is preserved and `marginRate`/`marginAmount` are re-derived from the new `totalCost`. Otherwise margin stays fixed and `finalPrice` is recomputed.
+### Estimate edit API — 9 actions total
+`PATCH /api/estimates/[eid]` dispatches on the request body shape. Order in the route handler matters (first match wins):
+
+1. `{ lineItemId, total }` — manual edit on a line (`isUserEdited = true`)
+2. `{ lineItemId, action: "undo" }` — restore `total = quantity × unitPrice`, clear `isUserEdited`
+3. `{ lineItemId, action: "delete" }` — remove the line
+4. `{ action: "add", newLineItem: { name, quantity, unit, unitPrice, category } }` — append a free-form line (`isUserEdited = true`)
+5. `{ marginRate }` — set rate, recompute margin amount / supply / final
+6. `{ marginAmount }` — set amount, back-derive rate, mode → `'amount'`
+7. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
+8. `{ vatIncluded }` — toggle, recompute totals
+9. `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` — whitelist meta update
+
+Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estimate)`:
+- If `estimate.marginMode === "finalPrice"`, the user's `finalPrice` is held fixed and `marginRate / marginAmount` are re-derived from the new `totalCost`. This preserves "I promised the customer 850만원" through subsequent edits.
+- Otherwise margin stays fixed and `finalPrice` is recomputed.
 
 ### Client-safe view
 - The estimate detail UI has a "고객 보기" toggle that hides line items, margin controls, and the cost breakdown. Used when the salesperson hands the phone to the customer. Toggle lives in `EstimateDetail.tsx` (`clientView` state).
@@ -135,8 +147,10 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 
 ### Visual polish
 - Default font is Pretendard. Don't reintroduce Geist for body text.
-- BottomNav auto-hides on focused task flows (currently `/sites/new` and `/sites/[id]/estimates/new`). Check `components/BottomNav.tsx` if adding new focused flows.
-- Sticky bottom action bars (PDF / KakaoTalk on estimate detail; "현장 등록하기" on new site) use the `StickySubmit` pattern from `app/sites/new/NewSiteForm.tsx`.
+- BottomNav auto-hides on focused task flows (currently `/sites/new`, `/sites/[id]/estimates/new`, and routes ending in `/preview`). Check `components/BottomNav.tsx` if adding new focused flows.
+- Sticky bottom action bars come in two flavors:
+  - **BottomNav hidden** (focused flows): use the `StickySubmit` pattern from `app/sites/new/NewSiteForm.tsx` (sits at `bottom-0` with a gradient backdrop).
+  - **BottomNav visible** (e.g. estimate detail, settings): position at `bottom-24` (or `bottom-28` for settings) so the button clears the nav pill. Bump the page's `pb-` accordingly (`pb-48` on estimate detail, `pb-32` elsewhere).
 
 ### Don't
 - Don't add `pdfUrl` permanence yet — we record `pdfSentAt` but the PDF is regenerated on demand from snapshot data, not stored. (The spec says we *should* store it long-term; that's a future task.)

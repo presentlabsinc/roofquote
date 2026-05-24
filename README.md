@@ -62,68 +62,160 @@ npm run dev
 ```
 roofquote/
 ├── app/
-│   ├── api/                       # API routes
-│   │   ├── settings/              # GET/POST 단가 설정
-│   │   ├── sites/                 # 현장 CRUD
-│   │   │   ├── [id]/              # 현장 상세/수정/삭제
-│   │   │   └── [id]/estimates/    # POST 새 견적 생성 (라인아이템 자동 계산)
-│   │   ├── estimates/[eid]/       # PATCH 견적 수정 (라인 / 마진 / 최종가)
-│   │   ├── estimates/[eid]/pdf/   # GET 고객용 PDF 다운로드
-│   │   └── upload/                # POST 사진 업로드 → Supabase Storage URL 반환
-│   ├── settings/                  # 단가 설정 페이지
-│   ├── sites/                     # 현장 목록 → 상세 → 견적
-│   ├── manifest.ts                # PWA manifest
-│   ├── layout.tsx                 # 루트 레이아웃 (Pretendard, BottomNav, Toaster)
-│   └── page.tsx                   # 홈 (현장 목록)
+│   ├── api/                                         # API routes
+│   │   ├── settings/                                # GET/POST 단가 설정
+│   │   ├── sites/                                   # 현장 CRUD
+│   │   │   ├── [id]/                                # 현장 상세/수정/삭제
+│   │   │   └── [id]/estimates/                      # POST 새 견적 생성 (라인아이템 자동 계산)
+│   │   ├── estimates/[eid]/                         # PATCH 견적 수정 (라인 / 마진 / 최종가 / 추가 / 삭제)
+│   │   ├── estimates/[eid]/pdf/                     # GET PDF (inline 기본, ?download=1 로 다운로드)
+│   │   └── upload/                                  # POST 사진 업로드 → Supabase Storage URL 반환
+│   ├── settings/                                    # 단가 설정 페이지 (㎡당 단가 계산기 포함)
+│   ├── sites/
+│   │   ├── new/                                     # 새 현장 등록 폼
+│   │   └── [id]/
+│   │       ├── page.tsx                             # 현장 상세 (사진, 견적 목록)
+│   │       └── estimates/
+│   │           ├── new/                             # 새 견적 만들기 (12-section flow)
+│   │           └── [eid]/
+│   │               ├── page.tsx                     # 견적 상세 (내부/고객 보기 토글)
+│   │               └── preview/                     # 견적서 미리보기 → 저장/카톡
+│   ├── manifest.ts                                  # PWA manifest
+│   ├── layout.tsx                                   # 루트 레이아웃 (Pretendard, BottomNav, Toaster)
+│   └── page.tsx                                     # 홈 (현장 목록)
 ├── components/
-│   ├── AppHeader.tsx              # 글래스 블러 sticky 헤더 + 뒤로가기
-│   ├── BottomNav.tsx              # 플로팅 pill 하단 네비
-│   ├── EstimatePDF.tsx            # @react-pdf/renderer 문서 컴포넌트
-│   └── ui/                        # shadcn/ui (button, input, card 등)
+│   ├── AppHeader.tsx                                # 글래스 블러 sticky 헤더 + 뒤로가기
+│   ├── BottomNav.tsx                                # 플로팅 pill 하단 네비 (focused flow 에서 숨김)
+│   ├── EstimatePDF.tsx                              # @react-pdf/renderer 문서 컴포넌트 (snapshot only)
+│   ├── CatalogPicker.tsx                            # 마감재/물받이부속/부자재/절곡 4-카테고리 picker
+│   └── ui/                                          # shadcn/ui (button, input, card, etc.) + number-stepper
 ├── lib/
-│   ├── prisma.ts                  # PrismaClient 싱글톤
-│   ├── supabase.ts                # supabase (anon) + supabaseAdmin (service role)
-│   ├── calculations.ts            # buildLineItems / calcTotals / calcFromFinalPrice
-│   ├── types.ts                   # ConstructionType, MaterialType, ScopeFlags 등
-│   └── utils.ts                   # cn() 유틸
+│   ├── prisma.ts                                    # PrismaClient 싱글톤
+│   ├── supabase.ts                                  # supabase (anon) + supabaseAdmin (service role)
+│   ├── calculations.ts                              # buildLineItems / calcTotals / calcFromFinalPrice / THICKNESS_MULT
+│   ├── types.ts                                     # ConstructionType, MaterialType, ScopeFlags, GutterMode, SubstructureType 등
+│   ├── catalog.ts                                   # DEFAULT_CATALOG (~30 prepopulated items) + helpers
+│   └── utils.ts                                     # cn() 유틸
 ├── prisma/
-│   ├── schema.prisma              # 데이터 모델
-│   └── migrations/                # Postgres 마이그레이션 이력
+│   ├── schema.prisma                                # 데이터 모델
+│   └── migrations/                                  # Postgres 마이그레이션 이력 (변경 금지 — prisma migrate dev 로만)
 ├── public/
-│   └── icon.svg                   # PWA 앱 아이콘
-└── roofing_app_spec.md            # 한국어 원본 제품 기획서 (변경 금지 — 진실 공급원)
+│   └── icon.svg                                     # PWA 앱 아이콘
+├── .env.example                                     # 환경변수 템플릿 (5개 키)
+├── roofing_app_spec.md                              # 한국어 원본 제품 기획서 (변경 금지 — 진실 공급원)
+├── README.md                                        # 이 파일 (사람 대상 가이드)
+├── CLAUDE.md → AGENTS.md                            # Claude Code 가 자동 로드하는 에이전트 컨텍스트
+└── AGENTS.md                                        # 에이전트가 알아야 할 비즈니스 규칙 / 컨벤션 / 패턴
 ```
 
 ### 데이터 모델
 
+전체 스키마는 [prisma/schema.prisma](prisma/schema.prisma) 참고. 4개 테이블:
+
 ```
-PricingSettings (live config — 절대 FK로 연결 안 함)
-  ├─ 회사정보 (companyName, companyPhone, companyAddress)
-  ├─ 단가 (자재/장비/인건비/체류비/마진 등 17개 항목)
-  └─ 기본값 (defaultMarginRate, vatIncludedByDefault)
+PricingSettings (live config — 절대 FK로 연결 안 함, 견적 생성 시점에 값 복사됨)
+  회사 정보 (snapshot 대상)
+    companyName, companyPhone, companyAddress
+
+  주요 자재 단가
+    materialPricePerSqm          # 칼라강판 ㎡당 (0.45t 기준, 두께별 배수 적용)
+    accessoryRate                # 부자재 비율 (자재비의 %, 자동 계산)
+    ridgePricePerM               # 용마루 m당
+    eavePricePerM                # 처마 마감 m당
+    gutterPricePerM              # 물받이 m당
+    removalPricePerSqm           # 철거 ㎡당
+    wasteDisposalCost            # 폐기물 트럭 1차당 (기본 1,000,000)
+
+  하지 작업 단가
+    substructureMode             # 새 견적 기본값: 'wood' | 'steel'
+    substructureWoodPricePerSqm  # 목재 하지 ㎡당
+    substructureSteelPricePerSqm # 철재 하지 ㎡당
+
+  인건비/체류비
+    dailyWage                    # 1인 1일
+    defaultWorkerCount           # 기본 작업 인원
+    mealCostPerPersonMeal        # 1인 1식 식비
+    lodgingCostPerPersonNight    # 1인 1박 숙박비
+
+  장비비
+    skyliftDailyCost             # 스카이차 1일
+    ladderTruckDailyCost         # 사다리차 1일
+    scaffoldPricePerSqmDay       # 비계 ㎡·일당 (주 모델)
+    scaffoldDailyCost            # 비계 1일 lump-sum (legacy, fallback)
+
+  로스율 / VAT / 마진 기본값
+    defaultLossRate              # 자재 로스율 (기본 10%)
+    useLossRateByDefault         # 새 견적에 로스율 자동 적용 여부
+    defaultMarginRate            # 기본 마진율 (예: 0.25 = 25%)
+    vatIncludedByDefault         # VAT 포함이 새 견적의 기본값인지
+
+  기타
+    baseTransportCost            # 기본 운송비
+    parapetMultiplier            # (legacy, 현재 미사용)
 
 Site
-  ├─ 고객 정보 (customerName, customerPhone)
-  ├─ 현장 주소 (siteAddress)
-  ├─ 사진 (photos: Json — Supabase Storage URL 배열)
-  ├─ 메모 (generalMemo)
-  └─ Estimate[] (1:N)
+  customerName, customerPhone, siteAddress
+  photos        Json     # [{url, memo?}] — Supabase Storage public URL 배열
+  generalMemo   String?
+  estimates     Estimate[]
 
-Estimate
-  ├─ 공사 정보 (constructionType, materialType, materialThickness, materialColor)
-  ├─ 입력값 (areaM2, workerCount, workDays, gutterLengthM, *Days 등)
-  ├─ scopeFlags (Json — 어떤 공사 범위 체크박스가 켜졌는지)
-  ├─ 합계 snapshot (totalCost, marginRate, marginAmount, supplyPrice, vat, finalPrice)
-  ├─ 회사정보 snapshot (companyNameSnapshot, companyPhoneSnapshot, companyAddressSnapshot)
-  ├─ 메타 (paymentTerms, validityDays, vatIncluded)
-  └─ EstimateLineItem[] (1:N)
+Estimate (모든 입력값과 합계는 snapshot)
+  공사 메타
+    constructionType    # 'roof' | 'steelWaterproof' | 'rooftopRoof'
+    materialType        # 'slate' | 'v250' | 'zinc250' | 'generalTile' | 'traditionalTile' | 'realZinc' | 'other'
+    materialThickness   # '0.4' | '0.45' | '0.5' | '0.6'
+    materialColor       # 프리셋 9개 + 직접 입력
+
+  면적
+    areaM2              # 시공 면적 (필수, 계산 기준)
+    buildingAreaM2      # 건물 면적 (옵션, 참고용 — 계산에 미사용)
+
+  작업
+    workerCount, workDays
+    substructureType    # null = 안함, 'wood' = 목재, 'steel' = 철재
+
+  공사 범위
+    scopeFlags          Json    # 체크된 항목들 (ScopeFlags 모양, lib/types.ts 참고)
+    gutterMode          # null/'none' | 'full' | 'front' | 'back'
+    gutterLengthM       # 물받이 길이 (gutterMode != 'none' 일 때)
+    wasteTruckCount     # 폐기물 차 수 (기본 1)
+
+  로스율 snapshot
+    applyLossRate, lossRate
+
+  장비
+    skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2
+    otherEquipment      # 자유 텍스트 메모
+
+  카탈로그 선택 (마감재 / 물받이 부속 / 부자재 / 절곡)
+    catalogSelections   Json    # [{ category, key, label, unit, quantity, unitPrice }] snapshot
+
+  합계 snapshot (lineItems 합과 일치해야 함)
+    totalCost, marginMode, marginRate, marginAmount, supplyPrice, vat, finalPrice, vatIncluded
+
+  견적서 메타
+    paymentTerms, validityDays
+
+  회사 정보 snapshot (생성 시점에 PricingSettings 에서 복사)
+    companyNameSnapshot, companyPhoneSnapshot, companyAddressSnapshot
+
+  발송 기록
+    pdfUrl, pdfSentAt   # 현재 pdfUrl 은 미사용 — PDF 는 매번 snapshot 으로 재생성
+    createdAt, updatedAt
+
+  lineItems EstimateLineItem[]
 
 EstimateLineItem  ← 각 라인이 자기 단가 스냅샷을 보유
-  ├─ category, name, quantity, unit
-  ├─ unitPrice (견적 생성 시점의 단가 복사본)
-  ├─ total (사용자 직접 수정 가능)
-  └─ isUserEdited (수정 여부 표시)
+  category    # 'material' | 'labor' | 'equipment' | 'transport' | 'meals' | 'lodging' | 'waste' | 'removal' | 'other'
+  name        # 사람이 읽는 라벨 ("칼라강판 0.45t 지붕 시공", "인건비", 등)
+  quantity, unit
+  unitPrice   # 견적 생성 시점의 단가 복사본 — 절대 재계산 안 함
+  total       # quantity × unitPrice (사용자 직접 수정 가능)
+  isUserEdited # 사용자가 손댄 라인 표시 (UI 에서 "수정됨" 뱃지 + "원래대로" 버튼)
+  sortOrder
 ```
+
+법적/회계적 안전성을 위해 모든 견적 관련 값은 생성 시점에 복사됩니다. 자세한 이유는 아래 "핵심 불변 규칙" 참고.
 
 ---
 
@@ -171,19 +263,44 @@ PDF에 나가는 항목:
 
 ### 수정 (PATCH `/api/estimates/[eid]`)
 
-5가지 케이스, 각각 처리 방식이 다릅니다:
+요청 body 의 모양에 따라 9가지 액션 중 하나로 dispatch. 모든 액션은 `recalcAndReturn` 헬퍼를 통과해 합계가 자동 재계산됨:
 
-| 입력 | 처리 |
+| Body 모양 | 액션 |
 |---|---|
-| `lineItemId + total` | 해당 라인의 total 만 업데이트, `isUserEdited = true`, 합계 재계산 |
-| `marginRate` | 라인은 안 건드림. `Estimate` 의 마진/공급가/최종가만 재계산 |
-| `marginAmount` | 마진율 역산, 마진 모드를 'amount' 로 기록 |
-| `finalPrice` | `marginAmount = finalPrice - totalCost - vat` 로 역산. 라인은 그대로 |
-| `vatIncluded` | VAT 토글, 최종가 재계산 |
+| `{ lineItemId, total }` | 라인 금액 수동 수정 (`isUserEdited = true`) |
+| `{ lineItemId, action: "undo" }` | 라인 원래대로 (`total = quantity × unitPrice`, `isUserEdited = false`) |
+| `{ lineItemId, action: "delete" }` | 라인 삭제 |
+| `{ action: "add", newLineItem }` | 자유 라인 추가 (`{name, quantity, unit, unitPrice, category}`) |
+| `{ marginRate }` | 마진율 변경 → 마진금액/공급가/최종가 재계산 (라인 그대로) |
+| `{ marginAmount }` | 마진금액 직접 입력 → 마진율 역산, 모드 = 'amount' |
+| `{ finalPrice }` | 최종가 직접 입력 → 마진금액 역산, 모드 = 'finalPrice' |
+| `{ vatIncluded }` | VAT 토글 → 최종가 재계산 |
+| `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` | 메타 필드 업데이트 (whitelist) |
+
+**중요:** `recalcAndReturn` 은 `marginMode === "finalPrice"` 일 때는 사용자가 고정한 `finalPrice` 를 유지하고 `marginRate / marginAmount` 만 재계산합니다 (라인 수정 후에도 "850만원에 맞춰줄게" 가 안 깨지도록).
 
 ### 단가 설정 변경
 
 - 기존 견적에 **절대 영향 없음**. 새로 만드는 견적부터 적용됨.
+
+---
+
+## 견적 상세 화면 UX
+
+[app/sites/[id]/estimates/[eid]/EstimateDetail.tsx](app/sites/[id]/estimates/[eid]/EstimateDetail.tsx) — 한 견적의 모든 작업이 이 화면에서 일어남:
+
+- **상단 토글**: "내부 보기" ↔ "고객 보기" 모드
+  - 내부 보기: 원가, 마진, 라인아이템 모두 표시
+  - **고객 보기**: 라인/마진/원가 모두 숨김. 최종가와 메타만 표시. 현장에서 고객에게 화면 보여줄 때 사용
+- **히어로 카드**: 최종 견적가 + VAT 토글 + (내부에서만) 총원가/마진율/면적 칩
+- **마진 조정 카드**: 마진율 / 마진금액 / 최종가 직접 — 셋 중 하나 탭 → 인라인 편집, 다른 두 개 자동 역산
+- **원가 항목 카드** (펼치기 가능)
+  - 각 라인: 카테고리 뱃지, 이름, 수량 × 단가 표시, 우측에 금액 (탭 → 인라인 편집)
+  - 수정된 라인: "수정됨" 뱃지 + 원래 금액 표시 + "원래대로" 버튼
+  - 라인 삭제: 두 번 탭 확인 ("정말 삭제? → 삭제/취소")
+- **하단 sticky 버튼**: "견적서 미리보기" → `/preview` 페이지로
+- **미리보기 페이지**: PDF 를 iframe inline 표시 → 검토 후 "PDF 저장" 또는 "카톡 보내기"
+  - 카톡 공유 성공 시에만 `pdfSentAt` 기록 (단순 미리보기는 발송으로 안 침)
 
 ---
 
