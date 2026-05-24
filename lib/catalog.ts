@@ -43,6 +43,8 @@ export type SimpleType = "percent" | "perSqm" | "perM" | "total";
 
 /** Per-category mode configuration. */
 export interface CategoryMode {
+  /** When false, the category contributes nothing to the estimate. Defaults true. */
+  enabled?: boolean;
   mode: "simple" | "detailed";
   /** Used when mode === "simple" */
   simpleType?: SimpleType;
@@ -65,10 +67,10 @@ export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;
  * a specific estimate can override any category via Estimate.catalogModes.
  */
 export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
-  finishing: { mode: "simple", simpleType: "perSqm",  simpleValue: 5000 },
-  gutter:    { mode: "simple", simpleType: "perM",    simpleValue: 3000 },
-  accessory: { mode: "simple", simpleType: "percent", simpleValue: 0.15 },
-  bending:   { mode: "simple", simpleType: "total",   simpleValue: 0 },
+  finishing: { enabled: true, mode: "simple", simpleType: "perSqm",  simpleValue: 1500 },
+  gutter:    { enabled: true, mode: "simple", simpleType: "perM",    simpleValue: 2000 },
+  accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.03 },
+  bending:   { enabled: true, mode: "simple", simpleType: "total",   simpleValue: 0 },
 };
 
 /** Merge user-defined defaults (from PricingSettings.catalogDefaults) over the built-in defaults. */

@@ -24,24 +24,25 @@ interface Props {
   onChange: (sel: CatalogSelection[]) => void;
   modes: CategoryModesMap;
   onModesChange: (m: CategoryModesMap) => void;
-  /** Optional override of the catalog (e.g. from PricingSettings.catalog if we add an editor) */
+  /** Construction area + gutter length used for live-cost preview in simple mode */
+  areaM2?: number;
+  gutterLengthM?: number;
+  /** Rough material total used for the "percent" simple type live preview */
+  materialTotalEstimate?: number;
   catalog?: CatalogItem[];
-  /** Default modes from PricingSettings.catalogDefaults (merged with DEFAULT_CATEGORY_MODES) */
   defaults?: CategoryModesMap;
 }
 
 /**
- * Catalog picker — 4 collapsible category cards. Each card has a 심플/상세 mode
- * toggle at the top:
- *   - 심플 (simple): one auto-line based on simpleType + value (% / ㎡당 / m당 / 총금액)
- *   - 상세 (detailed): individual catalog rows with quantity stepper + price override
- *
- * Selections (for detailed mode) and modes (for simple mode) are tracked in
- * parallel — the simple-mode value travels in `modes`, the per-item picks in
- * `selections`. Calculations pick whichever applies based on the mode.
+ * Catalog picker — 4 collapsible category cards. Header has an iOS-style
+ * on/off toggle (enable/disable the whole category). When enabled, the body
+ * shows a small simple/detailed chip toggle + the mode-specific inputs.
+ * Live "예상 비용" preview shows the calculated total based on current form
+ * values (area, gutter length, material price).
  */
 export function CatalogPicker({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
+  areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0,
 }: Props) {
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
   const resolved = useMemo(() => resolveCategoryDefaults({ ...defaults, ...modes }), [modes, defaults]);
@@ -94,73 +95,60 @@ export function CatalogPicker({
     <div className="space-y-2">
       {CATALOG_CATEGORIES.map((cat) => {
         const m = resolved[cat.value];
+        const enabled = m.enabled !== false;
         const items = grouped[cat.value];
         const customItems = selections.filter((s) => s.category === cat.value && s.key.startsWith("custom_"));
-        const activeCount = m.mode === "detailed"
-          ? selections.filter((s) => s.category === cat.value && s.quantity > 0).length
-          : (m.simpleValue && m.simpleValue > 0 ? 1 : 0);
 
         return (
           <CategoryCard
             key={cat.value}
             label={cat.label}
             icon={cat.icon}
-            activeCount={activeCount}
-            mode={m.mode}
+            enabled={enabled}
+            onToggleEnabled={() => setMode(cat.value, { enabled: !enabled })}
           >
-            {/* Mode toggle */}
-            <div className="grid grid-cols-2 gap-1.5 mb-3">
-              <button
-                type="button"
-                onClick={() => setMode(cat.value, { mode: "simple" })}
-                className={`h-9 rounded-lg text-xs font-semibold pressable ${
-                  m.mode === "simple" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                심플
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode(cat.value, { mode: "detailed" })}
-                className={`h-9 rounded-lg text-xs font-semibold pressable ${
-                  m.mode === "detailed" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}
-              >
-                상세
-              </button>
-            </div>
+            {enabled && (
+              <>
+                {/* Compact mode switch (much smaller than before) */}
+                <ModeSwitch mode={m.mode} onChange={(mode) => setMode(cat.value, { mode })} />
 
-            {m.mode === "simple" ? (
-              <SimpleModeBlock mode={m} onChange={(patch) => setMode(cat.value, patch)} />
-            ) : (
-              <div className="space-y-1.5">
-                {items.map((item) => (
-                  <CatalogRow
-                    key={item.key}
-                    item={item}
-                    selection={selectionForKey(item.key)}
-                    onUpdate={(patch) => updateSelection(item.key, item, patch)}
+                {m.mode === "simple" ? (
+                  <SimpleModeBlock
+                    mode={m}
+                    onChange={(patch) => setMode(cat.value, patch)}
+                    areaM2={areaM2}
+                    gutterLengthM={gutterLengthM}
+                    materialTotalEstimate={materialTotalEstimate}
                   />
-                ))}
-
-                {customItems.map((cs) => (
-                  <CustomRow
-                    key={cs.key}
-                    selection={cs}
-                    onUpdate={(patch) => updateCustom(cs.key, patch)}
-                    onRemove={() => removeCustom(cs.key)}
-                  />
-                ))}
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => addCustom(cat.value)}
-                  className="w-full h-10 rounded-xl text-xs font-medium border-dashed border-primary/40 text-primary pressable mt-2"
-                >
-                  <Plus size={14} className="mr-1" /> 직접 추가
-                </Button>
-              </div>
+                ) : (
+                  <div className="space-y-1.5 mt-3">
+                    {items.map((item) => (
+                      <CatalogRow
+                        key={item.key}
+                        item={item}
+                        selection={selectionForKey(item.key)}
+                        onUpdate={(patch) => updateSelection(item.key, item, patch)}
+                      />
+                    ))}
+                    {customItems.map((cs) => (
+                      <CustomRow
+                        key={cs.key}
+                        selection={cs}
+                        onUpdate={(patch) => updateCustom(cs.key, patch)}
+                        onRemove={() => removeCustom(cs.key)}
+                      />
+                    ))}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => addCustom(cat.value)}
+                      className="w-full h-10 rounded-xl text-xs font-medium border-dashed border-primary/40 text-primary pressable mt-2"
+                    >
+                      <Plus size={14} className="mr-1" /> 직접 추가
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </CategoryCard>
         );
@@ -170,52 +158,118 @@ export function CatalogPicker({
 }
 
 function CategoryCard({
-  label, icon, activeCount, mode, children,
+  label, icon, enabled, onToggleEnabled, children,
 }: {
-  label: string; icon: string; activeCount: number; mode: "simple" | "detailed"; children: React.ReactNode;
+  label: string; icon: string; enabled: boolean;
+  onToggleEnabled: () => void; children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+    <div className={`bg-card rounded-2xl border ${enabled ? "border-border/60" : "border-border/40 opacity-70"} overflow-hidden`}>
+      <div className="flex items-center gap-3 px-4 py-3">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex-1 flex items-center gap-3 pressable text-left"
+        >
+          <span className="text-xl">{icon}</span>
+          <span className="text-sm font-semibold text-foreground flex-1">{label}</span>
+          {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+        </button>
+        <ToggleSwitch checked={enabled} onChange={onToggleEnabled} />
+      </div>
+      {open && enabled && (
+        <div className="px-3 pb-3 pt-1 border-t border-border/40">{children}</div>
+      )}
+    </div>
+  );
+}
+
+/** iOS-style on/off toggle switch */
+function ToggleSwitch({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors pressable shrink-0 ${
+        checked ? "bg-primary justify-end" : "bg-muted justify-start"
+      }`}
+    >
+      <span className="w-5 h-5 rounded-full bg-white shadow-sm" />
+    </button>
+  );
+}
+
+/** Compact 심플/상세 pill switch — much smaller than the previous 50/50 buttons */
+function ModeSwitch({ mode, onChange }: { mode: "simple" | "detailed"; onChange: (m: "simple" | "detailed") => void }) {
+  return (
+    <div className="inline-flex bg-muted rounded-full p-0.5 mt-2 text-[11px]">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-4 py-3 pressable"
+        onClick={() => onChange("simple")}
+        className={`px-3 py-1 rounded-full font-semibold transition-colors pressable ${
+          mode === "simple" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+        }`}
       >
-        <span className="text-xl">{icon}</span>
-        <span className="text-sm font-semibold text-foreground flex-1 text-left">{label}</span>
-        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-          {mode === "simple" ? "심플" : "상세"}
-        </span>
-        {activeCount > 0 && (
-          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary tabular-nums">
-            {mode === "simple" ? "사용중" : `${activeCount}개`}
-          </span>
-        )}
-        {open ? <ChevronUp size={18} className="text-muted-foreground" /> : <ChevronDown size={18} className="text-muted-foreground" />}
+        심플
       </button>
-      {open && <div className="px-3 pb-3 pt-1 border-t border-border/40">{children}</div>}
+      <button
+        type="button"
+        onClick={() => onChange("detailed")}
+        className={`px-3 py-1 rounded-full font-semibold transition-colors pressable ${
+          mode === "detailed" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+        }`}
+      >
+        상세
+      </button>
     </div>
   );
 }
 
 function SimpleModeBlock({
-  mode, onChange,
+  mode, onChange, areaM2, gutterLengthM, materialTotalEstimate,
 }: {
   mode: CategoryMode;
   onChange: (patch: Partial<CategoryMode>) => void;
+  areaM2: number;
+  gutterLengthM: number;
+  materialTotalEstimate: number;
 }) {
   const simpleType = mode.simpleType ?? "total";
   const simpleValue = mode.simpleValue ?? 0;
   // For percent, the user enters whole numbers (e.g. 15) representing 15%.
   // Internally we store 0.15.
-  const displayValue = simpleType === "percent" ? Math.round(simpleValue * 1000) / 10 : simpleValue;
+  const displayValue = simpleType === "percent"
+    ? Math.round(simpleValue * 1000) / 10
+    : simpleValue;
+
+  // Live cost preview based on current form values
+  const previewCost = (() => {
+    if (!simpleValue || simpleValue <= 0) return 0;
+    switch (simpleType) {
+      case "percent": return Math.round(materialTotalEstimate * simpleValue);
+      case "perSqm":  return Math.round(areaM2 * simpleValue);
+      case "perM":    return Math.round(gutterLengthM * simpleValue);
+      case "total":   return Math.round(simpleValue);
+      default:        return 0;
+    }
+  })();
+
+  const quantityLabel = (() => {
+    switch (simpleType) {
+      case "percent": return materialTotalEstimate > 0 ? `자재비 ${materialTotalEstimate.toLocaleString("ko-KR")}원 기준` : "자재비 입력 후 계산";
+      case "perSqm":  return areaM2 > 0 ? `시공면적 ${areaM2}㎡` : "시공면적 입력 후 계산";
+      case "perM":    return gutterLengthM > 0 ? `물받이 길이 ${gutterLengthM}m` : "물받이 길이 입력 후 계산";
+      case "total":   return "총금액";
+      default:        return "";
+    }
+  })();
 
   return (
-    <div className="space-y-2 pt-1">
-      <p className="text-[11px] text-muted-foreground -mt-1 mb-1">
-        계산 방식을 고르고 값만 입력하면 한 줄로 비용이 자동 계산됩니다
-      </p>
+    <div className="space-y-2 mt-2">
+      <p className="text-[11px] text-muted-foreground">계산 방식 선택 + 값 입력하면 자동 계산됩니다</p>
       <div className="grid grid-cols-4 gap-1">
         {(["percent", "perSqm", "perM", "total"] as SimpleType[]).map((t) => (
           <button
@@ -248,11 +302,13 @@ function SimpleModeBlock({
           {SIMPLE_TYPE_LABELS[simpleType].suffix}
         </span>
       </div>
-      {simpleType === "percent" && (
-        <p className="text-[10px] text-muted-foreground text-center">
-          자재(강판 + 하지)비의 비율로 계산
-        </p>
-      )}
+      {/* Live preview row */}
+      <div className="flex items-center justify-between text-[11px] pt-1">
+        <span className="text-muted-foreground">{quantityLabel}</span>
+        <span className="font-semibold text-primary tabular-nums">
+          {previewCost > 0 ? `예상 ${previewCost.toLocaleString("ko-KR")}원` : ""}
+        </span>
+      </div>
     </div>
   );
 }

@@ -88,12 +88,26 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     return (COLOR_PRESETS as readonly string[]).includes(c) ? "" : c;
   });
 
-  // 공사 일정 — default to next month (지붕공사는 보통 다음 달 이후 시작)
+  // 공사 일정 — 3 modes: none / month (YYYY-MM) / date (YYYY-MM-DD)
+  type SchedulePrecision = "none" | "month" | "date";
+  const [schedulePrecision, setSchedulePrecision] = useState<SchedulePrecision>(() => {
+    const v = existing?.constructionMonth;
+    if (!v) return "none";
+    return v.length === 7 ? "month" : "date"; // 7 = YYYY-MM, 10 = YYYY-MM-DD
+  });
   const [constructionMonth, setConstructionMonth] = useState(() => {
     if (existing?.constructionMonth) return existing.constructionMonth;
     const d = new Date();
     d.setMonth(d.getMonth() + 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const [constructionDate, setConstructionDate] = useState(() => {
+    if (existing?.constructionMonth && existing.constructionMonth.length === 10) {
+      return existing.constructionMonth;
+    }
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().slice(0, 10);
   });
 
   // Loss rate (per-estimate override)
@@ -120,6 +134,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   // 새 배수구 타공 개수
   const [drainHoles, setDrainHoles] = useState(existing?.drainHoleCount ? String(existing.drainHoleCount) : "1");
+
+  // 엔드캡 개수 (지붕공사 / 옥상지붕)
+  const [endCaps, setEndCaps] = useState(existing?.endCapCount ? String(existing.endCapCount) : "1");
 
   // 폐기물 트럭 수
   const [wasteTrucks, setWasteTrucks] = useState(existing?.wasteTruckCount ? String(existing.wasteTruckCount) : "1");
@@ -250,13 +267,18 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
     const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
 
+    // Pick the right schedule value based on precision
+    const scheduleValue = schedulePrecision === "none" ? null
+      : schedulePrecision === "month" ? constructionMonth
+      : constructionDate;
+
     const payload = {
       constructionType,
       materialType,
       materialThickness: thickness,
       materialTexture: finalTexture,
       materialColor: finalColor,
-      constructionMonth,
+      constructionMonth: scheduleValue,
       areaM2,
       buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
       workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
@@ -265,6 +287,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       gutterLengthM: gutterMode !== "none" ? parseFloat(gutterLength) || 0 : 0,
       capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
+      endCapCount: scope.endCap ? Math.max(1, parseInt(endCaps) || 1) : 0,
       substructureType: substructureType === "none" ? null : substructureType,
       wasteTruckCount: scope.waste ? Math.max(1, parseInt(wasteTrucks) || 1) : 1,
       skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
@@ -615,6 +638,20 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           />
                         </div>
                       )}
+                      {/* 엔드캡 개수 */}
+                      {key === "endCap" && scope.endCap && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            개수 ({eff.endCapPrice.toLocaleString("ko-KR")}원/개)
+                          </Label>
+                          <NumberStepper
+                            value={endCaps}
+                            onChange={setEndCaps}
+                            min={1} max={50} step={1}
+                            unit="개"
+                          />
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -623,7 +660,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               {/* 물받이 mode picker — separate from scope flags */}
               <div className="mt-3 pt-3 border-t border-border/40">
                 <Label className="text-xs text-muted-foreground mb-2 block font-medium">물받이</Label>
-                <div className="grid grid-cols-4 gap-1.5">
+                <div className="grid grid-cols-5 gap-1.5">
                   {GUTTER_MODE_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
@@ -667,6 +704,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 modes={catalogModes}
                 onModesChange={setCatalogModes}
                 defaults={(settings.catalogDefaults as CategoryModesMap | null) ?? undefined}
+                areaM2={parseFloat(sqmInput) || 0}
+                gutterLengthM={gutterMode !== "none" ? (parseFloat(gutterLength) || 0) : 0}
+                materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
               />
             </Section>
 
@@ -719,20 +759,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </div>
             </Section>
 
-            {/* Construction month — 지붕공사는 날씨 영향 커서 "월" 단위로만 */}
-            <Section icon={<Calendar size={18} />} title="공사 일정">
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                "YYYY년 MM월 중" 형식으로 견적서에 표시됨. 착공/준공일은 분리하지 않음.
-              </p>
-              <Input
-                type="month"
-                value={constructionMonth}
-                onChange={(e) => setConstructionMonth(e.target.value)}
-                className="h-12 rounded-xl text-base tabular-nums"
-              />
-            </Section>
-
-            {/* STEP 9: 기타 비용 */}
+            {/* STEP 9: 기타 비용 (구 step 8 위치) */}
             <Section icon={<Receipt size={18} />} title="기타 비용" step={9}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">크레인, 추가 자재, 절곡비, 잡비 등 직접 추가</p>
               {extraCosts.length > 0 && (
@@ -774,6 +801,49 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               >
                 <Plus size={16} className="mr-1" /> 항목 추가
               </Button>
+            </Section>
+
+            {/* Construction schedule — optional, 3 precisions: 없음 / 연월 / 연월일 */}
+            <Section icon={<Calendar size={18} />} title="공사 일정">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                연월까지만, 연월일까지, 또는 안 넣기 중 선택
+              </p>
+              <div className="grid grid-cols-3 gap-1.5 mb-2">
+                {([
+                  { v: "none",  l: "없음" },
+                  { v: "month", l: "연월" },
+                  { v: "date",  l: "연월일" },
+                ] as { v: typeof schedulePrecision; l: string }[]).map((opt) => (
+                  <button
+                    key={opt.v}
+                    type="button"
+                    onClick={() => setSchedulePrecision(opt.v)}
+                    className={`pressable rounded-xl py-2.5 text-xs font-semibold border ${
+                      schedulePrecision === opt.v
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-card text-foreground border-border/60"
+                    }`}
+                  >
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+              {schedulePrecision === "month" && (
+                <Input
+                  type="month"
+                  value={constructionMonth}
+                  onChange={(e) => setConstructionMonth(e.target.value)}
+                  className="h-12 rounded-xl text-base tabular-nums"
+                />
+              )}
+              {schedulePrecision === "date" && (
+                <Input
+                  type="date"
+                  value={constructionDate}
+                  onChange={(e) => setConstructionDate(e.target.value)}
+                  className="h-12 rounded-xl text-base tabular-nums"
+                />
+              )}
             </Section>
 
             {/* Pricing overrides — at the very end. Collapsed by default. */}

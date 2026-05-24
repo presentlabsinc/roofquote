@@ -136,8 +136,8 @@ function scopeOneLine(estimate: Estimate, scope: ScopeFlags): string {
 
   const ct = estimate.constructionType as ConstructionType;
   const keys: (keyof ScopeFlags)[] = (() => {
-    if (ct === "roof") return ["ridge", "eave", "waste"];
-    if (ct === "rooftopRoof") return ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"];
+    if (ct === "roof") return ["ridge", "eave", "endCap", "waste"];
+    if (ct === "rooftopRoof") return ["ridge", "eave", "endCap", "waste"];
     return ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"];
   })();
   // Combine ridge+eave nicely if both
@@ -159,10 +159,13 @@ function scopeOneLine(estimate: Estimate, scope: ScopeFlags): string {
   return Array.from(new Set(parts)).join(" · ");
 }
 
-function formatMonth(yyyymm: string | null): string | null {
-  if (!yyyymm) return null;
-  const [y, m] = yyyymm.split("-");
+function formatMonth(v: string | null): string | null {
+  if (!v) return null;
+  const parts = v.split("-");
+  if (parts.length < 2) return null;
+  const [y, m, d] = parts;
   if (!y || !m) return null;
+  if (d) return `${y}년 ${parseInt(m)}월 ${parseInt(d)}일`;
   return `${y}년 ${parseInt(m)}월 중`;
 }
 

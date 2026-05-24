@@ -74,6 +74,7 @@ export interface BuildLineItemsInput {
   gutterLengthM: number;
   capLengthM?: number;
   drainHoleCount?: number;
+  endCapCount?: number;
   skyliftDays: number;
   ladderTruckDays: number;
   scaffoldDays: number;
@@ -103,7 +104,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     settings: rawSettings, constructionType, materialType, thickness,
     areaM2, scope, workerCount, workDays,
     gutterMode = null, gutterLengthM,
-    capLengthM = 0, drainHoleCount = 0,
+    capLengthM = 0, drainHoleCount = 0, endCapCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
     extraCosts = [], pricingOverrides = {},
@@ -171,9 +172,12 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // 물받이 — driven by gutterMode picker (안함/전체/앞만/뒤만), not scope flags
+  // 물받이 — driven by gutterMode picker (안함/전체/앞면/뒷면/기타), not scope flags
   if (gutterMode && gutterMode !== "none" && gutterLengthM > 0) {
-    const modeLabel = gutterMode === "full" ? "전체" : gutterMode === "front" ? "앞만" : "뒤만";
+    const modeLabel = gutterMode === "full" ? "전체"
+      : gutterMode === "front" ? "앞면"
+      : gutterMode === "back"  ? "뒷면"
+      : "기타";
     items.push({
       category: "material", name: `물받이 교체 (${modeLabel})`, quantity: gutterLengthM, unit: "m",
       unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
@@ -248,6 +252,16 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         sortOrder: order++,
       });
     }
+  }
+
+  // 엔드캡 (지붕공사 / 옥상지붕) — per-piece pricing
+  if (constructionType !== "steelWaterproof" && scope.endCap && endCapCount > 0) {
+    items.push({
+      category: "material", name: "엔드캡", quantity: endCapCount, unit: "개",
+      unitPrice: settings.endCapPrice,
+      total: endCapCount * settings.endCapPrice,
+      sortOrder: order++,
+    });
   }
 
   // Waste disposal — per-truck pricing
@@ -336,6 +350,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   // applied for categories the user hasn't explicitly configured.
   for (const cat of CATALOG_CATEGORIES) {
     const m: CategoryMode = effectiveModes[cat.value];
+    // Skip the category entirely when the user disabled it
+    if (m.enabled === false) continue;
     if (m.mode === "simple") {
       const sline = simpleModeLineItem(cat.value, cat.label, m, {
         materialTotal: materialTotalForCategoryPercent,

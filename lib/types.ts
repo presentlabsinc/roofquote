@@ -37,13 +37,14 @@ export const SUBSTRUCTURE_OPTIONS: { value: SubstructureType | "none"; label: st
   { value: "none",  label: "없음",  icon: "—" },
 ];
 
-export type GutterMode = "none" | "full" | "front" | "back";
+export type GutterMode = "none" | "full" | "front" | "back" | "custom";
 
 export const GUTTER_MODE_OPTIONS: { value: GutterMode; label: string }[] = [
-  { value: "none",  label: "안함" },
-  { value: "full",  label: "전체" },
-  { value: "front", label: "앞만" },
-  { value: "back",  label: "뒤만" },
+  { value: "none",   label: "안함" },
+  { value: "full",   label: "전체" },
+  { value: "front",  label: "앞면" },
+  { value: "back",   label: "뒷면" },
+  { value: "custom", label: "기타" },
 ];
 
 /** Standard texture presets. The user picks one or "기타" for free input. */
@@ -168,6 +169,7 @@ export interface ScopeFlags {
   handrail?: boolean;            // 난간 (시공면적에 포함된 것으로 가정)
   cap?: boolean;                 // 두겁 (절곡 — m당 별도 단가)
   drainHole?: boolean;           // 새 배수구 타공 (개당 단가 × 개수)
+  endCap?: boolean;              // 엔드캡 (개당 단가 × 개수) — roof / rooftopRoof
   existingWaterproofRemoval?: boolean; // [DEPRECATED] 기존 방수재 철거 — 사용자가 빼달라고 함
   drainage?: boolean;            // 배수구 처리
 
@@ -191,7 +193,8 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   overlay: "기존 지붕 덧씌우기",
   removal: "기존 지붕 철거",
   ridge: "용마루 마감",
-  eave: "처마 마감",
+  eave: "처마 / 덴조 마감",
+  endCap: "엔드캡",
   gutter: "물받이 교체",
   frameReinforcement: "골조 보강",
   handrailAndCap: "난간 및 두겁 포함",
@@ -221,13 +224,14 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
   stairwell: "시공면적에 포함하여 입력하세요",
   rooftopRoom: "시공면적에 포함하여 입력하세요",
   drainHole: "1개당 단가 × 개수",
+  endCap: "1개당 단가 × 개수",
 };
 
 /** Which scope items are shown for each construction type, in display order.
- *  Note: 물받이 was moved out of scope flags into its own GutterMode picker (안함/전체/앞만/뒤만). */
+ *  Note: 물받이 was moved out of scope flags into its own GutterMode picker. */
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
-  roof: ["overlay", "removal", "ridge", "eave", "waste"],
-  rooftopRoof: ["frameReinforcement", "ridge", "eave", "warehouse", "stairwell", "rooftopRoom", "waste"],
+  roof: ["overlay", "removal", "ridge", "eave", "endCap", "waste"],
+  rooftopRoof: ["ridge", "eave", "endCap", "waste"],
   steelWaterproof: ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"],
 };
 

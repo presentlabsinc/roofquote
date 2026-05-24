@@ -54,6 +54,9 @@ model PricingSettings {
   // 두겁 — 절곡 작업 m당 단가 (난간 시공 시 두겁 필수)
   capBendingPricePerM          Int    @default(5000)
 
+  // 지붕공사 / 옥상지붕 — 엔드캡 1개당
+  endCapPrice                  Int    @default(12000)
+
   // Catalog category defaults (mode + simple-mode preset per category).
   // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
   // When null/empty, defaults from lib/catalog.ts DEFAULT_CATEGORY_MODES apply.
@@ -144,6 +147,9 @@ model Estimate {
 
   // 새 배수구 타공 개수 (스틸방수)
   drainHoleCount    Int      @default(0)
+
+  // 엔드캡 개수 (지붕공사 / 옥상지붕)
+  endCapCount       Int      @default(0)
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]
