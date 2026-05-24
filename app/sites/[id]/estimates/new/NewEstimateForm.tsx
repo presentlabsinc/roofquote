@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
-import type { PricingSettings } from "@prisma/client";
+import type { PricingSettings, Estimate } from "@prisma/client";
 import {
   type ConstructionType,
   type MaterialType,
@@ -39,78 +39,110 @@ import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, P
 interface Props {
   siteId: string;
   settings: PricingSettings;
+  existing?: Estimate;
 }
 
-export function NewEstimateForm({ siteId, settings }: Props) {
+export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const router = useRouter();
+  const isEditing = !!existing;
   const [saving, setSaving] = useState(false);
 
+  // When editing, the scope is stored as a JSON object on the estimate
+  const existingScope = (existing?.scopeFlags ?? {}) as unknown as ScopeFlags;
+
+  // ─── Initial values: from `existing` when editing, otherwise sensible defaults ─
+
   // Step 1: Area
-  const [sqmInput, setSqmInput] = useState("");
-  const [pyeongInput, setPyeongInput] = useState("");
-  const [showBuildingArea, setShowBuildingArea] = useState(false);
-  const [buildingSqmInput, setBuildingSqmInput] = useState("");
-  const [buildingPyeongInput, setBuildingPyeongInput] = useState("");
+  const [sqmInput, setSqmInput] = useState(existing ? String(existing.areaM2) : "");
+  const [pyeongInput, setPyeongInput] = useState(existing ? String(sqmToPyeong(existing.areaM2)) : "");
+  const [showBuildingArea, setShowBuildingArea] = useState(!!existing?.buildingAreaM2);
+  const [buildingSqmInput, setBuildingSqmInput] = useState(existing?.buildingAreaM2 ? String(existing.buildingAreaM2) : "");
+  const [buildingPyeongInput, setBuildingPyeongInput] = useState(existing?.buildingAreaM2 ? String(sqmToPyeong(existing.buildingAreaM2)) : "");
 
   // Step 2: Construction type
-  const [constructionType, setConstructionType] = useState<ConstructionType | null>(null);
+  const [constructionType, setConstructionType] = useState<ConstructionType | null>(
+    (existing?.constructionType as ConstructionType | undefined) ?? null,
+  );
 
   // Step 3-5: Material
-  const [materialType, setMaterialType] = useState<MaterialType>("slate");
-  const [thickness, setThickness] = useState<Thickness>("0.45");
-  const [textureChoice, setTextureChoice] = useState<string>("매트");
-  const [textureCustom, setTextureCustom] = useState("");
-  const [colorChoice, setColorChoice] = useState<string>(DEFAULT_COLOR);
-  const [colorCustom, setColorCustom] = useState("");
+  const [materialType, setMaterialType] = useState<MaterialType>((existing?.materialType as MaterialType | undefined) ?? "slate");
+  const [thickness, setThickness] = useState<Thickness>((existing?.materialThickness as Thickness | undefined) ?? "0.45");
+  const [textureChoice, setTextureChoice] = useState<string>(() => {
+    const t = existing?.materialTexture;
+    if (!t) return "유광";
+    return (TEXTURE_PRESETS as readonly string[]).includes(t) ? t : "기타";
+  });
+  const [textureCustom, setTextureCustom] = useState<string>(() => {
+    const t = existing?.materialTexture ?? "";
+    return (TEXTURE_PRESETS as readonly string[]).includes(t) ? "" : t;
+  });
+  const [colorChoice, setColorChoice] = useState<string>(() => {
+    const c = existing?.materialColor;
+    if (!c) return DEFAULT_COLOR;
+    return (COLOR_PRESETS as readonly string[]).includes(c) ? c : "기타";
+  });
+  const [colorCustom, setColorCustom] = useState<string>(() => {
+    const c = existing?.materialColor ?? "";
+    return (COLOR_PRESETS as readonly string[]).includes(c) ? "" : c;
+  });
 
   // 공사 일정 — default to next month (지붕공사는 보통 다음 달 이후 시작)
   const [constructionMonth, setConstructionMonth] = useState(() => {
+    if (existing?.constructionMonth) return existing.constructionMonth;
     const d = new Date();
     d.setMonth(d.getMonth() + 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
 
   // Loss rate (per-estimate override)
-  const [applyLossRate, setApplyLossRate] = useState(settings.useLossRateByDefault);
-  const [lossRatePct, setLossRatePct] = useState(String(Math.round(settings.defaultLossRate * 100)));
-
-  // 하지작업 (NEW — between 색상 and 로스율)
-  const [substructureType, setSubstructureType] = useState<SubstructureType | "none">(
-    settings.substructureMode === "steel" ? "steel" : "wood",
+  const [applyLossRate, setApplyLossRate] = useState(existing?.applyLossRate ?? settings.useLossRateByDefault);
+  const [lossRatePct, setLossRatePct] = useState(
+    String(Math.round((existing?.lossRate ?? settings.defaultLossRate) * 100)),
   );
 
+  // 하지작업
+  const [substructureType, setSubstructureType] = useState<SubstructureType | "none">(() => {
+    if (isEditing) return (existing?.substructureType as SubstructureType | null) ?? "none";
+    return settings.substructureMode === "steel" ? "steel" : "wood";
+  });
+
   // Step 6: Scope
-  const [scope, setScope] = useState<ScopeFlags>({});
+  const [scope, setScope] = useState<ScopeFlags>(existingScope);
 
   // 물받이 mode (replaces scope.gutter)
-  const [gutterMode, setGutterMode] = useState<GutterMode>("full");
-  const [gutterLength, setGutterLength] = useState("");
+  const [gutterMode, setGutterMode] = useState<GutterMode>((existing?.gutterMode as GutterMode | null) ?? "full");
+  const [gutterLength, setGutterLength] = useState(existing?.gutterLengthM ? String(existing.gutterLengthM) : "");
 
   // 두겁 절곡 길이 (난간 시공 시 필수)
-  const [capLength, setCapLength] = useState("");
+  const [capLength, setCapLength] = useState(existing?.capLengthM ? String(existing.capLengthM) : "");
 
   // 새 배수구 타공 개수
-  const [drainHoles, setDrainHoles] = useState("1");
+  const [drainHoles, setDrainHoles] = useState(existing?.drainHoleCount ? String(existing.drainHoleCount) : "1");
 
   // 폐기물 트럭 수
-  const [wasteTrucks, setWasteTrucks] = useState("1");
+  const [wasteTrucks, setWasteTrucks] = useState(existing?.wasteTruckCount ? String(existing.wasteTruckCount) : "1");
 
   // Step 7: Equipment days (use steppers — small numeric range)
-  const [skyliftDays, setSkyliftDays] = useState("1");
-  const [ladderTruckDays, setLadderTruckDays] = useState("1");
-  const [scaffoldDays, setScaffoldDays] = useState("3");
-  const [scaffoldArea, setScaffoldArea] = useState("");
-  const [otherEquipment, setOtherEquipment] = useState("");
+  const [skyliftDays, setSkyliftDays] = useState(existing?.skyliftDays ? String(existing.skyliftDays) : "1");
+  const [ladderTruckDays, setLadderTruckDays] = useState(existing?.ladderTruckDays ? String(existing.ladderTruckDays) : "1");
+  const [scaffoldDays, setScaffoldDays] = useState(existing?.scaffoldDays ? String(existing.scaffoldDays) : "3");
+  const [scaffoldArea, setScaffoldArea] = useState(existing?.scaffoldAreaM2 ? String(existing.scaffoldAreaM2) : "");
+  const [otherEquipment, setOtherEquipment] = useState(existing?.otherEquipment ?? "");
 
   // Step 8: Work info (steppers)
-  const [workerCount, setWorkerCount] = useState(String(settings.defaultWorkerCount));
-  const [workDays, setWorkDays] = useState("2");
+  const [workerCount, setWorkerCount] = useState(existing ? String(existing.workerCount) : String(settings.defaultWorkerCount));
+  const [workDays, setWorkDays] = useState(existing ? String(existing.workDays) : "2");
 
   // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡)
-  const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>([]);
-  const [catalogModes, setCatalogModes] = useState<CategoryModesMap>({});
+  const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>(
+    (existing?.catalogSelections as unknown as CatalogSelection[]) ?? [],
+  );
+  const [catalogModes, setCatalogModes] = useState<CategoryModesMap>(
+    (existing?.catalogModes as unknown as CategoryModesMap) ?? {},
+  );
 
-  // Step 9: 기타 비용
+  // Step 9: 기타 비용 — not stored separately on Estimate; only relevant for new creation.
+  // On edit, we don't preserve these (they were already turned into line items at create time).
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
 
   function pickConstructionType(t: ConstructionType) {
@@ -211,50 +243,62 @@ export function NewEstimateForm({ siteId, settings }: Props) {
     const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
     const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
 
+    const payload = {
+      constructionType,
+      materialType,
+      materialThickness: thickness,
+      materialTexture: finalTexture,
+      materialColor: finalColor,
+      constructionMonth,
+      areaM2,
+      buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
+      workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
+      workDays: parseFloat(workDays) || 2,
+      gutterMode: gutterMode === "none" ? null : gutterMode,
+      gutterLengthM: gutterMode !== "none" ? parseFloat(gutterLength) || 0 : 0,
+      capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
+      drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
+      substructureType: substructureType === "none" ? null : substructureType,
+      wasteTruckCount: scope.waste ? Math.max(1, parseInt(wasteTrucks) || 1) : 1,
+      skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
+      ladderTruckDays: scope.ladderTruck ? parseFloat(ladderTruckDays) || 1 : 0,
+      scaffoldDays: scope.scaffold ? parseFloat(scaffoldDays) || 1 : 0,
+      scaffoldAreaM2: scope.scaffold && scaffoldArea ? parseFloat(scaffoldArea) || 0 : 0,
+      otherEquipment: otherEquipment || null,
+      scopeFlags: scope,
+      extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
+      catalogSelections: catalogSelections.filter((s) => s.quantity > 0 && s.label.trim()),
+      catalogModes,
+      applyLossRate,
+      lossRate,
+    };
+
     setSaving(true);
     try {
-      const res = await fetch(`/api/sites/${siteId}/estimates`, {
-        method: "POST",
+      let url: string;
+      let body: object;
+      if (isEditing && existing) {
+        url = `/api/estimates/${existing.id}`;
+        body = { action: "replace", ...payload };
+      } else {
+        url = `/api/sites/${siteId}/estimates`;
+        body = payload;
+      }
+      const res = await fetch(url, {
+        method: isEditing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          constructionType,
-          materialType,
-          materialThickness: thickness,
-          materialTexture: finalTexture,
-          materialColor: finalColor,
-          constructionMonth,
-          areaM2,
-          buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
-          workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
-          workDays: parseFloat(workDays) || 2,
-          gutterMode: gutterMode === "none" ? null : gutterMode,
-          gutterLengthM: gutterMode !== "none" ? parseFloat(gutterLength) || 0 : 0,
-          capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
-          drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
-          substructureType: substructureType === "none" ? null : substructureType,
-          wasteTruckCount: scope.waste ? Math.max(1, parseInt(wasteTrucks) || 1) : 1,
-          skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
-          ladderTruckDays: scope.ladderTruck ? parseFloat(ladderTruckDays) || 1 : 0,
-          scaffoldDays: scope.scaffold ? parseFloat(scaffoldDays) || 1 : 0,
-          scaffoldAreaM2: scope.scaffold && scaffoldArea ? parseFloat(scaffoldArea) || 0 : 0,
-          otherEquipment: otherEquipment || null,
-          scopeFlags: scope,
-          extraCosts: extraCosts.filter((ec) => ec.name?.trim() && ec.amount > 0),
-          catalogSelections: catalogSelections.filter((s) => s.quantity > 0 && s.label.trim()),
-          catalogModes,
-          applyLossRate,
-          lossRate,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error ?? "실패");
       }
       const est = await res.json();
-      toast.success("견적이 생성되었습니다");
+      toast.success(isEditing ? "견적이 수정되었습니다" : "견적이 생성되었습니다");
       router.push(`/sites/${siteId}/estimates/${est.id}`);
+      router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "견적 생성에 실패했습니다");
+      toast.error(e instanceof Error ? e.message : isEditing ? "수정에 실패했습니다" : "견적 생성에 실패했습니다");
     } finally {
       setSaving(false);
     }
@@ -727,7 +771,11 @@ export function NewEstimateForm({ siteId, settings }: Props) {
       <StickySubmit
         onClick={handleCreate}
         disabled={saving}
-        label={saving ? "계산 중..." : "견적 계산하기"}
+        label={
+          saving
+            ? (isEditing ? "저장 중..." : "계산 중...")
+            : (isEditing ? "수정 저장" : "견적 계산하기")
+        }
       />
     </>
   );

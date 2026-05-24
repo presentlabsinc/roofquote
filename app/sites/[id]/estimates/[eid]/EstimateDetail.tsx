@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText, Edit3 } from "lucide-react";
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 
 type FullEstimate = Estimate & { lineItems: EstimateLineItem[]; site: Site };
@@ -346,7 +346,8 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         </p>
       )}
 
-      {/* Destructive: delete this whole estimate. Two-tap confirm to prevent accidents. */}
+      {/* Edit input + Delete — destructive actions grouped at the bottom */}
+      <EditEstimateButton estimateId={est.id} siteId={est.siteId} />
       <DeleteEstimateButton estimateId={est.id} siteId={est.siteId} />
 
 
@@ -411,6 +412,57 @@ function BreakdownRow({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className="tabular-nums text-foreground">{value}</span>
+    </div>
+  );
+}
+
+function EditEstimateButton({ estimateId, siteId }: { estimateId: string; siteId: string }) {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+
+  function goEdit() {
+    router.push(`/sites/${siteId}/estimates/new?edit=${estimateId}`);
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 p-4">
+      {confirming ? (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-foreground text-center">
+            입력값을 수정하시면 <b className="text-amber-700">아래 항목이 초기화</b>됩니다:
+          </p>
+          <ul className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-disc">
+            <li>인라인으로 수정한 라인아이템 금액</li>
+            <li>마진율 / 최종가 직접 입력</li>
+            <li>견적 상세에서 추가/삭제한 라인</li>
+          </ul>
+          <p className="text-[11px] text-muted-foreground">
+            견적 번호와 발송 기록은 유지됩니다. 회사 정보와 단가는 현재 단가 설정값으로 다시 snapshot 됩니다.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirming(false)}
+              className="flex-1 h-11 rounded-xl text-sm"
+            >
+              취소
+            </Button>
+            <Button
+              onClick={goEdit}
+              className="flex-1 h-11 rounded-xl text-sm font-semibold"
+            >
+              계속 수정
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setConfirming(true)}
+          className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-primary py-2 pressable"
+        >
+          <Edit3 size={15} /> 입력값 수정
+        </button>
+      )}
     </div>
   );
 }

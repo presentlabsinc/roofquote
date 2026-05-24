@@ -148,18 +148,19 @@ Each catalog category has **two modes** — the user toggles per category:
 
 **Auto-fill for detailed mode** (per user request, deferred): each catalog item could carry a `perSqm` coefficient so switching to 상세 모드 auto-populates quantities based on construction area. Needs industry-standard data the user said they'd supply.
 
-### Estimate edit API — 9 actions total
+### Estimate edit API — 10 actions total
 `PATCH /api/estimates/[eid]` dispatches on the request body shape. Order in the route handler matters (first match wins):
 
 1. `{ lineItemId, total }` — manual edit on a line (`isUserEdited = true`)
 2. `{ lineItemId, action: "undo" }` — restore `total = quantity × unitPrice`, clear `isUserEdited`
 3. `{ lineItemId, action: "delete" }` — remove the line
 4. `{ action: "add", newLineItem: { name, quantity, unit, unitPrice, category } }` — append a free-form line (`isUserEdited = true`)
-5. `{ marginRate }` — set rate, recompute margin amount / supply / final
-6. `{ marginAmount }` — set amount, back-derive rate, mode → `'amount'`
-7. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
-8. `{ vatIncluded }` — toggle, recompute totals
-9. `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` — whitelist meta update
+5. `{ action: "replace", ...allEstimateFields }` — **full edit** — wipes existing line items, re-runs `buildLineItems` with submitted inputs, re-snapshots company info from current `PricingSettings`. Used by edit mode (`?edit=eid` on new-estimate form). Preserves `estimateNumber` and `pdfSentAt`. Resets `marginMode` to "percent".
+6. `{ marginRate }` — set rate, recompute margin amount / supply / final
+7. `{ marginAmount }` — set amount, back-derive rate, mode → `'amount'`
+8. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
+9. `{ vatIncluded }` — toggle, recompute totals
+10. `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` — whitelist meta update
 
 Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estimate)`:
 - If `estimate.marginMode === "finalPrice"`, the user's `finalPrice` is held fixed and `marginRate / marginAmount` are re-derived from the new `totalCost`. This preserves "I promised the customer 850만원" through subsequent edits.
@@ -167,6 +168,19 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 
 ### Client-safe view
 - The estimate detail UI has a "고객 보기" toggle that hides line items, margin controls, and the cost breakdown. Used when the salesperson hands the phone to the customer. Toggle lives in `EstimateDetail.tsx` (`clientView` state).
+
+### Edit mode (full edit of an existing estimate)
+- Triggered from EstimateDetail → "입력값 수정" button (with confirmation explaining what gets reset).
+- Navigates to `/sites/[id]/estimates/new?edit={eid}`.
+- `NewEstimateForm` accepts optional `existing?: Estimate` prop. When set:
+  - All useState initializers prefill from `existing.*` instead of defaults
+  - Form header shows "견적 수정"
+  - Submit button shows "수정 저장"
+  - PATCH `{ action: "replace", ... }` instead of POST
+- **What's reset:** line item inline edits, margin/finalPrice overrides, manually added line items (the rebuild starts fresh from `buildLineItems`).
+- **What's preserved:** `estimateNumber`, `pdfSentAt`.
+- **What's re-snapshotted:** all company info from current PricingSettings (so if user updated company phone after the original create, the edited estimate picks up the new phone).
+- **What's NOT preserved:** the `extraCosts` array — those became line items at create time and are wiped + must be re-entered if needed. (We don't store the original extraCosts on the Estimate.)
 
 ### PDF preview flow
 - Estimate detail → "견적서 미리보기" button navigates to `/sites/[id]/estimates/[eid]/preview?detail=simple` (default).

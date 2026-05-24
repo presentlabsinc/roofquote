@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { calcTotals, calcFromFinalPrice } from "@/lib/calculations";
+import { buildLineItems, calcTotals, calcFromFinalPrice } from "@/lib/calculations";
+import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
+import type { ConstructionType, ExtraCost, GutterMode, MaterialType, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { Estimate } from "@prisma/client";
 
 /**
@@ -92,6 +94,114 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       },
     });
     return recalcAndReturn(eid, estimate);
+  }
+
+  // ─── 5. Full edit (replace) ──────────────────────────────────────────
+  // Used when the user reopens the new-estimate form via ?edit=eid and
+  // saves. Wipes existing line items, re-runs buildLineItems with the
+  // submitted inputs, re-snapshots company info from CURRENT settings,
+  // and resets margin to "percent" mode. pdfSentAt is preserved so the
+  // "last sent" timestamp stays accurate (user can resend if needed).
+  if (body.action === "replace") {
+    const settings = await prisma.pricingSettings.findFirst();
+    if (!settings) {
+      return NextResponse.json({ error: "단가 설정이 없습니다." }, { status: 400 });
+    }
+    const {
+      constructionType = "roof", materialType = null,
+      materialThickness = "0.45", materialTexture = null, materialColor = null,
+      constructionMonth = null,
+      areaM2, buildingAreaM2 = null,
+      workerCount, workDays,
+      gutterMode = null, gutterLengthM = 0,
+      capLengthM = 0, drainHoleCount = 0,
+      warehouseAreaM2 = null, stairwellAreaM2 = null,
+      skyliftDays = 0, ladderTruckDays = 0, scaffoldDays = 0, scaffoldAreaM2 = 0,
+      wasteTruckCount = 1, substructureType = null,
+      otherEquipment = null,
+      scopeFlags, extraCosts = [], catalogSelections = [], catalogModes = {},
+      applyLossRate = false, lossRate = null,
+      marginRate: inputMarginRate, vatIncluded,
+      paymentTerms, validityDays,
+    } = body;
+
+    const scope: ScopeFlags = scopeFlags ?? {};
+    const marginRate = inputMarginRate ?? settings.defaultMarginRate;
+    const vatIncl = vatIncluded ?? estimate.vatIncluded;
+    const effectiveLossRate = lossRate ?? settings.defaultLossRate;
+
+    const lineItemDrafts = buildLineItems({
+      settings,
+      constructionType: constructionType as ConstructionType,
+      materialType: materialType as MaterialType | null,
+      thickness: materialThickness as Thickness | null,
+      areaM2, scope, workerCount, workDays,
+      gutterMode: gutterMode as GutterMode | null, gutterLengthM,
+      capLengthM, drainHoleCount,
+      skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2,
+      wasteTruckCount,
+      substructureType: substructureType as SubstructureType | null,
+      extraCosts: extraCosts as ExtraCost[],
+      catalogSelections: catalogSelections as CatalogSelection[],
+      catalogModes: catalogModes as CategoryModesMap,
+      applyLossRate, lossRate: effectiveLossRate,
+    });
+    const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
+
+    // Wipe + rebuild line items in a transaction so we don't leave the
+    // estimate in a half-state if the create fails
+    await prisma.$transaction(async (tx) => {
+      await tx.estimateLineItem.deleteMany({ where: { estimateId: eid } });
+      await tx.estimate.update({
+        where: { id: eid },
+        data: {
+          constructionType, materialType, materialThickness, materialTexture,
+          materialColor, constructionMonth,
+          areaM2, buildingAreaM2: buildingAreaM2 || null,
+          workerCount, workDays,
+          gutterMode: gutterMode || null, gutterLengthM: gutterLengthM || null,
+          capLengthM: capLengthM || null, drainHoleCount: drainHoleCount || 0,
+          warehouseAreaM2: warehouseAreaM2 || null,
+          stairwellAreaM2: stairwellAreaM2 || null,
+          skyliftDays: skyliftDays || null, ladderTruckDays: ladderTruckDays || null,
+          scaffoldDays: scaffoldDays || null, scaffoldAreaM2: scaffoldAreaM2 || null,
+          wasteTruckCount: wasteTruckCount || 1,
+          substructureType: substructureType || null,
+          otherEquipment, scopeFlags: scope as object,
+          applyLossRate,
+          lossRate: applyLossRate ? effectiveLossRate : null,
+          catalogSelections: (catalogSelections as CatalogSelection[])
+            .filter((s) => s.quantity > 0) as unknown as object,
+          catalogModes: catalogModes as object,
+          ...totals,
+          marginMode: "percent",
+          marginRate,
+          vatIncluded: vatIncl,
+          paymentTerms: paymentTerms ?? estimate.paymentTerms,
+          validityDays: validityDays ?? estimate.validityDays,
+          // Re-snapshot company info from current settings — user might have
+          // updated company name/phone/address since the original creation
+          companyNameSnapshot: settings.companyName,
+          companyPhoneSnapshot: settings.companyPhone ?? null,
+          companyAddressSnapshot: settings.companyAddress ?? null,
+          businessRegistrationNumberSnapshot: settings.businessRegistrationNumber ?? null,
+          sealImageUrlSnapshot: settings.sealImageUrl ?? null,
+          bankAccountSnapshot: settings.bankAccount ?? null,
+          noticeTextSnapshot: settings.noticeText ?? null,
+          // pdfSentAt + estimateNumber preserved (don't regenerate)
+          updatedAt: new Date(),
+        },
+      });
+      await tx.estimateLineItem.createMany({
+        data: lineItemDrafts.map((d) => ({ ...d, estimateId: eid })),
+      });
+    });
+
+    const updated = await prisma.estimate.findUnique({
+      where: { id: eid },
+      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+    });
+    return NextResponse.json(updated);
   }
 
   // Update margin rate
