@@ -28,7 +28,7 @@ export function BottomNav() {
               <Plus size={26} strokeWidth={2.6} />
             </Link>
           </div>
-          <NavItem href="/settings" icon={<Settings size={22} strokeWidth={2.3} />} label="단가" active={pathname === "/settings"} />
+          <NavItem href="/settings" icon={<Settings size={22} strokeWidth={2.3} />} label="설정" active={pathname === "/settings"} />
         </div>
       </div>
     </nav>

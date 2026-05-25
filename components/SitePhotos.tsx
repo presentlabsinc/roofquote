@@ -157,14 +157,17 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
                     className="w-24 h-24 object-cover border border-border/40"
                   />
                 </button>
-                {/* Delete chip — small, in the corner so it doesn't fight the main tap target. */}
+                {/* Delete chip — positioned INSIDE the image bounds so it
+                    survives the parent's overflow-x-auto (which implicitly
+                    clips vertical too). Dark bubble + white X stays visible
+                    on top of any image. */}
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     setConfirmDeleteIdx(i);
                   }}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 rounded-full bg-black/70 text-white grid place-items-center pressable"
+                  className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/65 text-white grid place-items-center pressable shadow-sm"
                   aria-label="사진 삭제"
                 >
                   <X size={13} strokeWidth={2.5} />
