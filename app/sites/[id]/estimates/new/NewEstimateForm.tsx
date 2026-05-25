@@ -110,8 +110,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     return d.toISOString().slice(0, 10);
   });
 
-  // Loss rate (per-estimate override)
-  const [applyLossRate, setApplyLossRate] = useState(existing?.applyLossRate ?? settings.useLossRateByDefault);
+  // Loss rate (per-estimate override) — default ON for new estimates per user request
+  const [applyLossRate, setApplyLossRate] = useState(existing?.applyLossRate ?? true);
   const [lossRatePct, setLossRatePct] = useState(
     String(Math.round((existing?.lossRate ?? settings.defaultLossRate) * 100)),
   );
@@ -171,25 +171,19 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   function pickConstructionType(t: ConstructionType) {
     setConstructionType(t);
+    // Per user feedback: only 용마루 (ridge) is default-checked; everything else
+    // off so the user explicitly opts in.
     const defaults: ScopeFlags = {};
     if (t === "roof") {
       defaults.ridge = true;
-      defaults.eave = true;
-      defaults.waste = true;
       setGutterMode("full");
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "rooftopRoof") {
-      defaults.frameReinforcement = true;
       defaults.ridge = true;
-      defaults.eave = true;
-      defaults.waste = true;
       setGutterMode("full");
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
-      // 난간 + 두겁 (forced by SCOPE_FORCES) + 폐기물 default
-      defaults.handrail = true;
-      defaults.cap = true;
-      defaults.waste = true;
+      // steelWaterproof has no ridge — leave all unchecked. User picks what's needed.
       setGutterMode("none");
       setSubstructureType("none");
     }
@@ -810,9 +804,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </p>
               <div className="grid grid-cols-3 gap-1.5 mb-2">
                 {([
-                  { v: "none",  l: "없음" },
-                  { v: "month", l: "연월" },
                   { v: "date",  l: "연월일" },
+                  { v: "month", l: "연월" },
+                  { v: "none",  l: "없음" },
                 ] as { v: typeof schedulePrecision; l: string }[]).map((opt) => (
                   <button
                     key={opt.v}

@@ -55,7 +55,7 @@ model PricingSettings {
   capBendingPricePerM          Int    @default(5000)
 
   // 지붕공사 / 옥상지붕 — 엔드캡 1개당
-  endCapPrice                  Int    @default(12000)
+  endCapPrice                  Int    @default(2000)
 
   // Catalog category defaults (mode + simple-mode preset per category).
   // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }

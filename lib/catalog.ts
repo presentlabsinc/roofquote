@@ -43,12 +43,16 @@ export type SimpleType = "percent" | "perSqm" | "perM" | "total";
 
 /** Per-category mode configuration. */
 export interface CategoryMode {
-  /** When false, the category contributes nothing to the estimate. Defaults true. */
+  /** When false, the category contributes nothing to the estimate. Defaults true.
+   *  (Currently no UI exposes this — kept in schema in case we want it back.) */
   enabled?: boolean;
   mode: "simple" | "detailed";
-  /** Used when mode === "simple" */
+  /** Used when mode === "simple" — the unit price or %  */
   simpleType?: SimpleType;
   simpleValue?: number;
+  /** Used when mode === "simple" with perSqm/perM — the quantity (m or ㎡).
+   *  When unset, falls back to the estimate's areaM2 (perSqm) or gutterLengthM (perM). */
+  simpleQty?: number;
 }
 
 export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;

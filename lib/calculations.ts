@@ -415,12 +415,14 @@ function simpleModeLineItem(
       unitPrice = ctx.materialTotal;
       break;
     case "perSqm":
-      qty = ctx.areaM2;
+      // Prefer user-entered simpleQty; fall back to construction area.
+      qty = (m.simpleQty && m.simpleQty > 0) ? m.simpleQty : ctx.areaM2;
       unit = "㎡";
       unitPrice = Math.round(v);
       break;
     case "perM":
-      qty = ctx.gutterLengthM;
+      // Prefer user-entered simpleQty; fall back to gutter length.
+      qty = (m.simpleQty && m.simpleQty > 0) ? m.simpleQty : ctx.gutterLengthM;
       unit = "m";
       unitPrice = Math.round(v);
       break;
