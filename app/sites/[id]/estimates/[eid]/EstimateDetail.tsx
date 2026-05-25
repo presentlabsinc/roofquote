@@ -192,35 +192,12 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
               <h2 className="font-semibold text-foreground text-sm">마진 조정</h2>
             </div>
 
+            {/* 순서는 "사장님이 가장 자주 만지는 것 → 회계 관점" 으로:
+                평당가 (현장 감각) → 최종 견적가 (고객이 묻는 숫자) →
+                마진율 (내부 관리) → 마진 금액 (거의 안 만짐). */}
             <div className="space-y-1.5 divide-y divide-border/40">
-              <EditableRow
-                label="마진율"
-                display={`${marginRatePct}%`}
-                editing={editingMargin === "rate"}
-                onEdit={() => { setEditingMargin("rate"); setMarginInput(String(marginRatePct)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="%" highlight
-              />
-              <EditableRow
-                label="마진 금액"
-                display={fmtKrw(est.marginAmount)}
-                editing={editingMargin === "amount"}
-                onEdit={() => { setEditingMargin("amount"); setMarginInput(String(est.marginAmount)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="원"
-              />
-              <EditableRow
-                label="최종 견적가 직접"
-                display={est.marginMode === "finalPrice" ? fmtKrw(est.finalPrice) : "역산 계산"}
-                placeholder
-                editing={editingMargin === "final"}
-                onEdit={() => { setEditingMargin("final"); setMarginInput(String(est.finalPrice)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="원"
-              />
-              {/* 평당가 — 한국 시공업계에서 자주 쓰는 quote 단위. 입력하면
-                  finalPrice = 평당가 × 평수 로 환산되어 finalPrice 모드로
-                  들어감 (역산 → marginRate 자동 재계산). */}
+              {/* 평당가 — 입력 시 finalPrice = 평당가 × 평수 로 환산 후
+                  finalPrice 모드로 들어감 (마진율 자동 역산). */}
               <EditableRow
                 label="평당가"
                 display={pyeong > 0 ? fmtKrw(pricePerPyeong) : "—"}
@@ -231,7 +208,32 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                   setMarginInput(String(pricePerPyeong));
                 }}
                 value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="원/평"
+                unit="원/평" highlight
+              />
+              <EditableRow
+                label="최종 견적가 직접"
+                display={est.marginMode === "finalPrice" ? fmtKrw(est.finalPrice) : "역산 계산"}
+                placeholder
+                editing={editingMargin === "final"}
+                onEdit={() => { setEditingMargin("final"); setMarginInput(String(est.finalPrice)); }}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                unit="원"
+              />
+              <EditableRow
+                label="마진율"
+                display={`${marginRatePct}%`}
+                editing={editingMargin === "rate"}
+                onEdit={() => { setEditingMargin("rate"); setMarginInput(String(marginRatePct)); }}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                unit="%"
+              />
+              <EditableRow
+                label="마진 금액"
+                display={fmtKrw(est.marginAmount)}
+                editing={editingMargin === "amount"}
+                onEdit={() => { setEditingMargin("amount"); setMarginInput(String(est.marginAmount)); }}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                unit="원"
               />
             </div>
 
