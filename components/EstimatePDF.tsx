@@ -310,16 +310,18 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
         {/* ─── Header (dark navy) ─── */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.companyName}>{estimate.companyNameSnapshot}</Text>
-            <Text style={styles.headerMeta}>
-              {estimate.businessRegistrationNumberSnapshot && `사업자등록번호: ${estimate.businessRegistrationNumberSnapshot}`}
-              {estimate.businessRegistrationNumberSnapshot && "\n"}
-              {estimate.companyPhoneSnapshot}
-              {estimate.companyAddressSnapshot && ` · ${estimate.companyAddressSnapshot}`}
-            </Text>
+            <Text style={styles.companyName}>{estimate.companyNameSnapshot || ""}</Text>
+            {estimate.businessRegistrationNumberSnapshot ? (
+              <Text style={styles.headerMeta}>사업자등록번호: {estimate.businessRegistrationNumberSnapshot}</Text>
+            ) : null}
+            {(estimate.companyPhoneSnapshot || estimate.companyAddressSnapshot) ? (
+              <Text style={styles.headerMeta}>
+                {[estimate.companyPhoneSnapshot, estimate.companyAddressSnapshot].filter(Boolean).join(" · ")}
+              </Text>
+            ) : null}
           </View>
           <View style={styles.headerRight}>
-            {estimate.estimateNumber && <Text style={styles.headerRightLine}>No. {estimate.estimateNumber}</Text>}
+            {estimate.estimateNumber ? <Text style={styles.headerRightLine}>No. {estimate.estimateNumber}</Text> : null}
             <Text style={styles.headerRightLine}>{createdStr} 발행</Text>
             <Text style={styles.headerRightLine}>{estimate.validityDays}일간 유효</Text>
           </View>
@@ -336,18 +338,18 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
           <View style={styles.topColRight}>
             <Text style={styles.labelTiny}>시공면적</Text>
             <Text style={styles.valueLarge}>{estimate.areaM2}㎡ (약 {pyeong}평)</Text>
-            {estimate.buildingAreaM2 && (
-              <>
+            {estimate.buildingAreaM2 ? (
+              <View>
                 <Text style={styles.labelTinyTop}>건물면적</Text>
                 <Text style={styles.valueRegular}>{estimate.buildingAreaM2}㎡ (약 {Math.round(estimate.buildingAreaM2 / 3.3058)}평)</Text>
-              </>
-            )}
-            {constructionMonthStr && (
-              <>
+              </View>
+            ) : null}
+            {constructionMonthStr ? (
+              <View>
                 <Text style={styles.labelTinyTop}>공사일정</Text>
                 <Text style={styles.valueRegular}>{constructionMonthStr}</Text>
-              </>
-            )}
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -377,32 +379,27 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
           <View style={styles.detailSection}>
             <Text style={styles.sectionLabel}>상세 내역</Text>
             <View style={styles.tableHeaderRow}>
-              <Text style={styles.cellName}><Text style={{ color: C.muted, fontSize: 9 }}>품명</Text></Text>
-              <Text style={styles.cellSpec}><Text style={{ color: C.muted, fontSize: 9 }}>규격</Text></Text>
-              <Text style={styles.cellQty}><Text style={{ color: C.muted, fontSize: 9 }}>수량</Text></Text>
-              <Text style={styles.cellAmount}><Text style={{ color: C.muted, fontSize: 9 }}>금액</Text></Text>
+              <Text style={[styles.cellName,   { color: C.muted, fontSize: 9 }]}>품명</Text>
+              <Text style={[styles.cellSpec,   { color: C.muted, fontSize: 9 }]}>규격</Text>
+              <Text style={[styles.cellQty,    { color: C.muted, fontSize: 9 }]}>수량</Text>
+              <Text style={[styles.cellAmount, { color: C.muted, fontSize: 9 }]}>금액</Text>
             </View>
-            {(() => {
-              const blocks: React.ReactElement[] = [];
-              let currentGroup = "";
-              detailedLines.forEach((line, i) => {
-                if (line.group !== currentGroup) {
-                  currentGroup = line.group;
-                  blocks.push(
-                    <Text key={`g-${i}`} style={styles.tableGroupHeader}>{line.group}</Text>
-                  );
-                }
-                blocks.push(
-                  <View key={`r-${i}`} style={styles.tableRow}>
-                    <Text style={styles.cellName}>{line.name}</Text>
-                    <Text style={styles.cellSpec}>{line.spec}</Text>
-                    <Text style={styles.cellQty}>{line.qty}</Text>
+            {detailedLines.map((line, i) => {
+              const showGroupHeader = i === 0 || line.group !== detailedLines[i - 1].group;
+              return (
+                <View key={`line-${i}`}>
+                  {showGroupHeader ? (
+                    <Text style={styles.tableGroupHeader}>{line.group}</Text>
+                  ) : null}
+                  <View style={styles.tableRow}>
+                    <Text style={styles.cellName}>{line.name || ""}</Text>
+                    <Text style={styles.cellSpec}>{line.spec || ""}</Text>
+                    <Text style={styles.cellQty}>{line.qty || ""}</Text>
                     <Text style={styles.cellAmount}>{fmt(line.amount)}</Text>
                   </View>
-                );
-              });
-              return blocks;
-            })()}
+                </View>
+              );
+            })}
             <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>소계 ({vatNote})</Text>
               <Text style={styles.subtotalAmount}>{fmt(detailedSubtotal)}</Text>
@@ -432,19 +429,19 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
               ))}
             </View>
           ) : (
-            <Text style={styles.paymentText}>{estimate.paymentTerms}</Text>
+            <Text style={styles.paymentText}>{estimate.paymentTerms || ""}</Text>
           )}
-          {estimate.bankAccountSnapshot && (
+          {estimate.bankAccountSnapshot ? (
             <Text style={styles.paymentBank}>입금계좌: {estimate.bankAccountSnapshot}</Text>
-          )}
+          ) : null}
         </View>
 
         {/* ─── Notice + Signature ─── */}
         <View style={styles.notice}>
           {noticeLines.length > 0 ? (
-            <View style={styles.noticeText}>
+            <View>
               {noticeLines.map((l, i) => (
-                <Text key={i}>{i + 1}. {l}</Text>
+                <Text key={`n-${i}`} style={styles.noticeText}>{i + 1}. {l}</Text>
               ))}
             </View>
           ) : (
@@ -455,7 +452,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
           <View style={styles.signatureRow}>
             <Text style={styles.signatureLeft}>위와 같이 견적합니다.</Text>
             <View style={styles.signatureRight}>
-              <Text style={styles.companyAbove}>{estimate.companyNameSnapshot}</Text>
+              <Text style={styles.companyAbove}>{estimate.companyNameSnapshot || ""}</Text>
               <View style={styles.sealCircle}>
                 {estimate.sealImageUrlSnapshot ? (
                   // eslint-disable-next-line jsx-a11y/alt-text
