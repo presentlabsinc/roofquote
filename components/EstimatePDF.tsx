@@ -34,11 +34,13 @@ try {
     family: "Pretendard",
     fonts: [
       {
-        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.ttf",
+        // NOTE: extension is .otf (not .ttf) — the .ttf files don't exist
+        // in this repo. Verified live: curl -I on these URLs returns 200.
+        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.otf",
         fontWeight: "normal",
       },
       {
-        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Bold.ttf",
+        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Bold.otf",
         fontWeight: "bold",
       },
     ],
