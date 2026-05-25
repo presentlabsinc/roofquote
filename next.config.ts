@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@prisma/client"],
+  // @react-pdf/renderer ships its own React reconciler + native-ish modules
+  // (PDFKit, fontkit) that break when bundled by Turbopack — symptom is the
+  // PDF route 500-ing with "Cannot read properties of null (reading 'props')"
+  // because the reconciler fails to commit the Document into the container.
+  // Marking it external makes Next.js load it from node_modules at runtime
+  // instead of bundling it through Turbopack.
+  serverExternalPackages: ["@prisma/client", "@react-pdf/renderer"],
   images: {
     remotePatterns: [
       {

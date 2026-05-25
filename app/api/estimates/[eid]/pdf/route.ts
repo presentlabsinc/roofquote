@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { renderToBuffer } from "@react-pdf/renderer";
+import { renderToBuffer, Document, Page, Text } from "@react-pdf/renderer";
 import { createElement, type ReactElement } from "react";
 import type { DocumentProps } from "@react-pdf/renderer";
 import { EstimatePDFDoc } from "@/components/EstimatePDF";
@@ -12,6 +12,40 @@ export const maxDuration = 60;
 
 export async function GET(req: Request, { params }: { params: Promise<{ eid: string }> }) {
   const { eid } = await params;
+  const url = new URL(req.url);
+
+  // ─── Diagnostic mode ────────────────────────────────────────────────
+  // Visit /api/estimates/{anyEid}/pdf?test=1 to render a minimal PDF
+  // with no Korean text, no font registration dependency, no data. If
+  // this fails, the issue is environmental (Turbopack/react-pdf wiring/
+  // serverless runtime). If it succeeds, the issue is in EstimatePDFDoc.
+  if (url.searchParams.get("test") === "1") {
+    try {
+      const minimal = createElement(
+        Document,
+        null,
+        createElement(
+          Page,
+          { size: "A4" },
+          createElement(Text, null, "hello from react-pdf"),
+        ),
+      ) as ReactElement<DocumentProps>;
+      const buf = await renderToBuffer(minimal);
+      const u8 = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
+      return new NextResponse(u8 as unknown as BodyInit, {
+        headers: { "Content-Type": "application/pdf", "Cache-Control": "no-store" },
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          mode: "test",
+          error: err instanceof Error ? err.message : String(err),
+          stack: err instanceof Error ? err.stack : undefined,
+        },
+        { status: 500 },
+      );
+    }
+  }
 
   try {
     const estimate = await prisma.estimate.findUnique({
@@ -22,11 +56,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const scopeFlags = estimate.scopeFlags as unknown as import("@/lib/types").ScopeFlags;
+    // scopeFlags is Json — could be {}, null, or a shape mismatch on old rows.
+    // Force-coerce to an empty object so component code never sees null.
+    const rawScope = estimate.scopeFlags as unknown;
+    const scopeFlags = (rawScope && typeof rawScope === "object"
+      ? rawScope
+      : {}) as import("@/lib/types").ScopeFlags;
 
-    const url = new URL(req.url);
     const detailLevel = url.searchParams.get("detail") === "detailed" ? "detailed" : "simple";
 
+    // Pre-render-time defensive snapshot. If EstimatePDFDoc throws during
+    // React's reconciliation, react-pdf's reconciler silently swallows the
+    // error and leaves container.document = null, which then surfaces as
+    // "Cannot read properties of null (reading 'props')" at line 139 of
+    // react-pdf.js's render(). To diagnose, we render the doc via
+    // React.renderToStaticMarkup substitute (a try around createElement)
+    // and let any synchronous throws bubble up to our catch block.
     const element = createElement(EstimatePDFDoc, { estimate, scopeFlags, detailLevel }) as ReactElement<DocumentProps>;
     const buffer = await renderToBuffer(element);
 

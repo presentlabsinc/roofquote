@@ -151,19 +151,21 @@ function constructionTypeLabel(t: string): string {
   return "지붕공사";
 }
 
-function buildWorkTitle(estimate: Estimate, scope: ScopeFlags): string {
+function buildWorkTitle(estimate: Estimate, scope: ScopeFlags | null | undefined): string {
+  const s = (scope ?? {}) as ScopeFlags;
   const mat = materialLabel(estimate.materialType ?? null);
   if (estimate.constructionType === "steelWaterproof") return `${mat} 옥상 스틸방수`;
   if (estimate.constructionType === "rooftopRoof") return `${mat} 옥상지붕 시공`;
-  if (scope.removal) return `${mat} 지붕공사 (기존 지붕 철거)`;
-  if (scope.overlay) return `${mat} 지붕공사 (기존 지붕 덧씌우기)`;
+  if (s.removal) return `${mat} 지붕공사 (기존 지붕 철거)`;
+  if (s.overlay) return `${mat} 지붕공사 (기존 지붕 덧씌우기)`;
   return `${mat} 지붕공사`;
 }
 
-function scopeOneLine(estimate: Estimate, scope: ScopeFlags): string {
+function scopeOneLine(estimate: Estimate, scope: ScopeFlags | null | undefined): string {
   // Builds one comma-joined sentence like the v4 mockup, including the work title.
+  const s = (scope ?? {}) as ScopeFlags;
   const parts: string[] = [];
-  parts.push(buildWorkTitle(estimate, scope));
+  parts.push(buildWorkTitle(estimate, s));
 
   const ct = estimate.constructionType as ConstructionType;
   const keys: (keyof ScopeFlags)[] = (() => {
@@ -172,22 +174,22 @@ function scopeOneLine(estimate: Estimate, scope: ScopeFlags): string {
     return ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"];
   })();
   // Combine ridge+eave nicely if both
-  if (scope.ridge && scope.eave) parts.push("용마루 및 처마 마감");
-  else if (scope.ridge) parts.push("용마루 마감");
-  else if (scope.eave) parts.push("처마 마감");
+  if (s.ridge && s.eave) parts.push("용마루 및 처마 마감");
+  else if (s.ridge) parts.push("용마루 마감");
+  else if (s.eave) parts.push("처마 마감");
   // Gutter — from mode
   if (estimate.gutterMode && estimate.gutterMode !== "none") {
     parts.push("물받이 교체");
   }
   for (const k of keys) {
     if (k === "ridge" || k === "eave") continue; // already handled
-    if (scope[k]) parts.push(SCOPE_LABELS[k]);
+    if (s[k]) parts.push(SCOPE_LABELS[k] ?? "");
   }
   // Always include waste/safety blurbs as in mockup
-  if (scope.skylift || scope.ladderTruck || scope.scaffold) parts.push("장비 및 안전 작업");
+  if (s.skylift || s.ladderTruck || s.scaffold) parts.push("장비 및 안전 작업");
 
-  // dedupe + join
-  return Array.from(new Set(parts)).join(" · ");
+  // dedupe + join (filter empty strings just in case)
+  return Array.from(new Set(parts.filter(Boolean))).join(" · ");
 }
 
 function formatMonth(v: string | null): string | null {
