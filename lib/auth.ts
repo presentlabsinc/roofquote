@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { supabaseServer } from "./supabase";
+import { supabaseServer } from "./supabase-server";
 import { prisma } from "./prisma";
 
 /**

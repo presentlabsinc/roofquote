@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 
 /**
  * POST /api/auth/logout — sign the user out and redirect to /login.

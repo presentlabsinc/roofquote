@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { supabaseAdmin, PHOTO_BUCKET } from "@/lib/supabase";
+import { supabaseAdmin } from "@/lib/supabase-server";
+import { PHOTO_BUCKET } from "@/lib/supabase";
 
 export const runtime = "nodejs";
 
