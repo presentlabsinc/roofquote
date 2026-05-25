@@ -155,6 +155,8 @@ Each catalog category has **two modes** — the user toggles per category:
 
 **Auto-fill for detailed mode** (per user request, deferred): each catalog item could carry a `perSqm` coefficient so switching to 상세 모드 auto-populates quantities based on construction area. Needs industry-standard data the user said they'd supply.
 
+**내 단가 프리셋 저장/불러오기** (deferred — post-v0): user wants to be able to save their pricing settings as multiple named snapshots and switch between them (e.g. "표준", "겨울 비수기", "프리미엄"). Plus a "기본설정으로 리셋" button that's available immediately. Probably one new model `PricingPreset { id, userId, name, snapshotJson, createdAt }` and a dropdown in settings header. Wait until auth is in place since presets are per-user.
+
 ### Estimate edit API — 10 actions total
 `PATCH /api/estimates/[eid]` dispatches on the request body shape. Order in the route handler matters (first match wins):
 
