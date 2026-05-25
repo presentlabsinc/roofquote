@@ -21,11 +21,24 @@ export default async function EstimateDetailPage({
   });
   if (!e || e.siteId !== id) notFound();
 
+  // Margin distribution ratios — same source the PDF route uses. Passed to
+  // EstimateDetail so the in-app line items can show '(고객가 X원)' next to
+  // each cost using the SAME numbers the customer will see on the PDF.
+  const settings = await prisma.pricingSettings.findUnique({ where: { userId: user.id } });
+  const marginRatios = {
+    material: settings?.marginMaterialRatio ?? 0.5,
+    labor: settings?.marginLaborRatio ?? 0.25,
+    profit: settings?.marginProfitRatio ?? 0.25,
+  };
+
   return (
     <>
       <AppHeader title="견적서" subtitle={e.site.customerName} />
       <div className="max-w-lg mx-auto px-4 pt-4">
-        <EstimateDetail estimate={e as Parameters<typeof EstimateDetail>[0]["estimate"]} />
+        <EstimateDetail
+          estimate={e as Parameters<typeof EstimateDetail>[0]["estimate"]}
+          marginRatios={marginRatios}
+        />
       </div>
     </>
   );

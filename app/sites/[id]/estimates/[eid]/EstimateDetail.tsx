@@ -1,11 +1,12 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText, Edit3 } from "lucide-react";
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
+import { distributeMarginForDisplay, type MarginDistributionRatios } from "@/lib/calculations";
 
 type FullEstimate = Estimate & { lineItems: EstimateLineItem[]; site: Site };
 
@@ -29,7 +30,13 @@ const CATEGORY_COLORS: Record<string, string> = {
 function fmt(n: number) { return n.toLocaleString("ko-KR"); }
 function fmtKrw(n: number) { return fmt(n) + "원"; }
 
-export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }) {
+export function EstimateDetail({
+  estimate: initial,
+  marginRatios = { material: 0.5, labor: 0.25, profit: 0.25 },
+}: {
+  estimate: FullEstimate;
+  marginRatios?: MarginDistributionRatios;
+}) {
   const router = useRouter();
   const [est, setEst] = useState<FullEstimate>(initial);
   const [expanded, setExpanded] = useState(true);
@@ -129,6 +136,21 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
   // 손해 견적 감지 — 사장님이 평당가·최종가를 원가보다 낮게 잡으면 음수 마진.
   // 저장은 허용하되 빨간색으로 강조해서 못 보고 지나치는 걸 방지.
   const isLoss = est.marginAmount < 0;
+
+  // 라인별 "고객가" = 원가 라인에 마진을 분배한 후의 표시 금액.
+  // PDF 가 보여주는 숫자와 똑같이 계산해서 사장님이 원가 ↔ 고객가 비교 가능.
+  // distributeMarginForDisplay 는 입력 라인 순서를 보존하므로 index 매칭으로 충분.
+  // (마지막에 synthetic 이윤 라인이 추가될 수 있는데 그건 별도 처리, BreakdownRow 에선 표시 안 함.)
+  const customerPriceById = useMemo(() => {
+    const map = new Map<string, number>();
+    if (est.marginAmount === 0) return map; // 분배할 게 없으면 원가 = 고객가
+    const display = distributeMarginForDisplay(est.lineItems, est.marginAmount, marginRatios);
+    est.lineItems.forEach((item, i) => {
+      const d = display[i];
+      if (d) map.set(item.id, d.total);
+    });
+    return map;
+  }, [est.lineItems, est.marginAmount, marginRatios]);
 
   return (
     <div className="space-y-3 pb-48">
@@ -320,10 +342,19 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                         ) : (
                           <button
                             onClick={() => { setEditingLineId(item.id); setLineEditVal(String(item.total)); }}
-                            className="flex items-center gap-1 pressable px-1.5 py-1 -mr-1.5 rounded-lg"
+                            className="flex flex-col items-end gap-0.5 pressable px-1.5 py-1 -mr-1.5 rounded-lg"
                           >
-                            <span className="text-sm font-semibold tabular-nums">{fmt(item.total)}<span className="text-[10px] ml-0.5 text-muted-foreground">원</span></span>
-                            <Edit2 size={12} className="text-muted-foreground/60" />
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm font-semibold tabular-nums">{fmt(item.total)}<span className="text-[10px] ml-0.5 text-muted-foreground">원</span></span>
+                              <Edit2 size={12} className="text-muted-foreground/60" />
+                            </div>
+                            {/* 고객가 — 마진을 라인별로 분배한 후의 표시 금액.
+                                원가와 같으면(분배 안 됨) 숨김. */}
+                            {customerPriceById.has(item.id) && customerPriceById.get(item.id) !== item.total && (
+                              <span className="text-[10px] tabular-nums text-primary/70 font-medium">
+                                (고객가 {fmt(customerPriceById.get(item.id)!)}원)
+                              </span>
+                            )}
                           </button>
                         )}
                       </div>
