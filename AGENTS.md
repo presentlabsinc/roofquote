@@ -116,7 +116,7 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 - **비계** uses two inputs (days + area in ㎡) → `area × days × scaffoldPricePerSqmDay`. If area is 0, falls back to legacy `scaffoldDailyCost × days` lump-sum model.
 - **두겁 (cap)** is a scope flag with inline length input. When 난간 (handrail) is checked, `SCOPE_FORCES` auto-checks 두겁 (water leaks otherwise). Cost = `capLengthM × capBendingPricePerM`. Stored on `Estimate.capLengthM`.
 - **새 배수구 타공 (drainHole)** is a scope flag with inline count stepper. Cost = `drainHoleCount × drainHolePrice`. Stored on `Estimate.drainHoleCount`.
-- **엔드캡 (endCap)** is a scope flag (지붕공사 + 옥상지붕 only) with inline count stepper. Cost = `endCapCount × endCapPrice` (default 2,000원/개, configurable in 단가 설정).
+- **엔드캡 (endCap)** is a scope flag (지붕공사 + 옥상지붕 only) with inline count stepper. Cost = `endCapCount × endCapPrice` (default 3,500원/개, configurable in 설정 → 자재 단가).
 
 ### Numeric stepper
 - `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.

@@ -36,7 +36,7 @@ const DEFAULTS = {
   substructureSteelPricePerSqm: 40000,
   drainHolePrice: 200000,
   capBendingPricePerM: 5000,
-  endCapPrice: 2000,
+  endCapPrice: 3500,
   stainlessDrainPricePerM: 50000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.10,
@@ -443,8 +443,10 @@ function SealAndNoticeCard({
  * lets the user input the supplier's number and auto-derive the ㎡ price.
  */
 function PriceCalculator({ onApply }: { onApply: (perSqm: number) => void }) {
-  const [width, setWidth] = useState("1.0");
-  const [perM, setPerM] = useState("");
+  // 기본값: 징크250 (너비 0.75m) × 9,000원/m — 가장 자주 쓰는 조합.
+  // 다른 폭(슬레이트골 1.0m, 기와형 0.7m 등) 은 사용자가 너비만 바꾸면 됨.
+  const [width, setWidth] = useState("0.75");
+  const [perM, setPerM] = useState("9000");
 
   const w = parseFloat(width);
   const pm = parseFloat(perM);
