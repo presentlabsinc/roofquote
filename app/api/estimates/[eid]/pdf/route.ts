@@ -55,7 +55,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
       stack: err instanceof Error ? err.stack : undefined,
     });
     return NextResponse.json(
-      { error: "PDF 생성 실패", detail: err instanceof Error ? err.message : String(err) },
+      {
+        error: "PDF 생성 실패",
+        detail: err instanceof Error ? err.message : String(err),
+        // Stack helps diagnose where inside react-pdf the null props happens.
+        // Keep this in v0 — it's only seen by us, no PII.
+        stack: err instanceof Error ? err.stack : undefined,
+      },
       { status: 500 },
     );
   }

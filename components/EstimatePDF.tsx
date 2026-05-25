@@ -1,4 +1,5 @@
 "use client";
+import type { ReactElement } from "react";
 import {
   Document,
   Page,
@@ -11,10 +12,41 @@ import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 import type { ScopeFlags, ConstructionType } from "@/lib/types";
 import { MATERIAL_TYPES, SCOPE_LABELS } from "@/lib/types";
 
-Font.register({
-  family: "Noto Sans KR",
-  src: "https://fonts.gstatic.com/s/notosanskr/v36/PbykFmXiEBPT4ITbgNA5Cgms3VYcOA-vvnIzzuoyeLTq8H4hfeE.woff2",
-});
+// ⚠️ Font sourcing — DO NOT use Google Fonts /s/ CSS-chunk URLs here.
+// Those URLs are dynamically subsetted woff2 files that only cover a
+// fraction of the Hangul block per file. When react-pdf v4 lays out a
+// Text node containing a character outside the subset, the glyph lookup
+// returns null and the renderer surfaces it as
+// "Cannot read properties of null (reading 'props')" deep inside its
+// children processor. Use a full-coverage TTF/OTF from a stable CDN.
+//
+// jsdelivr serves Pretendard from the official repo with a long cache.
+// Pretendard covers the full Hangul block + Latin and is what the app
+// already uses on the web side, so the PDF visually matches the UI.
+try {
+  Font.register({
+    family: "Pretendard",
+    fonts: [
+      {
+        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.ttf",
+        fontWeight: "normal",
+      },
+      {
+        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Bold.ttf",
+        fontWeight: "bold",
+      },
+    ],
+  });
+} catch (e) {
+  // Font registration failure should not block the entire PDF. Falls
+  // back to react-pdf's bundled Helvetica (no Korean coverage — boxes).
+  console.error("[PDF] Font.register failed", e);
+}
+
+// Disable hyphenation — react-pdf's default hyphenation callback can
+// also return null for characters it doesn't know, contributing to
+// the "null props" crash class.
+Font.registerHyphenationCallback((word) => [word]);
 
 // v4 color palette (matches the kickoff mockup)
 const C = {
@@ -34,7 +66,7 @@ const C = {
 };
 
 const styles = StyleSheet.create({
-  page: { fontFamily: "Noto Sans KR", fontSize: 10, padding: 0, color: C.text, backgroundColor: "#ffffff" },
+  page: { fontFamily: "Pretendard", fontSize: 10, padding: 0, color: C.text, backgroundColor: "#ffffff" },
   body: { padding: 24, paddingTop: 0 },
 
   // — Header (dark navy)
@@ -310,19 +342,27 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
         <View style={styles.header}>
           <View>
             <Text style={styles.companyName}>{estimate.companyNameSnapshot || ""}</Text>
-            {estimate.businessRegistrationNumberSnapshot ? (
-              <Text style={styles.headerMeta}>사업자등록번호: {estimate.businessRegistrationNumberSnapshot}</Text>
-            ) : null}
-            {(estimate.companyPhoneSnapshot || estimate.companyAddressSnapshot) ? (
-              <Text style={styles.headerMeta}>
-                {[estimate.companyPhoneSnapshot, estimate.companyAddressSnapshot].filter(Boolean).join(" · ")}
-              </Text>
-            ) : null}
+            {[
+              estimate.businessRegistrationNumberSnapshot
+                ? `사업자등록번호: ${estimate.businessRegistrationNumberSnapshot}`
+                : null,
+              [estimate.companyPhoneSnapshot, estimate.companyAddressSnapshot].filter(Boolean).join(" · ") || null,
+            ]
+              .filter((s): s is string => Boolean(s))
+              .map((s, i) => (
+                <Text key={`hm-${i}`} style={styles.headerMeta}>{s}</Text>
+              ))}
           </View>
           <View style={styles.headerRight}>
-            {estimate.estimateNumber ? <Text style={styles.headerRightLine}>{`No. ${estimate.estimateNumber}`}</Text> : null}
-            <Text style={styles.headerRightLine}>{`${createdStr} 발행`}</Text>
-            <Text style={styles.headerRightLine}>{`${estimate.validityDays}일간 유효`}</Text>
+            {[
+              estimate.estimateNumber ? `No. ${estimate.estimateNumber}` : null,
+              `${createdStr} 발행`,
+              `${estimate.validityDays}일간 유효`,
+            ]
+              .filter((s): s is string => Boolean(s))
+              .map((s, i) => (
+                <Text key={`hr-${i}`} style={styles.headerRightLine}>{s}</Text>
+              ))}
           </View>
         </View>
 
@@ -335,32 +375,42 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
             <Text style={styles.valueRegular}>{estimate.site.siteAddress ?? ""}</Text>
           </View>
           <View style={styles.topColRight}>
-            <Text style={styles.labelTiny}>시공면적</Text>
-            <Text style={styles.valueLarge}>{`${estimate.areaM2 ?? 0}㎡ (약 ${pyeong}평)`}</Text>
-            {estimate.buildingAreaM2 ? (
-              <View>
-                <Text style={styles.labelTinyTop}>건물면적</Text>
-                <Text style={styles.valueRegular}>{`${estimate.buildingAreaM2}㎡ (약 ${Math.round(estimate.buildingAreaM2 / 3.3058)}평)`}</Text>
-              </View>
-            ) : null}
-            {constructionMonthStr ? (
-              <View>
-                <Text style={styles.labelTinyTop}>공사일정</Text>
-                <Text style={styles.valueRegular}>{constructionMonthStr}</Text>
-              </View>
-            ) : null}
+            {/* Always-on rows + optional rows expressed as flat label/value pairs. */}
+            {(() => {
+              const rows: Array<{ label: string; value: string; top?: boolean }> = [
+                { label: "시공면적", value: `${estimate.areaM2 ?? 0}㎡ (약 ${pyeong}평)` },
+              ];
+              if (estimate.buildingAreaM2) {
+                rows.push({
+                  label: "건물면적",
+                  value: `${estimate.buildingAreaM2}㎡ (약 ${Math.round(estimate.buildingAreaM2 / 3.3058)}평)`,
+                  top: true,
+                });
+              }
+              if (constructionMonthStr) {
+                rows.push({ label: "공사일정", value: constructionMonthStr, top: true });
+              }
+              return rows.flatMap((r, i) => [
+                <Text key={`tr-l-${i}`} style={r.top ? styles.labelTinyTop : styles.labelTiny}>{r.label}</Text>,
+                <Text key={`tr-v-${i}`} style={r.label === "시공면적" ? styles.valueLarge : styles.valueRegular}>{r.value}</Text>,
+              ]);
+            })()}
           </View>
         </View>
 
         {/* ─── Scope + pills ─── */}
         <View style={styles.scopeSection}>
           <Text style={styles.sectionLabel}>공사 범위</Text>
-          <Text style={styles.scopeText}>{scopeOneLine(estimate, scopeFlags)}</Text>
-          {pills.length > 0 ? (
+          <Text style={styles.scopeText}>{scopeOneLine(estimate, scopeFlags) || ""}</Text>
+          {pills.length > 0 && (
             <View style={styles.pillRow}>
-              {pills.map((p, i) => (<Text key={`p-${i}`} style={styles.pill}>{p ?? ""}</Text>))}
+              {pills
+                .filter((p): p is string => Boolean(p))
+                .map((p, i) => (
+                  <Text key={`p-${i}`} style={styles.pill}>{p}</Text>
+                ))}
             </View>
-          ) : null}
+          )}
         </View>
 
         {/* ─── Cost: simple or detailed ─── */}
@@ -383,21 +433,26 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
               <Text style={[styles.cellQty,    { color: C.muted, fontSize: 9 }]}>수량</Text>
               <Text style={[styles.cellAmount, { color: C.muted, fontSize: 9 }]}>금액</Text>
             </View>
-            {detailedLines.map((line, i) => {
+            {/* Flatten group headers + rows into a flat element list — avoids
+                nested Views with conditional null children, which has been a
+                source of react-pdf "null props" crashes. */}
+            {detailedLines.flatMap((line, i) => {
               const showGroupHeader = i === 0 || line.group !== detailedLines[i - 1].group;
-              return (
-                <View key={`line-${i}`}>
-                  {showGroupHeader ? (
-                    <Text style={styles.tableGroupHeader}>{line.group}</Text>
-                  ) : null}
-                  <View style={styles.tableRow}>
-                    <Text style={styles.cellName}>{line.name || ""}</Text>
-                    <Text style={styles.cellSpec}>{line.spec || ""}</Text>
-                    <Text style={styles.cellQty}>{line.qty || ""}</Text>
-                    <Text style={styles.cellAmount}>{fmt(line.amount)}</Text>
-                  </View>
-                </View>
+              const els: ReactElement[] = [];
+              if (showGroupHeader) {
+                els.push(
+                  <Text key={`grp-${i}`} style={styles.tableGroupHeader}>{line.group || ""}</Text>,
+                );
+              }
+              els.push(
+                <View key={`row-${i}`} style={styles.tableRow}>
+                  <Text style={styles.cellName}>{line.name || ""}</Text>
+                  <Text style={styles.cellSpec}>{line.spec || ""}</Text>
+                  <Text style={styles.cellQty}>{line.qty || ""}</Text>
+                  <Text style={styles.cellAmount}>{fmt(line.amount)}</Text>
+                </View>,
               );
+              return els;
             })}
             <View style={styles.subtotalRow}>
               <Text style={styles.subtotalLabel}>{`소계 (${vatNote})`}</Text>
@@ -421,7 +476,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
             <View style={styles.paymentCards}>
               {paymentStages.map((s, i) => (
                 <View key={`pay-${i}`} style={styles.paymentCard}>
-                  <Text style={styles.paymentLabel}>{s.label ?? ""}</Text>
+                  <Text style={styles.paymentLabel}>{s.label || ""}</Text>
                   <Text style={styles.paymentAmount}>{`${fmt(s.amount)}원`}</Text>
                   <Text style={styles.paymentPercent}>{`${Math.round(s.percent * 100)}%`}</Text>
                 </View>
@@ -430,9 +485,9 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
           ) : (
             <Text style={styles.paymentText}>{estimate.paymentTerms || ""}</Text>
           )}
-          {estimate.bankAccountSnapshot ? (
+          {estimate.bankAccountSnapshot && (
             <Text style={styles.paymentBank}>{`입금계좌: ${estimate.bankAccountSnapshot}`}</Text>
-          ) : null}
+          )}
         </View>
 
         {/* ─── Notice + Signature ─── */}

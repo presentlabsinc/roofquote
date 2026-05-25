@@ -180,11 +180,20 @@ Estimate (모든 입력값과 합계는 snapshot)
 
   공사 범위
     scopeFlags          Json    # 체크된 항목들 (ScopeFlags 모양, lib/types.ts 참고)
-    gutterMode          # null/'none' | 'full' | 'front' | 'back'
-    gutterLengthM       # 물받이 길이 (gutterMode != 'none' 일 때)
+    gutterMode          # 다중선택 직렬화 — "front,back,left,right" / "" (안함). lib/types.ts 의 parseGutterSides / serializeGutterSides / gutterSidesLabel 사용
+    gutterLengthM       # 물받이 길이 (gutterMode 비어있지 않을 때)
+    endCapCount         # 엔드캡 개수 (지붕/옥상지붕)
     capLengthM          # 두겁 절곡 길이 (난간 시공 시 필수)
     drainHoleCount      # 새 배수구 타공 개수 (default 0)
     wasteTruckCount     # 폐기물 차 수 (기본 1)
+
+  공사 일정 정밀도
+    constructionMonth   # "YYYY-MM-DD" / "YYYY-MM" / null (안 넣음) — PDF 에서 자동 포맷
+
+  per-estimate 단가 override (snapshot rule 유지)
+    pricingOverrides    Json    # Partial<PricingOverrides> — 빈 칸은 단가설정 기본값 사용
+    catalogModes        Json    # 카테고리별 simple/detailed 모드 + 심플 값 override
+    catalogSelections   Json    # 상세 모드 항목 스냅샷
 
   로스율 snapshot
     applyLossRate, lossRate
@@ -275,7 +284,7 @@ PDF (v4 디자인) 에 나가는 항목:
 
 ### 수정 (PATCH `/api/estimates/[eid]`)
 
-요청 body 의 모양에 따라 9가지 액션 중 하나로 dispatch. 모든 액션은 `recalcAndReturn` 헬퍼를 통과해 합계가 자동 재계산됨:
+요청 body 의 모양에 따라 10가지 액션 중 하나로 dispatch. 모든 액션은 `recalcAndReturn` 헬퍼를 통과해 합계가 자동 재계산됨:
 
 | Body 모양 | 액션 |
 |---|---|
@@ -283,6 +292,7 @@ PDF (v4 디자인) 에 나가는 항목:
 | `{ lineItemId, action: "undo" }` | 라인 원래대로 (`total = quantity × unitPrice`, `isUserEdited = false`) |
 | `{ lineItemId, action: "delete" }` | 라인 삭제 |
 | `{ action: "add", newLineItem }` | 자유 라인 추가 (`{name, quantity, unit, unitPrice, category}`) |
+| `{ action: "replace", ...allFields }` | **전체 수정** — 라인 전부 삭제 후 `buildLineItems` 재실행. `?edit=eid` 모드에서 사용. 견적번호와 `pdfSentAt` 은 보존. 회사정보는 재스냅샷 |
 | `{ marginRate }` | 마진율 변경 → 마진금액/공급가/최종가 재계산 (라인 그대로) |
 | `{ marginAmount }` | 마진금액 직접 입력 → 마진율 역산, 모드 = 'amount' |
 | `{ finalPrice }` | 최종가 직접 입력 → 마진금액 역산, 모드 = 'finalPrice' |
@@ -322,27 +332,36 @@ PDF (v4 디자인) 에 나가는 항목:
 
 1. **면적** — 평 / ㎡ 양방향 자동 변환 (평 왼쪽 우선). 시공 면적 필수. 건물 면적은 옵션 토글.
 2. **공사 유형** — `roof` / `steelWaterproof` / `rooftopRoof` 중 택1
-3. **자재 종류** — 슬레이트골, V250, 징크250, 일반기와형, 전통기와형, 리얼징크, 기타
-4. **자재 두께** — 0.4t / 0.45t (기본) / 0.5t / 0.6t
+3. **강판 종류** — 슬레이트골, V250, 징크250, 일반기와형, 전통기와형, 리얼징크, 기타
+   - **공사 유형별 기본값:** `steelWaterproof` → 슬레이트골, `roof` / `rooftopRoof` → 징크250
+4. **강판 두께** — 0.4t / 0.45t (기본) / 0.5t / 0.6t
 5. **색상 / 텍스처** — 9가지 프리셋 (진밤색 기본) + 기타 직접 입력
    - 진밤색, 밤색, 차콜, 진회색, 은회색, 적갈색, 녹색, 청색, 백색
+   - 텍스처: 유광 / 무광 / 스톤
 6. **하지 작업** — 없음 / 목재 / 철재. 시공면적 × ㎡당 단가 자동 계산
-7. **자재 로스율** — 토글 (기본 OFF). 켜면 입력한 %만큼 자재 면적이 증가
-8. **공사 범위** — 공사 유형에 따라 옵션 다름:
-   - `roof`: 덧씌우기 ↔ 철거 (mutually exclusive), 용마루, 처마, 폐기물 (+ 트럭 수)
-   - `rooftopRoof`: 골조보강, 용마루, 처마, 창고/계단실/옥탑방 포함, 폐기물
+7. **자재 로스율** — 토글 (기본 ON). 끄면 자재 면적 그대로
+8. **공사 범위** — 공사 유형에 따라 옵션 다름. **기본은 "용마루 마감"만 체크**, 나머지는 사용자가 선택:
+   - `roof`: 덧씌우기 (기본 ON) ↔ 철거 (mutually exclusive), 용마루, 처마, 엔드캡 (+ 개수, 기본 단가 2,000원/개), 폐기물 (+ 트럭 수)
+   - `rooftopRoof`: 용마루, 처마, 엔드캡 (+ 개수), 폐기물 — (창고/계단실/옥탑방 옵션은 제거됨)
    - `steelWaterproof`: 난간 → 두겁 (forced dependency, 두겁 절곡 m당 비용), 새 배수구 타공 (+ 개수), 배수구 처리, 창고/계단실/옥탑방 포함, 폐기물
-   - **물받이**는 별도 라디오: 안함 / 전체 / 앞만 / 뒤만 + 길이 입력
+   - **물받이**는 별도 다중선택: 앞·뒤·좌·우 4 버튼 (기본 전부 선택). 모두 선택 시 견적서엔 "전체", 모두 해제 시 "안함" 로 표시. `lib/types.ts` 의 `parseGutterSides` / `serializeGutterSides` / `gutterSidesLabel` 헬퍼 사용
    - **포함 항목들**(난간, 창고, 계단실, 옥탑방)은 시공면적에 포함된 것으로 가정. **두겁만 예외** — 절곡이라 m당 별도 단가 적용
-9. **추가 자재 / 부속 (카탈로그)** — 4개 카테고리(마감재 / 물받이 부속 / 부자재 / 절곡) 각각 **심플/상세 모드 토글**
-   - **심플 모드** (기본): 한 줄로 자동 계산. 자재비의 % / ㎡당 / m당 / 총금액 중 하나 선택 + 값 입력. 빠름.
-   - **상세 모드**: 항목별로 수량 + 인라인 단가. 정확함.
-   - 기본값: 마감재 ㎡당 5,000원, 물받이부속 m당 3,000원, 부자재 자재비의 15%, 절곡 총금액 0원
+9. **추가 자재 / 부속 (카탈로그)** — 4개 카테고리(마감재 / 물받이 부속 / 부자재 / 절곡) 각각 **iOS 스타일 토글로 심플(OFF) ↔ 상세(ON)** 전환
+   - **심플 모드** (기본): 한 줄로 자동 계산. 자재비의 % / m당 / 총금액 중 하나 + 값 입력. ㎡당은 데이터 모델엔 살아있지만 현재 UI에서 숨김 (사용자 피드백: 계산이 어려워서 거의 안 씀)
+   - **상세 모드**: 항목별로 수량 + 인라인 단가. 토글을 켜면 카드가 자동 펼쳐짐
+   - 심플 모드 기본값 (`lib/catalog.ts` `DEFAULT_CATEGORY_MODES`):
+     - 마감재 → 총금액 0원 (사용자가 직접 입력)
+     - 물받이부속 → m당 2,000원
+     - 부자재 → 자재비의 3%
+     - 절곡 → 총금액 0원
    - 단가설정에 `catalogDefaults` 편집기는 아직 없음 — 현재는 새 견적에서 인라인으로 조정
 10. **장비대** — 스카이차/사다리차 (일수 −/+), **비계** (일수 + 비계 면적 → ㎡·일 단가로 자동 계산) + 기타 장비 메모
 11. **작업 정보** — 작업 일수, 작업 인원 (−/+ 스테퍼)
 12. **기타 비용** — 자유 추가 라인아이템 (이름 + 금액). 크레인, 잡비 등
-13. **💰 단가 임시 조정** — 이 견적에만 적용되는 단가 override (collapsed, 4 그룹: 자재 / 하지·스틸방수 / 인건·체류 / 장비·운송). 빈 칸이면 단가 설정 기본값 사용. **단가 설정 자체는 변경되지 않음.**
+13. **공사 일정** — 연월일 / 연월만 / 안 넣음 3 모드 선택. PDF 에 "2026년 6월 15일" / "2026년 6월 중" / 생략 으로 표시
+14. **💰 단가 임시 조정** — 이 견적에만 적용되는 단가 override (collapsed, 4 그룹: 자재 / 하지·스틸방수 / 인건·체류 / 장비·운송). 빈 칸이면 단가 설정 기본값 사용. 변경된 칸이 있으면 헤더에 "N개 변경됨" 뱃지. **단가 설정 자체는 변경되지 않음.**
+
+**기존 견적 수정 (edit mode):** 견적 상세 화면의 "입력값 수정" 버튼 → `/sites/[id]/estimates/new?edit={eid}` 로 이동. 폼이 기존 값으로 prefill 되고, 저장 시 PATCH `{ action: "replace", ... }` 호출 → 라인 전부 재계산. 견적번호와 `pdfSentAt` 은 보존되지만 라인 인라인 편집과 마진 override 는 리셋됨.
 
 추가로 **추가 자재 / 부속** 섹션 (공사 범위 다음)에 4개 카테고리 카탈로그:
 - **마감재** — 용마루, 처마, 미시, 하우마끼, 엔드캡, 크로샤, 프래싱, 눈방지턱, 회침, 회침커버, 대봉, 소봉

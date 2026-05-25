@@ -104,12 +104,19 @@ These are real constraints. Violating them silently corrupts past quotes — a u
   - **Do not add multipliers** that auto-inflate the material area based on scope flags. User feedback: they prefer to enter the actual 시공면적 themselves and use these flags as annotations only.
 
 ### Special non-scope-flag pickers
-- **물받이** uses its own `GutterMode` enum (`none | full | front | back`) with a 4-button radio in the 공사 범위 section. Length input appears when not "none". Stored on `Estimate.gutterMode` + `gutterLengthM`.
+- **물받이** is multi-select (front / back / left / right). Stored on `Estimate.gutterMode` as a comma-separated string. Helpers in [lib/types.ts](lib/types.ts):
+  - `GutterSide`, `GUTTER_SIDES`, `GUTTER_SIDE_LABELS`
+  - `parseGutterSides(stored)` → `Set<GutterSide>`. Back-compat: `"none"` → empty set, `"full"` → all 4.
+  - `serializeGutterSides(set)` → string. Empty → `"none"`. All 4 → `"full"`. Subset → `"front,back"`.
+  - `gutterSidesLabel(set)` for the PDF label: empty → "안함", all → "전체", subset → "앞, 좌" etc.
+  - Form shows 4 toggle chips with the length input appearing when ≥1 side is selected.
+  - Calculation: if `sides.size > 0` and `gutterLengthM > 0`, emit one line with the formatted label.
 - **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option. Priced per ㎡ of construction area using `PricingSettings.substructureWoodPricePerSqm` / `substructureSteelPricePerSqm`.
 - **폐기물** uses `wasteTruckCount` (defaults 1). When 폐기물 scope is checked, a stepper appears. Cost = `wasteDisposalCost × wasteTruckCount`. (The `wasteDisposalCost` field is now interpreted as "per truck" — default updated to ₩1,000,000.)
 - **비계** uses two inputs (days + area in ㎡) → `area × days × scaffoldPricePerSqmDay`. If area is 0, falls back to legacy `scaffoldDailyCost × days` lump-sum model.
 - **두겁 (cap)** is a scope flag with inline length input. When 난간 (handrail) is checked, `SCOPE_FORCES` auto-checks 두겁 (water leaks otherwise). Cost = `capLengthM × capBendingPricePerM`. Stored on `Estimate.capLengthM`.
 - **새 배수구 타공 (drainHole)** is a scope flag with inline count stepper. Cost = `drainHoleCount × drainHolePrice`. Stored on `Estimate.drainHoleCount`.
+- **엔드캡 (endCap)** is a scope flag (지붕공사 + 옥상지붕 only) with inline count stepper. Cost = `endCapCount × endCapPrice` (default 2,000원/개, configurable in 단가 설정).
 
 ### Numeric stepper
 - `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.
@@ -240,6 +247,8 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 - **Prisma 6 vs 7:** we deliberately use Prisma 6. Supabase docs target it, and it avoids the Prisma 7 adapter setup. Don't run `npm i prisma@latest` without rewriting the schema/client/adapter setup.
 - **PowerShell here-strings:** the closing `'@` must be at column 0 on its own line. For multi-line git commit messages, write to `.git/COMMIT_MSG_TEMP` and use `git commit -F`. PowerShell can't pipe to git well.
 - **`.env` is gitignored** — when env keys rotate, you have to ask the user for new values; nothing in the repo has them.
+- **react-pdf fonts must be full-coverage TTF/OTF, not Google Fonts chunks.** A URL like `fonts.gstatic.com/s/notosanskr/v36/...woff2` is a *subset* covering ~100 codepoints. Render any Hangul outside the subset and react-pdf v4 crashes deep inside its children processor with `Cannot read properties of null (reading 'props')` — the error gives no hint that fonts are involved. Use a self-contained font (we use Pretendard TTF from `cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/.../static/Pretendard-{Regular,Bold}.ttf`). Always wrap `Font.register` in try/catch and call `Font.registerHyphenationCallback((w) => [w])` to disable hyphenation (its default also returns null for unknown chars and contributes to the same crash class).
+- **react-pdf and `: null` JSX conditionals.** Patterns like `{cond ? <X/> : null}` inside a `<View>` can occasionally cause the same "null props" crash because react-pdf's children flattener doesn't strip `null` as cleanly as React DOM does. Prefer building child arrays via `.filter(Boolean).map(...)` or `.flatMap(...)` when conditionally including elements. `{cond && <X/>}` (without the `: null`) is also OK because react-pdf strips `false`.
 
 ## Documentation hygiene (you reading this)
 
