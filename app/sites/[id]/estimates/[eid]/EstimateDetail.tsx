@@ -152,6 +152,25 @@ export function EstimateDetail({
     return map;
   }, [est.lineItems, est.marginAmount, marginRatios]);
 
+  // 표시용 라인 정렬 — 한국 표준 순서 (재료비 → 노무비 → 경비) 로 그룹핑.
+  // DB 의 sortOrder 는 그대로 두고 (다른 곳에서 쓰임), 화면 표시에만 적용.
+  // 같은 그룹 안에선 원래 sortOrder 유지 → 자재 안에선 칼라강판 → 용마루 → ... 순서 보존.
+  const sortedLineItems = useMemo(() => {
+    const rank: Record<string, number> = {
+      material: 1,
+      labor: 2, meals: 2, lodging: 2,
+      equipment: 3, transport: 3,
+      removal: 4, waste: 4,
+      other: 5,
+    };
+    return [...est.lineItems].sort((a, b) => {
+      const ra = rank[a.category] ?? 9;
+      const rb = rank[b.category] ?? 9;
+      if (ra !== rb) return ra - rb;
+      return a.sortOrder - b.sortOrder;
+    });
+  }, [est.lineItems]);
+
   return (
     <div className="space-y-3 pb-48">
       {/* Client-safe view toggle bar */}
@@ -308,7 +327,7 @@ export function EstimateDetail({
 
             {expanded && (
               <div className="divide-y divide-border/40">
-                {est.lineItems.map((item) => (
+                {sortedLineItems.map((item) => (
                   <div key={item.id} className="px-4 py-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
