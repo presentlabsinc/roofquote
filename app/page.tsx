@@ -27,7 +27,13 @@ export default async function HomePage() {
       />
 
       <div className="px-4 pb-4">
-        {(!settings.companyName || settings.companyName.includes("회사명을 설정에서")) && (
+        {/* Onboarding banner — shown when companyName looks unfilled:
+            - empty / null
+            - still the placeholder seeded by getOrCreatePricingSettings
+            - looks like an email (legacy seed before we switched to placeholder) */}
+        {(!settings.companyName ||
+          settings.companyName.includes("설정에서") ||
+          settings.companyName.includes("@")) && (
           <Link
             href="/settings"
             className="block mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl pressable"

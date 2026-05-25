@@ -45,16 +45,17 @@ export async function getUser() {
  *
  * The "blank slate" values mirror SettingsForm DEFAULTS — keep them in sync.
  */
-export async function getOrCreatePricingSettings(userId: string, email?: string | null) {
+export async function getOrCreatePricingSettings(userId: string, _email?: string | null) {
   let settings = await prisma.pricingSettings.findUnique({ where: { userId } });
   if (settings) return settings;
 
-  // First-time user — create a default row. Company info starts blank so the
-  // user is prompted to fill it in (PDF render needs it).
+  // First-time user — create a default row. companyName seeded with an
+  // obvious placeholder (NOT the email — email isn't a sensible company name)
+  // so the "회사 정보 입력 필요" banner on the home page reliably picks it up.
   settings = await prisma.pricingSettings.create({
     data: {
       userId,
-      companyName: email ?? "회사명을 설정에서 입력하세요",
+      companyName: "회사명을 설정에서 입력하세요",
       companyPhone: null,
       companyAddress: null,
       // Pricing — sensible Korean industry defaults
