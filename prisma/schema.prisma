@@ -78,6 +78,13 @@ model PricingSettings {
   defaultMarginRate    Float   // e.g. 0.25 = 25%
   vatIncludedByDefault Boolean
 
+  // 마진 분배 비율 — 견적서 PDF 에서 마진을 자재/인건비/이윤 세 갈래로
+  // 흩뿌려서 표시하기 위한 비율. 합이 1.0 (100%) 이 되도록 사용자가 조정.
+  // 합이 1.0 이 아니면 분배 시점에 정규화됨 (안전망).
+  marginMaterialRatio  Float   @default(0.5)   // 자재 라인에 비례 분배
+  marginLaborRatio     Float   @default(0.25)  // 인건비 라인에 비례 분배
+  marginProfitRatio    Float   @default(0.25)  // "이윤" 별도 라인으로 노출
+
   // 견적 번호 시작값 — "YYYY-XXX" 형식의 XXX 가 이 숫자부터 시작.
   // 다른 시스템에서 마이그레이션하거나 특정 번호부터 시작하고 싶을 때 사용.
   // 새 견적 번호 = estimateNumberStart + (올해 이미 생성된 견적 수).

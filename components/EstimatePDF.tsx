@@ -17,6 +17,7 @@ import {
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 import type { ScopeFlags, ConstructionType } from "@/lib/types";
 import { MATERIAL_TYPES, SCOPE_LABELS } from "@/lib/types";
+import { distributeMarginForDisplay, type DisplayLineItem, type MarginDistributionRatios } from "@/lib/calculations";
 
 // ⚠️ Font sourcing — DO NOT use Google Fonts /s/ CSS-chunk URLs here.
 // Those URLs are dynamically subsetted woff2 files that only cover a
@@ -222,15 +223,22 @@ function fmt(n: number): string {
 interface SimpleLine { name: string; amount: number; }
 interface DetailedLine { group: string; name: string; spec: string; qty: string; amount: number; }
 
-function groupForSimple(items: EstimateLineItem[]): SimpleLine[] {
+/**
+ * 5-bucket summary for 간단 내역. The 이윤 synthetic line (added by
+ * distributeMarginForDisplay) is pulled out into its OWN bucket — looks
+ * cleaner than dumping it into "기타 비용" with other small fees.
+ */
+function groupForSimple(items: DisplayLineItem[]): SimpleLine[] {
   const buckets = {
     material: 0,   // 자재 + 마감재 + 부자재 + 하지
     construction: 0, // 인건 + 식비 + 숙박비
     equipment: 0,  // 장비 + 운송
     waste: 0,      // 폐기 + 철거
-    other: 0,      // 기타
+    other: 0,      // 기타 (이윤 제외 — 따로 표시)
+    profit: 0,     // 이윤 (synthetic line)
   };
   for (const i of items) {
+    if (i.synthetic && i.name === "이윤") { buckets.profit += i.total; continue; }
     if (i.category === "material") buckets.material += i.total;
     else if (i.category === "labor" || i.category === "meals" || i.category === "lodging") buckets.construction += i.total;
     else if (i.category === "equipment" || i.category === "transport") buckets.equipment += i.total;
@@ -243,6 +251,7 @@ function groupForSimple(items: EstimateLineItem[]): SimpleLine[] {
   if (buckets.equipment) lines.push({ name: "장비 및 운송", amount: buckets.equipment });
   if (buckets.waste) lines.push({ name: "철거 및 폐기물 처리", amount: buckets.waste });
   if (buckets.other) lines.push({ name: "기타 비용", amount: buckets.other });
+  if (buckets.profit) lines.push({ name: "이윤", amount: buckets.profit });
   return lines;
 }
 
@@ -252,10 +261,12 @@ function groupForSimple(items: EstimateLineItem[]): SimpleLine[] {
  * one "인건비 (기공·조공)" line under 노무비 (no per-worker breakdown for customer).
  * Everything else (equipment, transport, waste, removal, other) goes under 기타경비.
  */
-function groupForDetailed(items: EstimateLineItem[]): DetailedLine[] {
+function groupForDetailed(items: DisplayLineItem[]): DetailedLine[] {
   const out: DetailedLine[] = [];
-  const laborItems: EstimateLineItem[] = [];
+  const laborItems: DisplayLineItem[] = [];
+  let profitTotal = 0;
   for (const item of items) {
+    if (item.synthetic && item.name === "이윤") { profitTotal += item.total; continue; }
     if (item.category === "labor" || item.category === "meals" || item.category === "lodging") {
       laborItems.push(item);
       continue;
@@ -268,18 +279,23 @@ function groupForDetailed(items: EstimateLineItem[]): DetailedLine[] {
       : "—";
     out.push({ group, name: item.name, spec, qty, amount: item.total });
   }
-  // Roll up labor into one line under 노무비
+  // Roll up labor into one line under 노무비 (already includes labor's share
+  // of margin because distributeMarginForDisplay scaled it before us).
   if (laborItems.length) {
     const laborTotal = laborItems.reduce((s, i) => s + i.total, 0);
-    // Try to find a "person·day" type quantity
     const laborQty = laborItems
       .filter((i) => i.category === "labor")
       .reduce((s, i) => s + i.quantity, 0);
     const qty = laborQty > 0 ? `${laborQty}인일` : "1식";
     out.push({ group: "노무비", name: "인건비 (기공·조공)", spec: "—", qty, amount: laborTotal });
   }
-  // Sort by group order: 자재공사 → 노무비 → 기타경비
-  const order = { "자재공사": 1, "노무비": 2, "기타경비": 3 } as Record<string, number>;
+  // 이윤 as its own group at the bottom — mirrors 표준품셈 형식 where 이윤
+  // sits as its own row between 순공사원가 and 부가세.
+  if (profitTotal > 0) {
+    out.push({ group: "이윤", name: "이윤", spec: "—", qty: "1식", amount: profitTotal });
+  }
+  // Sort by group order: 자재공사 → 노무비 → 기타경비 → 이윤
+  const order = { "자재공사": 1, "노무비": 2, "기타경비": 3, "이윤": 4 } as Record<string, number>;
   out.sort((a, b) => (order[a.group] ?? 99) - (order[b.group] ?? 99));
   return out;
 }
@@ -320,9 +336,18 @@ interface Props {
   estimate: Estimate & { lineItems: EstimateLineItem[]; site: Site };
   scopeFlags: ScopeFlags;
   detailLevel?: "simple" | "detailed";
+  /** How to split the margin into material / labor / 이윤 display portions.
+   *  Read from PricingSettings by the PDF route. Defaults to 50/25/25 if
+   *  not provided (legacy callers). */
+  marginRatios?: MarginDistributionRatios;
 }
 
-export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }: Props) {
+export function EstimatePDFDoc({
+  estimate,
+  scopeFlags,
+  detailLevel = "simple",
+  marginRatios = { material: 0.5, labor: 0.25, profit: 0.25 },
+}: Props) {
   const vatNote = estimate.vatIncluded ? "부가세 포함" : "부가세 별도";
   const createdStr = new Date(estimate.createdAt).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\.$/, "");
   const constructionMonthStr = formatMonth(estimate.constructionMonth ?? null);
@@ -336,8 +361,16 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
   if (estimate.materialColor) pills.push(estimate.materialColor);
 
   // Cost lines
-  const simpleLines = groupForSimple(estimate.lineItems);
-  const detailedLines = groupForDetailed(estimate.lineItems);
+  // Apply margin distribution BEFORE grouping. Internal estimate.lineItems
+  // is cost only (snapshot rule); displayLines has the margin baked in plus
+  // a synthetic 이윤 row. Subtotal of displayLines == cost + margin == 공급가액.
+  const displayLines = distributeMarginForDisplay(
+    estimate.lineItems,
+    estimate.marginAmount,
+    marginRatios,
+  );
+  const simpleLines = groupForSimple(displayLines);
+  const detailedLines = groupForDetailed(displayLines);
   const detailedSubtotal = detailedLines.reduce((s, l) => s + l.amount, 0);
 
   // Payment stages

@@ -68,6 +68,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    // Pull the current user's margin distribution ratios. We deliberately
+    // read CURRENT settings (not snapshotted on the estimate) so the user
+    // can re-render an old estimate's PDF with a new split — the underlying
+    // line item totals don't change, only how the margin is presented.
+    const settings = await prisma.pricingSettings.findUnique({ where: { userId: user.id } });
+    const ratios = {
+      material: settings?.marginMaterialRatio ?? 0.5,
+      labor: settings?.marginLaborRatio ?? 0.25,
+      profit: settings?.marginProfitRatio ?? 0.25,
+    };
+
     // scopeFlags is Json — could be {}, null, or a shape mismatch on old rows.
     // Force-coerce to an empty object so component code never sees null.
     const rawScope = estimate.scopeFlags as unknown;
@@ -77,7 +88,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
 
     const detailLevel = url.searchParams.get("detail") === "detailed" ? "detailed" : "simple";
 
-    const element = createElement(EstimatePDFDoc, { estimate, scopeFlags, detailLevel });
+    const element = createElement(EstimatePDFDoc, { estimate, scopeFlags, detailLevel, marginRatios: ratios });
     // react-pdf's renderToBuffer is typed for DocumentProps, but it actually
     // accepts any React element whose tree contains a <Document> root.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

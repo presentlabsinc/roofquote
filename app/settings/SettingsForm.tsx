@@ -41,6 +41,9 @@ const DEFAULTS = {
   parapetMultiplier: 1.4,
   defaultLossRate: 0.15,
   estimateNumberStart: 1,
+  marginMaterialRatio: 0.5,
+  marginLaborRatio: 0.25,
+  marginProfitRatio: 0.25,
   useLossRateByDefault: false,
   baseTransportCost: 250000,
   mealCostPerPersonMeal: 10000,
@@ -191,6 +194,9 @@ export function SettingsForm({ defaultValues }: Props) {
       defaultMarginRate: defaultValues.defaultMarginRate,
       vatIncludedByDefault: defaultValues.vatIncludedByDefault,
       estimateNumberStart: defaultValues.estimateNumberStart ?? 1,
+      marginMaterialRatio: defaultValues.marginMaterialRatio ?? 0.5,
+      marginLaborRatio: defaultValues.marginLaborRatio ?? 0.25,
+      marginProfitRatio: defaultValues.marginProfitRatio ?? 0.25,
     };
   });
 
@@ -280,6 +286,20 @@ export function SettingsForm({ defaultValues }: Props) {
             </div>
           </div>
         ))}
+
+        {/* 마진 분배 비율 — 견적서 PDF 에서 마진을 어떻게 흩뿌릴지.
+            세 칸 합이 100% 가 되도록 조정. 100% 가 아니어도 분배 시 자동
+            정규화되지만 직관적으로 100 맞추는 게 좋음. */}
+        <MarginDistributionCard
+          material={values.marginMaterialRatio}
+          labor={values.marginLaborRatio}
+          profit={values.marginProfitRatio}
+          onChange={(field, val) => {
+            if (field === "material") setField("marginMaterialRatio", val);
+            else if (field === "labor") setField("marginLaborRatio", val);
+            else setField("marginProfitRatio", val);
+          }}
+        />
 
         {/* Seal image + Notice text */}
         <SealAndNoticeCard
@@ -503,6 +523,86 @@ function PriceCalculator({ onApply }: { onApply: (perSqm: number) => void }) {
           className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full pressable disabled:opacity-40"
         >
           이 값으로 설정
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 마진 분배 비율 카드 — 견적서 PDF 에서 마진을 자재/인건비/이윤으로 어떻게
+ * 흩뿌릴지 정함. 세 값의 합이 1.0(100%) 이 되어야 자연스럽지만, 합이 100%
+ * 가 아니어도 PDF 렌더 시점에 정규화되므로 안전함.
+ *
+ * UI: 세 입력 + 합계 표시 + 100% 가 아니면 부드러운 경고. "기본값으로
+ * 되돌리기" 버튼으로 50/25/25 빠르게 복귀.
+ */
+function MarginDistributionCard({
+  material,
+  labor,
+  profit,
+  onChange,
+}: {
+  material: number;
+  labor: number;
+  profit: number;
+  onChange: (field: "material" | "labor" | "profit", val: number) => void;
+}) {
+  const matPct = Math.round(material * 100);
+  const labPct = Math.round(labor * 100);
+  const proPct = Math.round(profit * 100);
+  const sum = matPct + labPct + proPct;
+  const isOk = sum === 100;
+
+  function reset() {
+    onChange("material", 0.5);
+    onChange("labor", 0.25);
+    onChange("profit", 0.25);
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📊</span>
+        <h2 className="font-semibold text-foreground">마진 분배 비율</h2>
+      </div>
+      <p className="text-[11px] text-muted-foreground px-5 -mt-1 leading-relaxed">
+        견적서 PDF 에서 마진을 어떻게 흩뿌릴지. 자재·인건비는 해당 항목에
+        비례 분배되고, "이윤" 은 별도 라인으로 표시됩니다. 합이 100% 가
+        되도록 조정해 주세요.
+      </p>
+      <div className="divide-y divide-border/40 mt-2">
+        {(["material", "labor", "profit"] as const).map((field) => {
+          const val = field === "material" ? matPct : field === "labor" ? labPct : proPct;
+          const label = field === "material" ? "자재에 분배" : field === "labor" ? "인건비에 분배" : "이윤 (별도 라인)";
+          return (
+            <div key={field} className="px-5 py-3 flex items-center gap-3">
+              <Label className="flex-1 text-sm text-muted-foreground">{label}</Label>
+              <div className="relative w-28 shrink-0">
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  value={String(val)}
+                  onChange={(e) => onChange(field, (parseInt(e.target.value) || 0) / 100)}
+                  className="h-11 text-right pr-8 font-semibold text-foreground tabular-nums border-border/60 rounded-xl"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">%</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className={`px-5 py-3 flex items-center justify-between text-xs ${isOk ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-800"}`}>
+        <span>
+          합계 <b className="tabular-nums">{sum}%</b>
+          {!isOk && <span className="ml-1">— 100% 가 아니면 비율대로 자동 정규화됨</span>}
+        </span>
+        <button
+          type="button"
+          onClick={reset}
+          className="text-[11px] font-semibold text-primary pressable px-2"
+        >
+          기본값 (50/25/25)
         </button>
       </div>
     </div>

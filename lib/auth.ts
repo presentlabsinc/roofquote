@@ -88,6 +88,9 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       defaultMarginRate: 0.25,
       vatIncludedByDefault: true,
       estimateNumberStart: 1,
+      marginMaterialRatio: 0.5,
+      marginLaborRatio: 0.25,
+      marginProfitRatio: 0.25,
     },
   });
   return settings;

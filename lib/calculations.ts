@@ -501,6 +501,156 @@ export function formatKRW(amount: number): string {
   return amount.toLocaleString("ko-KR") + "원";
 }
 
+// ─── Margin distribution for customer PDF ─────────────────────────────
+// Internal lineItems store cost only — no margin. For the customer-facing
+// PDF we want the displayed amounts to sum to (cost + margin) so the math
+// is transparent. distributeMarginForDisplay() returns a NEW array of
+// "display" line items with the margin baked in per these ratios:
+//
+//   material ratio → scales each material line up by a uniform factor
+//   labor ratio    → scales each labor (incl. meals/lodging) line
+//   profit ratio   → appended as a single "이윤" line at the end
+//
+// Fallback: if a target category has no source lines, its margin share
+// spills to the next non-empty category (labor → material → profit line).
+// Final pass adjusts the last item by ±1원 if needed so the exact sum
+// equals cost + marginAmount (avoids rounding drift visible to customer).
+//
+// IMPORTANT: this is presentation-only. Never call it before persisting
+// line items — the internal cost data must stay clean.
+
+export interface DisplayLineItem {
+  category: string;
+  name: string;
+  quantity: number;
+  unit: string | null;
+  unitPrice: number;
+  total: number;
+  /** True when this item didn't exist in the source (i.e. the synthetic 이윤 line). */
+  synthetic?: boolean;
+}
+
+export interface MarginDistributionRatios {
+  material: number;
+  labor: number;
+  profit: number;
+}
+
+/** Lines whose category counts as "material" for distribution. */
+const MATERIAL_CATEGORIES = new Set(["material"]);
+/** Lines whose category counts as "labor" for distribution. */
+const LABOR_CATEGORIES = new Set(["labor", "meals", "lodging"]);
+
+export function distributeMarginForDisplay<T extends { category: string; name: string; quantity: number; unit: string | null; unitPrice: number; total: number }>(
+  items: T[],
+  marginAmount: number,
+  ratiosInput: MarginDistributionRatios,
+): DisplayLineItem[] {
+  // Defensive: normalize ratios so they sum to 1.0. If user set them
+  // 60/30/30 (= 120%), this rescales to 50/25/25 effective so we never
+  // over-distribute and break the totals.
+  const sum = ratiosInput.material + ratiosInput.labor + ratiosInput.profit;
+  const ratios = sum > 0
+    ? { material: ratiosInput.material / sum, labor: ratiosInput.labor / sum, profit: ratiosInput.profit / sum }
+    : { material: 0.5, labor: 0.25, profit: 0.25 };
+
+  // Bucket items by role.
+  const materialItems: T[] = [];
+  const laborItems: T[] = [];
+  const otherItems: T[] = [];
+  for (const it of items) {
+    if (MATERIAL_CATEGORIES.has(it.category)) materialItems.push(it);
+    else if (LABOR_CATEGORIES.has(it.category)) laborItems.push(it);
+    else otherItems.push(it);
+  }
+
+  const materialTotal = materialItems.reduce((s, i) => s + i.total, 0);
+  const laborTotal = laborItems.reduce((s, i) => s + i.total, 0);
+
+  // Compute initial margin slices. Then handle empty-bucket fallback.
+  let materialMargin = Math.round(marginAmount * ratios.material);
+  let laborMargin = Math.round(marginAmount * ratios.labor);
+  let profitMargin = marginAmount - materialMargin - laborMargin;
+
+  // Fallback when a target bucket has no source lines to scale into.
+  if (materialTotal === 0 && materialMargin > 0) {
+    // No material — spill into labor if it has lines, else into profit.
+    if (laborTotal > 0) {
+      laborMargin += materialMargin;
+    } else {
+      profitMargin += materialMargin;
+    }
+    materialMargin = 0;
+  }
+  if (laborTotal === 0 && laborMargin > 0) {
+    // No labor — spill into material if it has lines, else profit.
+    if (materialTotal > 0) {
+      materialMargin += laborMargin;
+    } else {
+      profitMargin += laborMargin;
+    }
+    laborMargin = 0;
+  }
+
+  // Scale each line. Each line's portion of bucket margin is proportional
+  // to its share of the bucket total. unitPrice is scaled the same factor
+  // so quantity × unitPrice = total stays consistent.
+  function scale<U extends { quantity: number; unitPrice: number; total: number }>(
+    bucket: U[],
+    bucketTotal: number,
+    bucketMargin: number,
+  ): U[] {
+    if (bucketTotal === 0 || bucketMargin === 0) return bucket;
+    const factor = 1 + bucketMargin / bucketTotal;
+    return bucket.map((it) => ({
+      ...it,
+      unitPrice: Math.round(it.unitPrice * factor),
+      total: Math.round(it.total * factor),
+    }));
+  }
+  const scaledMaterial = scale(materialItems, materialTotal, materialMargin);
+  const scaledLabor = scale(laborItems, laborTotal, laborMargin);
+
+  // Build output preserving original order.
+  const out: DisplayLineItem[] = [];
+  const mIdx = { v: 0 };
+  const lIdx = { v: 0 };
+  for (const it of items) {
+    if (MATERIAL_CATEGORIES.has(it.category)) {
+      out.push(scaledMaterial[mIdx.v++]);
+    } else if (LABOR_CATEGORIES.has(it.category)) {
+      out.push(scaledLabor[lIdx.v++]);
+    } else {
+      out.push(it);
+    }
+  }
+
+  // Append the profit line (always last, "other" category so simple/detailed
+  // grouping puts it sensibly. Customer sees one neutral "이윤" row).
+  if (profitMargin > 0) {
+    out.push({
+      category: "other",
+      name: "이윤",
+      quantity: 1,
+      unit: "식",
+      unitPrice: profitMargin,
+      total: profitMargin,
+      synthetic: true,
+    });
+  }
+
+  // Rounding sweep — ensure exact target sum (cost + marginAmount).
+  const target = items.reduce((s, i) => s + i.total, 0) + marginAmount;
+  const actual = out.reduce((s, i) => s + i.total, 0);
+  const drift = target - actual;
+  if (drift !== 0 && out.length > 0) {
+    const last = out[out.length - 1];
+    out[out.length - 1] = { ...last, total: last.total + drift };
+  }
+
+  return out;
+}
+
 export function sqmToPyeong(sqm: number): number {
   return Math.round((sqm / 3.3058) * 100) / 100;
 }
