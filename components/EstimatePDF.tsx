@@ -4,7 +4,6 @@ import {
   Page,
   Text,
   View,
-  Image,
   StyleSheet,
   Font,
 } from "@react-pdf/renderer";
@@ -321,9 +320,9 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
             ) : null}
           </View>
           <View style={styles.headerRight}>
-            {estimate.estimateNumber ? <Text style={styles.headerRightLine}>No. {estimate.estimateNumber}</Text> : null}
-            <Text style={styles.headerRightLine}>{createdStr} 발행</Text>
-            <Text style={styles.headerRightLine}>{estimate.validityDays}일간 유효</Text>
+            {estimate.estimateNumber ? <Text style={styles.headerRightLine}>{`No. ${estimate.estimateNumber}`}</Text> : null}
+            <Text style={styles.headerRightLine}>{`${createdStr} 발행`}</Text>
+            <Text style={styles.headerRightLine}>{`${estimate.validityDays}일간 유효`}</Text>
           </View>
         </View>
 
@@ -331,17 +330,17 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
         <View style={styles.topRow}>
           <View style={styles.topCol}>
             <Text style={styles.labelTiny}>고객명</Text>
-            <Text style={styles.valueLarge}>{estimate.site.customerName} 님</Text>
+            <Text style={styles.valueLarge}>{`${estimate.site.customerName ?? ""} 님`}</Text>
             <Text style={styles.labelTinyTop}>공사위치</Text>
-            <Text style={styles.valueRegular}>{estimate.site.siteAddress}</Text>
+            <Text style={styles.valueRegular}>{estimate.site.siteAddress ?? ""}</Text>
           </View>
           <View style={styles.topColRight}>
             <Text style={styles.labelTiny}>시공면적</Text>
-            <Text style={styles.valueLarge}>{estimate.areaM2}㎡ (약 {pyeong}평)</Text>
+            <Text style={styles.valueLarge}>{`${estimate.areaM2 ?? 0}㎡ (약 ${pyeong}평)`}</Text>
             {estimate.buildingAreaM2 ? (
               <View>
                 <Text style={styles.labelTinyTop}>건물면적</Text>
-                <Text style={styles.valueRegular}>{estimate.buildingAreaM2}㎡ (약 {Math.round(estimate.buildingAreaM2 / 3.3058)}평)</Text>
+                <Text style={styles.valueRegular}>{`${estimate.buildingAreaM2}㎡ (약 ${Math.round(estimate.buildingAreaM2 / 3.3058)}평)`}</Text>
               </View>
             ) : null}
             {constructionMonthStr ? (
@@ -357,11 +356,11 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
         <View style={styles.scopeSection}>
           <Text style={styles.sectionLabel}>공사 범위</Text>
           <Text style={styles.scopeText}>{scopeOneLine(estimate, scopeFlags)}</Text>
-          {pills.length > 0 && (
+          {pills.length > 0 ? (
             <View style={styles.pillRow}>
-              {pills.map((p, i) => (<Text key={i} style={styles.pill}>{p}</Text>))}
+              {pills.map((p, i) => (<Text key={`p-${i}`} style={styles.pill}>{p ?? ""}</Text>))}
             </View>
-          )}
+          ) : null}
         </View>
 
         {/* ─── Cost: simple or detailed ─── */}
@@ -401,7 +400,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
               );
             })}
             <View style={styles.subtotalRow}>
-              <Text style={styles.subtotalLabel}>소계 ({vatNote})</Text>
+              <Text style={styles.subtotalLabel}>{`소계 (${vatNote})`}</Text>
               <Text style={styles.subtotalAmount}>{fmt(detailedSubtotal)}</Text>
             </View>
           </View>
@@ -413,7 +412,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
             <Text style={styles.totalLabel}>최종 견적 금액</Text>
             <Text style={styles.totalVatNote}>{vatNote}</Text>
           </View>
-          <Text style={styles.totalAmount}>{fmt(estimate.finalPrice)}원</Text>
+          <Text style={styles.totalAmount}>{`${fmt(estimate.finalPrice)}원`}</Text>
         </View>
 
         {/* ─── Payment ─── */}
@@ -421,10 +420,10 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
           {paymentStages && paymentStages.length > 1 ? (
             <View style={styles.paymentCards}>
               {paymentStages.map((s, i) => (
-                <View key={i} style={styles.paymentCard}>
-                  <Text style={styles.paymentLabel}>{s.label}</Text>
-                  <Text style={styles.paymentAmount}>{fmt(s.amount)}원</Text>
-                  <Text style={styles.paymentPercent}>{Math.round(s.percent * 100)}%</Text>
+                <View key={`pay-${i}`} style={styles.paymentCard}>
+                  <Text style={styles.paymentLabel}>{s.label ?? ""}</Text>
+                  <Text style={styles.paymentAmount}>{`${fmt(s.amount)}원`}</Text>
+                  <Text style={styles.paymentPercent}>{`${Math.round(s.percent * 100)}%`}</Text>
                 </View>
               ))}
             </View>
@@ -432,7 +431,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
             <Text style={styles.paymentText}>{estimate.paymentTerms || ""}</Text>
           )}
           {estimate.bankAccountSnapshot ? (
-            <Text style={styles.paymentBank}>입금계좌: {estimate.bankAccountSnapshot}</Text>
+            <Text style={styles.paymentBank}>{`입금계좌: ${estimate.bankAccountSnapshot}`}</Text>
           ) : null}
         </View>
 
@@ -441,7 +440,7 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
           {noticeLines.length > 0 ? (
             <View>
               {noticeLines.map((l, i) => (
-                <Text key={`n-${i}`} style={styles.noticeText}>{i + 1}. {l}</Text>
+                <Text key={`n-${i}`} style={styles.noticeText}>{`${i + 1}. ${l}`}</Text>
               ))}
             </View>
           ) : (
@@ -454,12 +453,12 @@ export function EstimatePDFDoc({ estimate, scopeFlags, detailLevel = "simple" }:
             <View style={styles.signatureRight}>
               <Text style={styles.companyAbove}>{estimate.companyNameSnapshot || ""}</Text>
               <View style={styles.sealCircle}>
-                {estimate.sealImageUrlSnapshot ? (
-                  // eslint-disable-next-line jsx-a11y/alt-text
-                  <Image src={estimate.sealImageUrlSnapshot} style={styles.sealImage} />
-                ) : (
-                  <Text style={styles.sealPlaceholder}>(인)</Text>
-                )}
+                {/* Seal Image disabled temporarily — react-pdf throws if the
+                    URL fails to fetch (network / stale / RLS), and that's a
+                    likely cause of the "null props" crash users hit. Always
+                    render the (인) placeholder until we wire up URL validation
+                    or pre-fetch the image into a buffer. */}
+                <Text style={styles.sealPlaceholder}>(인)</Text>
               </View>
             </View>
           </View>

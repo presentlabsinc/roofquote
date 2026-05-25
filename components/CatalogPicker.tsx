@@ -46,8 +46,38 @@ export function CatalogPicker({
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
   const resolved = useMemo(() => resolveCategoryDefaults({ ...defaults, ...modes }), [modes, defaults]);
 
+  // Track open/expanded state per category so we can auto-open on mode→detailed
+  const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
+  function toggleOpen(cat: CatalogCategory) {
+    setOpenMap((o) => ({ ...o, [cat]: !o[cat] }));
+  }
+
   function setMode(cat: CatalogCategory, patch: Partial<CategoryMode>) {
     onModesChange({ ...modes, [cat]: { ...resolved[cat], ...patch } });
+    // Auto-expand the card when user flips to 상세 — they're going to want
+    // to see the items. (Doesn't auto-collapse on flip to 심플.)
+    if (patch.mode === "detailed") {
+      setOpenMap((o) => ({ ...o, [cat]: true }));
+    }
+  }
+
+  /** Compute the simple-mode cost preview for a category */
+  function previewCostFor(cat: CatalogCategory): number {
+    const m = resolved[cat];
+    if (m.mode !== "simple") return 0;
+    const v = m.simpleValue ?? 0;
+    if (!v || v <= 0) return 0;
+    const qty = (m.simpleQty && m.simpleQty > 0) ? m.simpleQty
+      : m.simpleType === "perSqm" ? areaM2
+      : m.simpleType === "perM"   ? gutterLengthM
+      : 0;
+    switch (m.simpleType) {
+      case "percent": return Math.round(materialTotalEstimate * v);
+      case "perSqm":
+      case "perM":    return Math.round(qty * v);
+      case "total":   return Math.round(v);
+      default:        return 0;
+    }
   }
 
   function selectionForKey(key: string): CatalogSelection | undefined {
@@ -104,6 +134,9 @@ export function CatalogPicker({
             icon={cat.icon}
             mode={m.mode}
             onToggleMode={() => setMode(cat.value, { mode: m.mode === "simple" ? "detailed" : "simple" })}
+            open={!!openMap[cat.value]}
+            onToggleOpen={() => toggleOpen(cat.value)}
+            simpleCost={m.mode === "simple" ? previewCostFor(cat.value) : 0}
           >
             {m.mode === "simple" ? (
               <SimpleModeBlock
@@ -149,25 +182,35 @@ export function CatalogPicker({
 }
 
 function CategoryCard({
-  label, icon, mode, onToggleMode, children,
+  label, icon, mode, onToggleMode, open, onToggleOpen, simpleCost, children,
 }: {
   label: string;
   icon: string;
   mode: "simple" | "detailed";
   onToggleMode: () => void;
+  open: boolean;
+  onToggleOpen: () => void;
+  simpleCost: number;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
       <div className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={onToggleOpen}
           className="flex-1 flex items-center gap-3 pressable text-left"
         >
           <span className="text-xl">{icon}</span>
-          <span className="text-sm font-semibold text-foreground flex-1">{label}</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-foreground">{label}</div>
+            {/* Cost preview in collapsed header — simple mode only */}
+            {mode === "simple" && simpleCost > 0 && !open ? (
+              <div className="text-[11px] font-semibold text-primary tabular-nums">
+                예상 {simpleCost.toLocaleString("ko-KR")}원
+              </div>
+            ) : null}
+          </div>
           {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
         </button>
         <div className="flex items-center gap-2 shrink-0">
@@ -248,8 +291,10 @@ function SimpleModeBlock({
   return (
     <div className="space-y-2 mt-2">
       <p className="text-[11px] text-muted-foreground">계산 방식 + 값 입력 → 비용 자동 계산</p>
-      <div className="grid grid-cols-4 gap-1">
-        {(["percent", "perSqm", "perM", "total"] as SimpleType[]).map((t) => (
+      <div className="grid grid-cols-3 gap-1">
+        {/* perSqm intentionally hidden — too hard for most users to use
+            correctly. Calculation logic still supports it for existing data. */}
+        {(["percent", "perM", "total"] as SimpleType[]).map((t) => (
           <button
             key={t}
             type="button"

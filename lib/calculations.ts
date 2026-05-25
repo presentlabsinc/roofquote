@@ -1,5 +1,5 @@
 import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "./types";
-import { MATERIAL_TYPES } from "./types";
+import { MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
 import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -172,17 +172,17 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // 물받이 — driven by gutterMode picker (안함/전체/앞면/뒷면/기타), not scope flags
+  // 물받이 — driven by gutter multi-select (전/후/좌/우 또는 전체/안함)
   if (gutterMode && gutterMode !== "none" && gutterLengthM > 0) {
-    const modeLabel = gutterMode === "full" ? "전체"
-      : gutterMode === "front" ? "앞면"
-      : gutterMode === "back"  ? "뒷면"
-      : "기타";
-    items.push({
-      category: "material", name: `물받이 교체 (${modeLabel})`, quantity: gutterLengthM, unit: "m",
-      unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
-      sortOrder: order++,
-    });
+    const sides = parseGutterSides(gutterMode);
+    if (sides.size > 0) {
+      const modeLabel = gutterSidesLabel(sides);
+      items.push({
+        category: "material", name: `물받이 교체 (${modeLabel})`, quantity: gutterLengthM, unit: "m",
+        unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
+        sortOrder: order++,
+      });
+    }
   }
 
   // 하지작업 (substructure) — wood or steel, priced per ㎡ of construction area

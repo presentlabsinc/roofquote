@@ -71,7 +71,9 @@ export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;
  * a specific estimate can override any category via Estimate.catalogModes.
  */
 export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
-  finishing: { enabled: true, mode: "simple", simpleType: "perSqm",  simpleValue: 1500 },
+  // finishing default is now total 0 (perSqm chip hidden from UI per user req).
+  // User enters the total amount, or switches to 상세 to itemize.
+  finishing: { enabled: true, mode: "simple", simpleType: "total",   simpleValue: 0 },
   gutter:    { enabled: true, mode: "simple", simpleType: "perM",    simpleValue: 2000 },
   accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.03 },
   bending:   { enabled: true, mode: "simple", simpleType: "total",   simpleValue: 0 },

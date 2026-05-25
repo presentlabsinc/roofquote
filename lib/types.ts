@@ -37,15 +37,50 @@ export const SUBSTRUCTURE_OPTIONS: { value: SubstructureType | "none"; label: st
   { value: "none",  label: "없음",  icon: "—" },
 ];
 
-export type GutterMode = "none" | "full" | "front" | "back" | "custom";
+/**
+ * Gutter sides — multi-select. Stored as a comma-separated string on
+ * Estimate.gutterMode for back-compat with the old single-value enum.
+ *   "none" or null → no gutter
+ *   "full"          → all 4 sides (legacy alias, kept for old data)
+ *   "front,back,left,right" or any subset → just those sides
+ */
+export type GutterSide = "front" | "back" | "left" | "right";
 
-export const GUTTER_MODE_OPTIONS: { value: GutterMode; label: string }[] = [
-  { value: "none",   label: "안함" },
-  { value: "full",   label: "전체" },
-  { value: "front",  label: "앞면" },
-  { value: "back",   label: "뒷면" },
-  { value: "custom", label: "기타" },
-];
+export const GUTTER_SIDES: GutterSide[] = ["front", "back", "left", "right"];
+
+export const GUTTER_SIDE_LABELS: Record<GutterSide, string> = {
+  front: "앞",
+  back: "뒤",
+  left: "좌",
+  right: "우",
+};
+
+/** Parse a stored gutterMode value into the set of selected sides. */
+export function parseGutterSides(stored: string | null | undefined): Set<GutterSide> {
+  if (!stored || stored === "none") return new Set();
+  if (stored === "full") return new Set(GUTTER_SIDES);
+  const parts = stored.split(",").map((s) => s.trim()).filter(Boolean);
+  return new Set(parts.filter((p): p is GutterSide => GUTTER_SIDES.includes(p as GutterSide)));
+}
+
+/** Serialize a side set back into a stored gutterMode string. */
+export function serializeGutterSides(sides: Set<GutterSide> | GutterSide[]): string {
+  const arr = Array.from(sides);
+  if (arr.length === 0) return "none";
+  if (arr.length === GUTTER_SIDES.length) return "full";
+  // Preserve canonical order so PDF labels are stable
+  return GUTTER_SIDES.filter((s) => arr.includes(s)).join(",");
+}
+
+/** Human-readable label for a side set — used on the customer PDF. */
+export function gutterSidesLabel(sides: Set<GutterSide>): string {
+  if (sides.size === 0) return "안함";
+  if (sides.size === GUTTER_SIDES.length) return "전체";
+  return GUTTER_SIDES.filter((s) => sides.has(s)).map((s) => GUTTER_SIDE_LABELS[s]).join(", ");
+}
+
+/** @deprecated kept so existing imports still type-check; use GutterSide instead */
+export type GutterMode = string;
 
 /** Standard texture presets. The user picks one or "기타" for free input. */
 export const TEXTURE_PRESETS = [

@@ -29,7 +29,11 @@ import {
   DEFAULT_COLOR,
   TEXTURE_PRESETS,
   SUBSTRUCTURE_OPTIONS,
-  GUTTER_MODE_OPTIONS,
+  GUTTER_SIDES,
+  GUTTER_SIDE_LABELS,
+  parseGutterSides,
+  serializeGutterSides,
+  type GutterSide,
   PRICING_OVERRIDE_GROUPS,
 } from "@/lib/types";
 import { applyOverrides, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
@@ -125,9 +129,20 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
 
-  // 물받이 mode (replaces scope.gutter)
-  const [gutterMode, setGutterMode] = useState<GutterMode>((existing?.gutterMode as GutterMode | null) ?? "full");
+  // 물받이 multi-select sides — default all 4 selected
+  const [gutterSides, setGutterSides] = useState<Set<GutterSide>>(() =>
+    existing?.gutterMode ? parseGutterSides(existing.gutterMode) : new Set(GUTTER_SIDES),
+  );
   const [gutterLength, setGutterLength] = useState(existing?.gutterLengthM ? String(existing.gutterLengthM) : "");
+
+  function toggleGutterSide(side: GutterSide) {
+    setGutterSides((s) => {
+      const next = new Set(s);
+      if (next.has(side)) next.delete(side);
+      else next.add(side);
+      return next;
+    });
+  }
 
   // 두겁 절곡 길이 (난간 시공 시 필수)
   const [capLength, setCapLength] = useState(existing?.capLengthM ? String(existing.capLengthM) : "");
@@ -171,20 +186,25 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   function pickConstructionType(t: ConstructionType) {
     setConstructionType(t);
-    // Per user feedback: only 용마루 (ridge) is default-checked; everything else
-    // off so the user explicitly opts in.
+    // Defaults per construction type:
+    // - 용마루(ridge) basic for roof + rooftopRoof
+    // - 기존 지붕 덧씌우기(overlay) basic for roof
+    // - 강판 종류 default differs: steelWaterproof = 슬레이트골, 나머지 = 징크250
     const defaults: ScopeFlags = {};
     if (t === "roof") {
       defaults.ridge = true;
-      setGutterMode("full");
+      defaults.overlay = true;
+      setMaterialType("zinc250");
+      setGutterSides(new Set(GUTTER_SIDES)); // 전후좌우 모두
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "rooftopRoof") {
       defaults.ridge = true;
-      setGutterMode("full");
+      setMaterialType("zinc250");
+      setGutterSides(new Set(GUTTER_SIDES));
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
-      // steelWaterproof has no ridge — leave all unchecked. User picks what's needed.
-      setGutterMode("none");
+      setMaterialType("slate");
+      setGutterSides(new Set()); // 안함
       setSubstructureType("none");
     }
     setScope(defaults);
@@ -254,7 +274,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const areaM2 = parseFloat(sqmInput) || 0;
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
-    if (gutterMode !== "none" && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    if (gutterSides.size > 0 && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
     if (scope.cap && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
@@ -277,8 +297,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
       workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
       workDays: parseFloat(workDays) || 2,
-      gutterMode: gutterMode === "none" ? null : gutterMode,
-      gutterLengthM: gutterMode !== "none" ? parseFloat(gutterLength) || 0 : 0,
+      gutterMode: gutterSides.size === 0 ? null : serializeGutterSides(gutterSides),
+      gutterLengthM: gutterSides.size > 0 ? parseFloat(gutterLength) || 0 : 0,
       capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
       endCapCount: scope.endCap ? Math.max(1, parseInt(endCaps) || 1) : 0,
@@ -400,11 +420,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
         {showRest && (
           <>
-            {/* STEP 3: Material type */}
-            <Section icon={<Hammer size={18} />} title="자재 종류" step={3}>
-              {constructionType === "steelWaterproof" && (
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">바닥형은 보통 슬레이트골을 사용합니다</p>
-              )}
+            {/* STEP 3: Steel sheet type */}
+            <Section icon={<Hammer size={18} />} title="강판 종류" step={3}>
               <div className="grid grid-cols-2 gap-2">
                 {MATERIAL_TYPES.map((m) => (
                   <ChipBtn
@@ -418,7 +435,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* STEP 4: Thickness */}
-            <Section icon={<Layers size={18} />} title="자재 두께" step={4}>
+            <Section icon={<Layers size={18} />} title="강판 두께" step={4}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">기본 0.45t</p>
               <div className="grid grid-cols-4 gap-2">
                 {THICKNESSES.map((t) => (
@@ -651,38 +668,44 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 })}
               </div>
 
-              {/* 물받이 mode picker — separate from scope flags */}
+              {/* 물받이 multi-select 전/후/좌/우 (기본 다 선택). 다 선택되면
+                  PDF 에서 "전체" 로, 0개면 "안함" 으로 표시됨. */}
               <div className="mt-3 pt-3 border-t border-border/40">
-                <Label className="text-xs text-muted-foreground mb-2 block font-medium">물받이</Label>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {GUTTER_MODE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setGutterMode(opt.value)}
-                      className={`pressable rounded-xl py-2 text-xs font-semibold border ${
-                        gutterMode === opt.value
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-foreground border-border/60"
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+                <Label className="text-xs text-muted-foreground mb-2 block font-medium">
+                  물받이 (다 선택 = 전체, 0개 = 안함)
+                </Label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {GUTTER_SIDES.map((side) => {
+                    const active = gutterSides.has(side);
+                    return (
+                      <button
+                        key={side}
+                        type="button"
+                        onClick={() => toggleGutterSide(side)}
+                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-foreground border-border/60"
+                        }`}
+                      >
+                        {GUTTER_SIDE_LABELS[side]}
+                      </button>
+                    );
+                  })}
                 </div>
-                {gutterMode !== "none" && (
+                {gutterSides.size > 0 ? (
                   <div className="mt-2 flex items-center gap-2">
                     <Input
                       type="number"
                       inputMode="decimal"
                       value={gutterLength}
                       onChange={(e) => setGutterLength(e.target.value)}
-                      placeholder="길이"
+                      placeholder="총 길이"
                       className="h-11 rounded-xl tabular-nums flex-1"
                     />
                     <span className="text-sm text-muted-foreground font-medium w-6">m</span>
                   </div>
-                )}
+                ) : null}
               </div>
             </Section>
 
@@ -699,7 +722,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 onModesChange={setCatalogModes}
                 defaults={(settings.catalogDefaults as CategoryModesMap | null) ?? undefined}
                 areaM2={parseFloat(sqmInput) || 0}
-                gutterLengthM={gutterMode !== "none" ? (parseFloat(gutterLength) || 0) : 0}
+                gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
                 materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
               />
             </Section>
