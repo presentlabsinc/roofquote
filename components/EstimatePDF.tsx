@@ -185,8 +185,12 @@ function scopeOneLine(estimate: Estimate, scope: ScopeFlags | null | undefined):
   if (s.ridge && s.eave) parts.push("용마루 및 처마 마감");
   else if (s.ridge) parts.push("용마루 마감");
   else if (s.eave) parts.push("처마 마감");
-  // Gutter — from mode
-  if (estimate.gutterMode && estimate.gutterMode !== "none") {
+  // Gutter / 스테인리스 배수로 — 공사 유형에 따라 다름.
+  if (ct === "steelWaterproof") {
+    if ((estimate.stainlessDrainLengthM ?? 0) > 0) {
+      parts.push("스테인리스 배수로 시공");
+    }
+  } else if (estimate.gutterMode && estimate.gutterMode !== "none") {
     parts.push("물받이 교체");
   }
   for (const k of keys) {

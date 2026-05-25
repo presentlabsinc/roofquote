@@ -135,6 +135,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   );
   const [gutterLength, setGutterLength] = useState(existing?.gutterLengthM ? String(existing.gutterLengthM) : "");
 
+  // 스테인리스 배수로 (스틸방수 전용 — 물받이 대체)
+  const [stainlessDrainLength, setStainlessDrainLength] = useState(
+    existing?.stainlessDrainLengthM ? String(existing.stainlessDrainLengthM) : "",
+  );
+
   function toggleGutterSide(side: GutterSide) {
     setGutterSides((s) => {
       const next = new Set(s);
@@ -274,7 +279,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const areaM2 = parseFloat(sqmInput) || 0;
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
-    if (gutterSides.size > 0 && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
     if (scope.cap && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
@@ -297,8 +302,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
       workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
       workDays: parseFloat(workDays) || 2,
-      gutterMode: gutterSides.size === 0 ? null : serializeGutterSides(gutterSides),
-      gutterLengthM: gutterSides.size > 0 ? parseFloat(gutterLength) || 0 : 0,
+      // 스틸방수는 물받이 비활성 — 기존 데이터가 있어도 null/0 로 보낸다.
+      gutterMode: constructionType === "steelWaterproof" || gutterSides.size === 0
+        ? null
+        : serializeGutterSides(gutterSides),
+      gutterLengthM: constructionType === "steelWaterproof" || gutterSides.size === 0
+        ? 0
+        : parseFloat(gutterLength) || 0,
+      stainlessDrainLengthM: constructionType === "steelWaterproof"
+        ? parseFloat(stainlessDrainLength) || 0
+        : 0,
       capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
       endCapCount: scope.endCap ? Math.max(1, parseInt(endCaps) || 1) : 0,
@@ -668,45 +681,67 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 })}
               </div>
 
-              {/* 물받이 multi-select 전/후/좌/우 (기본 다 선택). 다 선택되면
-                  PDF 에서 "전체" 로, 0개면 "안함" 으로 표시됨. */}
-              <div className="mt-3 pt-3 border-t border-border/40">
-                <Label className="text-xs text-muted-foreground mb-2 block font-medium">
-                  물받이 (다 선택 = 전체, 0개 = 안함)
-                </Label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {GUTTER_SIDES.map((side) => {
-                    const active = gutterSides.has(side);
-                    return (
-                      <button
-                        key={side}
-                        type="button"
-                        onClick={() => toggleGutterSide(side)}
-                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                          active
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card text-foreground border-border/60"
-                        }`}
-                      >
-                        {GUTTER_SIDE_LABELS[side]}
-                      </button>
-                    );
-                  })}
-                </div>
-                {gutterSides.size > 0 ? (
-                  <div className="mt-2 flex items-center gap-2">
+              {/* 스틸방수는 물받이 대신 스테인리스 배수로를 사용. 그 외 공사 유형에서는
+                  물받이 다중선택(전/후/좌/우) 을 표시한다. */}
+              {constructionType === "steelWaterproof" ? (
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <Label className="text-xs text-muted-foreground mb-2 block font-medium">
+                    스테인리스 배수로 (총 길이)
+                  </Label>
+                  <div className="flex items-center gap-2">
                     <Input
                       type="number"
                       inputMode="decimal"
-                      value={gutterLength}
-                      onChange={(e) => setGutterLength(e.target.value)}
-                      placeholder="총 길이"
+                      value={stainlessDrainLength}
+                      onChange={(e) => setStainlessDrainLength(e.target.value)}
+                      placeholder="0 = 안함"
                       className="h-11 rounded-xl tabular-nums flex-1"
                     />
                     <span className="text-sm text-muted-foreground font-medium w-6">m</span>
                   </div>
-                ) : null}
-              </div>
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    m당 {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원 (설정에서 변경 가능)
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <Label className="text-xs text-muted-foreground mb-2 block font-medium">
+                    물받이 (다 선택 = 전체, 0개 = 안함)
+                  </Label>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {GUTTER_SIDES.map((side) => {
+                      const active = gutterSides.has(side);
+                      return (
+                        <button
+                          key={side}
+                          type="button"
+                          onClick={() => toggleGutterSide(side)}
+                          className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card text-foreground border-border/60"
+                          }`}
+                        >
+                          {GUTTER_SIDE_LABELS[side]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {gutterSides.size > 0 ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={gutterLength}
+                        onChange={(e) => setGutterLength(e.target.value)}
+                        placeholder="총 길이"
+                        className="h-11 rounded-xl tabular-nums flex-1"
+                      />
+                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </Section>
 
             {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}

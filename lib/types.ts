@@ -137,6 +137,7 @@ export interface PricingOverrides {
   substructureSteelPricePerSqm?: number;
   drainHolePrice?: number;
   capBendingPricePerM?: number;
+  stainlessDrainPricePerM?: number;
 }
 
 /** Field definitions for the override UI — grouped by concern. */
@@ -162,6 +163,7 @@ export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { k
       { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
       { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
       { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
+      { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
     ],
   },
   {

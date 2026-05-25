@@ -36,7 +36,8 @@ const DEFAULTS = {
   substructureSteelPricePerSqm: 40000,
   drainHolePrice: 200000,
   capBendingPricePerM: 5000,
-  endCapPrice: 12000,
+  endCapPrice: 2000,
+  stainlessDrainPricePerM: 50000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.10,
   useLossRateByDefault: false,
@@ -70,8 +71,18 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
       { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
+      { key: "endCapPrice", label: "엔드캡 (개당)", unit: "원" },
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
       { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
+    ],
+  },
+  {
+    section: "스틸방수 단가",
+    emoji: "🟦",
+    items: [
+      { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
+      { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
+      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
     ],
   },
   {
@@ -97,15 +108,6 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     items: [
       { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
       { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
-    ],
-  },
-  {
-    section: "스틸방수 단가",
-    emoji: "🟦",
-    items: [
-      { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
-      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
-      { key: "endCapPrice", label: "엔드캡 (개당)", unit: "원" },
     ],
   },
   {
@@ -169,6 +171,7 @@ export function SettingsForm({ defaultValues }: Props) {
       drainHolePrice: defaultValues.drainHolePrice,
       capBendingPricePerM: defaultValues.capBendingPricePerM,
       endCapPrice: defaultValues.endCapPrice,
+      stainlessDrainPricePerM: defaultValues.stainlessDrainPricePerM,
       parapetMultiplier: defaultValues.parapetMultiplier,
       defaultLossRate: defaultValues.defaultLossRate,
       useLossRateByDefault: defaultValues.useLossRateByDefault,

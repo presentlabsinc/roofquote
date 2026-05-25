@@ -72,6 +72,8 @@ export interface BuildLineItemsInput {
   workDays: number;
   gutterMode?: GutterMode | null;
   gutterLengthM: number;
+  /** 스테인리스 배수로 길이 — 스틸방수에서만 사용 (물받이 대체). */
+  stainlessDrainLengthM?: number;
   capLengthM?: number;
   drainHoleCount?: number;
   endCapCount?: number;
@@ -104,6 +106,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     settings: rawSettings, constructionType, materialType, thickness,
     areaM2, scope, workerCount, workDays,
     gutterMode = null, gutterLengthM,
+    stainlessDrainLengthM = 0,
     capLengthM = 0, drainHoleCount = 0, endCapCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
@@ -172,17 +175,28 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // 물받이 — driven by gutter multi-select (전/후/좌/우 또는 전체/안함)
-  if (gutterMode && gutterMode !== "none" && gutterLengthM > 0) {
-    const sides = parseGutterSides(gutterMode);
-    if (sides.size > 0) {
-      const modeLabel = gutterSidesLabel(sides);
-      items.push({
-        category: "material", name: `물받이 교체 (${modeLabel})`, quantity: gutterLengthM, unit: "m",
-        unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
-        sortOrder: order++,
-      });
+  // 물받이 — driven by gutter multi-select (전/후/좌/우 또는 전체/안함).
+  // 스틸방수는 물받이 대신 스테인리스 배수로를 쓰므로 gutter 라인은 emit 안 함.
+  if (constructionType !== "steelWaterproof") {
+    if (gutterMode && gutterMode !== "none" && gutterLengthM > 0) {
+      const sides = parseGutterSides(gutterMode);
+      if (sides.size > 0) {
+        const modeLabel = gutterSidesLabel(sides);
+        items.push({
+          category: "material", name: `물받이 교체 (${modeLabel})`, quantity: gutterLengthM, unit: "m",
+          unitPrice: settings.gutterPricePerM, total: Math.round(gutterLengthM * settings.gutterPricePerM),
+          sortOrder: order++,
+        });
+      }
     }
+  } else if (stainlessDrainLengthM > 0) {
+    // 스테인리스 배수로 — 스틸방수 전용. 단순 길이 × m당 단가.
+    items.push({
+      category: "material", name: "스테인리스 배수로", quantity: stainlessDrainLengthM, unit: "m",
+      unitPrice: settings.stainlessDrainPricePerM,
+      total: Math.round(stainlessDrainLengthM * settings.stainlessDrainPricePerM),
+      sortOrder: order++,
+    });
   }
 
   // 하지작업 (substructure) — wood or steel, priced per ㎡ of construction area
