@@ -36,7 +36,7 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
   const [clientView, setClientView] = useState(false); // 고객 보기 모드
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [lineEditVal, setLineEditVal] = useState("");
-  const [editingMargin, setEditingMargin] = useState<"rate" | "amount" | "final" | null>(null);
+  const [editingMargin, setEditingMargin] = useState<"rate" | "amount" | "final" | "pyeong" | null>(null);
   const [marginInput, setMarginInput] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
@@ -90,6 +90,16 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
       } else if (editingMargin === "amount") {
         const amount = parseInt(marginInput.replace(/,/g, "")) || 0;
         await patch({ marginAmount: amount });
+      } else if (editingMargin === "pyeong") {
+        // 평당가 → finalPrice 로 변환. 면적이 0이면 안 됨.
+        if (pyeong <= 0) {
+          toast.error("면적이 0이라 평당가를 적용할 수 없습니다");
+          setEditingMargin(null);
+          return;
+        }
+        const perPyeong = parseInt(marginInput.replace(/,/g, "")) || 0;
+        const fp = Math.round(perPyeong * pyeong);
+        await patch({ finalPrice: fp });
       } else {
         const fp = parseInt(marginInput.replace(/,/g, "")) || 0;
         await patch({ finalPrice: fp });
@@ -107,6 +117,10 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
   }
 
   const marginRatePct = Math.round(est.marginRate * 1000) / 10;
+  // 평당 단가 — 견적자가 "평당 얼마짜리 공사인지" 직관적으로 확인하는 핵심 숫자.
+  // 1평 = 3.3058㎡. areaM2 이 0이면 표시·편집 모두 비활성.
+  const pyeong = est.areaM2 > 0 ? est.areaM2 / 3.3058 : 0;
+  const pricePerPyeong = pyeong > 0 ? Math.round(est.finalPrice / pyeong) : 0;
 
   return (
     <div className="space-y-3 pb-48">
@@ -142,7 +156,9 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         </div>
         <p className="text-[34px] font-bold leading-none tabular-nums mb-4">{fmt(est.finalPrice)}<span className="text-lg font-medium ml-1.5 text-white/80">원</span></p>
 
-        <div className={`grid gap-2 text-[11px] ${clientView ? "grid-cols-1" : "grid-cols-3"}`}>
+        {/* clientView: 2 chips (면적 + 평당가).
+            internal: 4 chips in a 2×2 grid (원가, 마진, 면적, 평당가). */}
+        <div className="grid gap-2 text-[11px] grid-cols-2">
           {!clientView && (
             <>
               <div className="bg-white/10 backdrop-blur rounded-2xl p-2.5">
@@ -157,7 +173,11 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
           )}
           <div className="bg-white/10 backdrop-blur rounded-2xl p-2.5">
             <div className="text-white/60 mb-0.5">면적</div>
-            <div className="font-bold tabular-nums text-sm">{est.areaM2}㎡</div>
+            <div className="font-bold tabular-nums text-sm">{est.areaM2}㎡ <span className="text-white/60 font-normal">({Math.round(pyeong)}평)</span></div>
+          </div>
+          <div className="bg-white/10 backdrop-blur rounded-2xl p-2.5">
+            <div className="text-white/60 mb-0.5">평당가</div>
+            <div className="font-bold tabular-nums text-sm">{pyeong > 0 ? `${fmt(pricePerPyeong)}원` : "—"}</div>
           </div>
         </div>
       </div>
@@ -197,6 +217,21 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                 onEdit={() => { setEditingMargin("final"); setMarginInput(String(est.finalPrice)); }}
                 value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
                 unit="원"
+              />
+              {/* 평당가 — 한국 시공업계에서 자주 쓰는 quote 단위. 입력하면
+                  finalPrice = 평당가 × 평수 로 환산되어 finalPrice 모드로
+                  들어감 (역산 → marginRate 자동 재계산). */}
+              <EditableRow
+                label="평당가"
+                display={pyeong > 0 ? fmtKrw(pricePerPyeong) : "—"}
+                editing={editingMargin === "pyeong"}
+                onEdit={() => {
+                  if (pyeong <= 0) return;
+                  setEditingMargin("pyeong");
+                  setMarginInput(String(pricePerPyeong));
+                }}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                unit="원/평"
               />
             </div>
 
