@@ -91,15 +91,18 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         const amount = parseInt(marginInput.replace(/,/g, "")) || 0;
         await patch({ marginAmount: amount });
       } else if (editingMargin === "pyeong") {
-        // 평당가 → finalPrice 로 변환. 면적이 0이면 안 됨.
+        // 평당가 → 공급가 → marginAmount 로 변환해서 전송.
+        // marginAmount 액션 (mode='amount') 으로 들어가면 VAT 토글이 finalPrice
+        // 만 흔들고 평당가/마진율은 그대로 유지됨.
         if (pyeong <= 0) {
           toast.error("면적이 0이라 평당가를 적용할 수 없습니다");
           setEditingMargin(null);
           return;
         }
         const perPyeong = parseInt(marginInput.replace(/,/g, "")) || 0;
-        const fp = Math.round(perPyeong * pyeong);
-        await patch({ finalPrice: fp });
+        const newSupplyPrice = Math.round(perPyeong * pyeong);
+        const newMarginAmount = newSupplyPrice - est.totalCost;
+        await patch({ marginAmount: newMarginAmount });
       } else {
         const fp = parseInt(marginInput.replace(/,/g, "")) || 0;
         await patch({ finalPrice: fp });
@@ -117,10 +120,12 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
   }
 
   const marginRatePct = Math.round(est.marginRate * 1000) / 10;
-  // 평당 단가 — 견적자가 "평당 얼마짜리 공사인지" 직관적으로 확인하는 핵심 숫자.
+  // 평당 단가 — VAT 전 공급가 기준 (한국 시공업 관례).
+  // VAT 토글해도 평당가는 안 흔들림 — finalPrice 만 변동.
   // 1평 = 3.3058㎡. areaM2 이 0이면 표시·편집 모두 비활성.
   const pyeong = est.areaM2 > 0 ? est.areaM2 / 3.3058 : 0;
-  const pricePerPyeong = pyeong > 0 ? Math.round(est.finalPrice / pyeong) : 0;
+  const pricePerPyeong = pyeong > 0 ? Math.round(est.supplyPrice / pyeong) : 0;
+  const vatLabel = est.vatIncluded ? "VAT 포함" : "VAT 별도";
   // 손해 견적 감지 — 사장님이 평당가·최종가를 원가보다 낮게 잡으면 음수 마진.
   // 저장은 허용하되 빨간색으로 강조해서 못 보고 지나치는 걸 방지.
   const isLoss = est.marginAmount < 0;
@@ -157,7 +162,8 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
             {est.vatIncluded ? "VAT 포함" : "VAT 별도"}
           </button>
         </div>
-        <p className="text-[34px] font-bold leading-none tabular-nums mb-4">{fmt(est.finalPrice)}<span className="text-lg font-medium ml-1.5 text-white/80">원</span></p>
+        <p className="text-[34px] font-bold leading-none tabular-nums mb-1">{fmt(est.finalPrice)}<span className="text-lg font-medium ml-1.5 text-white/80">원</span></p>
+        <p className="text-[11px] font-medium text-white/70 mb-4">{vatLabel}</p>
 
         {/* 손해 견적 경고 — 내부 보기에서만 (고객 화면엔 노출 X). */}
         {!clientView && isLoss && (
@@ -206,14 +212,12 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
               <h2 className="font-semibold text-foreground text-sm">마진 조정</h2>
             </div>
 
-            {/* 순서는 "사장님이 가장 자주 만지는 것 → 회계 관점" 으로:
-                평당가 (현장 감각) → 최종 견적가 (고객이 묻는 숫자) →
-                마진율 (내부 관리) → 마진 금액 (거의 안 만짐). */}
+            {/* 평당가 → 마진율 → 마진금액 → 최종견적가직접 순서.
+                평당가는 VAT 전 공급가 기준 — VAT 토글해도 안 흔들림.
+                최종견적가직접만 VAT 포함/별도 토글에 따라 값이 변동. */}
             <div className="space-y-1.5 divide-y divide-border/40">
-              {/* 평당가 — 입력 시 finalPrice = 평당가 × 평수 로 환산 후
-                  finalPrice 모드로 들어감 (마진율 자동 역산). */}
               <EditableRow
-                label="평당가"
+                label="평당가 (VAT 전)"
                 display={pyeong > 0 ? fmtKrw(pricePerPyeong) : "—"}
                 editing={editingMargin === "pyeong"}
                 onEdit={() => {
@@ -223,15 +227,6 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                 }}
                 value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
                 unit="원/평" highlight
-              />
-              <EditableRow
-                label="최종 견적가 직접"
-                display={est.marginMode === "finalPrice" ? fmtKrw(est.finalPrice) : "역산 계산"}
-                placeholder
-                editing={editingMargin === "final"}
-                onEdit={() => { setEditingMargin("final"); setMarginInput(String(est.finalPrice)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="원"
               />
               <EditableRow
                 label="마진율"
@@ -249,6 +244,15 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                 value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
                 unit="원" danger={isLoss}
               />
+              <EditableRow
+                label={`최종 견적가 직접 (${vatLabel})`}
+                display={est.marginMode === "finalPrice" ? fmtKrw(est.finalPrice) : "역산 계산"}
+                placeholder
+                editing={editingMargin === "final"}
+                onEdit={() => { setEditingMargin("final"); setMarginInput(String(est.finalPrice)); }}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                unit="원"
+              />
             </div>
 
             <div className="mt-4 pt-3 border-t border-border/40 space-y-1.5">
@@ -261,7 +265,7 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
               <BreakdownRow label="공급가" value={fmtKrw(est.supplyPrice)} />
               <BreakdownRow label="부가세 (10%)" value={fmtKrw(est.vat)} />
               <div className="flex justify-between items-center pt-2 mt-1 border-t border-border/40">
-                <span className="text-sm font-semibold text-foreground">최종 견적가</span>
+                <span className="text-sm font-semibold text-foreground">최종 견적가 <span className="text-[11px] font-medium text-muted-foreground ml-0.5">({vatLabel})</span></span>
                 <span className="text-base font-bold text-primary tabular-nums">{fmtKrw(est.finalPrice)}</span>
               </div>
             </div>
