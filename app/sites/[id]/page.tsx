@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MapPin, Phone, FileText, Plus, ChevronRight, Send } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
+import { SitePhotos } from "@/components/SitePhotos";
 import type { PhotoItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -45,24 +46,9 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
           )}
         </div>
 
-        {/* Photos */}
-        {photos.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border/60 p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-semibold text-foreground text-sm">현장 사진</h2>
-              <span className="text-xs text-muted-foreground">{photos.length}장</span>
-            </div>
-            <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-1 px-1">
-              {photos.map((p, i) => (
-                <div key={i} className="shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={p.url} alt={p.memo ?? ""} className="w-24 h-24 object-cover rounded-xl border border-border/40" />
-                  {p.memo && <p className="text-[11px] text-muted-foreground mt-1.5 w-24 truncate">{p.memo}</p>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Photos — always shown (with empty-state CTA inside) so the user
+            can add more even when no photos exist yet. */}
+        <SitePhotos siteId={id} initialPhotos={photos} />
 
         {/* Estimates header */}
         <div className="flex items-center justify-between px-1 pt-2">
