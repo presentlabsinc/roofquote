@@ -1,25 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
 import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
-import type { PricingSettings } from "@prisma/client";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { user, settings } = await requireUserAndSettings();
   const { id: siteId } = await params;
   const body = await req.json();
 
-  const settings: PricingSettings | null = await prisma.pricingSettings.findFirst();
-  if (!settings) {
-    return NextResponse.json({ error: "단가 설정이 없습니다. 먼저 단가 설정을 완료해 주세요." }, { status: 400 });
+  // Ownership check — can't create an estimate for someone else's site.
+  const site = await prisma.site.findFirst({ where: { id: siteId, userId: user.id } });
+  if (!site) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // 견적 번호 자동 생성 — "YYYY-NNN" (연도별 카운터, 3자리 패딩)
+  // 견적 번호 자동 생성 — "YYYY-NNN" (연도별 카운터, 3자리 패딩).
+  // Scoped to the user so number sequences don't leak between accounts.
   const year = new Date().getFullYear();
   const yearStart = new Date(year, 0, 1);
   const yearEnd = new Date(year + 1, 0, 1);
   const countThisYear = await prisma.estimate.count({
-    where: { createdAt: { gte: yearStart, lt: yearEnd } },
+    where: { createdAt: { gte: yearStart, lt: yearEnd }, site: { userId: user.id } },
   });
   const estimateNumber = `${year}-${String(countThisYear + 1).padStart(3, "0")}`;
 

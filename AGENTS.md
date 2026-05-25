@@ -38,6 +38,32 @@ If the user asks for any of these, push back gently and confirm — they may hav
 - Pretendard font (Korean app standard), loaded via `<link>` in `app/layout.tsx`
 - PWA manifest at `app/manifest.ts`, icon at `public/icon.svg`
 
+## Authentication (Supabase Auth)
+
+Multi-tenant. Every page + API route requires a signed-in user; data is scoped by `userId` (the Supabase `auth.users.id` UUID stored as a string column).
+
+- **Provider**: `@supabase/ssr` for cookie-based session in App Router.
+- **Login methods**: Kakao OAuth, Google OAuth, email/password. Signup is closed during beta — admin creates accounts in the Supabase dashboard.
+- **Files**:
+  - `lib/supabase.ts` — `supabaseBrowser()`, `supabaseServer()` (async), `supabaseAdmin()` (service role).
+  - `lib/auth.ts` — `requireUser()`, `requireUserAndSettings()`, `getOrCreatePricingSettings()`.
+  - `middleware.ts` — session refresh + redirect unauthed users to `/login`.
+  - `app/login/` — sign-in page + form.
+  - `app/auth/callback/route.ts` — OAuth return URL → exchange code for session → forward to `next`.
+  - `app/api/auth/logout/route.ts` — POSTs sign out, redirects to /login.
+
+### Data ownership rules
+- `PricingSettings.userId` is `@unique` — exactly one settings row per user. Created lazily on first request via `getOrCreatePricingSettings()`.
+- `Site.userId` is indexed; `Estimate` ownership flows through `Site` (no own column).
+- All queries use either `findFirst({ where: { id, userId } })` or `findFirst({ where: { id, site: { userId } } })`. Never plain `findUnique({ id })` — that leaks across users.
+- Mutations use `updateMany`/`deleteMany` with the ownership filter so the check is atomic with the write (avoids find-then-update race).
+
+### Adding a new model
+Any new model that holds user-owned data must:
+1. Have a `userId String` column (or join through one that does).
+2. Be queried/mutated only via the patterns above.
+3. Not be returned from any route without first verifying ownership.
+
 ## ⚠️ Inviolable invariants
 
 These are real constraints. Violating them silently corrupts past quotes — a user-trust disaster.

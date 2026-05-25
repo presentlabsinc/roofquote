@@ -10,8 +10,17 @@ datasource db {
 
 // Live config — never FK-linked to Estimate.
 // At estimate creation time, values are COPIED (snapshotted) into EstimateLineItem.
+//
+// Multi-tenant: each Supabase auth user owns exactly one PricingSettings row.
+// userId stores the Supabase auth.users.id (UUID as string). The PricingSettings
+// row is created lazily on first authenticated request via
+// getOrCreatePricingSettings() in lib/auth.ts.
 model PricingSettings {
   id String @id @default(cuid())
+
+  // Foreign key into Supabase auth.users (we mirror the UUID as a string column —
+  // no Prisma @relation since auth.users is in a different Postgres schema).
+  userId String @unique
 
   // Company info (snapshot-copied into Estimate at creation)
   companyName               String
@@ -74,6 +83,8 @@ model PricingSettings {
 
 model Site {
   id            String     @id @default(cuid())
+  // Owner — Supabase auth.users.id. Estimates inherit ownership via Site.
+  userId        String
   customerName  String
   customerPhone String?
   siteAddress   String
@@ -81,6 +92,8 @@ model Site {
   generalMemo   String?
   estimates     Estimate[]
   createdAt     DateTime   @default(now())
+
+  @@index([userId])
 }
 
 model Estimate {

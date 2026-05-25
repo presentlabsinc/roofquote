@@ -1,24 +1,24 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUserAndSettings } from "@/lib/auth";
 import { MapPin, FileText, ChevronRight, Building2, Send } from "lucide-react";
 import { LargeTitle } from "@/components/AppHeader";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [sites, settings] = await Promise.all([
-    prisma.site.findMany({
-      include: { estimates: { orderBy: { createdAt: "desc" }, take: 1 } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.pricingSettings.findFirst(),
-  ]);
+  const { user, settings } = await requireUserAndSettings();
+  const sites = await prisma.site.findMany({
+    where: { userId: user.id },
+    include: { estimates: { orderBy: { createdAt: "desc" }, take: 1 } },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="max-w-lg mx-auto">
       <LargeTitle
         title="현장 목록"
-        subtitle={settings?.companyName ?? "지붕공사 견적"}
+        subtitle={settings.companyName || "지붕공사 견적"}
         rightSlot={
           <span className="text-sm font-semibold text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
             {sites.length}건
@@ -27,7 +27,7 @@ export default async function HomePage() {
       />
 
       <div className="px-4 pb-4">
-        {!settings && (
+        {(!settings.companyName || settings.companyName.includes("회사명을 설정에서")) && (
           <Link
             href="/settings"
             className="block mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl pressable"
@@ -35,7 +35,7 @@ export default async function HomePage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">⚙️</div>
               <div className="flex-1">
-                <p className="font-semibold text-amber-900 text-sm">단가 설정이 필요합니다</p>
+                <p className="font-semibold text-amber-900 text-sm">설정이 필요합니다</p>
                 <p className="text-xs text-amber-700 mt-0.5">먼저 회사 정보와 기본 단가를 입력해 주세요</p>
               </div>
               <ChevronRight size={18} className="text-amber-600" />

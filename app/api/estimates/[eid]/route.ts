@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser, requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals, calcFromFinalPrice } from "@/lib/calculations";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
@@ -29,9 +30,10 @@ async function recalcAndReturn(eid: string, estimate: Estimate) {
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ eid: string }> }) {
+  const user = await requireUser();
   const { eid } = await params;
-  const estimate = await prisma.estimate.findUnique({
-    where: { id: eid },
+  const estimate = await prisma.estimate.findFirst({
+    where: { id: eid, site: { userId: user.id } },
     include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
   });
   if (!estimate) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -39,11 +41,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ eid: strin
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ eid: string }> }) {
+  const user = await requireUser();
   const { eid } = await params;
   const body = await req.json();
 
-  const estimate = await prisma.estimate.findUnique({
-    where: { id: eid },
+  const estimate = await prisma.estimate.findFirst({
+    where: { id: eid, site: { userId: user.id } },
     include: { lineItems: true },
   });
   if (!estimate) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -103,10 +106,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
   // and resets margin to "percent" mode. pdfSentAt is preserved so the
   // "last sent" timestamp stays accurate (user can resend if needed).
   if (body.action === "replace") {
-    const settings = await prisma.pricingSettings.findFirst();
-    if (!settings) {
-      return NextResponse.json({ error: "단가 설정이 없습니다." }, { status: 400 });
-    }
+    // Settings come from the same user — getOrCreate guarantees existence.
+    const { settings } = await requireUserAndSettings();
     const {
       constructionType = "roof", materialType = null,
       materialThickness = "0.45", materialTexture = null, materialColor = null,
@@ -279,8 +280,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ eid: string }> }) {
+  const user = await requireUser();
   const { eid } = await params;
-  // EstimateLineItem has onDelete: Cascade in the schema, so children go automatically
-  await prisma.estimate.delete({ where: { id: eid } });
+  // Atomic ownership check via deleteMany — returns 0 affected if not owned.
+  // EstimateLineItem has onDelete: Cascade so children go automatically.
+  const result = await prisma.estimate.deleteMany({
+    where: { id: eid, site: { userId: user.id } },
+  });
+  if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json({ ok: true });
 }

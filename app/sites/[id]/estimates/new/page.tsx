@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireUserAndSettings } from "@/lib/auth";
 import { NewEstimateForm } from "./NewEstimateForm";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -12,16 +13,19 @@ export default async function NewEstimatePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ edit?: string }>;
 }) {
+  const { user, settings } = await requireUserAndSettings();
   const { id } = await params;
   const { edit } = await searchParams;
 
-  const [site, settings, existing] = await Promise.all([
-    prisma.site.findUnique({ where: { id } }),
-    prisma.pricingSettings.findFirst(),
-    edit ? prisma.estimate.findUnique({ where: { id: edit } }) : Promise.resolve(null),
+  // Both queries scoped to the user via site.userId. Estimate ownership
+  // flows through the site relation (no userId column on Estimate directly).
+  const [site, existing] = await Promise.all([
+    prisma.site.findFirst({ where: { id, userId: user.id } }),
+    edit
+      ? prisma.estimate.findFirst({ where: { id: edit, site: { userId: user.id } } })
+      : Promise.resolve(null),
   ]);
   if (!site) notFound();
-  if (!settings) redirect("/settings");
   // If edit ID is provided but estimate doesn't exist (or wrong site), drop the param
   if (edit && (!existing || existing.siteId !== id)) {
     redirect(`/sites/${id}/estimates/new`);

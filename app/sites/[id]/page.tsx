@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { MapPin, Phone, FileText, Plus, ChevronRight, Send } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SitePhotos } from "@/components/SitePhotos";
@@ -9,9 +10,10 @@ import type { PhotoItem } from "@/lib/types";
 export const dynamic = "force-dynamic";
 
 export default async function SiteDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const user = await requireUser();
   const { id } = await params;
-  const site = await prisma.site.findUnique({
-    where: { id },
+  const site = await prisma.site.findFirst({
+    where: { id, userId: user.id },
     include: { estimates: { orderBy: { createdAt: "desc" } } },
   });
   if (!site) notFound();

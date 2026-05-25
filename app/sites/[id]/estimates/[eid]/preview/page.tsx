@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { AppHeader } from "@/components/AppHeader";
 import { PreviewActions } from "./PreviewActions";
 
@@ -12,12 +13,13 @@ export default async function PreviewPage({
   params: Promise<{ id: string; eid: string }>;
   searchParams: Promise<{ detail?: string }>;
 }) {
+  const user = await requireUser();
   const { id, eid } = await params;
   const { detail } = await searchParams;
   const detailLevel = detail === "detailed" ? "detailed" : "simple";
 
-  const estimate = await prisma.estimate.findUnique({
-    where: { id: eid },
+  const estimate = await prisma.estimate.findFirst({
+    where: { id: eid, site: { userId: user.id } },
     include: { site: true },
   });
   if (!estimate || estimate.siteId !== id) notFound();

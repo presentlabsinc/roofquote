@@ -7,8 +7,11 @@ import { cn } from "@/lib/utils";
 export function BottomNav() {
   const pathname = usePathname();
 
-  // Hide on focused task flows
+  // Hide on focused task flows + auth pages (the auth pages don't have a
+  // signed-in user to navigate; middleware bounces unauthed users to /login).
   if (
+    pathname === "/login" ||
+    pathname.startsWith("/auth/") ||
     pathname === "/sites/new" ||
     pathname.endsWith("/estimates/new") ||
     pathname.endsWith("/preview")

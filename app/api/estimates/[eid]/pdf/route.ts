@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
 import { createElement } from "react";
 
 // PDF generation is heavy (font fetch + react-pdf render). Default Vercel
@@ -58,8 +59,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
   }
 
   try {
-    const estimate = await prisma.estimate.findUnique({
-      where: { id: eid },
+    const user = await requireUser();
+    const estimate = await prisma.estimate.findFirst({
+      where: { id: eid, site: { userId: user.id } },
       include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
     });
     if (!estimate) {
