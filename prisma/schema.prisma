@@ -49,7 +49,7 @@ model PricingSettings {
   parapetMultiplier         Float @default(1.4)   // (현재 미사용 — 면적은 시공면적에 포함된 것으로 가정)
 
   // 자재 로스율 — 시공 시 자투리/낭비분
-  defaultLossRate      Float   @default(0.10) // 10%
+  defaultLossRate      Float   @default(0.15) // 15%
   useLossRateByDefault Boolean @default(false)
 
   // 하지작업 단가
@@ -77,6 +77,12 @@ model PricingSettings {
   // Defaults
   defaultMarginRate    Float   // e.g. 0.25 = 25%
   vatIncludedByDefault Boolean
+
+  // 견적 번호 시작값 — "YYYY-XXX" 형식의 XXX 가 이 숫자부터 시작.
+  // 다른 시스템에서 마이그레이션하거나 특정 번호부터 시작하고 싶을 때 사용.
+  // 새 견적 번호 = estimateNumberStart + (올해 이미 생성된 견적 수).
+  // 기본 1 — 즉 첫 견적은 YYYY-001.
+  estimateNumberStart  Int     @default(1)
 
   updatedAt DateTime @updatedAt
 }

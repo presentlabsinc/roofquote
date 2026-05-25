@@ -82,11 +82,12 @@ export function gutterSidesLabel(sides: Set<GutterSide>): string {
 /** @deprecated kept so existing imports still type-check; use GutterSide instead */
 export type GutterMode = string;
 
-/** Standard texture presets. The user picks one or "기타" for free input. */
+/** Standard texture presets. Order = display order; first item is the
+ *  new-estimate default (스톤 is what the user picks most often). */
 export const TEXTURE_PRESETS = [
+  "스톤",
   "유광",
   "무광",
-  "스톤",
 ] as const;
 
 /** Standard color presets for color steel. The user picks one or "기타" for free input. */

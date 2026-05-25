@@ -18,13 +18,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // 견적 번호 자동 생성 — "YYYY-NNN" (연도별 카운터, 3자리 패딩).
   // Scoped to the user so number sequences don't leak between accounts.
+  // estimateNumberStart from settings lets the user shift the starting
+  // number (e.g. start at 100 if migrating from another system).
   const year = new Date().getFullYear();
   const yearStart = new Date(year, 0, 1);
   const yearEnd = new Date(year + 1, 0, 1);
   const countThisYear = await prisma.estimate.count({
     where: { createdAt: { gte: yearStart, lt: yearEnd }, site: { userId: user.id } },
   });
-  const estimateNumber = `${year}-${String(countThisYear + 1).padStart(3, "0")}`;
+  const seq = (settings.estimateNumberStart ?? 1) + countThisYear;
+  const estimateNumber = `${year}-${String(seq).padStart(3, "0")}`;
 
   const {
     constructionType = "roof",

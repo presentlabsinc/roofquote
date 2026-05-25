@@ -80,13 +80,14 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       endCapPrice: 3500,
       stainlessDrainPricePerM: 50000,
       parapetMultiplier: 1.4,
-      defaultLossRate: 0.10,
+      defaultLossRate: 0.15,
       useLossRateByDefault: false,
       baseTransportCost: 250000,
       mealCostPerPersonMeal: 10000,
       lodgingCostPerPersonNight: 50000,
       defaultMarginRate: 0.25,
       vatIncludedByDefault: true,
+      estimateNumberStart: 1,
     },
   });
   return settings;

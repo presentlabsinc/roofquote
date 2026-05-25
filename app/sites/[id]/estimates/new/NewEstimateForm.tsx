@@ -75,7 +75,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [thickness, setThickness] = useState<Thickness>((existing?.materialThickness as Thickness | undefined) ?? "0.45");
   const [textureChoice, setTextureChoice] = useState<string>(() => {
     const t = existing?.materialTexture;
-    if (!t) return "유광";
+    if (!t) return "스톤";
     return (TEXTURE_PRESETS as readonly string[]).includes(t) ? t : "기타";
   });
   const [textureCustom, setTextureCustom] = useState<string>(() => {
@@ -209,8 +209,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
       setMaterialType("slate");
-      setGutterSides(new Set()); // 안함
-      setSubstructureType("none");
+      setGutterSides(new Set()); // 안함 (스틸방수는 물받이 대신 스테인리스 배수로)
+      // 하지작업은 모든 유형에서 목재 기본 — 안 쓰면 사용자가 '없음' 으로 변경
+      setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     }
     setScope(defaults);
   }
@@ -694,13 +695,13 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       inputMode="decimal"
                       value={stainlessDrainLength}
                       onChange={(e) => setStainlessDrainLength(e.target.value)}
-                      placeholder="0 = 안함"
+                      placeholder="총 길이"
                       className="h-11 rounded-xl tabular-nums flex-1"
                     />
                     <span className="text-sm text-muted-foreground font-medium w-6">m</span>
                   </div>
                   <p className="text-[11px] text-muted-foreground mt-1.5">
-                    m당 {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원 (설정에서 변경 가능)
+                    m당 {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원 (설정에서 변경 가능) · 0 = 안함
                   </p>
                 </div>
               ) : (

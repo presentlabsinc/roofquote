@@ -39,7 +39,8 @@ const DEFAULTS = {
   endCapPrice: 3500,
   stainlessDrainPricePerM: 50000,
   parapetMultiplier: 1.4,
-  defaultLossRate: 0.10,
+  defaultLossRate: 0.15,
+  estimateNumberStart: 1,
   useLossRateByDefault: false,
   baseTransportCost: 250000,
   mealCostPerPersonMeal: 10000,
@@ -133,6 +134,15 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
       { key: "defaultMarginRate", label: "기본 마진율", unit: "%", step: 0.01, pct: true },
     ],
   },
+  {
+    section: "견적서",
+    emoji: "📄",
+    items: [
+      // 견적 번호 시작값 — 첫 번호가 YYYY-001 이 아니라 YYYY-100 같은 식으로 시작하고
+      // 싶을 때 사용. 새 견적 번호 = estimateNumberStart + 올해 이미 만든 견적 수.
+      { key: "estimateNumberStart", label: "견적 번호 시작값 (YYYY-XXX)", unit: "" },
+    ],
+  },
 ];
 
 interface Props {
@@ -180,6 +190,7 @@ export function SettingsForm({ defaultValues }: Props) {
       lodgingCostPerPersonNight: defaultValues.lodgingCostPerPersonNight,
       defaultMarginRate: defaultValues.defaultMarginRate,
       vatIncludedByDefault: defaultValues.vatIncludedByDefault,
+      estimateNumberStart: defaultValues.estimateNumberStart ?? 1,
     };
   });
 
