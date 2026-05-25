@@ -137,6 +137,8 @@ These are real constraints. Violating them silently corrupts past quotes — a u
   - `gutterSidesLabel(set)` for the PDF label: empty → "안함", all → "전체", subset → "앞, 좌" etc.
   - Form shows 4 toggle chips with the length input appearing when ≥1 side is selected.
   - Calculation: if `sides.size > 0` and `gutterLengthM > 0`, emit one line with the formatted label.
+  - **스틸방수 예외:** for `constructionType === "steelWaterproof"` the gutter UI is hidden and replaced with the 스테인리스 배수로 input (see below). `buildLineItems` also skips the gutter line for that type.
+- **스테인리스 배수로** (steelWaterproof only) replaces 물받이 in 스틸방수. Single "총 길이" input, priced as `stainlessDrainLengthM × stainlessDrainPricePerM`. Stored on `Estimate.stainlessDrainLengthM`. Price default 50,000원/m, configurable in 설정 → 스틸방수 단가.
 - **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option. Priced per ㎡ of construction area using `PricingSettings.substructureWoodPricePerSqm` / `substructureSteelPricePerSqm`.
 - **폐기물** uses `wasteTruckCount` (defaults 1). When 폐기물 scope is checked, a stepper appears. Cost = `wasteDisposalCost × wasteTruckCount`. (The `wasteDisposalCost` field is now interpreted as "per truck" — default updated to ₩1,000,000.)
 - **비계** uses two inputs (days + area in ㎡) → `area × days × scaffoldPricePerSqmDay`. If area is 0, falls back to legacy `scaffoldDailyCost × days` lump-sum model.
@@ -204,6 +206,28 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 ### Client-safe view
 - The estimate detail UI has a "고객 보기" toggle that hides line items, margin controls, and the cost breakdown. Used when the salesperson hands the phone to the customer. Toggle lives in `EstimateDetail.tsx` (`clientView` state).
 
+### Margin distribution on the customer PDF (50/25/25 default, configurable)
+- **The problem this solves:** the customer PDF used to show line items summing to `totalCost`, with a bigger 최종 견적 금액 below — math didn't add up and customers would ask why.
+- **The fix:** `distributeMarginForDisplay(items, marginAmount, ratios)` in [lib/calculations.ts](lib/calculations.ts) returns a NEW array of `DisplayLineItem`s with the margin baked into the line totals + a synthetic "이윤" line at the end. Sum of returned items == `cost + marginAmount` == 공급가액.
+- **Split** is per-user in PricingSettings:
+  - `marginMaterialRatio` (default 0.5) — distributed proportionally across material lines (each line's `total` and `unitPrice` scale by the same factor)
+  - `marginLaborRatio` (default 0.25) — across labor/meals/lodging lines (rolled up by `groupForDetailed` into one 인건비 row)
+  - `marginProfitRatio` (default 0.25) — emitted as a separate "이윤" line (표준품셈 형식, customer doesn't find it strange)
+- **Empty-bucket fallback:** no material lines → material's share spills into labor → labor full → spills into the profit line. Math never breaks.
+- **Normalization:** ratios are renormalized inside `distributeMarginForDisplay` so the saved settings can be e.g. 60/30/30 without over-distributing.
+- **Rounding sweep** at the end adjusts the last item by ±1원 so the displayed sum is exactly `cost + marginAmount` (no visible drift).
+- **Internal data is never modified.** `EstimateLineItem` rows stay cost-only (snapshot rule). This is purely a presentation transform applied at PDF render time. In-app `EstimateDetail` still shows the true cost breakdown + margin separately for the salesperson.
+- **Wiring:** `app/api/estimates/[eid]/pdf/route.ts` reads the current user's ratios from PricingSettings and passes them to `EstimatePDFDoc` as `marginRatios`. Settings UI: `MarginDistributionCard` at the bottom of `SettingsForm.tsx` with three % inputs + live sum check + "기본값 (50/25/25)" reset button.
+- **Ratios are read live**, not snapshotted — changing the split re-renders existing estimates' PDFs with the new distribution. Line item totals don't change, only the presentation does.
+
+### Margin adjustment — 4 editable inputs in `EstimateDetail`
+Order in the margin card (most-used → least-used):
+1. **평당가** (highlighted) — 평당가 × 평수 → finalPrice. Most natural for Korean contractors. 1평 = 3.3058㎡. Disabled when `areaM2 === 0`. Patches via existing `{ finalPrice }` action — backend doesn't know "평당" exists.
+2. **최종 견적가 직접** — sets finalPrice, marginMode → `'finalPrice'`, marginRate auto-derived.
+3. **마진율** — sets marginRate, recomputes everything.
+4. **마진 금액** — sets marginAmount, back-derives marginRate.
+All four are mutually derived: editing one updates the other three. The hero card chip row also displays 평당가 in both internal and client-view modes (it's customer-friendly information).
+
 ### Pricing overrides (per-estimate price changes)
 - `Estimate.pricingOverrides Json @default("{}")` — shape: `Partial<PricingOverrides>` with only the price fields the user changed for this specific estimate.
 - `applyOverrides(settings, overrides)` in `lib/calculations.ts` returns a merged `PricingSettings`-shaped object. `buildLineItems` calls this on `input.settings + input.pricingOverrides` and uses the merged object everywhere internally.
@@ -250,8 +274,10 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 - User can clear the seal by clicking the X overlay (sets URL to empty string, server stores null).
 
 ### Estimate number auto-generation
-- API: `POST /api/sites/[id]/estimates` queries `prisma.estimate.count({ where: { createdAt: yearRange } })` and assigns `YYYY-NNN` (3-digit pad).
-- Low race-condition risk for v0 single-user app. Could add a unique constraint + retry later if it becomes an issue.
+- API: `POST /api/sites/[id]/estimates` counts the **current user's** estimates this year and assigns `YYYY-NNN` (3-digit pad). Count scoped via `site: { userId }` so number sequences don't leak between accounts.
+- Formula: `seq = PricingSettings.estimateNumberStart + countThisYearForUser`. Default start = 1 → first estimate is `YYYY-001`. User can shift the start in 설정 → 견적서 (e.g. set to 100 when migrating from another system → first new estimate becomes `YYYY-100`).
+- **Not reset on Jan 1** — user must manually set `estimateNumberStart` back to 1 if they want to restart numbering each year. (Auto-reset is a possible v0.1 add if anyone asks.)
+- Low race-condition risk for v0 single-user-per-account app. Could add a unique constraint + retry later if it becomes an issue.
 - Stored in `Estimate.estimateNumber` (snapshot — does not regenerate on edit).
 
 ### 공사 일정 field
