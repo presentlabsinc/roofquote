@@ -121,6 +121,9 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
   // 1평 = 3.3058㎡. areaM2 이 0이면 표시·편집 모두 비활성.
   const pyeong = est.areaM2 > 0 ? est.areaM2 / 3.3058 : 0;
   const pricePerPyeong = pyeong > 0 ? Math.round(est.finalPrice / pyeong) : 0;
+  // 손해 견적 감지 — 사장님이 평당가·최종가를 원가보다 낮게 잡으면 음수 마진.
+  // 저장은 허용하되 빨간색으로 강조해서 못 보고 지나치는 걸 방지.
+  const isLoss = est.marginAmount < 0;
 
   return (
     <div className="space-y-3 pb-48">
@@ -156,6 +159,17 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
         </div>
         <p className="text-[34px] font-bold leading-none tabular-nums mb-4">{fmt(est.finalPrice)}<span className="text-lg font-medium ml-1.5 text-white/80">원</span></p>
 
+        {/* 손해 견적 경고 — 내부 보기에서만 (고객 화면엔 노출 X). */}
+        {!clientView && isLoss && (
+          <div className="bg-red-500/20 border border-red-300/40 rounded-2xl px-3 py-2 mb-3 flex items-center gap-2">
+            <span className="text-base">⚠️</span>
+            <div className="text-xs text-white leading-tight">
+              <div className="font-bold">손해 견적입니다</div>
+              <div className="text-white/80 tabular-nums">원가 대비 {fmt(est.marginAmount)}원 ({marginRatePct}%)</div>
+            </div>
+          </div>
+        )}
+
         {/* clientView: 2 chips (면적 + 평당가).
             internal: 4 chips in a 2×2 grid (원가, 마진, 면적, 평당가). */}
         <div className="grid gap-2 text-[11px] grid-cols-2">
@@ -165,8 +179,8 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                 <div className="text-white/60 mb-0.5">총 원가</div>
                 <div className="font-bold tabular-nums text-sm">{fmt(est.totalCost)}</div>
               </div>
-              <div className="bg-white/10 backdrop-blur rounded-2xl p-2.5">
-                <div className="text-white/60 mb-0.5">마진</div>
+              <div className={`backdrop-blur rounded-2xl p-2.5 ${isLoss ? "bg-red-500/30 border border-red-300/40" : "bg-white/10"}`}>
+                <div className={isLoss ? "text-red-100 mb-0.5" : "text-white/60 mb-0.5"}>마진</div>
                 <div className="font-bold tabular-nums text-sm">{marginRatePct}%</div>
               </div>
             </>
@@ -225,7 +239,7 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                 editing={editingMargin === "rate"}
                 onEdit={() => { setEditingMargin("rate"); setMarginInput(String(marginRatePct)); }}
                 value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="%"
+                unit="%" danger={isLoss}
               />
               <EditableRow
                 label="마진 금액"
@@ -233,13 +247,17 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
                 editing={editingMargin === "amount"}
                 onEdit={() => { setEditingMargin("amount"); setMarginInput(String(est.marginAmount)); }}
                 value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
-                unit="원"
+                unit="원" danger={isLoss}
               />
             </div>
 
             <div className="mt-4 pt-3 border-t border-border/40 space-y-1.5">
               <BreakdownRow label="총 원가" value={fmtKrw(est.totalCost)} />
-              <BreakdownRow label={`마진 (${marginRatePct}%)`} value={fmtKrw(est.marginAmount)} />
+              <BreakdownRow
+                label={isLoss ? `손해 (${marginRatePct}%)` : `마진 (${marginRatePct}%)`}
+                value={fmtKrw(est.marginAmount)}
+                danger={isLoss}
+              />
               <BreakdownRow label="공급가" value={fmtKrw(est.supplyPrice)} />
               <BreakdownRow label="부가세 (10%)" value={fmtKrw(est.vat)} />
               <div className="flex justify-between items-center pt-2 mt-1 border-t border-border/40">
@@ -405,15 +423,17 @@ export function EstimateDetail({ estimate: initial }: { estimate: FullEstimate }
 }
 
 function EditableRow({
-  label, display, editing, onEdit, value, onValueChange, onSave, unit, highlight, placeholder,
+  label, display, editing, onEdit, value, onValueChange, onSave, unit, highlight, placeholder, danger,
 }: {
   label: string; display: string; editing: boolean; onEdit: () => void;
   value: string; onValueChange: (v: string) => void; onSave: () => void;
   unit: string; highlight?: boolean; placeholder?: boolean;
+  /** Show value in red — used to flag negative margin (손해 견적). */
+  danger?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between py-2.5 first:pt-0">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className={`text-sm ${danger ? "text-red-600 font-semibold" : "text-muted-foreground"}`}>{label}</span>
       {editing ? (
         <div className="flex items-center gap-1.5">
           <div className="relative w-36">
@@ -434,21 +454,26 @@ function EditableRow({
           onClick={onEdit}
           className="flex items-center gap-1.5 pressable rounded-lg px-2 py-1 -mr-2"
         >
-          <span className={`text-sm tabular-nums ${highlight ? "font-bold text-foreground" : placeholder ? "text-muted-foreground/60" : "font-semibold text-foreground"}`}>
+          <span className={`text-sm tabular-nums ${
+            danger ? "font-bold text-red-600"
+            : highlight ? "font-bold text-foreground"
+            : placeholder ? "text-muted-foreground/60"
+            : "font-semibold text-foreground"
+          }`}>
             {display}
           </span>
-          <Edit2 size={13} className="text-muted-foreground/50" />
+          <Edit2 size={13} className={danger ? "text-red-400" : "text-muted-foreground/50"} />
         </button>
       )}
     </div>
   );
 }
 
-function BreakdownRow({ label, value }: { label: string; value: string }) {
+function BreakdownRow({ label, value, danger }: { label: string; value: string; danger?: boolean }) {
   return (
     <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="tabular-nums text-foreground">{value}</span>
+      <span className={danger ? "text-red-600 font-semibold" : "text-muted-foreground"}>{label}</span>
+      <span className={`tabular-nums ${danger ? "text-red-600 font-semibold" : "text-foreground"}`}>{value}</span>
     </div>
   );
 }

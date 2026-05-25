@@ -35,10 +35,31 @@ export default async function PreviewPage({
 자세한 내용은 첨부 견적서를 확인해 주세요.
 최종 견적은 현장 조건 확인 후 조정될 수 있습니다.`;
 
+  // 손해 견적 감지 — finalPrice 가 totalCost 보다 낮으면 마진이 음수.
+  // 미리보기 진입 시점이 "고객에게 보내기 직전" 의 마지막 안전망이라
+  // 큰 빨간 배너로 막아서 한 번 더 확인하게 함.
+  const isLoss = estimate.marginAmount < 0;
+  const lossAmount = Math.abs(estimate.marginAmount);
+
   return (
     <>
       <AppHeader title="견적서 미리보기" subtitle={estimate.site.customerName} />
       <div className="max-w-lg mx-auto px-4 pt-4 pb-32">
+        {isLoss && (
+          <div className="mb-3 bg-red-50 border-2 border-red-300 rounded-2xl p-4">
+            <div className="flex items-start gap-2.5">
+              <span className="text-xl leading-none">⚠️</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-red-700">손해 견적입니다</p>
+                <p className="text-xs text-red-600 mt-1 leading-relaxed tabular-nums">
+                  원가 {estimate.totalCost.toLocaleString("ko-KR")}원 보다 낮은 가격으로 발송됩니다.<br />
+                  손해 금액: <b>-{lossAmount.toLocaleString("ko-KR")}원</b><br />
+                  의도한 가격이 맞는지 한 번 더 확인해 주세요.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <PreviewActions
           estimateId={eid}
           siteId={id}
