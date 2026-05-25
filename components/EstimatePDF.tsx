@@ -1,4 +1,10 @@
-"use client";
+// NOTE: do NOT add "use client" here. This component is rendered ONLY by
+// the server-side PDF route via react-pdf's reconciler. Marking it as a
+// client component causes Next.js to replace it with a client reference
+// stub in server contexts, so when the API route imports it, the
+// reconciler sees a wrapper that never produces the Document host node —
+// leading to react-pdf's "Cannot read properties of null (reading 'props')"
+// crash because container.document stays null.
 import type { ReactElement } from "react";
 import {
   Document,

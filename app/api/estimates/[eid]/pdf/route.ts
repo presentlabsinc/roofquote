@@ -1,24 +1,34 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { renderToBuffer, Document, Page, Text } from "@react-pdf/renderer";
-import { createElement, type ReactElement } from "react";
-import type { DocumentProps } from "@react-pdf/renderer";
-import { EstimatePDFDoc } from "@/components/EstimatePDF";
+import { createElement } from "react";
 
 // PDF generation is heavy (font fetch + react-pdf render). Default Vercel
 // timeout (10s on Hobby) can be tight on cold start. Give it 60s headroom.
 export const runtime = "nodejs";
 export const maxDuration = 60;
+// Force fully dynamic — never try to statically optimize this route.
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request, { params }: { params: Promise<{ eid: string }> }) {
   const { eid } = await params;
   const url = new URL(req.url);
 
+  // ⚠️ Dynamic imports — DO NOT convert these back to top-level `import`.
+  // @react-pdf/renderer ships its own React reconciler that breaks when
+  // Turbopack inlines it into the route bundle (symptom: container.document
+  // ends up null and the PDF endpoint 500s with "Cannot read properties of
+  // null (reading 'props')"). Loading via `await import()` at request time
+  // forces Node's native ESM resolver to load it from node_modules, which
+  // makes the reconciler use its bundled scheduler correctly.
+  const reactPdf = await import("@react-pdf/renderer");
+  const { renderToBuffer, Document, Page, Text } = reactPdf;
+  const { EstimatePDFDoc } = await import("@/components/EstimatePDF");
+
   // ─── Diagnostic mode ────────────────────────────────────────────────
-  // Visit /api/estimates/{anyEid}/pdf?test=1 to render a minimal PDF
-  // with no Korean text, no font registration dependency, no data. If
-  // this fails, the issue is environmental (Turbopack/react-pdf wiring/
-  // serverless runtime). If it succeeds, the issue is in EstimatePDFDoc.
+  // GET /api/estimates/{anyEid}/pdf?test=1 renders a minimal hello-world PDF
+  // with zero data and zero font deps. If this succeeds and the real route
+  // still fails, the issue is data-driven inside EstimatePDFDoc. If this
+  // also fails, the issue is environmental (react-pdf wiring/runtime).
   if (url.searchParams.get("test") === "1") {
     try {
       const minimal = createElement(
@@ -29,7 +39,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
           { size: "A4" },
           createElement(Text, null, "hello from react-pdf"),
         ),
-      ) as ReactElement<DocumentProps>;
+      );
       const buf = await renderToBuffer(minimal);
       const u8 = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
       return new NextResponse(u8 as unknown as BodyInit, {
@@ -65,15 +75,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
 
     const detailLevel = url.searchParams.get("detail") === "detailed" ? "detailed" : "simple";
 
-    // Pre-render-time defensive snapshot. If EstimatePDFDoc throws during
-    // React's reconciliation, react-pdf's reconciler silently swallows the
-    // error and leaves container.document = null, which then surfaces as
-    // "Cannot read properties of null (reading 'props')" at line 139 of
-    // react-pdf.js's render(). To diagnose, we render the doc via
-    // React.renderToStaticMarkup substitute (a try around createElement)
-    // and let any synchronous throws bubble up to our catch block.
-    const element = createElement(EstimatePDFDoc, { estimate, scopeFlags, detailLevel }) as ReactElement<DocumentProps>;
-    const buffer = await renderToBuffer(element);
+    const element = createElement(EstimatePDFDoc, { estimate, scopeFlags, detailLevel });
+    // react-pdf's renderToBuffer is typed for DocumentProps, but it actually
+    // accepts any React element whose tree contains a <Document> root.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buffer = await renderToBuffer(element as any);
 
     const uint8 = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
 
