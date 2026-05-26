@@ -79,74 +79,78 @@ const styles = StyleSheet.create({
   body: { padding: 24, paddingTop: 0 },
 
   // — Header (dark navy)
-  header: { backgroundColor: C.ink, padding: 20, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  // Section paddings reduced from 16→11 (header 20→14, totalRow 16→12) to
+  // keep typical 상세 견적서 on a single A4 page. Type sizes & visual hierarchy
+  // unchanged. If we ever overflow again, the seal circle + bank line are
+  // the next things to compress.
+  header: { backgroundColor: C.ink, padding: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   companyName: { color: C.textOnDark, fontSize: 15, fontWeight: "bold", letterSpacing: 0.4 },
-  headerMeta: { color: C.metaOnDark, fontSize: 9, lineHeight: 1.5, marginTop: 4 },
+  headerMeta: { color: C.metaOnDark, fontSize: 9, lineHeight: 1.4, marginTop: 3 },
   headerRight: { alignItems: "flex-end" },
   headerRightLine: { color: C.metaOnDark, fontSize: 9, marginBottom: 2 },
 
   // — Customer + site row (two columns)
-  topRow: { flexDirection: "row", justifyContent: "space-between", borderBottom: `0.5pt solid ${C.border}`, padding: 16 },
+  topRow: { flexDirection: "row", justifyContent: "space-between", borderBottom: `0.5pt solid ${C.border}`, padding: 11 },
   topCol: { flex: 1 },
   topColRight: { flex: 1, alignItems: "flex-end" },
   labelTiny: { fontSize: 9, color: C.muted, marginBottom: 2 },
-  labelTinyTop: { fontSize: 9, color: C.muted, marginTop: 8, marginBottom: 2 },
+  labelTinyTop: { fontSize: 9, color: C.muted, marginTop: 6, marginBottom: 2 },
   valueLarge: { fontSize: 12, fontWeight: "bold", color: C.text },
   valueRegular: { fontSize: 10, color: C.text },
 
   // — Section: scope + pills
-  scopeSection: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
-  sectionLabel: { fontSize: 9, color: C.muted, letterSpacing: 0.5, marginBottom: 6 },
-  scopeText: { fontSize: 10.5, color: C.text, lineHeight: 1.5, marginBottom: 8 },
+  scopeSection: { padding: 11, borderBottom: `0.5pt solid ${C.border}` },
+  sectionLabel: { fontSize: 9, color: C.muted, letterSpacing: 0.5, marginBottom: 5 },
+  scopeText: { fontSize: 10.5, color: C.text, lineHeight: 1.4, marginBottom: 6 },
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 5 },
   pill: { fontSize: 9, color: C.pillText, backgroundColor: C.pillBg, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10 },
 
   // — Simple view
-  simpleSection: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
-  simpleRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  simpleSection: { padding: 11, borderBottom: `0.5pt solid ${C.border}` },
+  simpleRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 5 },
   simpleLabel: { fontSize: 11, color: C.text },
   simpleValue: { fontSize: 11, fontWeight: "bold", color: C.text },
 
   // — Detailed table
-  detailSection: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
-  tableHeaderRow: { flexDirection: "row", borderBottom: `0.5pt solid ${C.border}`, paddingBottom: 4, marginBottom: 4 },
-  tableGroupHeader: { fontSize: 9.5, color: C.muted, paddingTop: 6, paddingBottom: 4 },
-  tableRow: { flexDirection: "row", paddingVertical: 2.5 },
+  detailSection: { padding: 11, borderBottom: `0.5pt solid ${C.border}` },
+  tableHeaderRow: { flexDirection: "row", borderBottom: `0.5pt solid ${C.border}`, paddingBottom: 3, marginBottom: 3 },
+  tableGroupHeader: { fontSize: 9.5, color: C.muted, paddingTop: 4, paddingBottom: 3 },
+  tableRow: { flexDirection: "row", paddingVertical: 2 },
   cellName: { flex: 3.5, fontSize: 10, color: C.text },
   cellSpec: { flex: 1.7, fontSize: 10, color: C.muted, textAlign: "right" },
   cellQty:  { flex: 1.2, fontSize: 10, color: C.muted, textAlign: "right" },
   cellAmount: { flex: 1.8, fontSize: 10, color: C.text, textAlign: "right" },
-  subtotalRow: { flexDirection: "row", marginTop: 6, paddingTop: 6, borderTop: `0.5pt solid ${C.border}` },
+  subtotalRow: { flexDirection: "row", marginTop: 5, paddingTop: 5, borderTop: `0.5pt solid ${C.border}` },
   subtotalLabel: { flex: 1, fontSize: 10.5, color: C.muted },
   subtotalAmount: { fontSize: 10.5, color: C.muted, textAlign: "right" },
 
   // — Final total (filled card)
-  totalRow: { backgroundColor: C.totalBg, padding: 16, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottom: `0.5pt solid ${C.border}` },
+  totalRow: { backgroundColor: C.totalBg, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottom: `0.5pt solid ${C.border}` },
   totalLeft: { flexDirection: "row", alignItems: "baseline" },
   totalLabel: { fontSize: 12, fontWeight: "bold", color: C.ink },
   totalVatNote: { fontSize: 9, color: C.mutedLight, marginLeft: 6 },
   totalAmount: { fontSize: 17, fontWeight: "bold", color: C.ink },
 
   // — Payment (two cards)
-  payment: { padding: 16, borderBottom: `0.5pt solid ${C.border}` },
-  paymentCards: { flexDirection: "row", gap: 8, marginBottom: 10 },
-  paymentCard: { flex: 1, padding: 10, border: `0.5pt solid ${C.border}`, borderRadius: 6, alignItems: "center" },
-  paymentLabel: { fontSize: 8.5, color: C.muted, marginBottom: 4 },
-  paymentAmount: { fontSize: 12, fontWeight: "bold", color: C.text, marginBottom: 2 },
+  payment: { padding: 11, borderBottom: `0.5pt solid ${C.border}` },
+  paymentCards: { flexDirection: "row", gap: 6, marginBottom: 6 },
+  paymentCard: { flex: 1, padding: 7, border: `0.5pt solid ${C.border}`, borderRadius: 5, alignItems: "center" },
+  paymentLabel: { fontSize: 8.5, color: C.muted, marginBottom: 3 },
+  paymentAmount: { fontSize: 11.5, fontWeight: "bold", color: C.text, marginBottom: 1 },
   paymentPercent: { fontSize: 8.5, color: C.muted },
-  paymentText: { fontSize: 10, color: C.text, marginBottom: 6, fontWeight: "bold" },
+  paymentText: { fontSize: 10, color: C.text, marginBottom: 5, fontWeight: "bold" },
   paymentBank: { fontSize: 9.5, color: C.muted },
 
   // — Notice + signature
-  notice: { padding: 16 },
-  noticeText: { fontSize: 9.5, color: C.muted, lineHeight: 1.6, marginBottom: 12 },
-  signatureRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 4 },
+  notice: { padding: 11 },
+  noticeText: { fontSize: 9.5, color: C.muted, lineHeight: 1.45, marginBottom: 4 },
+  signatureRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 6 },
   signatureLeft: { fontSize: 9.5, color: C.muted },
   signatureRight: { alignItems: "center" },
-  companyAbove: { fontSize: 9.5, color: C.muted, marginBottom: 6 },
-  sealCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 0.7, borderColor: C.sealBorder, alignItems: "center", justifyContent: "center" },
+  companyAbove: { fontSize: 9.5, color: C.muted, marginBottom: 4 },
+  sealCircle: { width: 42, height: 42, borderRadius: 21, borderWidth: 0.7, borderColor: C.sealBorder, alignItems: "center", justifyContent: "center" },
   sealPlaceholder: { fontSize: 9, color: C.sealText },
-  sealImage: { width: 48, height: 48, borderRadius: 24 },
+  sealImage: { width: 42, height: 42, borderRadius: 21 },
 });
 
 function materialLabel(type: string | null): string {

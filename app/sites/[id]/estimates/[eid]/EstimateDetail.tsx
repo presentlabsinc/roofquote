@@ -672,7 +672,7 @@ function TermsCard({
                 autoFocus value={paymentInput}
                 onChange={(e) => setPaymentInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && savePayment()}
-                placeholder="예: 계약금 30% / 잔금 70%"
+                placeholder="예: 계약금 10% / 잔금 90%"
                 className="h-10 text-sm rounded-lg flex-1"
               />
               <Button size="sm" onClick={savePayment} className="h-10 w-10 p-0 rounded-lg"><Check size={15} /></Button>

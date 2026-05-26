@@ -143,7 +143,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       vat: totals.vat,
       finalPrice: totals.finalPrice,
       vatIncluded: vatIncl,
-      paymentTerms: paymentTerms ?? "계약금 30% / 잔금 70%",
+      paymentTerms: paymentTerms ?? "계약금 10% / 잔금 90%",
       validityDays: validityDays ?? 30,
       estimateNumber,
       companyNameSnapshot: settings.companyName,

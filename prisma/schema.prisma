@@ -195,7 +195,7 @@ model Estimate {
   vatIncluded  Boolean
 
   // Quote metadata
-  paymentTerms String @default("계약금 30% / 잔금 70%")
+  paymentTerms String @default("계약금 10% / 잔금 90%")
   validityDays Int    @default(30)
 
   // Company info snapshot — frozen at estimate creation, never updated after
