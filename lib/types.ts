@@ -44,13 +44,17 @@ export const BUILDING_SHAPES: { value: BuildingShape; label: string; icon: strin
 /**
  * 지붕 형태 — 자재 자동 추정에 사용 (지붕공사 / 옥상지붕만, 스틸방수는 없음).
  * 용마루/처마 길이 비율 + 강판 로스율에 영향.
+ *
+ * "complex" 는 구버전 enum — 신규 폼에는 노출 안 함. 기존 견적 호환용으로만 유지.
  */
-export type RoofShape = "gable" | "hip" | "complex";
+export type RoofShape = "gable" | "hip" | "halfHip" | "shed" | "mansard" | "complex";
 
 export const ROOF_SHAPES: { value: RoofShape; label: string; desc: string }[] = [
-  { value: "gable",   label: "박공", desc: "△ 단순 두 면" },
-  { value: "hip",     label: "모임", desc: "사방 경사" },
-  { value: "complex", label: "복합", desc: "꺾임 多" },
+  { value: "gable",   label: "박공",   desc: "△ 양면 경사" },
+  { value: "hip",     label: "모임",   desc: "사방 경사" },
+  { value: "halfHip", label: "팔작",   desc: "박공 + 모임" },
+  { value: "shed",    label: "외쪽",   desc: "한쪽만 경사" },
+  { value: "mansard", label: "멘사드", desc: "2단 꺾임" },
 ];
 
 /**

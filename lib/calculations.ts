@@ -73,10 +73,19 @@ const BUILDING_SHAPE_FACTORS: Record<BuildingShape, { perimeterFactor: number; c
   ushape:    { perimeterFactor: 5.5, cornerCount: 8, flashingPoints: 4 },
 };
 
+// 지붕 형태 계수 — 용마루/처마 길이 비율 + 강판 로스율.
+//   ridgeRatio: 용마루 길이 = 장변 × ridgeRatio × 용마루수
+//   eaveRatio:  처마 길이   = 둘레 × eaveRatio
+// 박공 = 양면 경사 (용마루 1, 처마 2면), 모임 = 사방 경사 (용마루 짧고 처마 全),
+// 팔작 = 박공+모임 혼합, 외쪽 = 한쪽 경사 (용마루 없음), 멘사드 = 2단 꺾임 (처마 ↑).
+// "complex" 는 구버전 호환용.
 const ROOF_SHAPE_FACTORS: Record<RoofShape, { ridgeRatio: number; eaveRatio: number; lossRate: number }> = {
-  gable:   { ridgeRatio: 1.0, eaveRatio: 0.5, lossRate: 0.07 },
-  hip:     { ridgeRatio: 0.6, eaveRatio: 1.0, lossRate: 0.12 },
-  complex: { ridgeRatio: 0.8, eaveRatio: 0.8, lossRate: 0.18 },
+  gable:   { ridgeRatio: 1.0, eaveRatio: 0.5,  lossRate: 0.07 },
+  hip:     { ridgeRatio: 0.6, eaveRatio: 1.0,  lossRate: 0.12 },
+  halfHip: { ridgeRatio: 0.8, eaveRatio: 0.85, lossRate: 0.13 },
+  shed:    { ridgeRatio: 0.0, eaveRatio: 0.35, lossRate: 0.05 },
+  mansard: { ridgeRatio: 0.6, eaveRatio: 1.3,  lossRate: 0.18 },
+  complex: { ridgeRatio: 0.8, eaveRatio: 0.8,  lossRate: 0.18 },
 };
 
 /** 건물 둘레 추정 — √면적 × 형태계수. 사용자 직접 입력값(perimeterOverride)이 우선. */

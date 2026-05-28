@@ -146,6 +146,13 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   );
   const [hasInsulation, setHasInsulation] = useState(existing?.hasInsulation ?? false);
 
+  // 지붕 형태 / 용마루 수는 기본 숨김. 박공 1동 가정으로 자동 추정 (대부분 케이스).
+  // 다른 형태(모임/팔작/외쪽/멘사드)거나 다중 용마루면 펼쳐서 직접 지정.
+  // 기존 견적에 roofShape 가 저장돼 있으면 시작부터 펼친 상태.
+  const [showRoofDetails, setShowRoofDetails] = useState(
+    !!existing?.roofShape || (existing?.ridgeCount ?? 1) > 1,
+  );
+
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
 
@@ -515,37 +522,71 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
             {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
             {constructionType !== "steelWaterproof" ? (
-              <Section icon={<Layers size={18} />} title="지붕 형태">
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                  지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {ROOF_SHAPES.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setRoofShape(s.value)}
-                      className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
-                        roofShape === s.value
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-border/60 bg-card text-foreground"
-                      }`}
-                    >
-                      <span className="text-sm font-bold">{s.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{s.desc}</span>
-                    </button>
-                  ))}
-                </div>
-                {roofShape && (
-                  <div className="mt-3 pt-3 border-t border-border/40">
-                    <Label className="text-[10px] text-muted-foreground mb-1 block">용마루 수</Label>
-                    <NumberStepper
-                      value={ridgeCount}
-                      onChange={setRidgeCount}
-                      min={1} max={6} step={1}
-                      unit="개"
-                    />
-                  </div>
+              <Section icon={<Layers size={18} />} title="지붕 형태 (선택)">
+                {!showRoofDetails ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowRoofDetails(true)}
+                    className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
+                  >
+                    <div className="text-xs">
+                      <div className="font-semibold text-foreground">기본값: 박공 · 용마루 1개</div>
+                      <div className="text-muted-foreground mt-0.5">
+                        대부분 케이스에 이걸로 됨. 다르면 펼쳐서 직접 지정
+                      </div>
+                    </div>
+                    <ChevronDown size={16} className="text-muted-foreground shrink-0 ml-2" />
+                  </button>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-[11px] text-muted-foreground">
+                        지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowRoofDetails(false);
+                          setRoofShape(null);
+                          setRidgeCount("1");
+                        }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
+                      >
+                        <ChevronUp size={12} />접기
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {ROOF_SHAPES.map((s) => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => setRoofShape(s.value)}
+                          className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                            roofShape === s.value
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-border/60 bg-card text-foreground"
+                          }`}
+                        >
+                          <span className="text-sm font-bold">{s.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{s.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* 외쪽 (shed) 은 용마루 없으니 수 입력도 숨김 */}
+                    {roofShape !== "shed" && (
+                      <div className="mt-3 pt-3 border-t border-border/40">
+                        <Label className="text-[10px] text-muted-foreground mb-1 block">
+                          용마루 수 (보통 1, 2동 건물이면 2)
+                        </Label>
+                        <NumberStepper
+                          value={ridgeCount}
+                          onChange={setRidgeCount}
+                          min={1} max={6} step={1}
+                          unit="개"
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </Section>
             ) : (
