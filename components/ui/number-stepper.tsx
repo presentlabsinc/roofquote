@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 import { Minus, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,7 @@ interface Props {
  * number input. Pattern used by Airbnb, Booking.com, etc. The user can either
  * tap the buttons (small adjustments) or type directly (large jumps).
  */
-export function NumberStepper({
+function NumberStepperBase({
   value, onChange, min = 0, max = 999, step = 1, unit, label, className,
 }: Props) {
   const numeric = parseFloat(value);
@@ -93,3 +94,9 @@ export function NumberStepper({
     </div>
   );
 }
+
+/**
+ * memo 로 감싸서 폼 안에서 다른 필드 입력 시 모든 NumberStepper 재렌더링 방지.
+ * onChange (setX from useState) 는 React 가 안정 ID 보장 → memo 가 정상 작동.
+ */
+export const NumberStepper = memo(NumberStepperBase);

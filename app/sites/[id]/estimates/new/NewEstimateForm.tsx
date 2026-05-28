@@ -18,7 +18,7 @@
  * 색상: 본문 = text-foreground, 보조/회색 = text-muted-foreground, 강조 = text-primary.
  * ─────────────────────────────────────────────────────────────────────
  */
-import { useEffect, useRef, useState, useMemo } from "react";
+import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -576,8 +576,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     }
   }, [gutterSides, perimeterInput, eaveOverhangInput, sqmInput, buildingShape, constructionType, gutterLength]);
 
-  // Effective prices for inline display — settings with overrides merged on top
-  const eff = applyOverrides(settings, pricingOverrides);
+  // Effective prices for inline display — settings with overrides merged on top.
+  // useMemo 로 메모이즈 — pricingOverrides 가 안 바뀌면 재계산 안 함 (폼 다른 필드 입력 시).
+  const eff = useMemo(
+    () => applyOverrides(settings, pricingOverrides),
+    [settings, pricingOverrides],
+  );
 
   return (
     <>
@@ -1629,7 +1633,8 @@ function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => voi
   );
 }
 
-function ChipBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+// memo — 강판 종류 등 chip 리스트에서 다른 칩 클릭 시 재렌더링 방지.
+const ChipBtn = memo(function ChipBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
       type="button"
@@ -1643,9 +1648,9 @@ function ChipBtn({ active, onClick, label }: { active: boolean; onClick: () => v
       {label}
     </button>
   );
-}
+});
 
-function ScopeRow({ active, label, hint, onToggle }: { active: boolean; label: string; hint?: string; onToggle: () => void }) {
+const ScopeRow = memo(function ScopeRow({ active, label, hint, onToggle }: { active: boolean; label: string; hint?: string; onToggle: () => void }) {
   return (
     <button
       type="button"
@@ -1661,7 +1666,7 @@ function ScopeRow({ active, label, hint, onToggle }: { active: boolean; label: s
       </div>
     </button>
   );
-}
+});
 
 function EquipmentRow({
   active, label, onToggle, days, onDaysChange,

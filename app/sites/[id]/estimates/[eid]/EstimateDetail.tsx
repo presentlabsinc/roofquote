@@ -258,7 +258,7 @@ export function EstimateDetail({
                 최종견적가직접만 VAT 포함/별도 토글에 따라 값이 변동. */}
             <div className="space-y-1.5 divide-y divide-border/40">
               <EditableRow
-                label="평당가 (VAT 전)"
+                label="평당가"
                 display={pyeong > 0 ? fmtKrw(pricePerPyeong) : "—"}
                 editing={editingMargin === "pyeong"}
                 onEdit={() => {
