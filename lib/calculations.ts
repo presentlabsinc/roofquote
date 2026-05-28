@@ -1,5 +1,5 @@
-import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
-import { BASELINE_AREAS, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
+import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
+import { BASELINE_AREAS, INSULATION_LABEL, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
 import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -285,8 +285,10 @@ export interface BuildLineItemsInput {
   ridgeCount?: number;
   /** 스틸방수 — 파라펫 높이 (기본 60cm) */
   parapetHeightCm?: number | null;
-  /** 단열재 추가 여부 */
+  /** [DEPRECATED] 단열재 단순 토글 — insulationTypes 로 대체. 구버전 호환용. */
   hasInsulation?: boolean;
+  /** 단열재 종류 (multi-select). 빈 배열 = 없음. */
+  insulationTypes?: InsulationType[] | string[];
 }
 
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
@@ -304,7 +306,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     buildingShape = null, roofShape = null,
     buildingAreaM2 = null,
     perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
-    hasInsulation = false,
+    hasInsulation = false, insulationTypes = [],
   } = input;
 
   // Apply per-estimate pricing overrides on top of the live PricingSettings.
@@ -452,15 +454,21 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
-  // 하지작업 (substructure) — wood or steel, priced per ㎡ of construction area
+  // 하지작업 (substructure) — wood or steel, priced per ㎡ of construction area.
+  // 강판과 동일하게 자재 로스율 적용 (자투리 + 절단 낭비).
   if (substructureType) {
     const sUnit = substructureType === "wood"
       ? settings.substructureWoodPricePerSqm
       : settings.substructureSteelPricePerSqm;
     const sLabel = substructureType === "wood" ? "목재 하지" : "철재 하지";
+    const sLossMult = applyLossRate && lossRate > 0 ? 1 + lossRate : 1;
+    const sEffectiveArea = Math.round(areaM2 * sLossMult * 100) / 100;
+    const sLossNote = applyLossRate && lossRate > 0
+      ? ` (로스율 ${Math.round(lossRate * 100)}% 포함)`
+      : "";
     items.push({
-      category: "material", name: sLabel, quantity: areaM2, unit: "㎡",
-      unitPrice: sUnit, total: Math.round(areaM2 * sUnit),
+      category: "material", name: `${sLabel}${sLossNote}`, quantity: sEffectiveArea, unit: "㎡",
+      unitPrice: sUnit, total: Math.round(sEffectiveArea * sUnit),
       sortOrder: order++,
     });
   }
@@ -702,11 +710,18 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // 단열재 — 옵션 (buildingShape 무관, 별도 토글)
-  if (hasInsulation && settings.insulationPricePerSqm > 0) {
+  // 단열재 — multi-select. 선택된 종류가 1개 이상이거나 (구버전) hasInsulation 토글 true 이면 라인 생성.
+  // 가격은 모든 종류 동일 (insulationPricePerSqm) — qty = 시공면적 × 1.10 (자투리 포함).
+  // 라인 이름에 선택한 종류들 표시: 예) "단열재 (XPS, PIR)".
+  const insTypeList: string[] = Array.isArray(insulationTypes) ? insulationTypes.filter(Boolean) : [];
+  if ((insTypeList.length > 0 || hasInsulation) && settings.insulationPricePerSqm > 0) {
     const insulationArea = Math.round(areaM2 * 1.10 * 10) / 10;
+    const typeNames = insTypeList
+      .map((t) => INSULATION_LABEL[t as InsulationType] ?? t)
+      .join(", ");
+    const name = typeNames ? `단열재 (${typeNames})` : "단열재";
     items.push({
-      category: "material", name: "단열재", quantity: insulationArea, unit: "㎡",
+      category: "material", name, quantity: insulationArea, unit: "㎡",
       unitPrice: settings.insulationPricePerSqm,
       total: Math.round(insulationArea * settings.insulationPricePerSqm),
       sortOrder: order++,

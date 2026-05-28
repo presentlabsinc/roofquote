@@ -88,6 +88,29 @@ export interface BaselineData {
 /** 베이스라인 매트릭스 기준 평수 — 30/50/80/150 */
 export const BASELINE_AREAS = [30, 50, 80, 150] as const;
 
+/**
+ * 단열재 종류 — multi-select.
+ * 가격은 모두 동일 (PricingSettings.insulationPricePerSqm) 적용.
+ * 라인아이템 이름에 선택한 종류들이 표시됨 (예: "단열재 (XPS, PIR)").
+ */
+export type InsulationType = "eps" | "xps" | "pir" | "thermalReflect" | "other";
+
+export const INSULATION_TYPES: { value: InsulationType; label: string }[] = [
+  { value: "eps",            label: "EPS" },
+  { value: "xps",            label: "XPS" },
+  { value: "pir",            label: "PIR" },
+  { value: "thermalReflect", label: "열반사단열재" },
+  { value: "other",          label: "기타" },
+];
+
+export const INSULATION_LABEL: Record<InsulationType, string> = {
+  eps: "EPS",
+  xps: "XPS",
+  pir: "PIR",
+  thermalReflect: "열반사단열재",
+  other: "기타",
+};
+
 export type SubstructureType = "wood" | "steel";
 
 export const SUBSTRUCTURE_OPTIONS: { value: SubstructureType | "none"; label: string; icon: string }[] = [

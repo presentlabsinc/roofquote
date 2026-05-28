@@ -212,7 +212,9 @@ model Estimate {
   parapetHeightCm   Int?     // 스틸방수만 — 파라펫 강판 면적 계산에 사용
 
   // ── 옵션 ──
-  hasInsulation     Boolean  @default(false)  // 단열재 (열반사 또는 일반)
+  hasInsulation     Boolean  @default(false)  // [DEPRECATED] 구버전 단순 토글
+  /** 단열재 종류 multi-select — 빈 배열 = 없음. ["eps", "xps", "pir", "thermalReflect", "other"] */
+  insulationTypes   Json     @default("[]")
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]

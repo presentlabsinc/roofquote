@@ -66,6 +66,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     ridgeCount = 1,
     parapetHeightCm = null,
     hasInsulation = false,
+    insulationTypes = [],
     marginRate: inputMarginRate,
     vatIncluded,
     paymentTerms,
@@ -111,6 +112,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     ridgeCount,
     parapetHeightCm,
     hasInsulation,
+    insulationTypes,
   });
 
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
@@ -150,6 +152,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       ridgeCount: ridgeCount || 1,
       parapetHeightCm: parapetHeightCm || null,
       hasInsulation: !!hasInsulation,
+      insulationTypes: (Array.isArray(insulationTypes) ? insulationTypes : []) as unknown as object,
       catalogSelections: (catalogSelections as CatalogSelection[])
         .filter((s) => s.quantity > 0) as unknown as object,
       catalogModes: catalogModes as object,

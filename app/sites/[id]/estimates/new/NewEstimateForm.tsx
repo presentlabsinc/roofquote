@@ -19,6 +19,8 @@ import {
   type PricingOverrides,
   type BuildingShape,
   type RoofShape,
+  type InsulationType,
+  INSULATION_TYPES,
   CONSTRUCTION_TYPES,
   MATERIAL_TYPES,
   THICKNESSES,
@@ -144,7 +146,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [parapetHeightInput, setParapetHeightInput] = useState(
     existing?.parapetHeightCm ? String(existing.parapetHeightCm) : "60",
   );
-  const [hasInsulation, setHasInsulation] = useState(existing?.hasInsulation ?? false);
+  // 단열재 multi-select. 기존 견적의 insulationTypes 가 있으면 우선, 없는데 hasInsulation=true 면 ["other"] 로 시드.
+  const [insulationTypes, setInsulationTypes] = useState<InsulationType[]>(() => {
+    const stored = (existing as unknown as { insulationTypes?: unknown })?.insulationTypes;
+    if (Array.isArray(stored) && stored.length > 0) return stored as InsulationType[];
+    return existing?.hasInsulation ? ["other"] : [];
+  });
+
+  function toggleInsulationType(t: InsulationType) {
+    setInsulationTypes((arr) => arr.includes(t) ? arr.filter((x) => x !== t) : [...arr, t]);
+  }
 
   // 지붕 형태는 기본 숨김. 박공 가정으로 자동 추정 (대부분 케이스).
   // 다른 형태(모임/팔작/외쪽/멘사드)면 펼쳐서 직접 지정.
@@ -364,7 +375,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       parapetHeightCm: constructionType === "steelWaterproof"
         ? (parapetHeightInput ? parseInt(parapetHeightInput) || 60 : 60)
         : null,
-      hasInsulation,
+      hasInsulation: insulationTypes.length > 0,
+      insulationTypes,
     };
 
     setSaving(true);
@@ -604,26 +616,79 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </Section>
             )}
 
-            {/* 단열재 옵션 */}
-            <Section icon={<Package size={18} />} title="단열재 (옵션)">
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setHasInsulation((v) => !v)}
-                  className={`w-12 h-7 rounded-full flex items-center px-0.5 pressable ${
-                    hasInsulation ? "bg-primary justify-end" : "bg-muted justify-start"
-                  }`}
-                >
-                  <span className="w-6 h-6 rounded-full bg-white shadow-sm" />
-                </button>
-                <span className="text-sm font-medium text-foreground flex-1">
-                  {hasInsulation ? "단열재 추가됨" : "단열재 없음"}
-                </span>
-                {hasInsulation && (
-                  <span className="text-[11px] text-muted-foreground tabular-nums">
-                    ≈ {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원/㎡
-                  </span>
-                )}
+            {/* 공사 범위 — 건물 정보 다음, 메인 자재 입력 전에 받기 */}
+            <Section icon={<ListChecks size={18} />} title="공사 범위">
+              <div className="space-y-2">
+                {scopeItems.map((key) => {
+                  const hint = SCOPE_HINTS[key];
+                  return (
+                    <div key={key}>
+                      <ScopeRow
+                        active={!!scope[key]}
+                        label={SCOPE_LABELS[key]}
+                        hint={hint}
+                        onToggle={() => toggleScope(key)}
+                      />
+                      {/* 폐기물 트럭 수 */}
+                      {key === "waste" && scope.waste && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">트럭 수 ({eff.wasteDisposalCost.toLocaleString("ko-KR")}원/차)</Label>
+                          <NumberStepper
+                            value={wasteTrucks}
+                            onChange={setWasteTrucks}
+                            min={1} max={20} step={1}
+                            unit="차"
+                          />
+                        </div>
+                      )}
+                      {/* 두겁 절곡 길이 — 난간/두겁 통합 UI 에서 난간 토글 아래에 표시.
+                          cap 은 SCOPE_FORCES 로 handrail 토글 시 자동 켜지므로 별도 row 없음. */}
+                      {key === "handrail" && scope.handrail && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            두겁 절곡 길이 ({eff.capBendingPricePerM.toLocaleString("ko-KR")}원/m)
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number" inputMode="decimal"
+                              value={capLength} onChange={(e) => setCapLength(e.target.value)}
+                              placeholder="0" className="h-11 rounded-xl tabular-nums flex-1"
+                            />
+                            <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                          </div>
+                        </div>
+                      )}
+                      {/* 새 배수구 타공 개수 */}
+                      {key === "drainHole" && scope.drainHole && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            개수 ({eff.drainHolePrice.toLocaleString("ko-KR")}원/개)
+                          </Label>
+                          <NumberStepper
+                            value={drainHoles}
+                            onChange={setDrainHoles}
+                            min={1} max={20} step={1}
+                            unit="개"
+                          />
+                        </div>
+                      )}
+                      {/* 엔드캡 개수 */}
+                      {key === "endCap" && scope.endCap && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            개수 ({eff.endCapPrice.toLocaleString("ko-KR")}원/개)
+                          </Label>
+                          <NumberStepper
+                            value={endCaps}
+                            onChange={setEndCaps}
+                            min={1} max={50} step={1}
+                            unit="개"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </Section>
 
@@ -771,7 +836,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             {/* Loss rate toggle */}
             <Section icon={<Percent size={18} />} title="자재 로스율">
               <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
-                시공 시 자투리/낭비분을 자재 비용에 반영. 보통 10~15%
+                강판 + 하지 자재에 적용 (자투리/낭비분). 부자재·소모품은 미포함 — 보통 10~15%
               </p>
               <div className="flex items-center gap-3">
                 <button
@@ -801,85 +866,52 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </div>
             </Section>
 
-            {/* STEP 6: Scope */}
-            <Section icon={<ListChecks size={18} />} title="공사 범위" step={6}>
-              <div className="space-y-2">
-                {scopeItems.map((key) => {
-                  const hint = SCOPE_HINTS[key];
+            {/* ── 부자재 영역 ── */}
+            {/* 단열재 — multi-select. 선택 안 하면 없음. */}
+            <Section icon={<Package size={18} />} title="단열재 (옵션)">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                선택 안 하면 없음 · 복수 선택 가능 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
+              </p>
+              <div className="grid grid-cols-3 gap-1.5">
+                {INSULATION_TYPES.map((t) => {
+                  const active = insulationTypes.includes(t.value);
                   return (
-                    <div key={key}>
-                      <ScopeRow
-                        active={!!scope[key]}
-                        label={SCOPE_LABELS[key]}
-                        hint={hint}
-                        onToggle={() => toggleScope(key)}
-                      />
-                      {/* 폐기물 트럭 수 */}
-                      {key === "waste" && scope.waste && (
-                        <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">트럭 수 ({eff.wasteDisposalCost.toLocaleString("ko-KR")}원/차)</Label>
-                          <NumberStepper
-                            value={wasteTrucks}
-                            onChange={setWasteTrucks}
-                            min={1} max={20} step={1}
-                            unit="차"
-                          />
-                        </div>
-                      )}
-                      {/* 두겁 절곡 길이 — 난간/두겁 통합 UI 에서 난간 토글 아래에 표시.
-                          cap 은 SCOPE_FORCES 로 handrail 토글 시 자동 켜지므로 별도 row 없음. */}
-                      {key === "handrail" && scope.handrail && (
-                        <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            두겁 절곡 길이 ({eff.capBendingPricePerM.toLocaleString("ko-KR")}원/m)
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number" inputMode="decimal"
-                              value={capLength} onChange={(e) => setCapLength(e.target.value)}
-                              placeholder="0" className="h-11 rounded-xl tabular-nums flex-1"
-                            />
-                            <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                          </div>
-                        </div>
-                      )}
-                      {/* 새 배수구 타공 개수 */}
-                      {key === "drainHole" && scope.drainHole && (
-                        <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            개수 ({eff.drainHolePrice.toLocaleString("ko-KR")}원/개)
-                          </Label>
-                          <NumberStepper
-                            value={drainHoles}
-                            onChange={setDrainHoles}
-                            min={1} max={20} step={1}
-                            unit="개"
-                          />
-                        </div>
-                      )}
-                      {/* 엔드캡 개수 */}
-                      {key === "endCap" && scope.endCap && (
-                        <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            개수 ({eff.endCapPrice.toLocaleString("ko-KR")}원/개)
-                          </Label>
-                          <NumberStepper
-                            value={endCaps}
-                            onChange={setEndCaps}
-                            min={1} max={50} step={1}
-                            unit="개"
-                          />
-                        </div>
-                      )}
-                    </div>
+                    <button
+                      key={t.value}
+                      type="button"
+                      onClick={() => toggleInsulationType(t.value)}
+                      className={`pressable rounded-xl px-2 py-2.5 text-xs font-semibold border ${
+                        active
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-foreground border-border/60"
+                      }`}
+                    >
+                      {t.label}
+                    </button>
                   );
                 })}
               </div>
-
             </Section>
 
-            {/* 물받이 (지붕/옥상지붕) — 별도 Section 으로 분리해서 눈에 잘 띄게.
-                예전엔 공사 범위 섹션 안에 작은 라벨로 들어가 있어서 자주 건너뜀. */}
+            {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}
+            <Section icon={<Package size={18} />} title="추가 자재 / 부속">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                각 카테고리는 <b>심플</b>(한 줄 자동 계산) 또는 <b>상세</b>(항목별) 모드 토글.
+                심플 = 빠름, 상세 = 정확. 단가는 모두 인라인 수정 가능.
+              </p>
+              <CatalogPicker
+                selections={catalogSelections}
+                onChange={setCatalogSelections}
+                modes={catalogModes}
+                onModesChange={setCatalogModes}
+                defaults={(settings.catalogDefaults as CategoryModesMap | null) ?? undefined}
+                areaM2={parseFloat(sqmInput) || 0}
+                gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
+                materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
+              />
+            </Section>
+
+            {/* ── 물받이 / 스테인리스 배수로 — 부자재 다음에 위치 (사용자 요청 순서) ── */}
             {constructionType !== "steelWaterproof" && (
               <Section icon={<CloudRain size={18} />} title="물받이">
                 <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
@@ -925,7 +957,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </Section>
             )}
 
-            {/* 스테인리스 배수로 (스틸방수 전용 — 물받이 대체) */}
             {constructionType === "steelWaterproof" && (
               <Section icon={<Waves size={18} />} title="스테인리스 배수로">
                 <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
@@ -947,24 +978,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 </div>
               </Section>
             )}
-
-            {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}
-            <Section icon={<Package size={18} />} title="추가 자재 / 부속">
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                각 카테고리는 <b>심플</b>(한 줄 자동 계산) 또는 <b>상세</b>(항목별) 모드 토글.
-                심플 = 빠름, 상세 = 정확. 단가는 모두 인라인 수정 가능.
-              </p>
-              <CatalogPicker
-                selections={catalogSelections}
-                onChange={setCatalogSelections}
-                modes={catalogModes}
-                onModesChange={setCatalogModes}
-                defaults={(settings.catalogDefaults as CategoryModesMap | null) ?? undefined}
-                areaM2={parseFloat(sqmInput) || 0}
-                gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
-                materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
-              />
-            </Section>
 
             {/* STEP 7: Equipment — steppers */}
             <Section icon={<Wrench size={18} />} title="장비대" step={7}>
