@@ -127,6 +127,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       buildingShape = null, roofShape = null,
       perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
       hasInsulation = false, insulationTypes = [],
+      insulationNote = null, roofShapeNote = null,
       hasPeFoam = false,
       marginRate: inputMarginRate, vatIncluded,
       paymentTerms, validityDays,
@@ -192,6 +193,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
           parapetHeightCm: parapetHeightCm || null,
           hasInsulation: !!hasInsulation,
           insulationTypes: (Array.isArray(insulationTypes) ? insulationTypes : []) as unknown as object,
+          insulationNote: insulationNote || null,
+          roofShapeNote: roofShapeNote || null,
           hasPeFoam: !!hasPeFoam,
           catalogSelections: (catalogSelections as CatalogSelection[])
             .filter((s) => s.quantity > 0) as unknown as object,

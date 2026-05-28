@@ -67,6 +67,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     parapetHeightCm = null,
     hasInsulation = false,
     insulationTypes = [],
+    insulationNote = null,
+    roofShapeNote = null,
     hasPeFoam = false,
     marginRate: inputMarginRate,
     vatIncluded,
@@ -155,6 +157,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       parapetHeightCm: parapetHeightCm || null,
       hasInsulation: !!hasInsulation,
       insulationTypes: (Array.isArray(insulationTypes) ? insulationTypes : []) as unknown as object,
+      insulationNote: insulationNote || null,
+      roofShapeNote: roofShapeNote || null,
       hasPeFoam: !!hasPeFoam,
       catalogSelections: (catalogSelections as CatalogSelection[])
         .filter((s) => s.quantity > 0) as unknown as object,

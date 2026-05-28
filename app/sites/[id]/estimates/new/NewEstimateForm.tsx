@@ -156,17 +156,27 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   function toggleInsulationType(t: InsulationType) {
     setInsulationTypes((arr) => arr.includes(t) ? arr.filter((x) => x !== t) : [...arr, t]);
   }
+  // 단열재 노트 (기타 선택 시) + 섹션 펼침 상태
+  const [insulationNote, setInsulationNote] = useState(
+    (existing as unknown as { insulationNote?: string } | undefined)?.insulationNote ?? "",
+  );
+  const [showInsulation, setShowInsulation] = useState(
+    (Array.isArray((existing as unknown as { insulationTypes?: unknown })?.insulationTypes) &&
+      ((existing as unknown as { insulationTypes?: unknown[] }).insulationTypes?.length ?? 0) > 0) ||
+    !!existing?.hasInsulation,
+  );
 
   // PE폼 부착 — 강판 결로/소음 방지. 강판 면적과 동일 비율로 추가 단가.
   const [hasPeFoam, setHasPeFoam] = useState(
     (existing as unknown as { hasPeFoam?: boolean } | undefined)?.hasPeFoam ?? false,
   );
 
-  // 지붕 형태는 기본 숨김. 박공 가정으로 자동 추정 (대부분 케이스).
-  // 다른 형태(모임/팔작/외쪽/멘사드)면 펼쳐서 직접 지정.
-  // 기존 견적에 roofShape 가 저장돼 있으면 시작부터 펼친 상태.
+  // 지붕 형태 — 항상 표시. 안 고르면 박공 가정 (calculations fallback).
+  // 복합/기타 선택 시 노트 입력 가능.
   // 용마루 수는 UI 에서 빠짐 — 항상 1 로 가정. 2동 건물은 사용자가 라인 직접 수정.
-  const [showRoofDetails, setShowRoofDetails] = useState(!!existing?.roofShape);
+  const [roofShapeNote, setRoofShapeNote] = useState(
+    (existing as unknown as { roofShapeNote?: string } | undefined)?.roofShapeNote ?? "",
+  );
 
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
@@ -382,6 +392,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
         : null,
       hasInsulation: insulationTypes.length > 0,
       insulationTypes,
+      insulationNote: insulationTypes.includes("other") ? insulationNote : null,
+      roofShapeNote: (roofShape === "complex" || roofShape === "other") ? roofShapeNote : null,
       hasPeFoam,
     };
 
@@ -422,8 +434,39 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   return (
     <>
       <div className="space-y-3 pb-32">
-        {/* STEP 1: Area */}
-        <Section icon={<Ruler size={18} />} title="면적" step={1}>
+        {/* STEP 1: Construction type — 영업 대화 순서대로 유형부터 */}
+        <Section icon={<Building2 size={18} />} title="공사 유형" step={1}>
+          <div className="space-y-2">
+            {CONSTRUCTION_TYPES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => pickConstructionType(t.value)}
+                className={`w-full text-left rounded-2xl px-4 py-3.5 border-2 pressable flex items-center gap-3 ${
+                  constructionType === t.value ? "border-primary bg-primary/5" : "border-border/60 bg-card"
+                }`}
+              >
+                <span className="text-2xl">{t.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className={`text-sm font-semibold ${constructionType === t.value ? "text-primary" : "text-foreground"}`}>
+                    {t.label}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</div>
+                </div>
+                <div className={`w-5 h-5 rounded-full border-2 shrink-0 ${
+                  constructionType === t.value ? "border-primary bg-primary" : "border-border"
+                }`}>
+                  {constructionType === t.value && (
+                    <div className="w-full h-full flex items-center justify-center text-white text-xs">✓</div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        {/* STEP 2: Area */}
+        <Section icon={<Ruler size={18} />} title="면적" step={2}>
           <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">시공 면적</Label>
           <div className="grid grid-cols-2 gap-2.5">
             <UnitInput label="평" unit="평" value={pyeongInput} onChange={handlePyeongChange} />
@@ -452,37 +495,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               <p className="text-[10px] text-muted-foreground mt-1.5">건물 둘레 자동 추정 정확도 향상에 사용</p>
             </div>
           )}
-        </Section>
-
-        {/* STEP 2: Construction type */}
-        <Section icon={<Building2 size={18} />} title="공사 유형" step={2}>
-          <div className="space-y-2">
-            {CONSTRUCTION_TYPES.map((t) => (
-              <button
-                key={t.value}
-                type="button"
-                onClick={() => pickConstructionType(t.value)}
-                className={`w-full text-left rounded-2xl px-4 py-3.5 border-2 pressable flex items-center gap-3 ${
-                  constructionType === t.value ? "border-primary bg-primary/5" : "border-border/60 bg-card"
-                }`}
-              >
-                <span className="text-2xl">{t.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-sm font-semibold ${constructionType === t.value ? "text-primary" : "text-foreground"}`}>
-                    {t.label}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground mt-0.5">{t.desc}</div>
-                </div>
-                <div className={`w-5 h-5 rounded-full border-2 shrink-0 ${
-                  constructionType === t.value ? "border-primary bg-primary" : "border-border"
-                }`}>
-                  {constructionType === t.value && (
-                    <div className="w-full h-full flex items-center justify-center text-white text-xs">✓</div>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
         </Section>
 
         {showRest && (
@@ -552,55 +564,38 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
             {constructionType !== "steelWaterproof" ? (
               <Section icon={<Layers size={18} />} title="지붕 형태 (옵션)">
-                {!showRoofDetails ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowRoofDetails(true)}
-                    className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
-                  >
-                    <div className="text-xs">
-                      <div className="font-semibold text-foreground">기본값: 박공</div>
-                      <div className="text-muted-foreground mt-0.5">
-                        대부분 케이스에 이걸로 됨. 다르면 펼쳐서 직접 지정
-                      </div>
-                    </div>
-                    <ChevronDown size={16} className="text-muted-foreground shrink-0 ml-2" />
-                  </button>
-                ) : (
-                  <>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-[11px] text-muted-foreground">
-                        지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowRoofDetails(false);
-                          setRoofShape(null);
-                        }}
-                        className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
-                      >
-                        <ChevronUp size={12} />접기
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2">
-                      {ROOF_SHAPES.map((s) => (
-                        <button
-                          key={s.value}
-                          type="button"
-                          onClick={() => setRoofShape(s.value)}
-                          className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
-                            roofShape === s.value
-                              ? "border-primary bg-primary/5 text-primary"
-                              : "border-border/60 bg-card text-foreground"
-                          }`}
-                        >
-                          <span className="text-sm font-bold">{s.label}</span>
-                          <span className="text-[10px] text-muted-foreground">{s.desc}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                  지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {ROOF_SHAPES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setRoofShape(roofShape === s.value ? null : s.value)}
+                      className={`pressable rounded-2xl py-2.5 px-2 border-2 flex flex-col items-center gap-0.5 ${
+                        roofShape === s.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <span className="text-sm font-bold">{s.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{s.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                {(roofShape === "complex" || roofShape === "other") && (
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">
+                      메모 — 어떤 형태인지 간략히 적어주세요
+                    </Label>
+                    <Input
+                      value={roofShapeNote}
+                      onChange={(e) => setRoofShapeNote(e.target.value)}
+                      placeholder="예: 박공 + 한쪽 외쪽, 또는 ㄷ자 일부만 모임"
+                      className="h-11 rounded-xl text-sm"
+                    />
+                  </div>
                 )}
               </Section>
             ) : (
@@ -699,7 +694,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* STEP 3: Steel sheet type */}
-            <Section icon={<Hammer size={18} />} title="강판 종류" step={3}>
+            <Section icon={<Hammer size={18} />} title="지붕재 (칼라강판) — 종류" step={3}>
               <div className="grid grid-cols-2 gap-2">
                 {MATERIAL_TYPES.map((m) => (
                   <ChipBtn
@@ -733,7 +728,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* STEP 4: Thickness */}
-            <Section icon={<Layers size={18} />} title="강판 두께" step={4}>
+            <Section icon={<Layers size={18} />} title="강판 두께">
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">기본 0.45t</p>
               <div className="grid grid-cols-4 gap-2">
                 {THICKNESSES.map((t) => (
@@ -754,7 +749,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* STEP 5: Texture + Color */}
-            <Section icon={<Palette size={18} />} title="색상 / 텍스처" step={5}>
+            <Section icon={<Palette size={18} />} title="색상 / 텍스처">
               <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">텍스처</Label>
               <div className="grid grid-cols-5 gap-1.5 mb-3">
                 {TEXTURE_PRESETS.map((t) => (
@@ -831,7 +826,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* 하지작업 (Substructure) */}
-            <Section icon={<Pickaxe size={18} />} title="하지 작업">
+            <Section icon={<Pickaxe size={18} />} title="하지 작업" step={4}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
                 강판 아래 시공되는 하지. ㎡당 단가로 자동 계산
               </p>
@@ -893,34 +888,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* ── 부자재 영역 ── */}
-            {/* 단열재 — multi-select. 선택 안 하면 없음. */}
-            <Section icon={<Package size={18} />} title="단열재 (옵션)">
-              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                선택 안 하면 없음 · 복수 선택 가능 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
-              </p>
-              <div className="grid grid-cols-3 gap-1.5">
-                {INSULATION_TYPES.map((t) => {
-                  const active = insulationTypes.includes(t.value);
-                  return (
-                    <button
-                      key={t.value}
-                      type="button"
-                      onClick={() => toggleInsulationType(t.value)}
-                      className={`pressable rounded-xl px-2 py-2.5 text-xs font-semibold border ${
-                        active
-                          ? "bg-primary text-primary-foreground border-primary"
-                          : "bg-card text-foreground border-border/60"
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </Section>
-
-            {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}
-            <Section icon={<Package size={18} />} title="추가 자재 / 부속">
+            {/* STEP 5: Catalog — 추가 자재가 부자재 중 제일 중요 */}
+            <Section icon={<Package size={18} />} title="추가 자재 / 부속" step={5}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
                 각 카테고리는 <b>심플</b>(한 줄 자동 계산) 또는 <b>상세</b>(항목별) 모드 토글.
                 심플 = 빠름, 상세 = 정확. 단가는 모두 인라인 수정 가능.
@@ -937,51 +906,109 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               />
             </Section>
 
-            {/* ── 물받이 / 스테인리스 배수로 — 부자재 다음에 위치 (사용자 요청 순서) ── */}
-            {constructionType !== "steelWaterproof" && (
-              <Section icon={<CloudRain size={18} />} title="물받이">
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                  설치 면을 선택하세요 (전부 = 4면, 0개 = 안함)
-                </p>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {GUTTER_SIDES.map((side) => {
-                    const active = gutterSides.has(side);
-                    return (
-                      <button
-                        key={side}
-                        type="button"
-                        onClick={() => toggleGutterSide(side)}
-                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                          active
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card text-foreground border-border/60"
-                        }`}
-                      >
-                        {GUTTER_SIDE_LABELS[side]}
-                      </button>
-                    );
-                  })}
-                </div>
-                {gutterSides.size > 0 && (
-                  <div className="mt-2.5">
-                    <Label className="text-[10px] text-muted-foreground mb-1 block">
-                      총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        value={gutterLength}
-                        onChange={(e) => setGutterLength(e.target.value)}
-                        placeholder="총 길이"
-                        className="h-11 rounded-xl tabular-nums flex-1"
-                      />
-                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                    </div>
+            {/* ── 물받이 / 엔드캡 (mutex) — steelWaterproof 외 ── */}
+            {constructionType !== "steelWaterproof" && (() => {
+              const isGutter = gutterSides.size > 0;
+              const isEndCap = !!scope.endCap;
+              function pickGutter() {
+                setGutterSides(new Set(GUTTER_SIDES));
+                setScope((s) => ({ ...s, endCap: false }));
+              }
+              function pickEndCap() {
+                setGutterSides(new Set());
+                setScope((s) => ({ ...s, endCap: true }));
+              }
+              function clearBoth() {
+                setGutterSides(new Set());
+                setScope((s) => ({ ...s, endCap: false }));
+              }
+              return (
+                <Section icon={<CloudRain size={18} />} title="물받이 / 엔드캡">
+                  <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                    둘 중 하나만 시공 (동시 시공 안 함)
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => isGutter ? clearBoth() : pickGutter()}
+                      className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                        isGutter ? "border-primary bg-primary/5 text-primary" : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <CloudRain size={18} />
+                      <span className="text-sm font-bold">물받이</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => isEndCap ? clearBoth() : pickEndCap()}
+                      className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                        isEndCap ? "border-primary bg-primary/5 text-primary" : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <span className="text-lg leading-none">🔚</span>
+                      <span className="text-sm font-bold">엔드캡</span>
+                    </button>
                   </div>
-                )}
-              </Section>
-            )}
+
+                  {isGutter && (
+                    <div className="mt-3 pt-3 border-t border-border/40">
+                      <Label className="text-[10px] text-muted-foreground mb-1.5 block">
+                        설치 면 (전부 = 4면, 일부 선택 가능)
+                      </Label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {GUTTER_SIDES.map((side) => {
+                          const active = gutterSides.has(side);
+                          return (
+                            <button
+                              key={side}
+                              type="button"
+                              onClick={() => toggleGutterSide(side)}
+                              className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                                active
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-card text-foreground border-border/60"
+                              }`}
+                            >
+                              {GUTTER_SIDE_LABELS[side]}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="mt-2.5">
+                        <Label className="text-[10px] text-muted-foreground mb-1 block">
+                          총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            value={gutterLength}
+                            onChange={(e) => setGutterLength(e.target.value)}
+                            placeholder="총 길이"
+                            className="h-11 rounded-xl tabular-nums flex-1"
+                          />
+                          <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {isEndCap && (
+                    <div className="mt-3 pt-3 border-t border-border/40">
+                      <Label className="text-[10px] text-muted-foreground mb-1 block">
+                        개수 ({eff.endCapPrice.toLocaleString("ko-KR")}원/개)
+                      </Label>
+                      <NumberStepper
+                        value={endCaps}
+                        onChange={setEndCaps}
+                        min={1} max={50} step={1}
+                        unit="개"
+                      />
+                    </div>
+                  )}
+                </Section>
+              );
+            })()}
 
             {constructionType === "steelWaterproof" && (
               <Section icon={<Waves size={18} />} title="스테인리스 배수로">
@@ -1005,8 +1032,82 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </Section>
             )}
 
+            {/* ── 단열재 (옵션, 마지막) — 펼침/접기 + 기타 노트 ── */}
+            <Section icon={<Package size={18} />} title="단열재 (옵션)">
+              {!showInsulation ? (
+                <button
+                  type="button"
+                  onClick={() => setShowInsulation(true)}
+                  className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
+                >
+                  <div className="text-xs">
+                    <div className="font-semibold text-foreground">
+                      {insulationTypes.length > 0
+                        ? `선택됨: ${insulationTypes.length}종`
+                        : "단열재 추가 (선택)"}
+                    </div>
+                    <div className="text-muted-foreground mt-0.5">
+                      열었다 닫았다 가능 · 복수 선택 OK
+                    </div>
+                  </div>
+                  <ChevronDown size={16} className="text-muted-foreground shrink-0 ml-2" />
+                </button>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      복수 선택 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowInsulation(false);
+                        setInsulationTypes([]);
+                        setInsulationNote("");
+                      }}
+                      className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
+                    >
+                      <ChevronUp size={12} />접기
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {INSULATION_TYPES.map((t) => {
+                      const active = insulationTypes.includes(t.value);
+                      return (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() => toggleInsulationType(t.value)}
+                          className={`pressable rounded-xl px-2 py-2.5 text-xs font-semibold border ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card text-foreground border-border/60"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {insulationTypes.includes("other") && (
+                    <div className="mt-3 pt-3 border-t border-border/40">
+                      <Label className="text-[10px] text-muted-foreground mb-1 block">
+                        기타 단열재 — 종류/규격 간략히
+                      </Label>
+                      <Input
+                        value={insulationNote}
+                        onChange={(e) => setInsulationNote(e.target.value)}
+                        placeholder="예: 글라스울 50T"
+                        className="h-11 rounded-xl text-sm"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </Section>
+
             {/* STEP 7: Equipment — steppers */}
-            <Section icon={<Wrench size={18} />} title="장비대" step={7}>
+            <Section icon={<Wrench size={18} />} title="장비대" step={6}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">사용 장비 체크 + 일수 (− / + 로 조정)</p>
               <div className="space-y-2">
                 <EquipmentRow
@@ -1035,7 +1136,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* STEP 8: Work info — steppers */}
-            <Section icon={<Users size={18} />} title="작업 정보" step={8}>
+            <Section icon={<Users size={18} />} title="작업 정보" step={7}>
               <div className="grid grid-cols-2 gap-3">
                 <NumberStepper
                   label="작업 일수"
@@ -1055,7 +1156,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             </Section>
 
             {/* STEP 9: 기타 비용 (구 step 8 위치) */}
-            <Section icon={<Receipt size={18} />} title="기타 비용" step={9}>
+            <Section icon={<Receipt size={18} />} title="기타 비용" step={8}>
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">크레인, 추가 자재, 절곡비, 잡비 등 직접 추가</p>
               {extraCosts.length > 0 && (
                 <div className="space-y-2 mb-2">
@@ -1169,7 +1270,7 @@ function Section({ icon, title, step, children }: { icon?: React.ReactNode; titl
     <div className="bg-card rounded-2xl border border-border/60 p-4">
       <div className="flex items-center gap-2 mb-3">
         {step !== undefined && (
-          <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[11px] font-bold flex items-center justify-center">
+          <span className="w-7 h-7 rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center shrink-0">
             {step}
           </span>
         )}

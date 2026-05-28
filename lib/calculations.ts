@@ -86,6 +86,8 @@ const ROOF_SHAPE_FACTORS: Record<RoofShape, { ridgeRatio: number; eaveRatio: num
   shed:    { ridgeRatio: 0.0, eaveRatio: 0.35, lossRate: 0.05 },
   mansard: { ridgeRatio: 0.6, eaveRatio: 1.3,  lossRate: 0.18 },
   complex: { ridgeRatio: 0.8, eaveRatio: 0.8,  lossRate: 0.18 },
+  // "other" 는 추정 불가 — 박공 기본값으로 둠 (사용자가 라인 직접 수정 가정).
+  other:   { ridgeRatio: 1.0, eaveRatio: 0.5,  lossRate: 0.07 },
 };
 
 /**

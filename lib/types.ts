@@ -47,14 +47,16 @@ export const BUILDING_SHAPES: { value: BuildingShape; label: string; icon: strin
  *
  * "complex" 는 구버전 enum — 신규 폼에는 노출 안 함. 기존 견적 호환용으로만 유지.
  */
-export type RoofShape = "gable" | "hip" | "halfHip" | "shed" | "mansard" | "complex";
+export type RoofShape = "gable" | "hip" | "halfHip" | "shed" | "mansard" | "complex" | "other";
 
-export const ROOF_SHAPES: { value: RoofShape; label: string; desc: string }[] = [
+export const ROOF_SHAPES: { value: RoofShape; label: string; desc: string; needsNote?: boolean }[] = [
   { value: "gable",   label: "박공",   desc: "△ 양면 경사" },
   { value: "hip",     label: "모임",   desc: "사방 경사" },
   { value: "halfHip", label: "팔작",   desc: "박공 + 모임" },
   { value: "shed",    label: "외쪽",   desc: "한쪽만 경사" },
   { value: "mansard", label: "멘사드", desc: "2단 꺾임" },
+  { value: "complex", label: "복합",   desc: "꺾임 多",   needsNote: true },
+  { value: "other",   label: "기타",   desc: "직접 메모", needsNote: true },
 ];
 
 /**
@@ -95,18 +97,18 @@ export const BASELINE_AREAS = [30, 50, 80, 150] as const;
  */
 export type InsulationType = "eps" | "xps" | "pir" | "thermalReflect" | "other";
 
-export const INSULATION_TYPES: { value: InsulationType; label: string }[] = [
-  { value: "eps",            label: "EPS" },
-  { value: "xps",            label: "XPS" },
-  { value: "pir",            label: "PIR" },
+export const INSULATION_TYPES: { value: InsulationType; label: string; needsNote?: boolean }[] = [
+  { value: "eps",            label: "스티로폼 (EPS)" },
+  { value: "xps",            label: "아이소핑크 (XPS)" },
+  { value: "pir",            label: "경질우레탄폼 (PIR)" },
   { value: "thermalReflect", label: "열반사단열재" },
-  { value: "other",          label: "기타" },
+  { value: "other",          label: "기타", needsNote: true },
 ];
 
 export const INSULATION_LABEL: Record<InsulationType, string> = {
-  eps: "EPS",
-  xps: "XPS",
-  pir: "PIR",
+  eps: "스티로폼 (EPS)",
+  xps: "아이소핑크 (XPS)",
+  pir: "경질우레탄폼 (PIR)",
   thermalReflect: "열반사단열재",
   other: "기타",
 };
@@ -174,15 +176,15 @@ export const TEXTURE_PRESETS = [
 
 /** Standard color presets for color steel. The user picks one or "기타" for free input. */
 export const COLOR_PRESETS = [
-  "진밤색",   // 기본 (= 다크브라운)
+  "진밤색",       // 기본 (= 다크브라운)
   "밤색",
   "차콜",
   "진회색",
-  "은회색",
+  "황토색",       // (was: 은회색)
   "적갈색",
   "녹색",
   "청색",
-  "백색",
+  "스페니쉬기와",  // (was: 백색)
 ] as const;
 
 export const DEFAULT_COLOR = "진밤색";
@@ -357,8 +359,9 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
 /** Which scope items are shown for each construction type, in display order.
  *  Note: 물받이 was moved out of scope flags into its own GutterMode picker. */
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
-  roof: ["overlay", "removal", "ridge", "eave", "endCap", "waste"],
-  rooftopRoof: ["ridge", "eave", "endCap", "waste"],
+  // endCap 은 물받이 Section 안으로 이동 (둘이 mutually exclusive — 함께 시공 안 함).
+  roof: ["overlay", "removal", "ridge", "eave", "waste"],
+  rooftopRoof: ["ridge", "eave", "waste"],
   // 난간 토글 시 두겁(cap)이 SCOPE_FORCES 로 자동 켜지므로 cap 은 별도 표시 안 함.
   // 창고/계단실/옥탑방은 rooftopStructure 로 통합.
   steelWaterproof: ["handrail", "drainHole", "rooftopStructure", "waste"],
