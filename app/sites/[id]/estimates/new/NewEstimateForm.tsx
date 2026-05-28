@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -438,6 +438,17 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     }
   }
 
+  // 건물 둘레 자동 채움 — buildingShape 또는 시공/건물 면적이 바뀔 때 perimeterInput 이 비어 있으면
+  // 추정값(m 반올림)을 채워줌. 사용자가 한 번 값을 넣으면 그 후엔 자동 변경 안 함.
+  useEffect(() => {
+    if (!buildingShape || perimeterInput) return;
+    const sqm = parseFloat(sqmInput) || 0;
+    if (sqm <= 0) return;
+    const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
+    const est = estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null);
+    if (est > 0) setPerimeterInput(String(Math.round(est)));
+  }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput]);
+
   // Effective prices for inline display — settings with overrides merged on top
   const eff = applyOverrides(settings, pricingOverrides);
 
@@ -531,58 +542,58 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 ))}
               </div>
               {buildingShape && (
-                <div className="mt-3 pt-3 border-t border-border/40 space-y-3">
+                <div className="mt-4 pt-4 border-t border-border/40 space-y-4">
                   {(() => {
                     const sqm = parseFloat(sqmInput) || 0;
                     const bSqm = showBuildingArea && buildingSqmInput
                       ? parseFloat(buildingSqmInput) || 0
                       : 0;
                     const estPerim = sqm > 0
-                      ? estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null)
+                      ? Math.round(estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null))
                       : 0;
                     const source = bSqm > 0 ? "건물면적" : "시공면적÷1.4";
                     const overhangCm = parseInt(eaveOverhangInput) || 0;
+                    const currentPerim = parseFloat(perimeterInput) || estPerim;
                     const isRoofType = constructionType !== "steelWaterproof";
-                    const eavePerim = isRoofType && estPerim > 0
-                      ? Math.round((estPerim + 8 * (overhangCm / 100)) * 10) / 10
-                      : estPerim;
+                    const eavePerim = isRoofType && currentPerim > 0
+                      ? Math.round(currentPerim + 8 * (overhangCm / 100))
+                      : currentPerim;
                     return (
                       <>
                         <div>
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            건물 둘레 (옵션 — 비우면 자동 계산
-                            {estPerim > 0 ? `: ${estPerim}m (${source})` : ""})
+                          <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                            건물 둘레
                           </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number" inputMode="decimal"
-                              value={perimeterInput}
-                              onChange={(e) => setPerimeterInput(e.target.value)}
-                              placeholder={estPerim > 0 ? String(estPerim) : "0"}
-                              className="h-11 rounded-xl tabular-nums flex-1"
-                            />
-                            <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                          </div>
+                          {estPerim > 0 && (
+                            <p className="text-[11px] text-muted-foreground mb-2 tabular-nums">
+                              추정 {estPerim}m ({source}) · 버튼으로 1m 씩 조정 또는 직접 입력
+                            </p>
+                          )}
+                          <NumberStepper
+                            value={perimeterInput}
+                            onChange={setPerimeterInput}
+                            min={5} max={999} step={1}
+                            unit="m"
+                          />
                         </div>
                         {/* 처마 돌출 — 지붕공사/옥상지붕만. 외벽 둘레 → 처마 외곽 둘레 보정 */}
                         {isRoofType && (
                           <div>
-                            <Label className="text-[10px] text-muted-foreground mb-1 block">
-                              처마 돌출 (사방 cm — 0 = 평지붕, 50 = 일반, 100 = 한옥)
+                            <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                              처마 돌출 (사방)
                             </Label>
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number" inputMode="numeric"
-                                value={eaveOverhangInput}
-                                onChange={(e) => setEaveOverhangInput(e.target.value)}
-                                placeholder="50"
-                                className="h-11 rounded-xl tabular-nums flex-1"
-                              />
-                              <span className="text-sm text-muted-foreground font-medium w-7">cm</span>
-                            </div>
-                            {estPerim > 0 && overhangCm > 0 && (
-                              <p className="text-[10px] text-muted-foreground mt-1.5 tabular-nums">
-                                처마 외곽 둘레 ≈ {eavePerim}m (= {estPerim} + 8 × {(overhangCm / 100).toFixed(2)})
+                            <p className="text-[11px] text-muted-foreground mb-2">
+                              0 = 평지붕 · 50 = 일반 · 100 = 한옥 — 버튼으로 10cm 씩
+                            </p>
+                            <NumberStepper
+                              value={eaveOverhangInput}
+                              onChange={setEaveOverhangInput}
+                              min={0} max={300} step={10}
+                              unit="cm"
+                            />
+                            {currentPerim > 0 && overhangCm > 0 && (
+                              <p className="text-[11px] text-muted-foreground mt-2 tabular-nums">
+                                → 처마 외곽 둘레 <b>{eavePerim}m</b> (= {currentPerim} + 8 × {(overhangCm / 100).toFixed(2)})
                               </p>
                             )}
                           </div>
