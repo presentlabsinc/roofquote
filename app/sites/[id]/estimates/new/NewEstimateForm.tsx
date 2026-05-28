@@ -171,12 +171,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     (existing as unknown as { hasPeFoam?: boolean } | undefined)?.hasPeFoam ?? false,
   );
 
-  // 지붕 형태 — 항상 표시. 안 고르면 박공 가정 (calculations fallback).
-  // 복합/기타 선택 시 노트 입력 가능.
+  // 지붕 형태 — 옵션이라 접힘 기본. 기타 선택 시 노트 입력 가능.
   // 용마루 수는 UI 에서 빠짐 — 항상 1 로 가정. 2동 건물은 사용자가 라인 직접 수정.
   const [roofShapeNote, setRoofShapeNote] = useState(
     (existing as unknown as { roofShapeNote?: string } | undefined)?.roofShapeNote ?? "",
   );
+  const [showRoofDetails, setShowRoofDetails] = useState(!!existing?.roofShape);
 
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
@@ -393,7 +393,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       hasInsulation: insulationTypes.length > 0,
       insulationTypes,
       insulationNote: insulationTypes.includes("other") ? insulationNote : null,
-      roofShapeNote: (roofShape === "complex" || roofShape === "other") ? roofShapeNote : null,
+      roofShapeNote: roofShape === "other" ? roofShapeNote : null,
       hasPeFoam,
     };
 
@@ -482,17 +482,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             <span className="w-5 h-5 rounded-md border border-primary/40 flex items-center justify-center text-[11px]">
               {showBuildingArea ? "−" : "+"}
             </span>
-            건물 면적도 함께 기입 (옵션 — 건물 둘레 추정 정확도 ↑)
+            건물 면적 (옵션)
           </button>
 
           {showBuildingArea && (
             <div className="mt-3 pt-3 border-t border-border/40">
-              <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">건물 면적</Label>
               <div className="grid grid-cols-2 gap-2.5">
                 <UnitInput label="평" unit="평" value={buildingPyeongInput} onChange={handleBuildingPyeongChange} />
                 <UnitInput label="㎡" unit="㎡" value={buildingSqmInput} onChange={handleBuildingSqmChange} />
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5">건물 둘레 자동 추정 정확도 향상에 사용</p>
             </div>
           )}
         </Section>
@@ -564,38 +562,73 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
             {constructionType !== "steelWaterproof" ? (
               <Section icon={<Layers size={18} />} title="지붕 형태 (옵션)">
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                  지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  {ROOF_SHAPES.map((s) => (
-                    <button
-                      key={s.value}
-                      type="button"
-                      onClick={() => setRoofShape(roofShape === s.value ? null : s.value)}
-                      className={`pressable rounded-2xl py-2.5 px-2 border-2 flex flex-col items-center gap-0.5 ${
-                        roofShape === s.value
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-border/60 bg-card text-foreground"
-                      }`}
-                    >
-                      <span className="text-sm font-bold">{s.label}</span>
-                      <span className="text-[10px] text-muted-foreground">{s.desc}</span>
-                    </button>
-                  ))}
-                </div>
-                {(roofShape === "complex" || roofShape === "other") && (
-                  <div className="mt-3 pt-3 border-t border-border/40">
-                    <Label className="text-[10px] text-muted-foreground mb-1 block">
-                      메모 — 어떤 형태인지 간략히 적어주세요
-                    </Label>
-                    <Input
-                      value={roofShapeNote}
-                      onChange={(e) => setRoofShapeNote(e.target.value)}
-                      placeholder="예: 박공 + 한쪽 외쪽, 또는 ㄷ자 일부만 모임"
-                      className="h-11 rounded-xl text-sm"
-                    />
-                  </div>
+                {!showRoofDetails ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowRoofDetails(true)}
+                    className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
+                  >
+                    <div className="text-xs">
+                      <div className="font-semibold text-foreground">
+                        {roofShape
+                          ? `선택됨: ${ROOF_SHAPES.find((s) => s.value === roofShape)?.label ?? roofShape}`
+                          : "지붕 모양 지정 (선택)"}
+                      </div>
+                      <div className="text-muted-foreground mt-0.5">
+                        용마루·처마 길이 + 강판 로스율 자동 추정에 사용
+                      </div>
+                    </div>
+                    <ChevronDown size={16} className="text-muted-foreground shrink-0 ml-2" />
+                  </button>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="text-[11px] text-muted-foreground">
+                        지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowRoofDetails(false);
+                          setRoofShape(null);
+                          setRoofShapeNote("");
+                        }}
+                        className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
+                      >
+                        <ChevronUp size={12} />접기
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {ROOF_SHAPES.map((s) => (
+                        <button
+                          key={s.value}
+                          type="button"
+                          onClick={() => setRoofShape(roofShape === s.value ? null : s.value)}
+                          className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                            roofShape === s.value
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-border/60 bg-card text-foreground"
+                          }`}
+                        >
+                          <span className="text-sm font-bold">{s.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{s.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {roofShape === "other" && (
+                      <div className="mt-3 pt-3 border-t border-border/40">
+                        <Label className="text-[10px] text-muted-foreground mb-1 block">
+                          메모 — 어떤 형태인지 간략히
+                        </Label>
+                        <Input
+                          value={roofShapeNote}
+                          onChange={(e) => setRoofShapeNote(e.target.value)}
+                          placeholder="예: 박공 + 한쪽 외쪽, ㄷ자 일부만 모임"
+                          className="h-11 rounded-xl text-sm"
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </Section>
             ) : (
@@ -736,7 +769,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     key={t}
                     type="button"
                     onClick={() => setThickness(t)}
-                    className={`pressable rounded-xl py-3 text-sm font-bold border ${
+                    className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
                       thickness === t
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card text-foreground border-border/60"
@@ -757,7 +790,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     key={t}
                     type="button"
                     onClick={() => setTextureChoice(t)}
-                    className={`pressable rounded-xl px-2 py-2 text-xs font-medium border ${
+                    className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
                       textureChoice === t
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card text-foreground border-border/60"
@@ -769,7 +802,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 <button
                   type="button"
                   onClick={() => setTextureChoice("기타")}
-                  className={`pressable rounded-xl px-2 py-2 text-xs font-medium border ${
+                  className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
                     textureChoice === "기타"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card text-foreground border-border/60"
@@ -794,7 +827,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     key={c}
                     type="button"
                     onClick={() => setColorChoice(c)}
-                    className={`pressable rounded-xl px-2 py-2.5 text-xs font-medium border ${
+                    className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
                       colorChoice === c
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-card text-foreground border-border/60"
@@ -806,7 +839,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 <button
                   type="button"
                   onClick={() => setColorChoice("기타")}
-                  className={`pressable rounded-xl px-2 py-2.5 text-xs font-medium border ${
+                  className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
                     colorChoice === "기타"
                       ? "bg-primary text-primary-foreground border-primary"
                       : "bg-card text-foreground border-border/60"
@@ -820,7 +853,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   value={colorCustom}
                   onChange={(e) => setColorCustom(e.target.value)}
                   placeholder="색상명 입력"
-                  className="mt-2.5 h-12 rounded-xl text-base"
+                  className="mt-2.5 h-11 rounded-xl text-sm"
                 />
               )}
             </Section>
@@ -1078,7 +1111,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           key={t.value}
                           type="button"
                           onClick={() => toggleInsulationType(t.value)}
-                          className={`pressable rounded-xl px-2 py-2.5 text-xs font-semibold border ${
+                          className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
                             active
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-card text-foreground border-border/60"
@@ -1414,7 +1447,7 @@ function ChipBtn({ active, onClick, label }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`pressable rounded-2xl px-3 py-2.5 text-sm font-medium border ${
+      className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
         active
           ? "bg-primary text-primary-foreground border-primary"
           : "bg-card text-foreground border-border/60"

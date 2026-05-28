@@ -17,11 +17,11 @@ export type MaterialType =
 
 export const MATERIAL_TYPES: { value: MaterialType; label: string }[] = [
   { value: "slate", label: "슬레이트골" },
-  { value: "v250", label: "V250" },
   { value: "zinc250", label: "징크250" },
+  { value: "v250", label: "V250" },
   { value: "generalTile", label: "일반기와형" },
   { value: "traditionalTile", label: "전통기와형" },
-  { value: "realZinc", label: "리얼징크" },
+  { value: "realZinc", label: "징크 / 리얼징크" },
   { value: "other", label: "기타" },
 ];
 
@@ -55,7 +55,6 @@ export const ROOF_SHAPES: { value: RoofShape; label: string; desc: string; needs
   { value: "halfHip", label: "팔작",   desc: "박공 + 모임" },
   { value: "shed",    label: "외쪽",   desc: "한쪽만 경사" },
   { value: "mansard", label: "멘사드", desc: "2단 꺾임" },
-  { value: "complex", label: "복합",   desc: "꺾임 多",   needsNote: true },
   { value: "other",   label: "기타",   desc: "직접 메모", needsNote: true },
 ];
 
