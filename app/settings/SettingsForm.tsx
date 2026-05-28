@@ -39,6 +39,7 @@ const DEFAULTS = {
   endCapPrice: 3500,
   stainlessDrainPricePerM: 50000,
   peFoamPricePerSqm: 1000,
+  downspoutUnitPrice: 50000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.15,
   estimateNumberStart: 1,
@@ -103,6 +104,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     emoji: "🟦",
     items: [
       { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
+      { key: "downspoutUnitPrice", label: "홈통 (개당)", unit: "원" },
       { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
       { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
     ],
@@ -253,6 +255,7 @@ export function SettingsForm({ defaultValues }: Props) {
       siliconePrice: defaultValues.siliconePrice ?? 5000,
       insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
       lossRateMode: (((defaultValues as unknown as { lossRateMode?: string }).lossRateMode === "manual") ? "manual" : "auto") as "auto" | "manual",
+      downspoutUnitPrice: (defaultValues as unknown as { downspoutUnitPrice?: number }).downspoutUnitPrice ?? 50000,
     };
   });
 

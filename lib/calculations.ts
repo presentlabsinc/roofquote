@@ -326,6 +326,12 @@ export interface BuildLineItemsInput {
   parapetHeightCm?: number | null;
   /** 처마 돌출 cm — 지붕공사/옥상지붕. 외벽 둘레 → 처마 외곽 둘레 보정. */
   eaveOverhangCm?: number;
+  /** 스틸방수 — 난간 둘레 (m) 직접 입력. 외곽 + 계단 등 자유. */
+  railPerimeterM?: number | null;
+  /** 스틸방수 — 옥탑 구조물 둘레 (m). 없으면 0/null. */
+  rooftopStructurePerimeterM?: number | null;
+  /** 홈통 (downspout) 개수 — 스테인리스 배수로와 함께 시공. */
+  downspoutCount?: number;
   /** [DEPRECATED] 단열재 단순 토글 — insulationTypes 로 대체. 구버전 호환용. */
   hasInsulation?: boolean;
   /** 단열재 종류 (multi-select). 빈 배열 = 없음. */
@@ -350,6 +356,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     buildingAreaM2 = null,
     perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
     eaveOverhangCm = 50,
+    railPerimeterM = null, rooftopStructurePerimeterM = null,
+    downspoutCount = 0,
     hasInsulation = false, insulationTypes = [],
     hasPeFoam = false,
   } = input;
@@ -550,41 +558,46 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
 
   // Steel-waterproof-specific items.
   if (constructionType === "steelWaterproof") {
-    // 두겁 절곡 — 난간 시공 시 필수 (SCOPE_FORCES enforces this in the form).
-    // 사용자가 capLengthM 입력하면 그 값 우선, 안 하면 buildingShape 있을 때 둘레로 자동 추정.
-    const autoCapM = (() => {
-      if (capLengthM > 0) return capLengthM;
-      if (!buildingShape || !geom) return 0;
-      const fromBaseline = baseline?.capBendingM;
-      return fromBaseline ?? Math.round(geom.perimeterM * 10) / 10;
-    })();
-    if (scope.cap && autoCapM > 0) {
-      // 단가 m당 — 기존 capBendingPricePerM (legacy) 와 새 절곡 공식 중 큰 값 사용? 단순히 새 공식만.
-      const bend = calcBendingCost(settings.bendingWidthCap, autoCapM, settings.bendingPricePerMmPer3m);
-      items.push({
-        category: "material", name: `두겁 절곡 (${settings.bendingWidthCap}mm)`,
-        quantity: autoCapM, unit: "m",
-        unitPrice: Math.round(bend / Math.max(1, autoCapM)),
-        total: bend,
-        sortOrder: order++,
-      });
-    }
-    // 미시 절곡 — 둘레 기반 자동 추정 (buildingShape 있을 때만)
-    if (buildingShape && geom) {
-      const mishiLen = baseline?.mishiBendingM ?? geom.perimeterM;
-      if (mishiLen > 0) {
-        const bend = calcBendingCost(settings.bendingWidthMishi, mishiLen, settings.bendingPricePerMmPer3m);
-        if (bend > 0) {
-          items.push({
-            category: "material", name: `미시 절곡 (${settings.bendingWidthMishi}mm)`,
-            quantity: mishiLen, unit: "m",
-            unitPrice: Math.round(bend / Math.max(1, mishiLen)), total: bend,
-            sortOrder: order++,
-          });
-        }
+    // 사용자 직접 입력 둘레 (없으면 0). 자동 추정 안 함 — 시공면적/옥탑 변수가 크기 때문.
+    const railP = railPerimeterM && railPerimeterM > 0 ? railPerimeterM : 0;
+    const rooftopP = rooftopStructurePerimeterM && rooftopStructurePerimeterM > 0 ? rooftopStructurePerimeterM : 0;
+    // 두겁 = 난간 + 옥탑 (모든 마감 부위에 캡 들어감)
+    // 미시 = 동일 (근사 — 옥탑 base 에도 미시 필요)
+    // 파라펫 강판 = (난간 + 옥탑) × 높이 × 1.10
+    const railLikeTotal = railP + rooftopP;
+    const parapetHeightM = (parapetHeightCm && parapetHeightCm > 0 ? parapetHeightCm : 60) / 100;
+
+    // 두겁 절곡 — 난간/두겁 토글 켰을 때만 (handrail 또는 cap)
+    if ((scope.handrail || scope.cap) && railLikeTotal > 0) {
+      const capM = capLengthM > 0 ? capLengthM : Math.round(railLikeTotal);
+      const bend = calcBendingCost(settings.bendingWidthCap, capM, settings.bendingPricePerMmPer3m);
+      if (bend > 0) {
+        items.push({
+          category: "material", name: `두겁 절곡 (${settings.bendingWidthCap}mm)`,
+          quantity: capM, unit: "m",
+          unitPrice: Math.round(bend / Math.max(1, capM)),
+          total: bend,
+          sortOrder: order++,
+        });
       }
-      // 프래싱 (꺾인 건물에만)
-      const flashLen = baseline?.flashingBendingM ?? geom.flashingLengthM;
+    }
+    // 미시 절곡 — 난간/두겁 토글 있을 때 (난간 둘레 기반)
+    if ((scope.handrail || scope.cap) && railLikeTotal > 0) {
+      const mishiLen = baseline?.mishiBendingM ?? Math.round(railLikeTotal);
+      const bend = calcBendingCost(settings.bendingWidthMishi, mishiLen, settings.bendingPricePerMmPer3m);
+      if (bend > 0) {
+        items.push({
+          category: "material", name: `미시 절곡 (${settings.bendingWidthMishi}mm)`,
+          quantity: mishiLen, unit: "m",
+          unitPrice: Math.round(bend / Math.max(1, mishiLen)), total: bend,
+          sortOrder: order++,
+        });
+      }
+    }
+    // 프래싱 — 꺾인 건물 형태일 때만 (난간 둘레 무관, 형태 코너 수 × 높이)
+    if (buildingShape && (scope.handrail || scope.cap)) {
+      const buildingF = BUILDING_SHAPE_FACTORS[buildingShape];
+      const flashLen = baseline?.flashingBendingM ?? (buildingF.flashingPoints * parapetHeightM);
       if (flashLen > 0) {
         const bend = calcBendingCost(settings.bendingWidthFlashing, flashLen, settings.bendingPricePerMmPer3m);
         if (bend > 0) {
@@ -596,8 +609,10 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
           });
         }
       }
-      // 파라펫 강판 — 둘레 × 파라펫높이 × 1.10 × materialPricePerSqm
-      const parapetArea = baseline?.parapetAreaM2 ?? geom.parapetAreaM2;
+    }
+    // 파라펫 강판 — (난간 + 옥탑) 둘레 × 높이 × 로스율(1.10) × materialPricePerSqm
+    if ((scope.handrail || scope.cap) && railLikeTotal > 0 && parapetHeightM > 0) {
+      const parapetArea = baseline?.parapetAreaM2 ?? Math.round(railLikeTotal * parapetHeightM * 1.10 * 10) / 10;
       if (parapetArea > 0) {
         const mult = thickness ? THICKNESS_MULT[thickness] : 1;
         const unitPrice = Math.round(settings.materialPricePerSqm * mult);
@@ -615,6 +630,15 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         category: "other", name: "새 배수구 타공", quantity: drainHoleCount, unit: "개",
         unitPrice: settings.drainHolePrice,
         total: drainHoleCount * settings.drainHolePrice,
+        sortOrder: order++,
+      });
+    }
+    // 홈통 (downspout) — 스테인리스 배수로와 함께. 개수 × 단가.
+    if (downspoutCount > 0 && settings.downspoutUnitPrice > 0) {
+      items.push({
+        category: "material", name: "홈통", quantity: downspoutCount, unit: "개",
+        unitPrice: settings.downspoutUnitPrice,
+        total: downspoutCount * settings.downspoutUnitPrice,
         sortOrder: order++,
       });
     }

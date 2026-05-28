@@ -223,6 +223,7 @@ export interface PricingOverrides {
   capBendingPricePerM?: number;
   stainlessDrainPricePerM?: number;
   peFoamPricePerSqm?: number;
+  downspoutUnitPrice?: number;
 }
 
 /** Field definitions for the override UI — grouped by concern. */
@@ -324,7 +325,7 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   gutter: "물받이 교체",
   frameReinforcement: "골조 보강",
   handrailAndCap: "난간 및 두겁 포함",
-  handrail: "난간 / 두겁 (절곡)",
+  handrail: "난간 / 두겁",
   cap: "두겁 (절곡)",
   drainHole: "새 배수구 타공",
   existingWaterproofRemoval: "기존 방수재 철거",
@@ -345,7 +346,7 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
  * they're notes that flow into the work scope description on the PDF.
  */
 export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
-  handrail: "두겁 절곡 자동 포함 (절곡 길이 × m당 단가)",
+  handrail: "두겁 절곡 + 파라펫 강판 자동 포함",
   cap: "절곡 길이 × m당 단가로 별도 계산",
   warehouse: "시공면적에 포함하여 입력하세요",
   stairwell: "시공면적에 포함하여 입력하세요",

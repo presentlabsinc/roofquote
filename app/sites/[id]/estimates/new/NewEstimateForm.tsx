@@ -172,6 +172,25 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       ? String((existing as unknown as { eaveOverhangCm?: number }).eaveOverhangCm)
       : "50",
   );
+
+  // 스틸방수 — 난간/옥탑 구조물 둘레 직접 입력 (자동 추정 X).
+  const [railPerimeterInput, setRailPerimeterInput] = useState(
+    (existing as unknown as { railPerimeterM?: number } | undefined)?.railPerimeterM != null
+      ? String((existing as unknown as { railPerimeterM?: number }).railPerimeterM)
+      : "0",
+  );
+  const [rooftopPerimeterInput, setRooftopPerimeterInput] = useState(
+    (existing as unknown as { rooftopStructurePerimeterM?: number } | undefined)?.rooftopStructurePerimeterM != null
+      ? String((existing as unknown as { rooftopStructurePerimeterM?: number }).rooftopStructurePerimeterM)
+      : "0",
+  );
+
+  // 홈통 (downspout) 개수 — 스테인리스 배수로와 함께
+  const [downspoutCount, setDownspoutCount] = useState(
+    (existing as unknown as { downspoutCount?: number } | undefined)?.downspoutCount != null
+      ? String((existing as unknown as { downspoutCount?: number }).downspoutCount)
+      : "0",
+  );
   // 단열재 multi-select. 기존 견적의 insulationTypes 가 있으면 우선, 없는데 hasInsulation=true 면 ["other"] 로 시드.
   const [insulationTypes, setInsulationTypes] = useState<InsulationType[]>(() => {
     const stored = (existing as unknown as { insulationTypes?: unknown })?.insulationTypes;
@@ -420,6 +439,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       eaveOverhangCm: constructionType === "steelWaterproof"
         ? 0
         : (parseInt(eaveOverhangInput) || 0),
+      // 스틸방수 전용 — 난간/옥탑 둘레 직접 입력 + 홈통 개수
+      railPerimeterM: constructionType === "steelWaterproof"
+        ? (parseFloat(railPerimeterInput) || 0)
+        : null,
+      rooftopStructurePerimeterM: constructionType === "steelWaterproof"
+        ? (parseFloat(rooftopPerimeterInput) || 0)
+        : null,
+      downspoutCount: constructionType === "steelWaterproof"
+        ? (parseInt(downspoutCount) || 0)
+        : 0,
       hasInsulation: insulationTypes.length > 0,
       insulationTypes,
       insulationNote: insulationTypes.includes("other") ? insulationNote : null,
@@ -664,8 +693,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               )}
             </Section>
 
-            {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
-            {constructionType !== "steelWaterproof" ? (
+            {/* STEP 2.7: 지붕 형태 — 지붕/옥상지붕 전용.
+                스틸방수는 파라펫/난간 정보를 공사 범위 → 난간/두겁 row 아래에서 받음 */}
+            {constructionType !== "steelWaterproof" && (
               <Section
                 icon={<Layers size={18} />}
                 title="지붕 형태 (옵션)"
@@ -725,23 +755,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   </>
                 )}
               </Section>
-            ) : (
-              <Section icon={<Layers size={18} />} title="파라펫 정보">
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                  파라펫 높이로 둘레 강판 면적 자동 추정
-                </p>
-                <Label className="text-[10px] text-muted-foreground mb-1 block">파라펫 높이</Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number" inputMode="numeric"
-                    value={parapetHeightInput}
-                    onChange={(e) => setParapetHeightInput(e.target.value)}
-                    placeholder="60"
-                    className="h-11 rounded-xl tabular-nums flex-1"
-                  />
-                  <span className="text-sm text-muted-foreground font-medium w-7">cm</span>
-                </div>
-              </Section>
             )}
 
             {/* 공사 범위 — 건물 정보 다음, 메인 자재 입력 전에 받기 */}
@@ -769,20 +782,47 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           />
                         </div>
                       )}
-                      {/* 두겁 절곡 길이 — 난간/두겁 통합 UI 에서 난간 토글 아래에 표시.
-                          cap 은 SCOPE_FORCES 로 handrail 토글 시 자동 켜지므로 별도 row 없음. */}
+                      {/* 난간 / 두겁 활성 시 — 파라펫 정보 (높이 + 난간 둘레 + 옥탑 구조물 둘레) */}
                       {key === "handrail" && scope.handrail && (
-                        <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            두겁 절곡 길이 ({eff.capBendingPricePerM.toLocaleString("ko-KR")}원/m)
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <Input
-                              type="number" inputMode="decimal"
-                              value={capLength} onChange={(e) => setCapLength(e.target.value)}
-                              placeholder="0" className="h-11 rounded-xl tabular-nums flex-1"
+                        <div className="mt-3 ml-3 space-y-3 pt-3 border-t border-border/40">
+                          <div>
+                            <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                              파라펫 높이
+                            </Label>
+                            <NumberStepper
+                              value={parapetHeightInput}
+                              onChange={setParapetHeightInput}
+                              min={0} max={300} step={10}
+                              unit="cm"
                             />
-                            <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                              난간 둘레
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground mb-2">
+                              외벽 + 계단 등 실제 난간 길이 (줄자로 측정)
+                            </p>
+                            <NumberStepper
+                              value={railPerimeterInput}
+                              onChange={setRailPerimeterInput}
+                              min={0} max={999} step={1}
+                              unit="m"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                              옥탑 구조물 둘레
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground mb-2">
+                              계단실 / 창고 등 외벽 둘레 (없으면 0)
+                            </p>
+                            <NumberStepper
+                              value={rooftopPerimeterInput}
+                              onChange={setRooftopPerimeterInput}
+                              min={0} max={999} step={1}
+                              unit="m"
+                            />
                           </div>
                         </div>
                       )}
@@ -1072,22 +1112,40 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
             {constructionType === "steelWaterproof" && (
               <Section icon={<Waves size={18} />} title="스테인리스 배수로">
-                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                  옥상 바닥의 배수로 — 물받이 대신 사용 (0 = 안함)
-                </p>
-                <Label className="text-[10px] text-muted-foreground mb-1 block">
-                  총 길이 ({eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원/m)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    value={stainlessDrainLength}
-                    onChange={(e) => setStainlessDrainLength(e.target.value)}
-                    placeholder="총 길이"
-                    className="h-11 rounded-xl tabular-nums flex-1"
-                  />
-                  <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                      총 길이
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      옥상 바닥의 배수로 — 물받이 대신 사용 · {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원/m · 0 = 안함
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={stainlessDrainLength}
+                        onChange={(e) => setStainlessDrainLength(e.target.value)}
+                        placeholder="0"
+                        className="h-11 rounded-xl tabular-nums flex-1"
+                      />
+                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-border/40">
+                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                      홈통 개수
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      배수로에서 아래로 내려오는 홈통 · {eff.downspoutUnitPrice.toLocaleString("ko-KR")}원/개
+                    </p>
+                    <NumberStepper
+                      value={downspoutCount}
+                      onChange={setDownspoutCount}
+                      min={0} max={30} step={1}
+                      unit="개"
+                    />
+                  </div>
                 </div>
               </Section>
             )}

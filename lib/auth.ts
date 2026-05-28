@@ -79,6 +79,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       capBendingPricePerM: 5000,
       endCapPrice: 3500,
       stainlessDrainPricePerM: 50000,
+      downspoutUnitPrice: 50000,
       parapetMultiplier: 1.4,
       defaultLossRate: 0.15,
       useLossRateByDefault: false,
