@@ -17,6 +17,8 @@ import {
   type GutterMode,
   type SubstructureType,
   type PricingOverrides,
+  type BuildingShape,
+  type RoofShape,
   CONSTRUCTION_TYPES,
   MATERIAL_TYPES,
   THICKNESSES,
@@ -35,12 +37,14 @@ import {
   serializeGutterSides,
   type GutterSide,
   PRICING_OVERRIDE_GROUPS,
+  BUILDING_SHAPES,
+  ROOF_SHAPES,
 } from "@/lib/types";
-import { applyOverrides, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { applyOverrides, estimatePerimeter, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar, Coins, ChevronDown, ChevronUp } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar, Coins, ChevronDown, ChevronUp, CloudRain, Waves } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -125,6 +129,22 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (isEditing) return (existing?.substructureType as SubstructureType | null) ?? "none";
     return settings.substructureMode === "steel" ? "steel" : "wood";
   });
+
+  // 건물 / 지붕 형태 (자재 자동 추정용)
+  const [buildingShape, setBuildingShape] = useState<BuildingShape | null>(
+    (existing?.buildingShape as BuildingShape | null) ?? null,
+  );
+  const [roofShape, setRoofShape] = useState<RoofShape | null>(
+    (existing?.roofShape as RoofShape | null) ?? null,
+  );
+  const [perimeterInput, setPerimeterInput] = useState(
+    existing?.perimeterM ? String(existing.perimeterM) : "",
+  );
+  const [ridgeCount, setRidgeCount] = useState(String(existing?.ridgeCount ?? 1));
+  const [parapetHeightInput, setParapetHeightInput] = useState(
+    existing?.parapetHeightCm ? String(existing.parapetHeightCm) : "60",
+  );
+  const [hasInsulation, setHasInsulation] = useState(existing?.hasInsulation ?? false);
 
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
@@ -281,7 +301,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
     if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
-    if (scope.cap && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
+    if ((scope.handrail || scope.cap) && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
     const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
@@ -313,7 +333,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       stainlessDrainLengthM: constructionType === "steelWaterproof"
         ? parseFloat(stainlessDrainLength) || 0
         : 0,
-      capLengthM: scope.cap ? parseFloat(capLength) || 0 : 0,
+      capLengthM: (scope.cap || scope.handrail) ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
       endCapCount: scope.endCap ? Math.max(1, parseInt(endCaps) || 1) : 0,
       substructureType: substructureType === "none" ? null : substructureType,
@@ -330,6 +350,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       pricingOverrides,
       applyLossRate,
       lossRate,
+      // 건물/지붕 형태 + 단열재 (자재 자동 추정)
+      buildingShape,
+      roofShape: constructionType === "steelWaterproof" ? null : roofShape,
+      perimeterM: perimeterInput ? parseFloat(perimeterInput) || null : null,
+      ridgeCount: Math.max(1, parseInt(ridgeCount) || 1),
+      parapetHeightCm: constructionType === "steelWaterproof"
+        ? (parapetHeightInput ? parseInt(parapetHeightInput) || 60 : 60)
+        : null,
+      hasInsulation,
     };
 
     setSaving(true);
@@ -434,6 +463,133 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
         {showRest && (
           <>
+            {/* STEP 2.5: 건물 평면 형태 — 자재 자동 추정용 */}
+            <Section icon={<Building2 size={18} />} title="건물 평면 형태">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                건물 모양으로 둘레·꺾임 자동 추정 (자재 수량 계산에 사용)
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {BUILDING_SHAPES.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    onClick={() => setBuildingShape(s.value)}
+                    className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                      buildingShape === s.value
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border/60 bg-card text-foreground"
+                    }`}
+                  >
+                    <span className="text-2xl leading-none">{s.icon}</span>
+                    <span className="text-sm font-semibold">{s.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{s.desc}</span>
+                  </button>
+                ))}
+              </div>
+              {buildingShape && (
+                <div className="mt-3 pt-3 border-t border-border/40">
+                  <Label className="text-[10px] text-muted-foreground mb-1 block">
+                    건물 둘레 (선택 — 비우면 자동 추정
+                    {sqmInput && parseFloat(sqmInput) > 0
+                      ? `: ${estimatePerimeter(parseFloat(sqmInput), buildingShape)}m`
+                      : ""}
+                    )
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number" inputMode="decimal"
+                      value={perimeterInput}
+                      onChange={(e) => setPerimeterInput(e.target.value)}
+                      placeholder={
+                        sqmInput && parseFloat(sqmInput) > 0
+                          ? String(estimatePerimeter(parseFloat(sqmInput), buildingShape))
+                          : "0"
+                      }
+                      className="h-11 rounded-xl tabular-nums flex-1"
+                    />
+                    <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                  </div>
+                </div>
+              )}
+            </Section>
+
+            {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
+            {constructionType !== "steelWaterproof" ? (
+              <Section icon={<Layers size={18} />} title="지붕 형태">
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                  지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {ROOF_SHAPES.map((s) => (
+                    <button
+                      key={s.value}
+                      type="button"
+                      onClick={() => setRoofShape(s.value)}
+                      className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                        roofShape === s.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <span className="text-sm font-bold">{s.label}</span>
+                      <span className="text-[10px] text-muted-foreground">{s.desc}</span>
+                    </button>
+                  ))}
+                </div>
+                {roofShape && (
+                  <div className="mt-3 pt-3 border-t border-border/40">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">용마루 수</Label>
+                    <NumberStepper
+                      value={ridgeCount}
+                      onChange={setRidgeCount}
+                      min={1} max={6} step={1}
+                      unit="개"
+                    />
+                  </div>
+                )}
+              </Section>
+            ) : (
+              <Section icon={<Layers size={18} />} title="파라펫 정보">
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                  파라펫 높이로 둘레 강판 면적 자동 추정
+                </p>
+                <Label className="text-[10px] text-muted-foreground mb-1 block">파라펫 높이</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={parapetHeightInput}
+                    onChange={(e) => setParapetHeightInput(e.target.value)}
+                    placeholder="60"
+                    className="h-11 rounded-xl tabular-nums flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground font-medium w-7">cm</span>
+                </div>
+              </Section>
+            )}
+
+            {/* 단열재 옵션 */}
+            <Section icon={<Package size={18} />} title="단열재 (옵션)">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setHasInsulation((v) => !v)}
+                  className={`w-12 h-7 rounded-full flex items-center px-0.5 pressable ${
+                    hasInsulation ? "bg-primary justify-end" : "bg-muted justify-start"
+                  }`}
+                >
+                  <span className="w-6 h-6 rounded-full bg-white shadow-sm" />
+                </button>
+                <span className="text-sm font-medium text-foreground flex-1">
+                  {hasInsulation ? "단열재 추가됨" : "단열재 없음"}
+                </span>
+                {hasInsulation && (
+                  <span className="text-[11px] text-muted-foreground tabular-nums">
+                    ≈ {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원/㎡
+                  </span>
+                )}
+              </div>
+            </Section>
+
             {/* STEP 3: Steel sheet type */}
             <Section icon={<Hammer size={18} />} title="강판 종류" step={3}>
               <div className="grid grid-cols-2 gap-2">
@@ -633,11 +789,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           />
                         </div>
                       )}
-                      {/* 두겁 절곡 길이 */}
-                      {key === "cap" && scope.cap && (
+                      {/* 두겁 절곡 길이 — 난간/두겁 통합 UI 에서 난간 토글 아래에 표시.
+                          cap 은 SCOPE_FORCES 로 handrail 토글 시 자동 켜지므로 별도 row 없음. */}
+                      {key === "handrail" && scope.handrail && (
                         <div className="mt-2 ml-3">
                           <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            절곡 길이 ({eff.capBendingPricePerM.toLocaleString("ko-KR")}원/m)
+                            두겁 절곡 길이 ({eff.capBendingPricePerM.toLocaleString("ko-KR")}원/m)
                           </Label>
                           <div className="flex items-center gap-2">
                             <Input
@@ -682,54 +839,40 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 })}
               </div>
 
-              {/* 스틸방수는 물받이 대신 스테인리스 배수로를 사용. 그 외 공사 유형에서는
-                  물받이 다중선택(전/후/좌/우) 을 표시한다. */}
-              {constructionType === "steelWaterproof" ? (
-                <div className="mt-3 pt-3 border-t border-border/40">
-                  <Label className="text-xs text-muted-foreground mb-2 block font-medium">
-                    스테인리스 배수로 (총 길이)
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      inputMode="decimal"
-                      value={stainlessDrainLength}
-                      onChange={(e) => setStainlessDrainLength(e.target.value)}
-                      placeholder="총 길이"
-                      className="h-11 rounded-xl tabular-nums flex-1"
-                    />
-                    <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
-                    m당 {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원 (설정에서 변경 가능) · 0 = 안함
-                  </p>
+            </Section>
+
+            {/* 물받이 (지붕/옥상지붕) — 별도 Section 으로 분리해서 눈에 잘 띄게.
+                예전엔 공사 범위 섹션 안에 작은 라벨로 들어가 있어서 자주 건너뜀. */}
+            {constructionType !== "steelWaterproof" && (
+              <Section icon={<CloudRain size={18} />} title="물받이">
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                  설치 면을 선택하세요 (전부 = 4면, 0개 = 안함)
+                </p>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {GUTTER_SIDES.map((side) => {
+                    const active = gutterSides.has(side);
+                    return (
+                      <button
+                        key={side}
+                        type="button"
+                        onClick={() => toggleGutterSide(side)}
+                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-foreground border-border/60"
+                        }`}
+                      >
+                        {GUTTER_SIDE_LABELS[side]}
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="mt-3 pt-3 border-t border-border/40">
-                  <Label className="text-xs text-muted-foreground mb-2 block font-medium">
-                    물받이 (다 선택 = 전체, 0개 = 안함)
-                  </Label>
-                  <div className="grid grid-cols-4 gap-1.5">
-                    {GUTTER_SIDES.map((side) => {
-                      const active = gutterSides.has(side);
-                      return (
-                        <button
-                          key={side}
-                          type="button"
-                          onClick={() => toggleGutterSide(side)}
-                          className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                            active
-                              ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-card text-foreground border-border/60"
-                          }`}
-                        >
-                          {GUTTER_SIDE_LABELS[side]}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {gutterSides.size > 0 ? (
-                    <div className="mt-2 flex items-center gap-2">
+                {gutterSides.size > 0 && (
+                  <div className="mt-2.5">
+                    <Label className="text-[10px] text-muted-foreground mb-1 block">
+                      총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
+                    </Label>
+                    <div className="flex items-center gap-2">
                       <Input
                         type="number"
                         inputMode="decimal"
@@ -740,10 +883,33 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       />
                       <span className="text-sm text-muted-foreground font-medium w-6">m</span>
                     </div>
-                  ) : null}
+                  </div>
+                )}
+              </Section>
+            )}
+
+            {/* 스테인리스 배수로 (스틸방수 전용 — 물받이 대체) */}
+            {constructionType === "steelWaterproof" && (
+              <Section icon={<Waves size={18} />} title="스테인리스 배수로">
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                  옥상 바닥의 배수로 — 물받이 대신 사용 (0 = 안함)
+                </p>
+                <Label className="text-[10px] text-muted-foreground mb-1 block">
+                  총 길이 ({eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원/m)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    value={stainlessDrainLength}
+                    onChange={(e) => setStainlessDrainLength(e.target.value)}
+                    placeholder="총 길이"
+                    className="h-11 rounded-xl tabular-nums flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground font-medium w-6">m</span>
                 </div>
-              )}
-            </Section>
+              </Section>
+            )}
 
             {/* Catalog: 마감재 / 물받이 부속 / 부자재 / 절곡 */}
             <Section icon={<Package size={18} />} title="추가 자재 / 부속">

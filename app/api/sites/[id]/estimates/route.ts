@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals } from "@/lib/calculations";
-import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import type { BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -60,6 +60,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     catalogModes = {},
     applyLossRate = false,
     lossRate = null,
+    buildingShape = null,
+    roofShape = null,
+    perimeterM = null,
+    ridgeCount = 1,
+    parapetHeightCm = null,
+    hasInsulation = false,
     marginRate: inputMarginRate,
     vatIncluded,
     paymentTerms,
@@ -98,6 +104,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     catalogModes: catalogModes as CategoryModesMap,
     applyLossRate,
     lossRate: effectiveLossRate,
+    buildingShape: buildingShape as BuildingShape | null,
+    roofShape: roofShape as RoofShape | null,
+    perimeterM,
+    ridgeCount,
+    parapetHeightCm,
+    hasInsulation,
   });
 
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
@@ -131,6 +143,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       scopeFlags: scope as object,
       applyLossRate,
       lossRate: applyLossRate ? effectiveLossRate : null,
+      buildingShape: buildingShape || null,
+      roofShape: roofShape || null,
+      perimeterM: perimeterM || null,
+      ridgeCount: ridgeCount || 1,
+      parapetHeightCm: parapetHeightCm || null,
+      hasInsulation: !!hasInsulation,
       catalogSelections: (catalogSelections as CatalogSelection[])
         .filter((s) => s.quantity > 0) as unknown as object,
       catalogModes: catalogModes as object,

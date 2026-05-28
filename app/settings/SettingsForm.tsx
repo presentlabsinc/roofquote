@@ -50,6 +50,20 @@ const DEFAULTS = {
   lodgingCostPerPersonNight: 50000,
   defaultMarginRate: 0.25,
   vatIncludedByDefault: true,
+  // ── 절곡 단가 및 기본 넓이 ──
+  bendingPricePerMmPer3m: 36,
+  bendingWidthRidge: 350,
+  bendingWidthEave: 250,
+  bendingWidthCap: 200,
+  bendingWidthMishi: 150,
+  bendingWidthFlashing: 200,
+  bendingWidthValley: 300,
+  bendingWidthSnowGuard: 180,
+  // ── 소모품 ──
+  screwLargePrice: 300,
+  screwSmallPrice: 100,
+  siliconePrice: 5000,
+  insulationPricePerSqm: 15000,
 };
 
 type FieldDef = { key: keyof typeof DEFAULTS; label: string; unit?: string; step?: number; pct?: boolean };
@@ -115,6 +129,30 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     ],
   },
   {
+    section: "절곡 단가",
+    emoji: "📏",
+    items: [
+      { key: "bendingPricePerMmPer3m", label: "절곡 단가 (1mm × 3m 기준)", unit: "원" },
+      { key: "bendingWidthRidge", label: "용마루 기본 넓이", unit: "mm" },
+      { key: "bendingWidthEave", label: "처마 기본 넓이", unit: "mm" },
+      { key: "bendingWidthCap", label: "두겁 기본 넓이", unit: "mm" },
+      { key: "bendingWidthMishi", label: "미시 기본 넓이", unit: "mm" },
+      { key: "bendingWidthFlashing", label: "프래싱 기본 넓이", unit: "mm" },
+      { key: "bendingWidthValley", label: "회침 기본 넓이", unit: "mm" },
+      { key: "bendingWidthSnowGuard", label: "눈방지턱 기본 넓이", unit: "mm" },
+    ],
+  },
+  {
+    section: "소모품 단가",
+    emoji: "🔩",
+    items: [
+      { key: "screwLargePrice", label: "스크류 (대) 개당", unit: "원" },
+      { key: "screwSmallPrice", label: "스크류 (소) 개당", unit: "원" },
+      { key: "siliconePrice", label: "실리콘 개당", unit: "원" },
+      { key: "insulationPricePerSqm", label: "단열재 ㎡당", unit: "원" },
+    ],
+  },
+  {
     section: "운송·체류비",
     emoji: "🚚",
     items: [
@@ -134,7 +172,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     section: "마진 기본값",
     emoji: "💰",
     items: [
-      { key: "defaultMarginRate", label: "기본 마진율", unit: "%", step: 0.01, pct: true },
+      { key: "defaultMarginRate", label: "기본 마진율 (매출 대비)", unit: "%", step: 0.01, pct: true },
     ],
   },
   {
@@ -197,6 +235,18 @@ export function SettingsForm({ defaultValues }: Props) {
       marginMaterialRatio: defaultValues.marginMaterialRatio ?? 0.5,
       marginLaborRatio: defaultValues.marginLaborRatio ?? 0.25,
       marginProfitRatio: defaultValues.marginProfitRatio ?? 0.25,
+      bendingPricePerMmPer3m: defaultValues.bendingPricePerMmPer3m ?? 36,
+      bendingWidthRidge: defaultValues.bendingWidthRidge ?? 350,
+      bendingWidthEave: defaultValues.bendingWidthEave ?? 250,
+      bendingWidthCap: defaultValues.bendingWidthCap ?? 200,
+      bendingWidthMishi: defaultValues.bendingWidthMishi ?? 150,
+      bendingWidthFlashing: defaultValues.bendingWidthFlashing ?? 200,
+      bendingWidthValley: defaultValues.bendingWidthValley ?? 300,
+      bendingWidthSnowGuard: defaultValues.bendingWidthSnowGuard ?? 180,
+      screwLargePrice: defaultValues.screwLargePrice ?? 300,
+      screwSmallPrice: defaultValues.screwSmallPrice ?? 100,
+      siliconePrice: defaultValues.siliconePrice ?? 5000,
+      insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
     };
   });
 

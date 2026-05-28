@@ -17,7 +17,8 @@ export const CATALOG_CATEGORIES: { value: CatalogCategory; label: string; icon: 
   { value: "finishing", label: "마감재",      icon: "📐", lineItemCategory: "material" },
   { value: "gutter",    label: "물받이 부속", icon: "🌧️", lineItemCategory: "material" },
   { value: "accessory", label: "부자재",      icon: "🔩", lineItemCategory: "material" },
-  { value: "bending",   label: "절곡",        icon: "📏", lineItemCategory: "other" },
+  // 절곡은 자재 카테고리 — 견적서 PDF 의 "자재공사" 그룹에 묶이도록 material 로 매핑.
+  { value: "bending",   label: "절곡",        icon: "📏", lineItemCategory: "material" },
 ];
 
 export interface CatalogItem {

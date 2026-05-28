@@ -184,7 +184,9 @@ function scopeOneLine(estimate: Estimate, scope: ScopeFlags | null | undefined):
   const keys: (keyof ScopeFlags)[] = (() => {
     if (ct === "roof") return ["ridge", "eave", "endCap", "waste"];
     if (ct === "rooftopRoof") return ["ridge", "eave", "endCap", "waste"];
-    return ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"];
+    // 신규 스킴: 난간/두겁 합쳐서 handrail 한 줄, 창고/계단실/옥탑방은 rooftopStructure 한 줄.
+    // 구 데이터(warehouse/stairwell/rooftopRoom/cap) 호환을 위해 keys 에 같이 포함 — 어차피 false 면 SCOPE_LABELS 로 안 잡힘.
+    return ["handrail", "drainHole", "rooftopStructure", "warehouse", "stairwell", "rooftopRoom", "waste"];
   })();
   // Combine ridge+eave nicely if both
   if (s.ridge && s.eave) parts.push("용마루 및 처마 마감");

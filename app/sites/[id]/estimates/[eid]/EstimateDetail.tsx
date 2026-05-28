@@ -212,7 +212,7 @@ export function EstimateDetail({
             <span className="text-base">⚠️</span>
             <div className="text-xs text-white leading-tight">
               <div className="font-bold">손해 견적입니다</div>
-              <div className="text-white/80 tabular-nums">원가 대비 {fmt(est.marginAmount)}원 ({marginRatePct}%)</div>
+              <div className="text-white/80 tabular-nums">매출 대비 {fmt(est.marginAmount)}원 ({marginRatePct}%)</div>
             </div>
           </div>
         )}

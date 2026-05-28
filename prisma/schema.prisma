@@ -67,6 +67,29 @@ model PricingSettings {
   // 지붕공사 / 옥상지붕 — 엔드캡 1개당
   endCapPrice                  Int    @default(3500)
 
+  // ── 절곡 단가 및 기본 넓이 (자재 자동 추정용) ──
+  // 절곡 비용 공식: 넓이mm × bendingPricePerMmPer3m × (길이m / 3)
+  // 견적의 용마루/처마/두겁/미시/프래싱 등 절곡 작업 단가 산출에 사용
+  bendingPricePerMmPer3m  Int  @default(36)   // mm·3m 기준 단가
+  bendingWidthRidge       Int  @default(350)  // 용마루 기본 넓이 mm
+  bendingWidthEave        Int  @default(250)  // 처마 기본 넓이 mm
+  bendingWidthCap         Int  @default(200)  // 두겁 기본 넓이 mm
+  bendingWidthMishi       Int  @default(150)  // 미시 기본 넓이 mm
+  bendingWidthFlashing    Int  @default(200)  // 프래싱 기본 넓이 mm
+  bendingWidthValley      Int  @default(300)  // 회침 기본 넓이 mm
+  bendingWidthSnowGuard   Int  @default(180)  // 눈방지턱 기본 넓이 mm
+
+  // ── 소모품 (자재 자동 추정용) ──
+  screwLargePrice         Int  @default(300)    // 스크류 대 1개당
+  screwSmallPrice         Int  @default(100)    // 스크류 소 1개당
+  siliconePrice           Int  @default(5000)   // 실리콘 1개당
+  insulationPricePerSqm   Int  @default(15000)  // 단열재 ㎡당
+
+  // ── 베이스라인 데이터 (Phase 2 — 실제 시공 데이터 기반 추정용) ──
+  // 비어있으면 기하학적 추정 fallback. 채워져 있으면 데이터 우선.
+  // Shape: { roof: { area30: { rectangle: { gable: { bendingTotalM, ... } } } } }
+  baselineData            Json?
+
   // Catalog category defaults (mode + simple-mode preset per category).
   // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
   // When null/empty, defaults from lib/catalog.ts DEFAULT_CATEGORY_MODES apply.
@@ -180,6 +203,16 @@ model Estimate {
 
   // 엔드캡 개수 (지붕공사 / 옥상지붕)
   endCapCount       Int      @default(0)
+
+  // ── 건물/지붕 형태 (자재 자동 추정용) ──
+  buildingShape     String?  // 'rectangle' | 'lshape' | 'ushape'
+  roofShape         String?  // 'gable' | 'hip' | 'complex' (지붕/옥상지붕만)
+  perimeterM        Float?   // 직접 입력값. 없으면 형태+면적으로 추정
+  ridgeCount        Int      @default(1)
+  parapetHeightCm   Int?     // 스틸방수만 — 파라펫 강판 면적 계산에 사용
+
+  // ── 옵션 ──
+  hasInsulation     Boolean  @default(false)  // 단열재 (열반사 또는 일반)
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]

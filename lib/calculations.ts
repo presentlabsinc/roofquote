@@ -1,5 +1,5 @@
-import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "./types";
-import { MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
+import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
+import { BASELINE_AREAS, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
 import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -61,6 +61,146 @@ export function applyOverrides(settings: PricingSettings, overrides: PricingOver
   return merged;
 }
 
+// ─── 자재 자동 추정 ──────────────────────────────────────────────────
+// 두 단계:
+//  Layer 1: PricingSettings.baselineData (실제 시공 데이터) — 있으면 우선 사용.
+//  Layer 2: 기하학적 추정 (건물형태 + 지붕형태 계수) — 항상 fallback 가능.
+// 모든 추정값은 라인아이템으로 표시되며 사용자가 직접 수정 가능.
+
+const BUILDING_SHAPE_FACTORS: Record<BuildingShape, { perimeterFactor: number; cornerCount: number; flashingPoints: number }> = {
+  rectangle: { perimeterFactor: 4.2, cornerCount: 4, flashingPoints: 0 },
+  lshape:    { perimeterFactor: 5.0, cornerCount: 6, flashingPoints: 2 },
+  ushape:    { perimeterFactor: 5.5, cornerCount: 8, flashingPoints: 4 },
+};
+
+const ROOF_SHAPE_FACTORS: Record<RoofShape, { ridgeRatio: number; eaveRatio: number; lossRate: number }> = {
+  gable:   { ridgeRatio: 1.0, eaveRatio: 0.5, lossRate: 0.07 },
+  hip:     { ridgeRatio: 0.6, eaveRatio: 1.0, lossRate: 0.12 },
+  complex: { ridgeRatio: 0.8, eaveRatio: 0.8, lossRate: 0.18 },
+};
+
+/** 건물 둘레 추정 — √면적 × 형태계수. 사용자 직접 입력값(perimeterOverride)이 우선. */
+export function estimatePerimeter(areaM2: number, shape: BuildingShape): number {
+  if (!areaM2 || areaM2 <= 0) return 0;
+  return Math.round(Math.sqrt(areaM2) * BUILDING_SHAPE_FACTORS[shape].perimeterFactor * 10) / 10;
+}
+
+/** 장변 길이 추정 — 둘레 = 2(L+S), 장단비 1.5 가정. ㄱ/ㄷ자도 주동 길이로 근사. */
+function estimateLongSide(perimeter: number): number {
+  return Math.round((perimeter / 5) * 1.5 * 10) / 10;
+}
+
+export interface GeometricEstimate {
+  perimeterM: number;
+  longSideM: number;
+  ridgeLengthM: number;
+  eaveLengthM: number;
+  flashingLengthM: number;
+  parapetAreaM2: number;
+  lossRate: number;
+}
+
+export function estimateGeometrically(args: {
+  constructionType: ConstructionType;
+  areaM2: number;
+  building: BuildingShape;
+  roof: RoofShape | null;
+  ridgeCount: number;
+  parapetHeightCm: number | null;
+  perimeterOverride: number | null;
+}): GeometricEstimate {
+  const { constructionType, areaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride } = args;
+  const perimeter = (perimeterOverride && perimeterOverride > 0)
+    ? perimeterOverride
+    : estimatePerimeter(areaM2, building);
+  const longSide = estimateLongSide(perimeter);
+  const buildingF = BUILDING_SHAPE_FACTORS[building];
+
+  if (constructionType === "steelWaterproof") {
+    const ph = parapetHeightCm && parapetHeightCm > 0 ? parapetHeightCm : 60;
+    const parapetAreaM2 = Math.round(perimeter * (ph / 100) * 1.10 * 10) / 10;
+    return {
+      perimeterM: perimeter,
+      longSideM: longSide,
+      ridgeLengthM: 0,
+      eaveLengthM: 0,
+      flashingLengthM: buildingF.flashingPoints * (ph / 100),
+      parapetAreaM2,
+      lossRate: 0.05,
+    };
+  }
+
+  const roofF = roof ? ROOF_SHAPE_FACTORS[roof] : ROOF_SHAPE_FACTORS.gable;
+  const ridges = Math.max(1, ridgeCount || 1);
+  return {
+    perimeterM: perimeter,
+    longSideM: longSide,
+    ridgeLengthM: Math.round(longSide * roofF.ridgeRatio * ridges * 10) / 10,
+    eaveLengthM: Math.round(perimeter * roofF.eaveRatio * 10) / 10,
+    flashingLengthM: buildingF.flashingPoints * 3,  // 평균 경사높이 3m
+    parapetAreaM2: 0,
+    lossRate: roofF.lossRate,
+  };
+}
+
+/** 베이스라인 데이터에서 가장 가까운 평수 + 형태 엔트리를 찾아 면적 비율로 스케일. */
+export function findAndScaleBaseline(
+  data: BaselineData | null | undefined,
+  args: {
+    constructionType: ConstructionType;
+    areaM2: number;
+    building: BuildingShape;
+    roof: RoofShape | null;
+  },
+): BaselineEntry | null {
+  if (!data) return null;
+  const { constructionType, areaM2, building, roof } = args;
+  const typeBucket = data[constructionType];
+  if (!typeBucket) return null;
+
+  const pyeong = areaM2 / 3.3058;
+  const nearest = BASELINE_AREAS.reduce((prev, curr) =>
+    Math.abs(curr - pyeong) < Math.abs(prev - pyeong) ? curr : prev
+  );
+  const areaKey = `area${nearest}`;
+  const areaBucket = (typeBucket as Record<string, unknown>)[areaKey] as
+    | Partial<Record<BuildingShape, unknown>> | undefined;
+  if (!areaBucket) return null;
+  const buildingBucket = areaBucket[building];
+  if (!buildingBucket) return null;
+
+  let entry: BaselineEntry | null;
+  if (constructionType === "steelWaterproof") {
+    entry = buildingBucket as BaselineEntry;
+  } else {
+    if (!roof) return null;
+    entry = (buildingBucket as Partial<Record<RoofShape, BaselineEntry>>)[roof] ?? null;
+  }
+  if (!entry) return null;
+
+  // Scale to actual area.
+  const baselineAreaM2 = nearest * 3.3058;
+  const scale = baselineAreaM2 > 0 ? areaM2 / baselineAreaM2 : 1;
+  const out: BaselineEntry = {};
+  for (const [k, v] of Object.entries(entry)) {
+    if (typeof v !== "number") continue;
+    // lossRate는 스케일하지 않음 (비율이라서)
+    out[k as keyof BaselineEntry] = k === "materialLossRate"
+      ? v
+      : Math.round(v * scale * 10) / 10;
+  }
+  return out;
+}
+
+/**
+ * 절곡 비용 — 넓이mm × 단가(원/mm·3m) × (길이m / 3).
+ * 예: 350mm 용마루 10m, 단가 36원 → 350 × 36 × (10/3) = 42,000원
+ */
+export function calcBendingCost(widthMm: number, lengthM: number, pricePerMmPer3m: number): number {
+  if (!widthMm || !lengthM || !pricePerMmPer3m) return 0;
+  return Math.round(widthMm * pricePerMmPer3m * (lengthM / 3));
+}
+
 export interface BuildLineItemsInput {
   settings: PricingSettings;
   constructionType: ConstructionType;
@@ -99,6 +239,20 @@ export interface BuildLineItemsInput {
   applyLossRate?: boolean;
   /** Loss rate to apply (e.g. 0.10 = 10%). Used only when applyLossRate is true. */
   lossRate?: number;
+
+  // ── 자재 자동 추정 입력 (Phase A 신규) ──
+  /** 건물 평면 형태 — 없으면 자동 추정 라인은 모두 생략 (기존 동작 유지) */
+  buildingShape?: BuildingShape | null;
+  /** 지붕 형태 (지붕공사/옥상지붕만) */
+  roofShape?: RoofShape | null;
+  /** 건물 둘레 직접 입력 — 없으면 √면적 × 형태계수로 추정 */
+  perimeterM?: number | null;
+  /** 용마루 수 — 박공이라도 2동 건물이면 2 */
+  ridgeCount?: number;
+  /** 스틸방수 — 파라펫 높이 (기본 60cm) */
+  parapetHeightCm?: number | null;
+  /** 단열재 추가 여부 */
+  hasInsulation?: boolean;
 }
 
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
@@ -113,6 +267,9 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     extraCosts = [], pricingOverrides = {},
     catalogSelections = [], catalogModes,
     applyLossRate = false, lossRate = 0,
+    buildingShape = null, roofShape = null,
+    perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
+    hasInsulation = false,
   } = input;
 
   // Apply per-estimate pricing overrides on top of the live PricingSettings.
@@ -155,23 +312,83 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     .filter((i) => i.category === "material")
     .reduce((s, i) => s + i.total, 0);
 
+  // ── 자재 자동 추정: 베이스라인 우선, 없으면 기하학적 추정 ──
+  // buildingShape 가 있으면 새 추정 로직, 없으면 기존 √면적 근사로 fallback.
+  const baselineRaw = (settings as unknown as { baselineData?: BaselineData | null }).baselineData ?? null;
+  const baseline = buildingShape ? findAndScaleBaseline(baselineRaw, {
+    constructionType, areaM2, building: buildingShape, roof: roofShape,
+  }) : null;
+  const geom = buildingShape ? estimateGeometrically({
+    constructionType, areaM2, building: buildingShape, roof: roofShape,
+    ridgeCount, parapetHeightCm, perimeterOverride: perimeterM,
+  }) : null;
+
+  /** 추정값 헬퍼 — 베이스라인 우선, geom fallback, 없으면 fallback 콜백. */
+  function est(field: keyof BaselineEntry, geomField: keyof GeometricEstimate | null, fallback: () => number): number {
+    if (baseline && baseline[field] != null) return baseline[field] as number;
+    if (geom && geomField) {
+      const v = geom[geomField];
+      if (v != null) return v as number;
+    }
+    return fallback();
+  }
+
   // Ridge / Eave — only for roof / rooftopRoof
   if (constructionType !== "steelWaterproof") {
     if (scope.ridge) {
-      const ridgeLength = Math.round(Math.sqrt(areaM2) * 0.8);
+      // 자재 (마감재) 라인
+      const ridgeLength = est("ridgeBendingM", "ridgeLengthM", () => Math.round(Math.sqrt(areaM2) * 0.8));
       items.push({
         category: "material", name: "용마루 마감", quantity: ridgeLength, unit: "m",
         unitPrice: settings.ridgePricePerM, total: Math.round(ridgeLength * settings.ridgePricePerM),
         sortOrder: order++,
       });
+      // 절곡 라인 (buildingShape 입력 시에만 자동 생성)
+      if (buildingShape && ridgeLength > 0) {
+        const bend = calcBendingCost(settings.bendingWidthRidge, ridgeLength, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `용마루 절곡 (${settings.bendingWidthRidge}mm)`,
+            quantity: ridgeLength, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, ridgeLength)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
     }
     if (scope.eave) {
-      const eaveLength = Math.round(Math.sqrt(areaM2) * 2);
+      const eaveLength = est("eaveBendingM", "eaveLengthM", () => Math.round(Math.sqrt(areaM2) * 2));
       items.push({
         category: "material", name: "처마 마감", quantity: eaveLength, unit: "m",
         unitPrice: settings.eavePricePerM, total: Math.round(eaveLength * settings.eavePricePerM),
         sortOrder: order++,
       });
+      if (buildingShape && eaveLength > 0) {
+        const bend = calcBendingCost(settings.bendingWidthEave, eaveLength, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `처마 절곡 (${settings.bendingWidthEave}mm)`,
+            quantity: eaveLength, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, eaveLength)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
+    }
+    // 프래싱 (꺾인 건물에만) — 기존 견적에는 없던 자동 생성 라인
+    if (buildingShape && geom && geom.flashingLengthM > 0) {
+      const flashLen = est("flashingBendingM", "flashingLengthM", () => 0);
+      if (flashLen > 0) {
+        const bend = calcBendingCost(settings.bendingWidthFlashing, flashLen, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `프래싱 절곡 (${settings.bendingWidthFlashing}mm)`,
+            quantity: flashLen, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, flashLen)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
     }
   }
 
@@ -233,14 +450,64 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
 
   // Steel-waterproof-specific items.
   if (constructionType === "steelWaterproof") {
-    // 두겁 절곡 — 난간 시공 시 필수 (SCOPE_FORCES enforces this in the form)
-    if (scope.cap && capLengthM > 0) {
+    // 두겁 절곡 — 난간 시공 시 필수 (SCOPE_FORCES enforces this in the form).
+    // 사용자가 capLengthM 입력하면 그 값 우선, 안 하면 buildingShape 있을 때 둘레로 자동 추정.
+    const autoCapM = (() => {
+      if (capLengthM > 0) return capLengthM;
+      if (!buildingShape || !geom) return 0;
+      const fromBaseline = baseline?.capBendingM;
+      return fromBaseline ?? Math.round(geom.perimeterM * 10) / 10;
+    })();
+    if (scope.cap && autoCapM > 0) {
+      // 단가 m당 — 기존 capBendingPricePerM (legacy) 와 새 절곡 공식 중 큰 값 사용? 단순히 새 공식만.
+      const bend = calcBendingCost(settings.bendingWidthCap, autoCapM, settings.bendingPricePerMmPer3m);
       items.push({
-        category: "material", name: "두겁 (절곡)", quantity: capLengthM, unit: "m",
-        unitPrice: settings.capBendingPricePerM,
-        total: Math.round(capLengthM * settings.capBendingPricePerM),
+        category: "material", name: `두겁 절곡 (${settings.bendingWidthCap}mm)`,
+        quantity: autoCapM, unit: "m",
+        unitPrice: Math.round(bend / Math.max(1, autoCapM)),
+        total: bend,
         sortOrder: order++,
       });
+    }
+    // 미시 절곡 — 둘레 기반 자동 추정 (buildingShape 있을 때만)
+    if (buildingShape && geom) {
+      const mishiLen = baseline?.mishiBendingM ?? geom.perimeterM;
+      if (mishiLen > 0) {
+        const bend = calcBendingCost(settings.bendingWidthMishi, mishiLen, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `미시 절곡 (${settings.bendingWidthMishi}mm)`,
+            quantity: mishiLen, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, mishiLen)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
+      // 프래싱 (꺾인 건물에만)
+      const flashLen = baseline?.flashingBendingM ?? geom.flashingLengthM;
+      if (flashLen > 0) {
+        const bend = calcBendingCost(settings.bendingWidthFlashing, flashLen, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `프래싱 절곡 (${settings.bendingWidthFlashing}mm)`,
+            quantity: flashLen, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, flashLen)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
+      // 파라펫 강판 — 둘레 × 파라펫높이 × 1.10 × materialPricePerSqm
+      const parapetArea = baseline?.parapetAreaM2 ?? geom.parapetAreaM2;
+      if (parapetArea > 0) {
+        const mult = thickness ? THICKNESS_MULT[thickness] : 1;
+        const unitPrice = Math.round(settings.materialPricePerSqm * mult);
+        items.push({
+          category: "material", name: "파라펫 강판",
+          quantity: parapetArea, unit: "㎡",
+          unitPrice, total: Math.round(parapetArea * unitPrice),
+          sortOrder: order++,
+        });
+      }
     }
     // 새 배수구 타공
     if (scope.drainHole && drainHoleCount > 0) {
@@ -355,6 +622,61 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
+  // ── 소모품 자동 생성 (스크류 / 실리콘 / 단열재) ──
+  // buildingShape 있을 때만 자동 생성. 사용자는 수정 가능.
+  if (buildingShape) {
+    // 강판 면적 — 메인 자재 라인 합산 (시공면적 × 로스율 반영 결과). 단순 areaM2 로 근사.
+    const sheetArea = areaM2 * (applyLossRate && lossRate > 0 ? 1 + lossRate : 1);
+
+    // 스크류 대 — 강판 1㎡당 약 2개
+    const screwLargeQty = baseline?.screwLarge ?? Math.round(sheetArea * 2);
+    if (screwLargeQty > 0 && settings.screwLargePrice > 0) {
+      items.push({
+        category: "material", name: "스크류 (대)", quantity: screwLargeQty, unit: "개",
+        unitPrice: settings.screwLargePrice,
+        total: screwLargeQty * settings.screwLargePrice,
+        sortOrder: order++,
+      });
+    }
+
+    // 스크류 소 — 절곡 라인 길이 합 × 3.3개/m
+    const bendingLengthSum = items
+      .filter((i) => i.unit === "m" && /절곡/.test(i.name))
+      .reduce((s, i) => s + i.quantity, 0);
+    const screwSmallQty = baseline?.screwSmall ?? Math.round(bendingLengthSum * 3.3);
+    if (screwSmallQty > 0 && settings.screwSmallPrice > 0) {
+      items.push({
+        category: "material", name: "스크류 (소)", quantity: screwSmallQty, unit: "개",
+        unitPrice: settings.screwSmallPrice,
+        total: screwSmallQty * settings.screwSmallPrice,
+        sortOrder: order++,
+      });
+    }
+
+    // 실리콘 — 접합부 총 길이 / 6m 당 1개 (올림)
+    const jointLength = bendingLengthSum + (gutterLengthM || 0) + (stainlessDrainLengthM || 0);
+    const siliconeQty = baseline?.siliconeUnits ?? Math.ceil(jointLength / 6);
+    if (siliconeQty > 0 && settings.siliconePrice > 0) {
+      items.push({
+        category: "material", name: "실리콘", quantity: siliconeQty, unit: "개",
+        unitPrice: settings.siliconePrice,
+        total: siliconeQty * settings.siliconePrice,
+        sortOrder: order++,
+      });
+    }
+  }
+
+  // 단열재 — 옵션 (buildingShape 무관, 별도 토글)
+  if (hasInsulation && settings.insulationPricePerSqm > 0) {
+    const insulationArea = Math.round(areaM2 * 1.10 * 10) / 10;
+    items.push({
+      category: "material", name: "단열재", quantity: insulationArea, unit: "㎡",
+      unitPrice: settings.insulationPricePerSqm,
+      total: Math.round(insulationArea * settings.insulationPricePerSqm),
+      sortOrder: order++,
+    });
+  }
+
   // Catalog categories (마감재 / 물받이 부속 / 부자재 / 절곡)
   // Each category is either:
   //   - 심플 (simple) mode: one auto-calculated line based on simpleType + simpleValue
@@ -465,19 +787,37 @@ function simpleModeLineItem(
   };
 }
 
+/**
+ * 마진율 = 마진 / 공급가 (매출 대비).
+ *   공급가 = 원가 / (1 - 마진율)
+ *   마진 = 공급가 - 원가 = 원가 × 마진율 / (1 - 마진율)
+ *
+ * 예) 원가 800만, 마진율 20% → 공급가 1,000만, 마진 200만.
+ *     (참고로 "원가 대비" 방식으로 계산하면 공급가 960만, 마진 160만)
+ *
+ * 마진율 ≥ 1.0 (= 100%) 은 수학적으로 무한대 공급가가 나오므로 클램프.
+ * 음수 마진율은 손해 견적이라 그대로 허용 (마진 < 0).
+ */
 export function calcTotals(
   lineItems: { total: number }[],
   marginRate: number,
   vatIncluded: boolean,
 ): { totalCost: number; marginAmount: number; supplyPrice: number; vat: number; finalPrice: number } {
   const totalCost = lineItems.reduce((s, i) => s + i.total, 0);
-  const marginAmount = Math.round(totalCost * marginRate);
-  const supplyPrice = totalCost + marginAmount;
+  // 안전망: 99% 이상은 공급가가 폭발하니 99% 로 클램프 (실무상 의미 없는 영역).
+  const r = Math.min(0.99, marginRate);
+  const denom = 1 - r;
+  const supplyPrice = denom > 0 ? Math.round(totalCost / denom) : totalCost;
+  const marginAmount = supplyPrice - totalCost;
   const vat = Math.round(supplyPrice * 0.1);
   const finalPrice = vatIncluded ? supplyPrice + vat : supplyPrice;
   return { totalCost, marginAmount, supplyPrice, vat, finalPrice };
 }
 
+/**
+ * 사용자가 finalPrice 를 직접 입력했을 때 — 거기서 supplyPrice 빼고
+ * 매출 대비 마진율을 역산. 마진율 = (공급가 - 원가) / 공급가.
+ */
 export function calcFromFinalPrice(
   totalCost: number,
   finalPrice: number,
@@ -493,7 +833,8 @@ export function calcFromFinalPrice(
     vat = Math.round(supplyPrice * 0.1);
   }
   const marginAmount = supplyPrice - totalCost;
-  const marginRate = totalCost > 0 ? marginAmount / totalCost : 0;
+  // 매출 대비 = 마진 / 공급가
+  const marginRate = supplyPrice > 0 ? marginAmount / supplyPrice : 0;
   return { marginAmount, supplyPrice, vat, marginRate };
 }
 

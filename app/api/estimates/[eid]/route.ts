@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals, calcFromFinalPrice } from "@/lib/calculations";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
-import type { ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import type { BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { Estimate } from "@prisma/client";
 
 /**
@@ -124,6 +124,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       scopeFlags, extraCosts = [], pricingOverrides = {},
       catalogSelections = [], catalogModes = {},
       applyLossRate = false, lossRate = null,
+      buildingShape = null, roofShape = null,
+      perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
+      hasInsulation = false,
       marginRate: inputMarginRate, vatIncluded,
       paymentTerms, validityDays,
     } = body;
@@ -150,6 +153,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       catalogSelections: catalogSelections as CatalogSelection[],
       catalogModes: catalogModes as CategoryModesMap,
       applyLossRate, lossRate: effectiveLossRate,
+      buildingShape: buildingShape as BuildingShape | null,
+      roofShape: roofShape as RoofShape | null,
+      perimeterM, ridgeCount, parapetHeightCm, hasInsulation,
     });
     const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
 
@@ -177,6 +183,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
           otherEquipment, scopeFlags: scope as object,
           applyLossRate,
           lossRate: applyLossRate ? effectiveLossRate : null,
+          buildingShape: buildingShape || null,
+          roofShape: roofShape || null,
+          perimeterM: perimeterM || null,
+          ridgeCount: ridgeCount || 1,
+          parapetHeightCm: parapetHeightCm || null,
+          hasInsulation: !!hasInsulation,
           catalogSelections: (catalogSelections as CatalogSelection[])
             .filter((s) => s.quantity > 0) as unknown as object,
           catalogModes: catalogModes as object,
@@ -224,12 +236,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
     return NextResponse.json(updated);
   }
 
-  // Update margin amount directly
+  // Update margin amount directly — marginRate 는 매출(공급가) 대비로 역산.
   if (body.marginAmount !== undefined) {
     const supplyPrice = estimate.totalCost + body.marginAmount;
     const vat = Math.round(supplyPrice * 0.1);
     const finalPrice = estimate.vatIncluded ? supplyPrice + vat : supplyPrice;
-    const marginRate = estimate.totalCost > 0 ? body.marginAmount / estimate.totalCost : 0;
+    // 매출 대비: marginRate = marginAmount / supplyPrice (calcTotals 와 일관)
+    const marginRate = supplyPrice > 0 ? body.marginAmount / supplyPrice : 0;
     const updated = await prisma.estimate.update({
       where: { id: eid },
       data: { marginAmount: body.marginAmount, marginRate, supplyPrice, vat, finalPrice, marginMode: "amount", updatedAt: new Date() },

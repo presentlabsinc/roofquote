@@ -21,13 +21,68 @@ export const MATERIAL_TYPES: { value: MaterialType; label: string }[] = [
   { value: "zinc250", label: "징크250" },
   { value: "generalTile", label: "일반기와형" },
   { value: "traditionalTile", label: "전통기와형" },
-  { value: "realZinc", label: "리얼징크 (Standing Seam)" },
+  { value: "realZinc", label: "리얼징크" },
   { value: "other", label: "기타" },
 ];
 
 export type Thickness = "0.4" | "0.45" | "0.5" | "0.6";
 
 export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
+
+/**
+ * 건물 평면 형태 — 자재 자동 추정에 사용.
+ * 둘레 추정 + 코너/꺾임 카운트로 프래싱 길이 산정에 영향.
+ */
+export type BuildingShape = "rectangle" | "lshape" | "ushape";
+
+export const BUILDING_SHAPES: { value: BuildingShape; label: string; icon: string; desc: string }[] = [
+  { value: "rectangle", label: "ㅁ자",  icon: "▭", desc: "사각 / 직사각" },
+  { value: "lshape",    label: "ㄱ자",  icon: "⌐", desc: "L자 꺾임" },
+  { value: "ushape",    label: "ㄷ자",  icon: "⊂", desc: "U자 꺾임" },
+];
+
+/**
+ * 지붕 형태 — 자재 자동 추정에 사용 (지붕공사 / 옥상지붕만, 스틸방수는 없음).
+ * 용마루/처마 길이 비율 + 강판 로스율에 영향.
+ */
+export type RoofShape = "gable" | "hip" | "complex";
+
+export const ROOF_SHAPES: { value: RoofShape; label: string; desc: string }[] = [
+  { value: "gable",   label: "박공", desc: "△ 단순 두 면" },
+  { value: "hip",     label: "모임", desc: "사방 경사" },
+  { value: "complex", label: "복합", desc: "꺾임 多" },
+];
+
+/**
+ * 베이스라인 매트릭스 한 칸 — 실제 시공 데이터 (포스코지붕공사 등) 기반.
+ * 모두 optional — 사용자가 채운 칸만 우선 사용, 빈 칸은 기하학적 추정 fallback.
+ */
+export interface BaselineEntry {
+  bendingTotalM?: number;        // 총 절곡 m수 (참고용)
+  ridgeBendingM?: number;        // 용마루 절곡 m
+  eaveBendingM?: number;         // 처마 절곡 m
+  capBendingM?: number;          // 두겁 절곡 m (스틸방수)
+  mishiBendingM?: number;        // 미시 절곡 m (스틸방수)
+  flashingBendingM?: number;     // 프래싱 m
+  materialLossRate?: number;     // 강판 로스율 (0.07 = 7%)
+  parapetAreaM2?: number;        // 파라펫 강판 면적 (스틸방수)
+  screwLarge?: number;
+  screwSmall?: number;
+  siliconeUnits?: number;
+}
+
+/**
+ * PricingSettings.baselineData 의 JSON shape.
+ * 평수 → 건물형태 → 지붕형태 (또는 스틸방수는 평수 → 건물형태) 트리.
+ */
+export interface BaselineData {
+  roof?: Partial<Record<string, Partial<Record<BuildingShape, Partial<Record<RoofShape, BaselineEntry>>>>>>;
+  rooftopRoof?: Partial<Record<string, Partial<Record<BuildingShape, Partial<Record<RoofShape, BaselineEntry>>>>>>;
+  steelWaterproof?: Partial<Record<string, Partial<Record<BuildingShape, BaselineEntry>>>>;
+}
+
+/** 베이스라인 매트릭스 기준 평수 — 30/50/80/150 */
+export const BASELINE_AREAS = [30, 50, 80, 150] as const;
 
 export type SubstructureType = "wood" | "steel";
 
@@ -214,9 +269,13 @@ export interface ScopeFlags {
   // — Rooftop "included in 시공면적" annotations —
   // These are just notes that say "the user-entered 시공면적 already covers this".
   // No multipliers, no separate area calculation.
-  warehouse?: boolean;     // 창고 포함
-  stairwell?: boolean;     // 계단실 포함
-  rooftopRoom?: boolean;   // 옥탑방 포함
+  // [DEPRECATED] warehouse / stairwell / rooftopRoom — kept for back-compat with
+  // old estimates. New estimates use rooftopStructure (옥탑 구조물) as a unified flag.
+  warehouse?: boolean;
+  stairwell?: boolean;
+  rooftopRoom?: boolean;
+  /** 옥탑 구조물 포함 (창고 / 계단실 / 옥탑방 등 통칭) — 시공면적에 포함된 것으로 가정 */
+  rooftopStructure?: boolean;
 
   // — Common —
   waste?: boolean;               // 폐기물 처리
@@ -236,7 +295,7 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   gutter: "물받이 교체",
   frameReinforcement: "골조 보강",
   handrailAndCap: "난간 및 두겁 포함",
-  handrail: "난간 포함",
+  handrail: "난간 / 두겁 (절곡)",
   cap: "두겁 (절곡)",
   drainHole: "새 배수구 타공",
   existingWaterproofRemoval: "기존 방수재 철거",
@@ -244,6 +303,7 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   warehouse: "창고 포함",
   stairwell: "계단실 포함",
   rooftopRoom: "옥탑방 포함",
+  rooftopStructure: "옥탑 구조물 포함",
   waste: "폐기물 처리",
   skylift: "스카이차",
   ladderTruck: "사다리차",
@@ -256,11 +316,12 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
  * they're notes that flow into the work scope description on the PDF.
  */
 export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
-  handrail: "시공면적에 포함하여 입력하세요 (난간 시공 시 두겁 자동 추가)",
+  handrail: "두겁 절곡 자동 포함 (절곡 길이 × m당 단가)",
   cap: "절곡 길이 × m당 단가로 별도 계산",
   warehouse: "시공면적에 포함하여 입력하세요",
   stairwell: "시공면적에 포함하여 입력하세요",
   rooftopRoom: "시공면적에 포함하여 입력하세요",
+  rooftopStructure: "창고 / 계단실 / 옥탑방 등 — 시공면적에 포함하여 입력",
   drainHole: "1개당 단가 × 개수",
   endCap: "1개당 단가 × 개수",
 };
@@ -270,7 +331,9 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
 export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
   roof: ["overlay", "removal", "ridge", "eave", "endCap", "waste"],
   rooftopRoof: ["ridge", "eave", "endCap", "waste"],
-  steelWaterproof: ["handrail", "cap", "drainHole", "warehouse", "stairwell", "rooftopRoom", "waste"],
+  // 난간 토글 시 두겁(cap)이 SCOPE_FORCES 로 자동 켜지므로 cap 은 별도 표시 안 함.
+  // 창고/계단실/옥탑방은 rooftopStructure 로 통합.
+  steelWaterproof: ["handrail", "drainHole", "rooftopStructure", "waste"],
 };
 
 /** Mutually exclusive scope item pairs — checking one auto-unchecks the other.
