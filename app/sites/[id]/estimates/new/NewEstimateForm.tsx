@@ -396,7 +396,19 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
     if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
-    if ((scope.handrail || scope.cap) && !capLength) { toast.error("두겁 절곡 길이를 입력해 주세요"); return; }
+    // 스틸방수 + 난간/두겁 활성: 난간 둘레 필수 (예전 capLength 가 아니라 railPerimeter)
+    if (constructionType === "steelWaterproof" && (scope.handrail || scope.cap)) {
+      const rail = parseFloat(railPerimeterInput) || 0;
+      if (rail <= 0) { toast.error("난간 둘레를 입력해 주세요"); return; }
+    }
+    // 스틸방수 + 스테인리스 배수로 0: 확인 다이얼로그로 넘어가게 (실수 방지)
+    if (constructionType === "steelWaterproof") {
+      const drainLen = parseFloat(stainlessDrainLength) || 0;
+      if (drainLen <= 0) {
+        const ok = window.confirm("스테인리스 배수로 길이가 0입니다.\n정말 시공 안 하시나요? (예 = 계속 진행)");
+        if (!ok) return;
+      }
+    }
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
     const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
