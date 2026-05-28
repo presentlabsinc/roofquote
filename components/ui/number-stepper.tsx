@@ -61,7 +61,12 @@ export function NumberStepper({
             inputMode="decimal"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full h-12 text-center text-lg font-bold tabular-nums rounded-2xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+            // pr-8 pl-2 — 가운데 정렬 텍스트가 우측 단위 라벨과 겹치지 않게 좌우 공간 확보.
+            // 좁은 모바일 (grid-cols-2 안 등) 에서 숫자/단위 시각적 겹침 방지.
+            className={cn(
+              "w-full h-12 text-center text-lg font-bold tabular-nums rounded-2xl border border-border bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
+              unit ? "pl-2 pr-8" : "px-2"
+            )}
           />
           {unit && (
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium pointer-events-none">

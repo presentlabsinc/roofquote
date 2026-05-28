@@ -18,7 +18,7 @@
  * 색상: 본문 = text-foreground, 보조/회색 = text-muted-foreground, 강조 = text-primary.
  * ─────────────────────────────────────────────────────────────────────
  */
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -457,15 +457,24 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     }
   }
 
-  // 건물 둘레 자동 채움 — buildingShape 또는 시공/건물 면적이 바뀔 때 perimeterInput 이 비어 있으면
-  // 추정값(m 반올림)을 채워줌. 사용자가 한 번 값을 넣으면 그 후엔 자동 변경 안 함.
+  // 건물 둘레 자동 채움:
+  //   - 건물형태(ㅁ/ㄱ/ㄷ)가 바뀌면 → 추정 둘레로 항상 덮어씀 (사용자가 적어 넣었어도 OK)
+  //   - 면적만 바뀌고 형태 그대로면 → 둘레가 비어 있을 때만 채움 (수동 입력 보존)
+  const prevShapeRef = useRef<BuildingShape | null>(buildingShape);
   useEffect(() => {
-    if (!buildingShape || perimeterInput) return;
+    if (!buildingShape) return;
     const sqm = parseFloat(sqmInput) || 0;
     if (sqm <= 0) return;
     const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
-    const est = estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null);
-    if (est > 0) setPerimeterInput(String(Math.round(est)));
+    const est = Math.round(estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null));
+    if (est <= 0) return;
+
+    const shapeChanged = prevShapeRef.current !== buildingShape;
+    prevShapeRef.current = buildingShape;
+
+    if (shapeChanged || !perimeterInput) {
+      setPerimeterInput(String(est));
+    }
   }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput]);
 
   // Effective prices for inline display — settings with overrides merged on top
@@ -548,13 +557,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     key={s.value}
                     type="button"
                     onClick={() => setBuildingShape(s.value)}
-                    className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
+                    className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-0.5 ${
                       buildingShape === s.value
                         ? "border-primary bg-primary/5 text-primary"
                         : "border-border/60 bg-card text-foreground"
                     }`}
                   >
-                    <span className="text-2xl leading-none">{s.icon}</span>
                     <span className="text-sm font-semibold">{s.label}</span>
                     <span className="text-[10px] text-muted-foreground">{s.desc}</span>
                   </button>
@@ -982,106 +990,53 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               />
             </Section>
 
-            {/* ── 물받이 / 엔드캡 (mutex) — steelWaterproof 외 ── */}
-            {constructionType !== "steelWaterproof" && (() => {
-              const isGutter = gutterSides.size > 0;
-              const isEndCap = !!scope.endCap;
-              function pickGutter() {
-                setGutterSides(new Set(GUTTER_SIDES));
-                setScope((s) => ({ ...s, endCap: false }));
-              }
-              function pickEndCap() {
-                setGutterSides(new Set());
-                setScope((s) => ({ ...s, endCap: true }));
-              }
-              function clearBoth() {
-                setGutterSides(new Set());
-                setScope((s) => ({ ...s, endCap: false }));
-              }
-              return (
-                <Section icon={<CloudRain size={18} />} title="물받이 / 엔드캡">
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => isGutter ? clearBoth() : pickGutter()}
-                      className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
-                        isGutter ? "border-primary bg-primary/5 text-primary" : "border-border/60 bg-card text-foreground"
-                      }`}
-                    >
-                      <CloudRain size={18} />
-                      <span className="text-sm font-bold">물받이</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => isEndCap ? clearBoth() : pickEndCap()}
-                      className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-1 ${
-                        isEndCap ? "border-primary bg-primary/5 text-primary" : "border-border/60 bg-card text-foreground"
-                      }`}
-                    >
-                      <span className="text-lg leading-none">🔚</span>
-                      <span className="text-sm font-bold">엔드캡</span>
-                    </button>
-                  </div>
-
-                  {isGutter && (
-                    <div className="mt-3 pt-3 border-t border-border/40">
-                      <Label className="text-[10px] text-muted-foreground mb-1.5 block">
-                        설치 면 (전부 = 4면, 일부 선택 가능)
-                      </Label>
-                      <div className="grid grid-cols-4 gap-1.5">
-                        {GUTTER_SIDES.map((side) => {
-                          const active = gutterSides.has(side);
-                          return (
-                            <button
-                              key={side}
-                              type="button"
-                              onClick={() => toggleGutterSide(side)}
-                              className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                                active
-                                  ? "bg-primary text-primary-foreground border-primary"
-                                  : "bg-card text-foreground border-border/60"
-                              }`}
-                            >
-                              {GUTTER_SIDE_LABELS[side]}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="mt-2.5">
-                        <Label className="text-[10px] text-muted-foreground mb-1 block">
-                          총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            inputMode="decimal"
-                            value={gutterLength}
-                            onChange={(e) => setGutterLength(e.target.value)}
-                            placeholder="총 길이"
-                            className="h-11 rounded-xl tabular-nums flex-1"
-                          />
-                          <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {isEndCap && (
-                    <div className="mt-3 pt-3 border-t border-border/40">
-                      <Label className="text-[10px] text-muted-foreground mb-1 block">
-                        개수 ({eff.endCapPrice.toLocaleString("ko-KR")}원/개)
-                      </Label>
-                      <NumberStepper
-                        value={endCaps}
-                        onChange={setEndCaps}
-                        min={1} max={50} step={1}
-                        unit="개"
+            {/* ── 물받이 — steelWaterproof 외 ── */}
+            {/* 엔드캡은 사용 빈도가 낮아 (기와지붕 외엔 거의 안 씀, 보통 접어서 마감)
+                추가 자재 / 부속 카탈로그(finishing) 에서 필요할 때 선택하면 됨. */}
+            {constructionType !== "steelWaterproof" && (
+              <Section icon={<CloudRain size={18} />} title="물받이">
+                <Label className="text-[11px] text-muted-foreground mb-2 block">
+                  설치 면 (전부 = 4면, 0개 = 안함)
+                </Label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {GUTTER_SIDES.map((side) => {
+                    const active = gutterSides.has(side);
+                    return (
+                      <button
+                        key={side}
+                        type="button"
+                        onClick={() => toggleGutterSide(side)}
+                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-foreground border-border/60"
+                        }`}
+                      >
+                        {GUTTER_SIDE_LABELS[side]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {gutterSides.size > 0 && (
+                  <div className="mt-3">
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">
+                      총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={gutterLength}
+                        onChange={(e) => setGutterLength(e.target.value)}
+                        placeholder="총 길이"
+                        className="h-11 rounded-xl tabular-nums flex-1"
                       />
+                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
                     </div>
-                  )}
-                </Section>
-              );
-            })()}
+                  </div>
+                )}
+              </Section>
+            )}
 
             {constructionType === "steelWaterproof" && (
               <Section icon={<Waves size={18} />} title="스테인리스 배수로">
@@ -1197,9 +1152,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </div>
             </Section>
 
-            {/* STEP 8: Work info — steppers */}
-            <Section icon={<Users size={18} />} title="작업 정보" step={7}>
-              <div className="grid grid-cols-2 gap-3">
+            {/* STEP 7: 노무비 — 작업 일수 × 인원 */}
+            <Section icon={<Users size={18} />} title="노무비" step={7}>
+              <div className="space-y-3">
                 <NumberStepper
                   label="작업 일수"
                   value={workDays}
