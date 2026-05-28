@@ -223,8 +223,8 @@ model Estimate {
   insulationTypes   Json     @default("[]")
   /** 단열재 "기타" 선택 시 자유 메모 */
   insulationNote    String?
-  /** PE폼 부착 (강판 ㎡당 추가 단가) */
-  hasPeFoam         Boolean  @default(false)
+  /** PE폼 부착 (강판 ㎡당 추가 단가) — 보통 기본 시공이라 default true */
+  hasPeFoam         Boolean  @default(true)
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]

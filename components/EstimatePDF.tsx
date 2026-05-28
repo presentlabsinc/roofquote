@@ -230,6 +230,36 @@ interface SimpleLine { name: string; amount: number; }
 interface DetailedLine { group: string; name: string; spec: string; qty: string; amount: number; }
 
 /**
+ * Presentation-only: merge PE폼 부착 라인을 메인 강판 라인에 흡수.
+ * 내부 EstimateLineItem 은 그대로 (snapshot 규칙 — 영업자가 in-app 에서는 분리해서 봄).
+ * 고객 PDF 에서는 "강판" 한 줄로 보임 — 단가도 합산해서 ㎡당으로 재계산.
+ */
+function mergePeFoamIntoMaterial<T extends EstimateLineItem>(items: T[]): T[] {
+  const peFoamIdx = items.findIndex((i) => i.name?.includes("PE폼"));
+  if (peFoamIdx < 0) return items;
+  // 메인 강판 라인 = 첫 material/㎡ 라인 중 PE폼 자신이 아닌 것
+  const mainIdx = items.findIndex((i, idx) =>
+    idx !== peFoamIdx && i.category === "material" && i.unit === "㎡"
+  );
+  if (mainIdx < 0) return items; // 강판 라인이 없으면 PE폼 그대로 둠
+  const peFoam = items[peFoamIdx];
+  const main = items[mainIdx];
+  const mergedTotal = main.total + peFoam.total;
+  const mergedUnitPrice = main.quantity > 0
+    ? Math.round(mergedTotal / main.quantity)
+    : main.unitPrice;
+  return items
+    .filter((_, idx) => idx !== peFoamIdx)
+    .map((i, idx, arr) => {
+      // 인덱스 재매핑 — peFoam 빠진 후 mainIdx 위치 보정
+      const adjustedMainIdx = mainIdx > peFoamIdx ? mainIdx - 1 : mainIdx;
+      return idx === adjustedMainIdx
+        ? { ...i, total: mergedTotal, unitPrice: mergedUnitPrice }
+        : i;
+    });
+}
+
+/**
  * 5-bucket summary for 간단 내역. The 이윤 synthetic line (added by
  * distributeMarginForDisplay) is pulled out into its OWN bucket — looks
  * cleaner than dumping it into "기타 비용" with other small fees.
@@ -367,11 +397,16 @@ export function EstimatePDFDoc({
   if (estimate.materialColor) pills.push(estimate.materialColor);
 
   // Cost lines
+  // Merge PE폼 부착 into the main steel sheet line (presentation-only — internal
+  // EstimateLineItem rows stay separate so the salesperson can see the breakdown
+  // in-app). Customer sees one combined "강판 + PE폼" amount.
+  const mergedLineItems = mergePeFoamIntoMaterial(estimate.lineItems);
+
   // Apply margin distribution BEFORE grouping. Internal estimate.lineItems
   // is cost only (snapshot rule); displayLines has the margin baked in plus
   // a synthetic 이윤 row. Subtotal of displayLines == cost + margin == 공급가액.
   const displayLines = distributeMarginForDisplay(
-    estimate.lineItems,
+    mergedLineItems,
     estimate.marginAmount,
     marginRatios,
   );

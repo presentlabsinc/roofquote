@@ -193,8 +193,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   );
 
   // PE폼 부착 — 강판 결로/소음 방지. 강판 면적과 동일 비율로 추가 단가.
+  // 기본 true (대부분 시공에 PE폼 들어감 — 사용자 요청).
   const [hasPeFoam, setHasPeFoam] = useState(
-    (existing as unknown as { hasPeFoam?: boolean } | undefined)?.hasPeFoam ?? false,
+    (existing as unknown as { hasPeFoam?: boolean } | undefined)?.hasPeFoam ?? true,
   );
 
   // 지붕 형태 — 옵션이라 접힘 기본. 기타 선택 시 노트 입력 가능.
@@ -476,6 +477,36 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       setPerimeterInput(String(est));
     }
   }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput]);
+
+  // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
+  //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)
+  //   - 둘레/처마 돌출만 바뀌면 면이 1개 이상 선택돼 있을 때만 갱신 (수동 입력 보존)
+  //   - 스틸방수는 물받이 없음 → 적용 안 함
+  const GUTTER_SIDE_WEIGHTS: Record<GutterSide, number> = {
+    front: 0.30, back: 0.30, left: 0.20, right: 0.20,
+  };
+  const prevGutterSerializedRef = useRef<string>("");
+  useEffect(() => {
+    if (constructionType === "steelWaterproof") return;
+    const sqm = parseFloat(sqmInput) || 0;
+    const overhangCm = parseInt(eaveOverhangInput) || 0;
+    const inputPerim = parseFloat(perimeterInput) || 0;
+    if (sqm <= 0 || !buildingShape || inputPerim <= 0) return;
+    // 처마 외곽 둘레 사용 (물받이는 처마 끝에 달림)
+    const eavePerim = inputPerim + 8 * (overhangCm / 100);
+    const weight = Array.from(gutterSides).reduce((sum, s) => sum + GUTTER_SIDE_WEIGHTS[s], 0);
+    const estLen = Math.round(eavePerim * weight * 10) / 10;
+
+    const serialized = Array.from(gutterSides).sort().join(",");
+    const sidesChanged = prevGutterSerializedRef.current !== serialized;
+    prevGutterSerializedRef.current = serialized;
+
+    // 면이 0개면 아무 값도 세팅 안 함 (gutterLength 그대로 둠 — UI 가 어차피 안 보임)
+    if (gutterSides.size === 0) return;
+    if (sidesChanged || !gutterLength) {
+      setGutterLength(String(estLen));
+    }
+  }, [gutterSides, perimeterInput, eaveOverhangInput, sqmInput, buildingShape, constructionType, gutterLength]);
 
   // Effective prices for inline display — settings with overrides merged on top
   const eff = applyOverrides(settings, pricingOverrides);
