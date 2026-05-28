@@ -231,6 +231,12 @@ model Estimate {
   railPerimeterM             Float?
   /** 옥탑 구조물 둘레 (m) — 계단실/창고 등. 없으면 0. 두겁/파라펫강판에 합산 */
   rooftopStructurePerimeterM Float?
+  /** 옥탑 구조물 높이 (cm) — 옥탑 외벽 강판 면적 = 둘레 × 높이 × 로스율 */
+  rooftopStructureHeightCm   Int?
+  /** 옥탑 출입문 개수 — 트림 절곡 자동 계산 (문당 둘레 6m 가정) */
+  rooftopDoorCount           Int     @default(0)
+  /** 옥탑 창문 개수 — 트림 절곡 자동 계산 (창당 둘레 4m 가정) */
+  rooftopWindowCount         Int     @default(0)
   /** 홈통 (downspout) 개수 — 스테인리스 배수로와 함께 시공 */
   downspoutCount             Int     @default(0)
 

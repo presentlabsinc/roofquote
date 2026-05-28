@@ -330,6 +330,12 @@ export interface BuildLineItemsInput {
   railPerimeterM?: number | null;
   /** 스틸방수 — 옥탑 구조물 둘레 (m). 없으면 0/null. */
   rooftopStructurePerimeterM?: number | null;
+  /** 스틸방수 — 옥탑 구조물 높이 (cm). 외벽 강판 면적 = 둘레 × 높이 × 1.10. */
+  rooftopStructureHeightCm?: number | null;
+  /** 옥탑 출입문 개수 (문당 둘레 6m 가정 → 트림 절곡) */
+  rooftopDoorCount?: number;
+  /** 옥탑 창문 개수 (창당 둘레 4m 가정 → 트림 절곡) */
+  rooftopWindowCount?: number;
   /** 홈통 (downspout) 개수 — 스테인리스 배수로와 함께 시공. */
   downspoutCount?: number;
   /** [DEPRECATED] 단열재 단순 토글 — insulationTypes 로 대체. 구버전 호환용. */
@@ -357,6 +363,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
     eaveOverhangCm = 50,
     railPerimeterM = null, rooftopStructurePerimeterM = null,
+    rooftopStructureHeightCm = null,
+    rooftopDoorCount = 0, rooftopWindowCount = 0,
     downspoutCount = 0,
     hasInsulation = false, insulationTypes = [],
     hasPeFoam = false,
@@ -561,15 +569,14 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     // 사용자 직접 입력 둘레 (없으면 0). 자동 추정 안 함 — 시공면적/옥탑 변수가 크기 때문.
     const railP = railPerimeterM && railPerimeterM > 0 ? railPerimeterM : 0;
     const rooftopP = rooftopStructurePerimeterM && rooftopStructurePerimeterM > 0 ? rooftopStructurePerimeterM : 0;
-    // 두겁 = 난간 + 옥탑 (모든 마감 부위에 캡 들어감)
-    // 미시 = 동일 (근사 — 옥탑 base 에도 미시 필요)
-    // 파라펫 강판 = (난간 + 옥탑) × 높이 × 1.10
-    const railLikeTotal = railP + rooftopP;
     const parapetHeightM = (parapetHeightCm && parapetHeightCm > 0 ? parapetHeightCm : 60) / 100;
+    const rooftopHeightM = (rooftopStructureHeightCm && rooftopStructureHeightCm > 0 ? rooftopStructureHeightCm : 250) / 100;
+    // 두겁 = 난간 + 옥탑 (모든 마감 부위에 캡 들어감 — 옥탑 위에도 두겁 있음)
+    const capTotal = railP + rooftopP;
 
     // 두겁 절곡 — 난간/두겁 토글 켰을 때만 (handrail 또는 cap)
-    if ((scope.handrail || scope.cap) && railLikeTotal > 0) {
-      const capM = capLengthM > 0 ? capLengthM : Math.round(railLikeTotal);
+    if ((scope.handrail || scope.cap) && capTotal > 0) {
+      const capM = capLengthM > 0 ? capLengthM : Math.round(capTotal);
       const bend = calcBendingCost(settings.bendingWidthCap, capM, settings.bendingPricePerMmPer3m);
       if (bend > 0) {
         items.push({
@@ -581,9 +588,9 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         });
       }
     }
-    // 미시 절곡 — 난간/두겁 토글 있을 때 (난간 둘레 기반)
-    if ((scope.handrail || scope.cap) && railLikeTotal > 0) {
-      const mishiLen = baseline?.mishiBendingM ?? Math.round(railLikeTotal);
+    // 미시 절곡 — 옥상 바닥-외벽 접합부 + 옥탑 base 접합부 (난간 + 옥탑 둘레)
+    if ((scope.handrail || scope.cap) && capTotal > 0) {
+      const mishiLen = baseline?.mishiBendingM ?? Math.round(capTotal);
       const bend = calcBendingCost(settings.bendingWidthMishi, mishiLen, settings.bendingPricePerMmPer3m);
       if (bend > 0) {
         items.push({
@@ -594,7 +601,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         });
       }
     }
-    // 프래싱 — 꺾인 건물 형태일 때만 (난간 둘레 무관, 형태 코너 수 × 높이)
+    // 프래싱 — 꺾인 건물 형태일 때만 (코너 수 × 파라펫 높이)
     if (buildingShape && (scope.handrail || scope.cap)) {
       const buildingF = BUILDING_SHAPE_FACTORS[buildingShape];
       const flashLen = baseline?.flashingBendingM ?? (buildingF.flashingPoints * parapetHeightM);
@@ -610,18 +617,85 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         }
       }
     }
-    // 파라펫 강판 — (난간 + 옥탑) 둘레 × 높이 × 로스율(1.10) × materialPricePerSqm
-    if ((scope.handrail || scope.cap) && railLikeTotal > 0 && parapetHeightM > 0) {
-      const parapetArea = baseline?.parapetAreaM2 ?? Math.round(railLikeTotal * parapetHeightM * 1.10 * 10) / 10;
+    // 파라펫 강판 (난간) — 난간 둘레 × 파라펫 높이 × 1.10
+    if ((scope.handrail || scope.cap) && railP > 0 && parapetHeightM > 0) {
+      const parapetArea = Math.round(railP * parapetHeightM * 1.10 * 10) / 10;
       if (parapetArea > 0) {
         const mult = thickness ? THICKNESS_MULT[thickness] : 1;
         const unitPrice = Math.round(settings.materialPricePerSqm * mult);
         items.push({
-          category: "material", name: "파라펫 강판",
+          category: "material", name: "파라펫 강판 (난간)",
           quantity: parapetArea, unit: "㎡",
           unitPrice, total: Math.round(parapetArea * unitPrice),
           sortOrder: order++,
         });
+      }
+    }
+    // 옥탑 외벽 강판 — 옥탑 둘레 × 옥탑 높이 × 1.10 (별도 라인 — 높이가 다르므로)
+    if (scope.rooftopStructure && rooftopP > 0 && rooftopHeightM > 0) {
+      const rooftopArea = Math.round(rooftopP * rooftopHeightM * 1.10 * 10) / 10;
+      if (rooftopArea > 0) {
+        const mult = thickness ? THICKNESS_MULT[thickness] : 1;
+        const unitPrice = Math.round(settings.materialPricePerSqm * mult);
+        items.push({
+          category: "material", name: "옥탑 외벽 강판",
+          quantity: rooftopArea, unit: "㎡",
+          unitPrice, total: Math.round(rooftopArea * unitPrice),
+          sortOrder: order++,
+        });
+      }
+    }
+    // 옥탑 문/창문 트림 절곡 — 평균 둘레 × 트림 넓이 × 절곡단가
+    //   문 6m/개, 창 4m/개. 트림 넓이는 처마 넓이(bendingWidthEave)와 비슷.
+    if (scope.rooftopStructure && (rooftopDoorCount > 0 || rooftopWindowCount > 0)) {
+      const AVG_DOOR_PERIMETER_M = 6;
+      const AVG_WINDOW_PERIMETER_M = 4;
+      const TRIM_WIDTH_MM = settings.bendingWidthEave; // 트림 넓이 ~ 처마 넓이
+      if (rooftopDoorCount > 0) {
+        const totalLen = rooftopDoorCount * AVG_DOOR_PERIMETER_M;
+        const bend = calcBendingCost(TRIM_WIDTH_MM, totalLen, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `옥탑 문 트림 (${rooftopDoorCount}개, ${AVG_DOOR_PERIMETER_M}m/개)`,
+            quantity: totalLen, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, totalLen)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
+      if (rooftopWindowCount > 0) {
+        const totalLen = rooftopWindowCount * AVG_WINDOW_PERIMETER_M;
+        const bend = calcBendingCost(TRIM_WIDTH_MM, totalLen, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `옥탑 창문 트림 (${rooftopWindowCount}개, ${AVG_WINDOW_PERIMETER_M}m/개)`,
+            quantity: totalLen, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, totalLen)), total: bend,
+            sortOrder: order++,
+          });
+        }
+      }
+    }
+    // 처마/덴조 (eave) — 스틸방수에도 옥탑 처마 마감 들어가는 경우 (사용자 요청 추가)
+    if (scope.eave) {
+      // 옥탑 둘레가 있으면 그것 사용 (옥탑 처마), 없으면 난간 둘레의 일부 사용
+      const eaveLen = rooftopP > 0 ? rooftopP : Math.round(railP * 0.5);
+      if (eaveLen > 0) {
+        items.push({
+          category: "material", name: "처마 / 덴조 마감", quantity: eaveLen, unit: "m",
+          unitPrice: settings.eavePricePerM,
+          total: Math.round(eaveLen * settings.eavePricePerM),
+          sortOrder: order++,
+        });
+        const bend = calcBendingCost(settings.bendingWidthEave, eaveLen, settings.bendingPricePerMmPer3m);
+        if (bend > 0) {
+          items.push({
+            category: "material", name: `처마 절곡 (${settings.bendingWidthEave}mm)`,
+            quantity: eaveLen, unit: "m",
+            unitPrice: Math.round(bend / Math.max(1, eaveLen)), total: bend,
+            sortOrder: order++,
+          });
+        }
       }
     }
     // 새 배수구 타공

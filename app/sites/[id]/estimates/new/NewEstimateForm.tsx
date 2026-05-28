@@ -191,6 +191,23 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       ? String((existing as unknown as { downspoutCount?: number }).downspoutCount)
       : "0",
   );
+
+  // 옥탑 구조물 — 높이 / 문 / 창문 (rooftopStructure scope row 아래에 표시)
+  const [rooftopHeightInput, setRooftopHeightInput] = useState(
+    (existing as unknown as { rooftopStructureHeightCm?: number } | undefined)?.rooftopStructureHeightCm != null
+      ? String((existing as unknown as { rooftopStructureHeightCm?: number }).rooftopStructureHeightCm)
+      : "250",
+  );
+  const [rooftopDoorCount, setRooftopDoorCount] = useState(
+    (existing as unknown as { rooftopDoorCount?: number } | undefined)?.rooftopDoorCount != null
+      ? String((existing as unknown as { rooftopDoorCount?: number }).rooftopDoorCount)
+      : "1",
+  );
+  const [rooftopWindowCount, setRooftopWindowCount] = useState(
+    (existing as unknown as { rooftopWindowCount?: number } | undefined)?.rooftopWindowCount != null
+      ? String((existing as unknown as { rooftopWindowCount?: number }).rooftopWindowCount)
+      : "0",
+  );
   // 단열재 multi-select. 기존 견적의 insulationTypes 가 있으면 우선, 없는데 hasInsulation=true 면 ["other"] 로 시드.
   const [insulationTypes, setInsulationTypes] = useState<InsulationType[]>(() => {
     const stored = (existing as unknown as { insulationTypes?: unknown })?.insulationTypes;
@@ -443,9 +460,18 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       railPerimeterM: constructionType === "steelWaterproof"
         ? (parseFloat(railPerimeterInput) || 0)
         : null,
-      rooftopStructurePerimeterM: constructionType === "steelWaterproof"
+      rooftopStructurePerimeterM: constructionType === "steelWaterproof" && scope.rooftopStructure
         ? (parseFloat(rooftopPerimeterInput) || 0)
         : null,
+      rooftopStructureHeightCm: constructionType === "steelWaterproof" && scope.rooftopStructure
+        ? (parseInt(rooftopHeightInput) || 0)
+        : null,
+      rooftopDoorCount: constructionType === "steelWaterproof" && scope.rooftopStructure
+        ? (parseInt(rooftopDoorCount) || 0)
+        : 0,
+      rooftopWindowCount: constructionType === "steelWaterproof" && scope.rooftopStructure
+        ? (parseInt(rooftopWindowCount) || 0)
+        : 0,
       downspoutCount: constructionType === "steelWaterproof"
         ? (parseInt(downspoutCount) || 0)
         : 0,
@@ -629,7 +655,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   </button>
                 ))}
               </div>
-              {buildingShape && (
+              {/* 건물 둘레/처마 돌출은 지붕공사/옥상지붕만 — 스틸방수는 난간 둘레 직접 입력으로 대체 */}
+              {buildingShape && constructionType !== "steelWaterproof" && (
                 <div className="mt-4 pt-4 border-t border-border/40 space-y-4">
                   {(() => {
                     const sqm = parseFloat(sqmInput) || 0;
@@ -642,8 +669,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     const source = bSqm > 0 ? "건물면적" : "시공면적÷1.4";
                     const overhangCm = parseInt(eaveOverhangInput) || 0;
                     const currentPerim = parseFloat(perimeterInput) || estPerim;
-                    const isRoofType = constructionType !== "steelWaterproof";
-                    const eavePerim = isRoofType && currentPerim > 0
+                    const eavePerim = currentPerim > 0
                       ? Math.round(currentPerim + 8 * (overhangCm / 100))
                       : currentPerim;
                     return (
@@ -664,32 +690,36 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                             unit="m"
                           />
                         </div>
-                        {/* 처마 돌출 — 지붕공사/옥상지붕만. 외벽 둘레 → 처마 외곽 둘레 보정 */}
-                        {isRoofType && (
-                          <div>
-                            <Label className="text-sm font-semibold text-foreground mb-1.5 block">
-                              처마 돌출 (사방)
-                            </Label>
-                            <p className="text-[11px] text-muted-foreground mb-2">
-                              0 = 평지붕 · 50 = 일반 · 100 = 한옥 — 버튼으로 10cm 씩
+                        {/* 처마 돌출 — 외벽 둘레 → 처마 외곽 둘레 보정 */}
+                        <div>
+                          <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                            처마 돌출 (사방)
+                          </Label>
+                          <p className="text-[11px] text-muted-foreground mb-2">
+                            0 = 평지붕 · 50 = 일반 · 100 = 한옥 — 버튼으로 10cm 씩
+                          </p>
+                          <NumberStepper
+                            value={eaveOverhangInput}
+                            onChange={setEaveOverhangInput}
+                            min={0} max={300} step={10}
+                            unit="cm"
+                          />
+                          {currentPerim > 0 && overhangCm > 0 && (
+                            <p className="text-[11px] text-muted-foreground mt-2 tabular-nums">
+                              → 처마 외곽 둘레 <b>{eavePerim}m</b> (= {currentPerim} + 8 × {(overhangCm / 100).toFixed(2)})
                             </p>
-                            <NumberStepper
-                              value={eaveOverhangInput}
-                              onChange={setEaveOverhangInput}
-                              min={0} max={300} step={10}
-                              unit="cm"
-                            />
-                            {currentPerim > 0 && overhangCm > 0 && (
-                              <p className="text-[11px] text-muted-foreground mt-2 tabular-nums">
-                                → 처마 외곽 둘레 <b>{eavePerim}m</b> (= {currentPerim} + 8 × {(overhangCm / 100).toFixed(2)})
-                              </p>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </>
                     );
                   })()}
                 </div>
+              )}
+              {/* 스틸방수: 건물 형태만 코너 수 (플래싱 계산)용으로 활용. 둘레/처마 입력 없음 */}
+              {buildingShape && constructionType === "steelWaterproof" && (
+                <p className="text-[11px] text-muted-foreground mt-3 pt-3 border-t border-border/40">
+                  스틸방수는 건물 형태만 플래싱 코너 계산에 사용. 둘레는 공사 범위 → 난간/두겁에서 직접 입력.
+                </p>
               )}
             </Section>
 
@@ -782,7 +812,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           />
                         </div>
                       )}
-                      {/* 난간 / 두겁 활성 시 — 파라펫 정보 (높이 + 난간 둘레 + 옥탑 구조물 둘레) */}
+                      {/* 난간 / 두겁 활성 시 — 파라펫 높이 + 난간 둘레 */}
                       {key === "handrail" && scope.handrail && (
                         <div className="mt-3 ml-3 space-y-3 pt-3 border-t border-border/40">
                           <div>
@@ -810,12 +840,17 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                               unit="m"
                             />
                           </div>
+                        </div>
+                      )}
+                      {/* 옥탑 구조물 활성 시 — 둘레 + 높이 + 문 + 창문 */}
+                      {key === "rooftopStructure" && scope.rooftopStructure && (
+                        <div className="mt-3 ml-3 space-y-3 pt-3 border-t border-border/40">
                           <div>
                             <Label className="text-sm font-semibold text-foreground mb-1.5 block">
                               옥탑 구조물 둘레
                             </Label>
                             <p className="text-[11px] text-muted-foreground mb-2">
-                              계단실 / 창고 등 외벽 둘레 (없으면 0)
+                              계단실 / 창고 등 외벽 둘레 (줄자로 측정)
                             </p>
                             <NumberStepper
                               value={rooftopPerimeterInput}
@@ -823,6 +858,50 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                               min={0} max={999} step={1}
                               unit="m"
                             />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                              옥탑 구조물 높이
+                            </Label>
+                            <p className="text-[11px] text-muted-foreground mb-2">
+                              일반 옥탑방 ~250cm, 낮은 창고 ~150cm — 외벽 강판 면적 계산
+                            </p>
+                            <NumberStepper
+                              value={rooftopHeightInput}
+                              onChange={setRooftopHeightInput}
+                              min={0} max={500} step={10}
+                              unit="cm"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                                출입문
+                              </Label>
+                              <p className="text-[10px] text-muted-foreground mb-2">
+                                트림 절곡 (문당 ~6m)
+                              </p>
+                              <NumberStepper
+                                value={rooftopDoorCount}
+                                onChange={setRooftopDoorCount}
+                                min={0} max={10} step={1}
+                                unit="개"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                                창문
+                              </Label>
+                              <p className="text-[10px] text-muted-foreground mb-2">
+                                트림 절곡 (창당 ~4m)
+                              </p>
+                              <NumberStepper
+                                value={rooftopWindowCount}
+                                onChange={setRooftopWindowCount}
+                                min={0} max={20} step={1}
+                                unit="개"
+                              />
+                            </div>
                           </div>
                         </div>
                       )}

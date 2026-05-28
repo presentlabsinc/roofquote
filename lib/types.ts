@@ -364,7 +364,8 @@ export const SCOPE_BY_TYPE: Record<ConstructionType, (keyof ScopeFlags)[]> = {
   rooftopRoof: ["ridge", "eave", "waste"],
   // 난간 토글 시 두겁(cap)이 SCOPE_FORCES 로 자동 켜지므로 cap 은 별도 표시 안 함.
   // 창고/계단실/옥탑방은 rooftopStructure 로 통합.
-  steelWaterproof: ["handrail", "drainHole", "rooftopStructure", "waste"],
+  // eave (처마/덴조) — 스틸방수도 옥탑 구조물 처마 마감 필요.
+  steelWaterproof: ["handrail", "eave", "drainHole", "rooftopStructure", "waste"],
 };
 
 /** Mutually exclusive scope item pairs — checking one auto-unchecks the other.
