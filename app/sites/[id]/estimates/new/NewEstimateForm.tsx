@@ -1,4 +1,23 @@
 "use client";
+/**
+ * 새 견적 폼.
+ *
+ * ─── 타이포그래피 표준 (유지 부탁 — 일관된 시인성 위해) ────────────────────
+ * - 섹션 제목 (Section h2):           text-sm font-semibold text-foreground
+ * - 강조 필드 라벨 (입력 위 중요):    text-sm font-semibold text-foreground mb-1.5 block
+ *                                    예: "건물 둘레", "처마 돌출"
+ * - 소형 필드 라벨 (입력 위 보조):    text-xs font-medium text-muted-foreground mb-1.5 block
+ *                                    예: "시공 면적"
+ * - 섹션 설명 (제목 바로 아래 회색):  text-[11px] text-muted-foreground -mt-1 mb-2
+ * - 입력 아래 도움말 (한 줄 안내):    text-[10px] text-muted-foreground mt-1.5
+ * - 칩 버튼 라벨 (선택용):            text-sm font-semibold
+ * - 칩 안의 보조 설명 (icon+label):   text-[10px] text-muted-foreground
+ * - 큰 숫자 입력 (UnitInput):         text-xl font-bold tabular-nums
+ * - 일반 숫자 입력 (NumberStepper):   text-lg font-bold tabular-nums
+ *
+ * 색상: 본문 = text-foreground, 보조/회색 = text-muted-foreground, 강조 = text-primary.
+ * ─────────────────────────────────────────────────────────────────────
+ */
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -607,36 +626,32 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
             {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
             {constructionType !== "steelWaterproof" ? (
-              <Section icon={<Layers size={18} />} title="지붕 형태 (옵션)">
+              <Section
+                icon={<Layers size={18} />}
+                title="지붕 형태 (옵션)"
+                headerRight={
+                  <CollapseToggle
+                    open={showRoofDetails}
+                    onToggle={() => {
+                      if (showRoofDetails) {
+                        setShowRoofDetails(false);
+                        setRoofShape(null);
+                        setRoofShapeNote("");
+                      } else {
+                        setShowRoofDetails(true);
+                      }
+                    }}
+                  />
+                }
+              >
                 <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
                   용마루·처마 길이 + 강판 로스율 자동 계산
                   {roofShape && !showRoofDetails && (
                     <> · 선택됨: <b>{ROOF_SHAPES.find((s) => s.value === roofShape)?.label ?? roofShape}</b></>
                   )}
                 </p>
-                {!showRoofDetails ? (
-                  <button
-                    type="button"
-                    onClick={() => setShowRoofDetails(true)}
-                    className="w-full rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-foreground"
-                  >
-                    펼치기 <ChevronDown size={14} />
-                  </button>
-                ) : (
+                {showRoofDetails && (
                   <>
-                    <div className="flex justify-end mb-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowRoofDetails(false);
-                          setRoofShape(null);
-                          setRoofShapeNote("");
-                        }}
-                        className="text-[10px] text-muted-foreground hover:text-foreground pressable flex items-center gap-0.5"
-                      >
-                        <ChevronUp size={12} />접기
-                      </button>
-                    </div>
                     <div className="grid grid-cols-3 gap-2">
                       {ROOF_SHAPES.map((s) => (
                         <button
@@ -777,22 +792,14 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   />
                 ))}
               </div>
-              {/* PE폼 부착 — 단일 chip 토글로 통일 */}
+              {/* PE폼 부착 — 공사 범위 체크박스 (ScopeRow) 스타일로 통일 */}
               <div className="mt-3 pt-3 border-t border-border/40">
-                <button
-                  type="button"
-                  onClick={() => setHasPeFoam((v) => !v)}
-                  className={`pressable rounded-xl px-3 py-2.5 text-sm font-semibold border w-full flex items-center justify-between ${
-                    hasPeFoam
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-card text-foreground border-border/60"
-                  }`}
-                >
-                  <span>PE폼 부착</span>
-                  <span className={`text-xs tabular-nums ${hasPeFoam ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                    +{eff.peFoamPricePerSqm.toLocaleString("ko-KR")}원/㎡
-                  </span>
-                </button>
+                <ScopeRow
+                  active={hasPeFoam}
+                  label="PE폼 부착"
+                  hint={`+${eff.peFoamPricePerSqm.toLocaleString("ko-KR")}원/㎡`}
+                  onToggle={() => setHasPeFoam((v) => !v)}
+                />
               </div>
             </Section>
 
@@ -1099,36 +1106,32 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             )}
 
             {/* ── 단열재 (옵션, 마지막) — 펼침/접기 + 기타 노트 ── */}
-            <Section icon={<Package size={18} />} title="단열재 (옵션)">
+            <Section
+              icon={<Package size={18} />}
+              title="단열재 (옵션)"
+              headerRight={
+                <CollapseToggle
+                  open={showInsulation}
+                  onToggle={() => {
+                    if (showInsulation) {
+                      setShowInsulation(false);
+                      setInsulationTypes([]);
+                      setInsulationNote("");
+                    } else {
+                      setShowInsulation(true);
+                    }
+                  }}
+                />
+              }
+            >
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
                 복수 선택 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
                 {insulationTypes.length > 0 && !showInsulation && (
                   <> · 선택됨: <b>{insulationTypes.length}종</b></>
                 )}
               </p>
-              {!showInsulation ? (
-                <button
-                  type="button"
-                  onClick={() => setShowInsulation(true)}
-                  className="w-full rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-foreground"
-                >
-                  펼치기 <ChevronDown size={14} />
-                </button>
-              ) : (
+              {showInsulation && (
                 <>
-                  <div className="flex justify-end mb-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowInsulation(false);
-                        setInsulationTypes([]);
-                        setInsulationNote("");
-                      }}
-                      className="text-[10px] text-muted-foreground hover:text-foreground pressable flex items-center gap-0.5"
-                    >
-                      <ChevronUp size={12} />접기
-                    </button>
-                  </div>
                   <div className="grid grid-cols-2 gap-1.5">
                     {INSULATION_TYPES.map((t) => {
                       const active = insulationTypes.includes(t.value);
@@ -1324,7 +1327,14 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   );
 }
 
-function Section({ icon, title, step, children }: { icon?: React.ReactNode; title: string; step?: number; children: React.ReactNode }) {
+function Section({ icon, title, step, headerRight, children }: {
+  icon?: React.ReactNode;
+  title: string;
+  step?: number;
+  /** Optional right-aligned action in the section header (e.g. 펼치기/접기 토글). */
+  headerRight?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div className="bg-card rounded-2xl border border-border/60 p-4">
       <div className="flex items-center gap-2 mb-3">
@@ -1334,7 +1344,8 @@ function Section({ icon, title, step, children }: { icon?: React.ReactNode; titl
           </span>
         )}
         {icon && <span className="text-primary">{icon}</span>}
-        <h2 className="font-semibold text-foreground text-sm">{title}</h2>
+        <h2 className="font-semibold text-foreground text-sm flex-1">{title}</h2>
+        {headerRight}
       </div>
       {children}
     </div>
@@ -1449,22 +1460,36 @@ function PricingOverridesSection({
   );
 }
 
-function UnitInput({ label, unit, value, onChange }: { label: string; unit: string; value: string; onChange: (v: string) => void }) {
+function UnitInput({ unit, value, onChange }: { label?: string; unit: string; value: string; onChange: (v: string) => void }) {
+  // 단위는 input 안 우측에 표시되므로 위쪽 라벨은 제거 (중복 제거 — 사용자 요청).
   return (
-    <div>
-      <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">{label}</Label>
-      <div className="relative">
-        <Input
-          type="number"
-          inputMode="decimal"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="0"
-          className="h-14 text-xl font-bold text-center pr-10 rounded-2xl tabular-nums"
-        />
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium pointer-events-none">{unit}</span>
-      </div>
+    <div className="relative">
+      <Input
+        type="number"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="0"
+        className="h-14 text-xl font-bold text-center pr-10 rounded-2xl tabular-nums"
+      />
+      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium pointer-events-none">{unit}</span>
     </div>
+  );
+}
+
+/**
+ * 섹션 헤더 우측 토글 — 펼치기/접기 둘 다 같은 위치에 놔서 누르기 편하게.
+ * Section 의 headerRight 슬롯에 넣어 사용.
+ */
+function CollapseToggle({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="text-[11px] font-medium text-muted-foreground hover:text-foreground pressable flex items-center gap-0.5 shrink-0"
+    >
+      {open ? <><ChevronUp size={14} />접기</> : <>펼치기<ChevronDown size={14} /></>}
+    </button>
   );
 }
 
