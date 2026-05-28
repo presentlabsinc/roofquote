@@ -88,10 +88,31 @@ const ROOF_SHAPE_FACTORS: Record<RoofShape, { ridgeRatio: number; eaveRatio: num
   complex: { ridgeRatio: 0.8, eaveRatio: 0.8,  lossRate: 0.18 },
 };
 
-/** 건물 둘레 추정 — √면적 × 형태계수. 사용자 직접 입력값(perimeterOverride)이 우선. */
-export function estimatePerimeter(areaM2: number, shape: BuildingShape): number {
-  if (!areaM2 || areaM2 <= 0) return 0;
-  return Math.round(Math.sqrt(areaM2) * BUILDING_SHAPE_FACTORS[shape].perimeterFactor * 10) / 10;
+/**
+ * 시공면적 → 건물면적 추정 비율.
+ * 보통 지붕공사에서 시공면적은 건물면적의 1.3~1.5배 (경사 + 처마 돌출).
+ * 사용자가 buildingAreaM2 를 직접 입력했으면 그 값 우선.
+ */
+const CONSTRUCTION_TO_BUILDING_RATIO = 1.4;
+
+/**
+ * 건물 둘레 추정 — √건물면적 × 형태계수.
+ *
+ * buildingAreaM2 가 입력되어 있으면 그것을 사용, 없으면 areaM2 (시공면적) / 1.4 로 추정.
+ * 시공면적을 그대로 쓰면 경사·처마 만큼 둘레가 과대평가됨.
+ */
+export function estimatePerimeter(
+  areaM2: number,
+  shape: BuildingShape,
+  buildingAreaM2?: number | null,
+): number {
+  const effectiveBuildingArea = (buildingAreaM2 && buildingAreaM2 > 0)
+    ? buildingAreaM2
+    : (areaM2 > 0 ? areaM2 / CONSTRUCTION_TO_BUILDING_RATIO : 0);
+  if (effectiveBuildingArea <= 0) return 0;
+  return Math.round(
+    Math.sqrt(effectiveBuildingArea) * BUILDING_SHAPE_FACTORS[shape].perimeterFactor * 10
+  ) / 10;
 }
 
 /** 장변 길이 추정 — 둘레 = 2(L+S), 장단비 1.5 가정. ㄱ/ㄷ자도 주동 길이로 근사. */
@@ -112,16 +133,18 @@ export interface GeometricEstimate {
 export function estimateGeometrically(args: {
   constructionType: ConstructionType;
   areaM2: number;
+  /** 건물면적 (옵션). 없으면 시공면적/1.4 로 추정. estimatePerimeter() 참고. */
+  buildingAreaM2?: number | null;
   building: BuildingShape;
   roof: RoofShape | null;
   ridgeCount: number;
   parapetHeightCm: number | null;
   perimeterOverride: number | null;
 }): GeometricEstimate {
-  const { constructionType, areaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride } = args;
+  const { constructionType, areaM2, buildingAreaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride } = args;
   const perimeter = (perimeterOverride && perimeterOverride > 0)
     ? perimeterOverride
-    : estimatePerimeter(areaM2, building);
+    : estimatePerimeter(areaM2, building, buildingAreaM2);
   const longSide = estimateLongSide(perimeter);
   const buildingF = BUILDING_SHAPE_FACTORS[building];
 
@@ -250,6 +273,8 @@ export interface BuildLineItemsInput {
   lossRate?: number;
 
   // ── 자재 자동 추정 입력 (Phase A 신규) ──
+  /** 건물 면적 (옵션). 둘레 추정 시 사용 — 없으면 시공면적/1.4 로 추정. */
+  buildingAreaM2?: number | null;
   /** 건물 평면 형태 — 없으면 자동 추정 라인은 모두 생략 (기존 동작 유지) */
   buildingShape?: BuildingShape | null;
   /** 지붕 형태 (지붕공사/옥상지붕만) */
@@ -277,6 +302,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     catalogSelections = [], catalogModes,
     applyLossRate = false, lossRate = 0,
     buildingShape = null, roofShape = null,
+    buildingAreaM2 = null,
     perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
     hasInsulation = false,
   } = input;
@@ -328,7 +354,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     constructionType, areaM2, building: buildingShape, roof: roofShape,
   }) : null;
   const geom = buildingShape ? estimateGeometrically({
-    constructionType, areaM2, building: buildingShape, roof: roofShape,
+    constructionType, areaM2, buildingAreaM2,
+    building: buildingShape, roof: roofShape,
     ridgeCount, parapetHeightCm, perimeterOverride: perimeterM,
   }) : null;
 

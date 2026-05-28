@@ -146,12 +146,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   );
   const [hasInsulation, setHasInsulation] = useState(existing?.hasInsulation ?? false);
 
-  // 지붕 형태 / 용마루 수는 기본 숨김. 박공 1동 가정으로 자동 추정 (대부분 케이스).
-  // 다른 형태(모임/팔작/외쪽/멘사드)거나 다중 용마루면 펼쳐서 직접 지정.
+  // 지붕 형태는 기본 숨김. 박공 가정으로 자동 추정 (대부분 케이스).
+  // 다른 형태(모임/팔작/외쪽/멘사드)면 펼쳐서 직접 지정.
   // 기존 견적에 roofShape 가 저장돼 있으면 시작부터 펼친 상태.
-  const [showRoofDetails, setShowRoofDetails] = useState(
-    !!existing?.roofShape || (existing?.ridgeCount ?? 1) > 1,
-  );
+  // 용마루 수는 UI 에서 빠짐 — 항상 1 로 가정. 2동 건물은 사용자가 라인 직접 수정.
+  const [showRoofDetails, setShowRoofDetails] = useState(!!existing?.roofShape);
 
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
@@ -422,7 +421,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             <span className="w-5 h-5 rounded-md border border-primary/40 flex items-center justify-center text-[11px]">
               {showBuildingArea ? "−" : "+"}
             </span>
-            건물 면적도 함께 기입 (옵션 — 참고용)
+            건물 면적도 함께 기입 (옵션 — 건물 둘레 추정 정확도 ↑)
           </button>
 
           {showBuildingArea && (
@@ -432,7 +431,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 <UnitInput label="평" unit="평" value={buildingPyeongInput} onChange={handleBuildingPyeongChange} />
                 <UnitInput label="㎡" unit="㎡" value={buildingSqmInput} onChange={handleBuildingSqmChange} />
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1.5">견적 계산에는 사용되지 않습니다</p>
+              <p className="text-[10px] text-muted-foreground mt-1.5">건물 둘레 자동 추정 정확도 향상에 사용</p>
             </div>
           )}
         </Section>
@@ -495,34 +494,46 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </div>
               {buildingShape && (
                 <div className="mt-3 pt-3 border-t border-border/40">
-                  <Label className="text-[10px] text-muted-foreground mb-1 block">
-                    건물 둘레 (선택 — 비우면 자동 추정
-                    {sqmInput && parseFloat(sqmInput) > 0
-                      ? `: ${estimatePerimeter(parseFloat(sqmInput), buildingShape)}m`
-                      : ""}
-                    )
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number" inputMode="decimal"
-                      value={perimeterInput}
-                      onChange={(e) => setPerimeterInput(e.target.value)}
-                      placeholder={
-                        sqmInput && parseFloat(sqmInput) > 0
-                          ? String(estimatePerimeter(parseFloat(sqmInput), buildingShape))
-                          : "0"
-                      }
-                      className="h-11 rounded-xl tabular-nums flex-1"
-                    />
-                    <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                  </div>
+                  {(() => {
+                    const sqm = parseFloat(sqmInput) || 0;
+                    const bSqm = showBuildingArea && buildingSqmInput
+                      ? parseFloat(buildingSqmInput) || 0
+                      : 0;
+                    const estPerim = sqm > 0
+                      ? estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null)
+                      : 0;
+                    const source = bSqm > 0 ? "건물면적" : "시공면적÷1.4";
+                    return (
+                      <>
+                        <Label className="text-[10px] text-muted-foreground mb-1 block">
+                          건물 둘레 (옵션 — 비우면 자동 추정
+                          {estPerim > 0 ? `: ${estPerim}m (${source})` : ""})
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number" inputMode="decimal"
+                            value={perimeterInput}
+                            onChange={(e) => setPerimeterInput(e.target.value)}
+                            placeholder={estPerim > 0 ? String(estPerim) : "0"}
+                            className="h-11 rounded-xl tabular-nums flex-1"
+                          />
+                          <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                        </div>
+                        {bSqm === 0 && sqm > 0 && (
+                          <p className="text-[10px] text-muted-foreground mt-1.5">
+                            정확한 둘레가 필요하면 위 "건물 면적도 함께 기입" 옵션을 채우거나 직접 입력하세요
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
             </Section>
 
             {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
             {constructionType !== "steelWaterproof" ? (
-              <Section icon={<Layers size={18} />} title="지붕 형태 (선택)">
+              <Section icon={<Layers size={18} />} title="지붕 형태 (옵션)">
                 {!showRoofDetails ? (
                   <button
                     type="button"
@@ -530,7 +541,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
                   >
                     <div className="text-xs">
-                      <div className="font-semibold text-foreground">기본값: 박공 · 용마루 1개</div>
+                      <div className="font-semibold text-foreground">기본값: 박공</div>
                       <div className="text-muted-foreground mt-0.5">
                         대부분 케이스에 이걸로 됨. 다르면 펼쳐서 직접 지정
                       </div>
@@ -548,7 +559,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                         onClick={() => {
                           setShowRoofDetails(false);
                           setRoofShape(null);
-                          setRidgeCount("1");
                         }}
                         className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
                       >
@@ -572,20 +582,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                         </button>
                       ))}
                     </div>
-                    {/* 외쪽 (shed) 은 용마루 없으니 수 입력도 숨김 */}
-                    {roofShape !== "shed" && (
-                      <div className="mt-3 pt-3 border-t border-border/40">
-                        <Label className="text-[10px] text-muted-foreground mb-1 block">
-                          용마루 수 (보통 1, 2동 건물이면 2)
-                        </Label>
-                        <NumberStepper
-                          value={ridgeCount}
-                          onChange={setRidgeCount}
-                          min={1} max={6} step={1}
-                          unit="개"
-                        />
-                      </div>
-                    )}
                   </>
                 )}
               </Section>

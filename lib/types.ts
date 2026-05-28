@@ -36,9 +36,9 @@ export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
 export type BuildingShape = "rectangle" | "lshape" | "ushape";
 
 export const BUILDING_SHAPES: { value: BuildingShape; label: string; icon: string; desc: string }[] = [
-  { value: "rectangle", label: "ㅁ자",  icon: "▭", desc: "사각 / 직사각" },
-  { value: "lshape",    label: "ㄱ자",  icon: "⌐", desc: "L자 꺾임" },
-  { value: "ushape",    label: "ㄷ자",  icon: "⊂", desc: "U자 꺾임" },
+  { value: "rectangle", label: "ㅁ자",  icon: "ㅁ", desc: "사각 / 직사각" },
+  { value: "lshape",    label: "ㄱ자",  icon: "ㄱ", desc: "L자 꺾임" },
+  { value: "ushape",    label: "ㄷ자",  icon: "ㄷ", desc: "U자 꺾임" },
 ];
 
 /**

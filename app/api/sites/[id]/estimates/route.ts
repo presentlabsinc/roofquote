@@ -106,6 +106,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     lossRate: effectiveLossRate,
     buildingShape: buildingShape as BuildingShape | null,
     roofShape: roofShape as RoofShape | null,
+    buildingAreaM2: buildingAreaM2 ?? null,
     perimeterM,
     ridgeCount,
     parapetHeightCm,

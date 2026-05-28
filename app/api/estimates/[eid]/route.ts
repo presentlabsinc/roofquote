@@ -155,6 +155,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       applyLossRate, lossRate: effectiveLossRate,
       buildingShape: buildingShape as BuildingShape | null,
       roofShape: roofShape as RoofShape | null,
+      buildingAreaM2: buildingAreaM2 ?? null,
       perimeterM, ridgeCount, parapetHeightCm, hasInsulation,
     });
     const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
