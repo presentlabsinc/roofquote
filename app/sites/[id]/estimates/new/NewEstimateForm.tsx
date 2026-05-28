@@ -495,7 +495,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     // 처마 외곽 둘레 사용 (물받이는 처마 끝에 달림)
     const eavePerim = inputPerim + 8 * (overhangCm / 100);
     const weight = Array.from(gutterSides).reduce((sum, s) => sum + GUTTER_SIDE_WEIGHTS[s], 0);
-    const estLen = Math.round(eavePerim * weight * 10) / 10;
+    // m 단위 정수 반올림 (둘레와 동일한 정밀도)
+    const estLen = Math.round(eavePerim * weight);
 
     const serialized = Array.from(gutterSides).sort().join(",");
     const sidesChanged = prevGutterSerializedRef.current !== serialized;

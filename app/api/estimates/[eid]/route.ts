@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserAndSettings } from "@/lib/auth";
-import { buildLineItems, calcTotals, calcFromFinalPrice } from "@/lib/calculations";
+import { buildLineItems, calcTotals, calcFromFinalPrice, resolveEffectiveLossRate } from "@/lib/calculations";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import type { BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { Estimate } from "@prisma/client";
@@ -137,7 +137,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
     const scope: ScopeFlags = scopeFlags ?? {};
     const marginRate = inputMarginRate ?? settings.defaultMarginRate;
     const vatIncl = vatIncluded ?? estimate.vatIncluded;
-    const effectiveLossRate = lossRate ?? settings.defaultLossRate;
+    const manualLossRate = lossRate ?? settings.defaultLossRate;
+    const effectiveLossRate = resolveEffectiveLossRate(
+      (settings as unknown as { lossRateMode?: string }).lossRateMode,
+      roofShape as RoofShape | null,
+      manualLossRate,
+    );
 
     const lineItemDrafts = buildLineItems({
       settings,

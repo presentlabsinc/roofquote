@@ -237,6 +237,33 @@ export function findAndScaleBaseline(
 }
 
 /**
+ * 지붕 형태별 강판 로스율 조회.
+ * 자동 모드(lossRateMode === "auto")에서 지붕형태 선택 시 이 값을 사용.
+ * roofShape 가 없으면 null → 호출자가 fallback (수동 lossRate) 처리.
+ */
+export function lossRateForRoofShape(roofShape: RoofShape | null | undefined): number | null {
+  if (!roofShape) return null;
+  return ROOF_SHAPE_FACTORS[roofShape]?.lossRate ?? null;
+}
+
+/**
+ * 견적에 실제 적용할 로스율 결정.
+ *   - lossRateMode === "auto" + roofShape 있음 → ROOF_SHAPE_FACTORS lossRate
+ *   - 그 외 (manual 또는 roofShape 없음) → manualLossRate (사용자 입력값 또는 settings default)
+ */
+export function resolveEffectiveLossRate(
+  lossRateMode: string | null | undefined,
+  roofShape: RoofShape | null | undefined,
+  manualLossRate: number,
+): number {
+  if (lossRateMode === "auto") {
+    const auto = lossRateForRoofShape(roofShape);
+    if (auto !== null) return auto;
+  }
+  return manualLossRate;
+}
+
+/**
  * 절곡 비용 — 넓이mm × 단가(원/mm·3m) × (길이m / 3).
  * 예: 350mm 용마루 10m, 단가 36원 → 350 × 36 × (10/3) = 42,000원
  */

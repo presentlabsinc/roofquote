@@ -63,7 +63,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       accessoryRate: 0.03,
       ridgePricePerM: 25000,
       eavePricePerM: 20000,
-      gutterPricePerM: 30000,
+      gutterPricePerM: 5000,
       removalPricePerSqm: 8000,
       wasteDisposalCost: 1000000,
       dailyWage: 300000,

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserAndSettings } from "@/lib/auth";
-import { buildLineItems, calcTotals } from "@/lib/calculations";
+import { buildLineItems, calcTotals, resolveEffectiveLossRate } from "@/lib/calculations";
 import type { BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 
@@ -80,7 +80,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const scope: ScopeFlags = scopeFlags ?? {};
   const marginRate = inputMarginRate ?? settings.defaultMarginRate;
   const vatIncl = vatIncluded ?? settings.vatIncludedByDefault;
-  const effectiveLossRate = lossRate ?? settings.defaultLossRate;
+  // 로스율: 설정의 lossRateMode === "auto" + roofShape 있으면 형태별 자동 적용,
+  // 그 외엔 사용자 입력값 (또는 settings.defaultLossRate) 사용.
+  const manualLossRate = lossRate ?? settings.defaultLossRate;
+  const effectiveLossRate = resolveEffectiveLossRate(
+    (settings as unknown as { lossRateMode?: string }).lossRateMode,
+    roofShape as RoofShape | null,
+    manualLossRate,
+  );
 
   const lineItemDrafts = buildLineItems({
     settings,

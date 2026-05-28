@@ -22,7 +22,7 @@ const DEFAULTS = {
   accessoryRate: 0.15,
   ridgePricePerM: 25000,
   eavePricePerM: 20000,
-  gutterPricePerM: 30000,
+  gutterPricePerM: 5000,
   removalPricePerSqm: 8000,
   wasteDisposalCost: 300000,
   dailyWage: 300000,
@@ -51,6 +51,8 @@ const DEFAULTS = {
   lodgingCostPerPersonNight: 50000,
   defaultMarginRate: 0.25,
   vatIncludedByDefault: true,
+  // 로스율 적용 모드 — "auto" (지붕형태별 자동) | "manual" (디폴트값 항상)
+  lossRateMode: "auto" as "auto" | "manual",
   // ── 절곡 단가 및 기본 넓이 ──
   bendingPricePerMmPer3m: 36,
   bendingWidthRidge: 350,
@@ -250,6 +252,7 @@ export function SettingsForm({ defaultValues }: Props) {
       screwSmallPrice: defaultValues.screwSmallPrice ?? 100,
       siliconePrice: defaultValues.siliconePrice ?? 5000,
       insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
+      lossRateMode: (((defaultValues as unknown as { lossRateMode?: string }).lossRateMode === "manual") ? "manual" : "auto") as "auto" | "manual",
     };
   });
 
@@ -386,6 +389,33 @@ export function SettingsForm({ defaultValues }: Props) {
               <span className="block text-xs text-muted-foreground mt-0.5">새 견적 만들 때 로스율 토글이 켜진 상태로 시작</span>
             </span>
           </label>
+          {/* 로스율 적용 모드 — 자동(지붕형태별) vs 수동(디폴트값) */}
+          <div className="pt-2 border-t border-border/40">
+            <div className="font-medium text-foreground text-sm mb-2">로스율 적용 방식</div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: "auto", label: "지붕 형태별 자동", desc: "박공 7% · 모임 12% · 멘사드 18% 등" },
+                { value: "manual", label: "디폴트 항상 적용", desc: `위 ${Math.round(values.defaultLossRate * 100)}% 사용` },
+              ].map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setField("lossRateMode", opt.value as "auto" | "manual")}
+                  className={`pressable rounded-xl py-2.5 px-3 text-left border ${
+                    values.lossRateMode === opt.value
+                      ? "border-primary bg-primary/5 text-primary"
+                      : "border-border/60 bg-card text-foreground"
+                  }`}
+                >
+                  <div className="text-sm font-semibold">{opt.label}</div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1.5">
+              자동 모드 + 지붕 형태 미선택 시엔 디폴트 로스율 사용
+            </p>
+          </div>
           <div className="pt-2 border-t border-border/40">
             <div className="font-medium text-foreground text-sm mb-2">기본 하지 자재</div>
             <div className="grid grid-cols-2 gap-2">

@@ -51,6 +51,12 @@ model PricingSettings {
   // 자재 로스율 — 시공 시 자투리/낭비분
   defaultLossRate      Float   @default(0.15) // 15%
   useLossRateByDefault Boolean @default(false)
+  /**
+   * 로스율 적용 모드:
+   *   "manual" — 항상 사용자가 정한 defaultLossRate (또는 견적별 입력값) 사용
+   *   "auto"   — 지붕 형태 선택 시 ROOF_SHAPE_FACTORS 의 lossRate 자동 적용 (지붕형태 없으면 manual fallback)
+   */
+  lossRateMode         String  @default("auto")
 
   // 하지작업 단가
   substructureMode             String @default("wood")  // 'wood' | 'steel' — 새 견적 기본값
