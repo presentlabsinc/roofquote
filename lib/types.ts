@@ -221,6 +221,7 @@ export interface PricingOverrides {
   drainHolePrice?: number;
   capBendingPricePerM?: number;
   stainlessDrainPricePerM?: number;
+  peFoamPricePerSqm?: number;
 }
 
 /** Field definitions for the override UI — grouped by concern. */

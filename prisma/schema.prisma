@@ -67,6 +67,9 @@ model PricingSettings {
   // 지붕공사 / 옥상지붕 — 엔드캡 1개당
   endCapPrice                  Int    @default(3500)
 
+  // PE폼 부착 (결로/소음 방지) — 강판 ㎡당 추가 단가
+  peFoamPricePerSqm            Int    @default(1000)
+
   // ── 절곡 단가 및 기본 넓이 (자재 자동 추정용) ──
   // 절곡 비용 공식: 넓이mm × bendingPricePerMmPer3m × (길이m / 3)
   // 견적의 용마루/처마/두겁/미시/프래싱 등 절곡 작업 단가 산출에 사용
@@ -215,6 +218,8 @@ model Estimate {
   hasInsulation     Boolean  @default(false)  // [DEPRECATED] 구버전 단순 토글
   /** 단열재 종류 multi-select — 빈 배열 = 없음. ["eps", "xps", "pir", "thermalReflect", "other"] */
   insulationTypes   Json     @default("[]")
+  /** PE폼 부착 (강판 ㎡당 추가 단가) */
+  hasPeFoam         Boolean  @default(false)
 
   // Line items in separate table (each holds its own unitPrice snapshot)
   lineItems EstimateLineItem[]

@@ -157,6 +157,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     setInsulationTypes((arr) => arr.includes(t) ? arr.filter((x) => x !== t) : [...arr, t]);
   }
 
+  // PE폼 부착 — 강판 결로/소음 방지. 강판 면적과 동일 비율로 추가 단가.
+  const [hasPeFoam, setHasPeFoam] = useState(
+    (existing as unknown as { hasPeFoam?: boolean } | undefined)?.hasPeFoam ?? false,
+  );
+
   // 지붕 형태는 기본 숨김. 박공 가정으로 자동 추정 (대부분 케이스).
   // 다른 형태(모임/팔작/외쪽/멘사드)면 펼쳐서 직접 지정.
   // 기존 견적에 roofShape 가 저장돼 있으면 시작부터 펼친 상태.
@@ -377,6 +382,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
         : null,
       hasInsulation: insulationTypes.length > 0,
       insulationTypes,
+      hasPeFoam,
     };
 
     setSaving(true);
@@ -703,6 +709,26 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     label={m.label}
                   />
                 ))}
+              </div>
+              {/* PE폼 부착 — 강판 결로/소음 방지 옵션 */}
+              <div className="mt-3 pt-3 border-t border-border/40">
+                <button
+                  type="button"
+                  onClick={() => setHasPeFoam((v) => !v)}
+                  className="w-full flex items-center gap-3 pressable"
+                >
+                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
+                    hasPeFoam ? "bg-primary border-primary" : "bg-card border-border"
+                  }`}>
+                    {hasPeFoam && <span className="text-white text-xs leading-none">✓</span>}
+                  </div>
+                  <div className="flex-1 text-left">
+                    <div className="text-sm font-semibold text-foreground">PE폼 부착</div>
+                    <div className="text-[10px] text-muted-foreground mt-0.5">
+                      결로 / 소음 방지 — 강판 ㎡당 +{eff.peFoamPricePerSqm.toLocaleString("ko-KR")}원 (설정에서 변경)
+                    </div>
+                  </div>
+                </button>
               </div>
             </Section>
 

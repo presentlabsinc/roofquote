@@ -289,6 +289,8 @@ export interface BuildLineItemsInput {
   hasInsulation?: boolean;
   /** 단열재 종류 (multi-select). 빈 배열 = 없음. */
   insulationTypes?: InsulationType[] | string[];
+  /** PE폼 부착 (강판 ㎡당 추가 단가) */
+  hasPeFoam?: boolean;
 }
 
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
@@ -307,6 +309,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     buildingAreaM2 = null,
     perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
     hasInsulation = false, insulationTypes = [],
+    hasPeFoam = false,
   } = input;
 
   // Apply per-estimate pricing overrides on top of the live PricingSettings.
@@ -339,6 +342,16 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       category: "material", name, quantity: effectiveArea, unit: "㎡", unitPrice,
       total: Math.round(effectiveArea * unitPrice), sortOrder: order++,
     });
+    // PE폼 부착 (결로/소음 방지) — 강판 면적과 동일하게 (로스율 포함) ㎡당 추가 단가.
+    // 별도 라인으로 분리해서 견적서에서도 명시되고 사용자가 단가/수량 수정 가능.
+    if (hasPeFoam && settings.peFoamPricePerSqm > 0) {
+      items.push({
+        category: "material", name: "PE폼 부착", quantity: effectiveArea, unit: "㎡",
+        unitPrice: settings.peFoamPricePerSqm,
+        total: Math.round(effectiveArea * settings.peFoamPricePerSqm),
+        sortOrder: order++,
+      });
+    }
     // Note: 부자재 used to be auto-added here at materialTotal × accessoryRate.
     // That's now handled by the accessory catalog category (simple mode =
     // "percent" default 0.15). See "Catalog categories — simple/detailed" below.
