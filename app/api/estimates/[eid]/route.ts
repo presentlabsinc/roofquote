@@ -126,6 +126,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       applyLossRate = false, lossRate = null,
       buildingShape = null, roofShape = null,
       perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
+      eaveOverhangCm = 50,
       hasInsulation = false, insulationTypes = [],
       insulationNote = null, roofShapeNote = null,
       hasPeFoam = false,
@@ -158,7 +159,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       buildingShape: buildingShape as BuildingShape | null,
       roofShape: roofShape as RoofShape | null,
       buildingAreaM2: buildingAreaM2 ?? null,
-      perimeterM, ridgeCount, parapetHeightCm, hasInsulation, insulationTypes, hasPeFoam,
+      perimeterM, ridgeCount, parapetHeightCm, eaveOverhangCm,
+      hasInsulation, insulationTypes, hasPeFoam,
     });
     const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
 
@@ -191,6 +193,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
           perimeterM: perimeterM || null,
           ridgeCount: ridgeCount || 1,
           parapetHeightCm: parapetHeightCm || null,
+          eaveOverhangCm: typeof eaveOverhangCm === "number" ? eaveOverhangCm : 50,
           hasInsulation: !!hasInsulation,
           insulationTypes: (Array.isArray(insulationTypes) ? insulationTypes : []) as unknown as object,
           insulationNote: insulationNote || null,

@@ -142,11 +142,21 @@ export function estimateGeometrically(args: {
   ridgeCount: number;
   parapetHeightCm: number | null;
   perimeterOverride: number | null;
+  /**
+   * 처마 돌출 cm (지붕공사/옥상지붕만). 외벽 둘레에서 처마 외곽 둘레로 보정 —
+   * 사방으로 d 만큼 나오면 △둘레 = 8 × (d/100). rectilinear polygon 의 모든 모양
+   * (ㅁ/ㄱ/ㄷ) 에 대해 동일 (외부코너 - 내부코너 = 4 불변).
+   * 한옥처럼 처마 1m 면 100, 일반 50cm 면 50, 평지붕은 0.
+   */
+  eaveOverhangCm?: number;
 }): GeometricEstimate {
-  const { constructionType, areaM2, buildingAreaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride } = args;
-  const perimeter = (perimeterOverride && perimeterOverride > 0)
+  const { constructionType, areaM2, buildingAreaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride, eaveOverhangCm = 0 } = args;
+  const buildingPerimeter = (perimeterOverride && perimeterOverride > 0)
     ? perimeterOverride
     : estimatePerimeter(areaM2, building, buildingAreaM2);
+  // 처마 외곽 둘레 = 건물 둘레 + 8d (지붕공사/옥상지붕만, 스틸방수는 그대로).
+  const eaveOverhangM = constructionType === "steelWaterproof" ? 0 : (eaveOverhangCm / 100);
+  const perimeter = buildingPerimeter + 8 * eaveOverhangM;
   const longSide = estimateLongSide(perimeter);
   const buildingF = BUILDING_SHAPE_FACTORS[building];
 
@@ -287,6 +297,8 @@ export interface BuildLineItemsInput {
   ridgeCount?: number;
   /** 스틸방수 — 파라펫 높이 (기본 60cm) */
   parapetHeightCm?: number | null;
+  /** 처마 돌출 cm — 지붕공사/옥상지붕. 외벽 둘레 → 처마 외곽 둘레 보정. */
+  eaveOverhangCm?: number;
   /** [DEPRECATED] 단열재 단순 토글 — insulationTypes 로 대체. 구버전 호환용. */
   hasInsulation?: boolean;
   /** 단열재 종류 (multi-select). 빈 배열 = 없음. */
@@ -310,6 +322,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     buildingShape = null, roofShape = null,
     buildingAreaM2 = null,
     perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
+    eaveOverhangCm = 50,
     hasInsulation = false, insulationTypes = [],
     hasPeFoam = false,
   } = input;
@@ -374,6 +387,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     constructionType, areaM2, buildingAreaM2,
     building: buildingShape, roof: roofShape,
     ridgeCount, parapetHeightCm, perimeterOverride: perimeterM,
+    eaveOverhangCm,
   }) : null;
 
   /** 추정값 헬퍼 — 베이스라인 우선, geom fallback, 없으면 fallback 콜백. */

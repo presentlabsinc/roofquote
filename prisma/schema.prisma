@@ -214,6 +214,8 @@ model Estimate {
   perimeterM        Float?   // 직접 입력값. 없으면 형태+면적으로 추정
   ridgeCount        Int      @default(1)
   parapetHeightCm   Int?     // 스틸방수만 — 파라펫 강판 면적 계산에 사용
+  /** 처마 돌출 cm — 지붕공사/옥상지붕만. 외곽 둘레 = 건물 둘레 + 8 × (d/100) */
+  eaveOverhangCm    Int      @default(50)
 
   // ── 옵션 ──
   hasInsulation     Boolean  @default(false)  // [DEPRECATED] 구버전 단순 토글

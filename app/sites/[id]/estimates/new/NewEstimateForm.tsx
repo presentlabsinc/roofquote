@@ -146,6 +146,13 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [parapetHeightInput, setParapetHeightInput] = useState(
     existing?.parapetHeightCm ? String(existing.parapetHeightCm) : "60",
   );
+  // 처마 돌출 cm — 지붕공사/옥상지붕에서 외벽 둘레 → 처마 외곽 둘레 보정.
+  // 한옥 같으면 100, 일반 50, 평지붕은 0.
+  const [eaveOverhangInput, setEaveOverhangInput] = useState(
+    (existing as unknown as { eaveOverhangCm?: number } | undefined)?.eaveOverhangCm != null
+      ? String((existing as unknown as { eaveOverhangCm?: number }).eaveOverhangCm)
+      : "50",
+  );
   // 단열재 multi-select. 기존 견적의 insulationTypes 가 있으면 우선, 없는데 hasInsulation=true 면 ["other"] 로 시드.
   const [insulationTypes, setInsulationTypes] = useState<InsulationType[]>(() => {
     const stored = (existing as unknown as { insulationTypes?: unknown })?.insulationTypes;
@@ -390,6 +397,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       parapetHeightCm: constructionType === "steelWaterproof"
         ? (parapetHeightInput ? parseInt(parapetHeightInput) || 60 : 60)
         : null,
+      eaveOverhangCm: constructionType === "steelWaterproof"
+        ? 0
+        : (parseInt(eaveOverhangInput) || 0),
       hasInsulation: insulationTypes.length > 0,
       insulationTypes,
       insulationNote: insulationTypes.includes("other") ? insulationNote : null,
@@ -521,7 +531,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 ))}
               </div>
               {buildingShape && (
-                <div className="mt-3 pt-3 border-t border-border/40">
+                <div className="mt-3 pt-3 border-t border-border/40 space-y-3">
                   {(() => {
                     const sqm = parseFloat(sqmInput) || 0;
                     const bSqm = showBuildingArea && buildingSqmInput
@@ -531,26 +541,51 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       ? estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null)
                       : 0;
                     const source = bSqm > 0 ? "건물면적" : "시공면적÷1.4";
+                    const overhangCm = parseInt(eaveOverhangInput) || 0;
+                    const isRoofType = constructionType !== "steelWaterproof";
+                    const eavePerim = isRoofType && estPerim > 0
+                      ? Math.round((estPerim + 8 * (overhangCm / 100)) * 10) / 10
+                      : estPerim;
                     return (
                       <>
-                        <Label className="text-[10px] text-muted-foreground mb-1 block">
-                          건물 둘레 (옵션 — 비우면 자동 추정
-                          {estPerim > 0 ? `: ${estPerim}m (${source})` : ""})
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number" inputMode="decimal"
-                            value={perimeterInput}
-                            onChange={(e) => setPerimeterInput(e.target.value)}
-                            placeholder={estPerim > 0 ? String(estPerim) : "0"}
-                            className="h-11 rounded-xl tabular-nums flex-1"
-                          />
-                          <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                        <div>
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            건물 둘레 (옵션 — 비우면 자동 계산
+                            {estPerim > 0 ? `: ${estPerim}m (${source})` : ""})
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number" inputMode="decimal"
+                              value={perimeterInput}
+                              onChange={(e) => setPerimeterInput(e.target.value)}
+                              placeholder={estPerim > 0 ? String(estPerim) : "0"}
+                              className="h-11 rounded-xl tabular-nums flex-1"
+                            />
+                            <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                          </div>
                         </div>
-                        {bSqm === 0 && sqm > 0 && (
-                          <p className="text-[10px] text-muted-foreground mt-1.5">
-                            정확한 둘레가 필요하면 위 "건물 면적도 함께 기입" 옵션을 채우거나 직접 입력하세요
-                          </p>
+                        {/* 처마 돌출 — 지붕공사/옥상지붕만. 외벽 둘레 → 처마 외곽 둘레 보정 */}
+                        {isRoofType && (
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground mb-1 block">
+                              처마 돌출 (사방 cm — 0 = 평지붕, 50 = 일반, 100 = 한옥)
+                            </Label>
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number" inputMode="numeric"
+                                value={eaveOverhangInput}
+                                onChange={(e) => setEaveOverhangInput(e.target.value)}
+                                placeholder="50"
+                                className="h-11 rounded-xl tabular-nums flex-1"
+                              />
+                              <span className="text-sm text-muted-foreground font-medium w-7">cm</span>
+                            </div>
+                            {estPerim > 0 && overhangCm > 0 && (
+                              <p className="text-[10px] text-muted-foreground mt-1.5 tabular-nums">
+                                처마 외곽 둘레 ≈ {eavePerim}m (= {estPerim} + 8 × {(overhangCm / 100).toFixed(2)})
+                              </p>
+                            )}
+                          </div>
                         )}
                       </>
                     );
@@ -562,30 +597,23 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             {/* STEP 2.7: 지붕 형태 (지붕/옥상지붕) 또는 파라펫 (스틸방수) */}
             {constructionType !== "steelWaterproof" ? (
               <Section icon={<Layers size={18} />} title="지붕 형태 (옵션)">
+                <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                  용마루·처마 길이 + 강판 로스율 자동 계산
+                  {roofShape && !showRoofDetails && (
+                    <> · 선택됨: <b>{ROOF_SHAPES.find((s) => s.value === roofShape)?.label ?? roofShape}</b></>
+                  )}
+                </p>
                 {!showRoofDetails ? (
                   <button
                     type="button"
                     onClick={() => setShowRoofDetails(true)}
-                    className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
+                    className="w-full rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-foreground"
                   >
-                    <div className="text-xs">
-                      <div className="font-semibold text-foreground">
-                        {roofShape
-                          ? `선택됨: ${ROOF_SHAPES.find((s) => s.value === roofShape)?.label ?? roofShape}`
-                          : "지붕 모양 지정 (선택)"}
-                      </div>
-                      <div className="text-muted-foreground mt-0.5">
-                        용마루·처마 길이 + 강판 로스율 자동 추정에 사용
-                      </div>
-                    </div>
-                    <ChevronDown size={16} className="text-muted-foreground shrink-0 ml-2" />
+                    펼치기 <ChevronDown size={14} />
                   </button>
                 ) : (
                   <>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="text-[11px] text-muted-foreground">
-                        지붕 모양으로 용마루·처마 길이 + 강판 로스율 자동 추정
-                      </p>
+                    <div className="flex justify-end mb-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -593,7 +621,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           setRoofShape(null);
                           setRoofShapeNote("");
                         }}
-                        className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
+                        className="text-[10px] text-muted-foreground hover:text-foreground pressable flex items-center gap-0.5"
                       >
                         <ChevronUp size={12} />접기
                       </button>
@@ -738,24 +766,21 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   />
                 ))}
               </div>
-              {/* PE폼 부착 — 강판 결로/소음 방지 옵션 */}
+              {/* PE폼 부착 — 단일 chip 토글로 통일 */}
               <div className="mt-3 pt-3 border-t border-border/40">
                 <button
                   type="button"
                   onClick={() => setHasPeFoam((v) => !v)}
-                  className="w-full flex items-center gap-3 pressable"
+                  className={`pressable rounded-xl px-3 py-2.5 text-sm font-semibold border w-full flex items-center justify-between ${
+                    hasPeFoam
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-card text-foreground border-border/60"
+                  }`}
                 >
-                  <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${
-                    hasPeFoam ? "bg-primary border-primary" : "bg-card border-border"
-                  }`}>
-                    {hasPeFoam && <span className="text-white text-xs leading-none">✓</span>}
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="text-sm font-semibold text-foreground">PE폼 부착</div>
-                    <div className="text-[10px] text-muted-foreground mt-0.5">
-                      결로 / 소음 방지 — 강판 ㎡당 +{eff.peFoamPricePerSqm.toLocaleString("ko-KR")}원 (설정에서 변경)
-                    </div>
-                  </div>
+                  <span>PE폼 부착</span>
+                  <span className={`text-xs tabular-nums ${hasPeFoam ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                    +{eff.peFoamPricePerSqm.toLocaleString("ko-KR")}원/㎡
+                  </span>
                 </button>
               </div>
             </Section>
@@ -957,9 +982,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               }
               return (
                 <Section icon={<CloudRain size={18} />} title="물받이 / 엔드캡">
-                  <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                    둘 중 하나만 시공 (동시 시공 안 함)
-                  </p>
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
@@ -1067,30 +1089,23 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
             {/* ── 단열재 (옵션, 마지막) — 펼침/접기 + 기타 노트 ── */}
             <Section icon={<Package size={18} />} title="단열재 (옵션)">
+              <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
+                복수 선택 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
+                {insulationTypes.length > 0 && !showInsulation && (
+                  <> · 선택됨: <b>{insulationTypes.length}종</b></>
+                )}
+              </p>
               {!showInsulation ? (
                 <button
                   type="button"
                   onClick={() => setShowInsulation(true)}
-                  className="w-full text-left rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-3 flex items-center justify-between"
+                  className="w-full rounded-xl bg-muted/30 hover:bg-muted/50 pressable px-3 py-2.5 flex items-center justify-center gap-1.5 text-xs font-medium text-foreground"
                 >
-                  <div className="text-xs">
-                    <div className="font-semibold text-foreground">
-                      {insulationTypes.length > 0
-                        ? `선택됨: ${insulationTypes.length}종`
-                        : "단열재 추가 (선택)"}
-                    </div>
-                    <div className="text-muted-foreground mt-0.5">
-                      열었다 닫았다 가능 · 복수 선택 OK
-                    </div>
-                  </div>
-                  <ChevronDown size={16} className="text-muted-foreground shrink-0 ml-2" />
+                  펼치기 <ChevronDown size={14} />
                 </button>
               ) : (
                 <>
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <p className="text-[11px] text-muted-foreground">
-                      복수 선택 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
-                    </p>
+                  <div className="flex justify-end mb-2">
                     <button
                       type="button"
                       onClick={() => {
@@ -1098,7 +1113,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                         setInsulationTypes([]);
                         setInsulationNote("");
                       }}
-                      className="text-[10px] text-muted-foreground hover:text-foreground pressable shrink-0 flex items-center gap-0.5"
+                      className="text-[10px] text-muted-foreground hover:text-foreground pressable flex items-center gap-0.5"
                     >
                       <ChevronUp size={12} />접기
                     </button>
