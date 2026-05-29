@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -72,10 +72,22 @@ const DEFAULTS = {
 
 type FieldDef = { key: keyof typeof DEFAULTS; label: string; unit?: string; step?: number; pct?: boolean };
 
-const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
+/**
+ * 설정 섹션 — 변경 빈도 3계층으로 정렬.
+ *   tier 1 회사 정보 (1회 설정) — 맨 위 (정체성)
+ *   tier 2 견적 기본 정책 (자주 조정) — 마진/로스율/VAT/견적번호
+ *   tier 3 단가표 (거의 고정) — 자재/하지/절곡/소모품/스틸방수/노무·장비·운송
+ *
+ * `tier` 값이 바뀌는 첫 섹션 앞에 구분선이 렌더링됨.
+ * 특수 카드(직인+안내문구 / 마진분배 / 정책토글)는 특정 섹션 뒤에 끼워넣음 (render 참고).
+ */
+type Tier = "company" | "policy" | "price";
+const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[] = [
+  // ─── tier 1: 회사 정보 ───
   {
     section: "회사 정보",
     emoji: "🏢",
+    tier: "company",
     items: [
       { key: "companyName", label: "회사명" },
       { key: "companyPhone", label: "대표 연락처" },
@@ -84,12 +96,33 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
       { key: "bankAccount", label: "입금 계좌" },
     ],
   },
+  // ─── tier 2: 견적 기본 정책 ───
+  {
+    section: "마진",
+    emoji: "💰",
+    tier: "policy",
+    items: [
+      { key: "defaultMarginRate", label: "기본 마진율 (매출 대비)", unit: "%", step: 0.01, pct: true },
+    ],
+  },
+  {
+    section: "견적 기본값",
+    emoji: "📋",
+    tier: "policy",
+    items: [
+      { key: "defaultLossRate", label: "기본 자재 로스율", unit: "%", step: 0.01, pct: true },
+      { key: "defaultWorkerCount", label: "기본 작업 인원", unit: "명" },
+      // 견적 번호 시작값 — 새 견적 번호 = estimateNumberStart + 올해 이미 만든 견적 수.
+      { key: "estimateNumberStart", label: "견적 번호 시작값 (YYYY-XXX)", unit: "" },
+    ],
+  },
+  // ─── tier 3: 단가표 ───
   {
     section: "자재 단가",
     emoji: "🧱",
+    tier: "price",
     items: [
       { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (0.45t 기준)", unit: "원" },
-      { key: "accessoryRate", label: "부자재 비율", unit: "%", step: 0.01, pct: true },
       { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
@@ -100,35 +133,9 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     ],
   },
   {
-    section: "스틸방수 단가",
-    emoji: "🟦",
-    items: [
-      { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
-      { key: "downspoutUnitPrice", label: "홈통 (개당)", unit: "원" },
-      { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
-      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
-    ],
-  },
-  {
-    section: "인건비",
-    emoji: "👷",
-    items: [
-      { key: "dailyWage", label: "1인 1일", unit: "원" },
-      { key: "defaultWorkerCount", label: "기본 작업 인원", unit: "명" },
-    ],
-  },
-  {
-    section: "장비비",
-    emoji: "🏗️",
-    items: [
-      { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
-      { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
-      { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
-    ],
-  },
-  {
     section: "하지 작업 단가",
     emoji: "🪵",
+    tier: "price",
     items: [
       { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
       { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
@@ -137,6 +144,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
   {
     section: "절곡 단가",
     emoji: "📏",
+    tier: "price",
     items: [
       { key: "bendingPricePerMmPer3m", label: "절곡 단가 (1mm × 3m 기준)", unit: "원" },
       { key: "bendingWidthRidge", label: "용마루 기본 넓이", unit: "mm" },
@@ -151,6 +159,7 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
   {
     section: "소모품 단가",
     emoji: "🔩",
+    tier: "price",
     items: [
       { key: "screwLargePrice", label: "스크류 (대) 개당", unit: "원" },
       { key: "screwSmallPrice", label: "스크류 (소) 개당", unit: "원" },
@@ -159,38 +168,38 @@ const FIELDS: { section: string; emoji: string; items: FieldDef[] }[] = [
     ],
   },
   {
-    section: "운송·체류비",
-    emoji: "🚚",
+    section: "스틸방수 단가",
+    emoji: "🟦",
+    tier: "price",
     items: [
+      { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
+      { key: "downspoutUnitPrice", label: "홈통 (개당)", unit: "원" },
+      { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
+      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
+    ],
+  },
+  {
+    section: "노무·장비·운송 단가",
+    emoji: "🚚",
+    tier: "price",
+    items: [
+      { key: "dailyWage", label: "1인 1일 인건비", unit: "원" },
+      { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
+      { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
+      { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
       { key: "baseTransportCost", label: "기본 운송비", unit: "원" },
       { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
       { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
     ],
   },
-  {
-    section: "공사 계산 기본값",
-    emoji: "📐",
-    items: [
-      { key: "defaultLossRate", label: "기본 자재 로스율", unit: "%", step: 0.01, pct: true },
-    ],
-  },
-  {
-    section: "마진 기본값",
-    emoji: "💰",
-    items: [
-      { key: "defaultMarginRate", label: "기본 마진율 (매출 대비)", unit: "%", step: 0.01, pct: true },
-    ],
-  },
-  {
-    section: "견적서",
-    emoji: "📄",
-    items: [
-      // 견적 번호 시작값 — 첫 번호가 YYYY-001 이 아니라 YYYY-100 같은 식으로 시작하고
-      // 싶을 때 사용. 새 견적 번호 = estimateNumberStart + 올해 이미 만든 견적 수.
-      { key: "estimateNumberStart", label: "견적 번호 시작값 (YYYY-XXX)", unit: "" },
-    ],
-  },
 ];
+
+/** 계층 구분선 라벨 — 각 tier 의 첫 섹션 앞에 표시. */
+const TIER_LABELS: Record<Tier, string> = {
+  company: "",                     // 맨 위라 라벨 생략
+  policy: "견적 기본 정책 · 자주 조정",
+  price: "단가표 · 한 번 설정하면 거의 고정",
+};
 
 interface Props {
   defaultValues: PricingSettings | null;
@@ -293,8 +302,18 @@ export function SettingsForm({ defaultValues }: Props) {
   return (
     <>
       <div className="space-y-3 pb-4">
-        {FIELDS.map(({ section, emoji, items }) => (
-          <div key={section} className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+        {FIELDS.map(({ section, emoji, tier, items }, idx) => {
+          const isTierStart = idx === 0 || FIELDS[idx - 1].tier !== tier;
+          const tierLabel = isTierStart ? TIER_LABELS[tier] : "";
+          return (
+          <Fragment key={section}>
+            {tierLabel && (
+              <div className="flex items-center gap-2 pt-3 px-1">
+                <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wide">{tierLabel}</span>
+                <span className="flex-1 h-px bg-border/60" />
+              </div>
+            )}
+          <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-center gap-2">
               <span className="text-lg">{emoji}</span>
               <h2 className="font-semibold text-foreground">{section}</h2>
@@ -344,105 +363,110 @@ export function SettingsForm({ defaultValues }: Props) {
               })}
             </div>
           </div>
-        ))}
-
-        {/* 마진 분배 비율 — 견적서 PDF 에서 마진을 어떻게 흩뿌릴지.
-            세 칸 합이 100% 가 되도록 조정. 100% 가 아니어도 분배 시 자동
-            정규화되지만 직관적으로 100 맞추는 게 좋음. */}
-        <MarginDistributionCard
-          material={values.marginMaterialRatio}
-          labor={values.marginLaborRatio}
-          profit={values.marginProfitRatio}
-          onChange={(field, val) => {
-            if (field === "material") setField("marginMaterialRatio", val);
-            else if (field === "labor") setField("marginLaborRatio", val);
-            else setField("marginProfitRatio", val);
-          }}
-        />
-
-        {/* Seal image + Notice text */}
-        <SealAndNoticeCard
-          sealImageUrl={values.sealImageUrl}
-          onSealChange={(url) => setField("sealImageUrl", url)}
-          noticeText={values.noticeText}
-          onNoticeChange={(t) => setField("noticeText", t)}
-        />
-
-        {/* Boolean defaults */}
-        <div className="bg-card rounded-2xl border border-border/60 p-5 space-y-4">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <Checkbox
-              checked={values.vatIncludedByDefault}
-              onCheckedChange={(c) => setField("vatIncludedByDefault", c === true)}
-              className="w-5 h-5"
+          {/* 회사 정보 직속 — 직인 + 견적서 안내 문구 */}
+          {section === "회사 정보" && (
+            <SealAndNoticeCard
+              sealImageUrl={values.sealImageUrl}
+              onSealChange={(url) => setField("sealImageUrl", url)}
+              noticeText={values.noticeText}
+              onNoticeChange={(t) => setField("noticeText", t)}
             />
-            <span className="flex-1">
-              <span className="block font-medium text-foreground text-sm">VAT 포함을 기본값으로</span>
-              <span className="block text-xs text-muted-foreground mt-0.5">새 견적의 부가세 표시 방식</span>
-            </span>
-          </label>
-          <label className="flex items-center gap-3 cursor-pointer">
-            <Checkbox
-              checked={values.useLossRateByDefault}
-              onCheckedChange={(c) => setField("useLossRateByDefault", c === true)}
-              className="w-5 h-5"
+          )}
+
+          {/* 기본 마진율 바로 아래 — 마진 분배 비율 */}
+          {section === "마진" && (
+            <MarginDistributionCard
+              material={values.marginMaterialRatio}
+              labor={values.marginLaborRatio}
+              profit={values.marginProfitRatio}
+              onChange={(field, val) => {
+                if (field === "material") setField("marginMaterialRatio", val);
+                else if (field === "labor") setField("marginLaborRatio", val);
+                else setField("marginProfitRatio", val);
+              }}
             />
-            <span className="flex-1">
-              <span className="block font-medium text-foreground text-sm">자재 로스율을 기본 적용</span>
-              <span className="block text-xs text-muted-foreground mt-0.5">새 견적 만들 때 로스율 토글이 켜진 상태로 시작</span>
-            </span>
-          </label>
-          {/* 로스율 적용 모드 — 자동(지붕형태별) vs 수동(디폴트값) */}
-          <div className="pt-2 border-t border-border/40">
-            <div className="font-medium text-foreground text-sm mb-2">로스율 적용 방식</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: "auto", label: "지붕 형태별 자동", desc: "박공 7% · 모임 12% · 멘사드 18% 등" },
-                { value: "manual", label: "디폴트 항상 적용", desc: `위 ${Math.round(values.defaultLossRate * 100)}% 사용` },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setField("lossRateMode", opt.value as "auto" | "manual")}
-                  className={`pressable rounded-xl py-2.5 px-3 text-left border ${
-                    values.lossRateMode === opt.value
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border/60 bg-card text-foreground"
-                  }`}
-                >
-                  <div className="text-sm font-semibold">{opt.label}</div>
-                  <div className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</div>
-                </button>
-              ))}
+          )}
+
+          {/* 견적 기본값 아래 — 정책 토글 (VAT / 로스율 적용·방식 / 기본 하지) */}
+          {section === "견적 기본값" && (
+            <div className="bg-card rounded-2xl border border-border/60 p-5 space-y-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={values.vatIncludedByDefault}
+                  onCheckedChange={(c) => setField("vatIncludedByDefault", c === true)}
+                  className="w-5 h-5"
+                />
+                <span className="flex-1">
+                  <span className="block font-medium text-foreground text-sm">VAT 포함을 기본값으로</span>
+                  <span className="block text-xs text-muted-foreground mt-0.5">새 견적의 부가세 표시 방식</span>
+                </span>
+              </label>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Checkbox
+                  checked={values.useLossRateByDefault}
+                  onCheckedChange={(c) => setField("useLossRateByDefault", c === true)}
+                  className="w-5 h-5"
+                />
+                <span className="flex-1">
+                  <span className="block font-medium text-foreground text-sm">자재 로스율을 기본 적용</span>
+                  <span className="block text-xs text-muted-foreground mt-0.5">새 견적 만들 때 로스율 토글이 켜진 상태로 시작</span>
+                </span>
+              </label>
+              {/* 로스율 적용 모드 — 자동(지붕형태별) vs 수동(디폴트값) */}
+              <div className="pt-2 border-t border-border/40">
+                <div className="font-medium text-foreground text-sm mb-2">로스율 적용 방식</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "auto", label: "지붕 형태별 자동", desc: "박공 7% · 모임 12% · 멘사드 18% 등" },
+                    { value: "manual", label: "디폴트 항상 적용", desc: `위 ${Math.round(values.defaultLossRate * 100)}% 사용` },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setField("lossRateMode", opt.value as "auto" | "manual")}
+                      className={`pressable rounded-xl py-2.5 px-3 text-left border ${
+                        values.lossRateMode === opt.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      <div className="text-sm font-semibold">{opt.label}</div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">{opt.desc}</div>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  자동 모드 + 지붕 형태 미선택 시엔 디폴트 로스율 사용
+                </p>
+              </div>
+              <div className="pt-2 border-t border-border/40">
+                <div className="font-medium text-foreground text-sm mb-2">기본 하지 자재</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: "wood", label: "목재" },
+                    { value: "steel", label: "철재" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setField("substructureMode", opt.value)}
+                      className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                        values.substructureMode === opt.value
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-border/60 bg-card text-foreground"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">새 견적 만들 때 지붕/옥상지붕 공사의 하지 기본값</p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-1.5">
-              자동 모드 + 지붕 형태 미선택 시엔 디폴트 로스율 사용
-            </p>
-          </div>
-          <div className="pt-2 border-t border-border/40">
-            <div className="font-medium text-foreground text-sm mb-2">기본 하지 자재</div>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { value: "wood", label: "목재" },
-                { value: "steel", label: "철재" },
-              ].map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setField("substructureMode", opt.value)}
-                  className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                    values.substructureMode === opt.value
-                      ? "border-primary bg-primary/5 text-primary"
-                      : "border-border/60 bg-card text-foreground"
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1.5">새 견적 만들 때 지붕/옥상지붕 공사의 하지 기본값</p>
-          </div>
-        </div>
+          )}
+          </Fragment>
+          );
+        })}
       </div>
 
       {/* Sticky save bar — sits above the BottomNav */}
@@ -453,7 +477,7 @@ export function SettingsForm({ defaultValues }: Props) {
             disabled={saving}
             className="w-full h-14 text-base font-semibold rounded-2xl shadow-lg shadow-primary/25 pressable"
           >
-            {saving ? "저장 중..." : <><Check size={20} className="mr-1.5" />단가 저장</>}
+            {saving ? "저장 중..." : <><Check size={20} className="mr-1.5" />설정 저장</>}
           </Button>
         </div>
       </div>
