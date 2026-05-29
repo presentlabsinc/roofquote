@@ -121,8 +121,9 @@ export function EstimateDetail({
     setEditingMargin(null);
   }
 
-  async function toggleVat() {
-    try { await patch({ vatIncluded: !est.vatIncluded }); }
+  async function setVat(included: boolean) {
+    if (included === est.vatIncluded) return;
+    try { await patch({ vatIncluded: included }); }
     catch { toast.error("수정에 실패했습니다"); }
   }
 
@@ -196,12 +197,26 @@ export function EstimateDetail({
       <div className="bg-gradient-to-br from-primary to-blue-700 rounded-3xl p-5 text-white shadow-xl shadow-primary/20">
         <div className="flex items-center justify-between mb-2">
           <span className="text-white/70 text-xs font-medium uppercase tracking-wider">최종 견적가</span>
-          <button
-            onClick={toggleVat}
-            className="text-[11px] font-medium px-2.5 py-1 bg-white/15 rounded-full pressable"
-          >
-            {est.vatIncluded ? "VAT 포함" : "VAT 별도"}
-          </button>
+          {/* VAT 세그먼트 토글 — 포함/별도 두 칸. 활성 칸은 흰 배경, 누르면 전환됨이 명확. */}
+          <div className="flex items-center gap-0.5 bg-white/15 rounded-full p-0.5">
+            <span className="text-[9px] font-bold text-white/50 pl-2 pr-0.5 tracking-wide">VAT</span>
+            <button
+              onClick={() => setVat(true)}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full pressable transition-colors ${
+                est.vatIncluded ? "bg-white text-primary shadow-sm" : "text-white/70"
+              }`}
+            >
+              포함
+            </button>
+            <button
+              onClick={() => setVat(false)}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-full pressable transition-colors ${
+                !est.vatIncluded ? "bg-white text-primary shadow-sm" : "text-white/70"
+              }`}
+            >
+              별도
+            </button>
+          </div>
         </div>
         <p className="text-[34px] font-bold leading-none tabular-nums mb-1">{fmt(est.finalPrice)}<span className="text-lg font-medium ml-1.5 text-white/80">원</span></p>
         <p className="text-[11px] font-medium text-white/70 mb-4">{vatLabel}</p>
