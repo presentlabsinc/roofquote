@@ -220,8 +220,12 @@ price (drop 절곡 lines) vs separated (keep). Quote total can differ ~2× on th
   - Form shows 4 toggle chips with the length input appearing when ≥1 side is selected.
   - Calculation: if `sides.size > 0` and `gutterLengthM > 0`, emit one line with the formatted label.
   - **스틸방수 예외:** for `constructionType === "steelWaterproof"` the gutter UI is hidden and replaced with the 스테인리스 배수로 input (see below). `buildLineItems` also skips the gutter line for that type.
-- **스테인리스 배수로** (steelWaterproof only) replaces 물받이 in 스틸방수. "총 길이" input + **홈통 개수**(`downspoutCount`, NumberStepper) — 홈통 = `count × downspoutUnitPrice` (기본 50,000원/개). 배수로 길이 0 이면 confirm 다이얼로그.
-- **물받이 ↔ 엔드캡** (지붕/옥상지붕) are **mutually exclusive** in the form — one Section with 2 chips. 물받이 선택 시 4면 + 길이(자동: 처마외곽둘레 × 면가중치 앞30/뒤30/좌20/우20%), 엔드캡 선택 시 개수 stepper. 둘 다 해제 가능.
+- **물받이 / 배수로는 시공 범위의 일부** — 폼에서 공사 범위 Section 바로 뒤에 배치 (자재 itemize 가 아니라 설치 여부/길이 결정이라서). 물받이 부속 자재(걸쇠/코너/마감캡 등)는 별개로 추가 자재 카탈로그 `gutter` 카테고리에 있음.
+  - 지붕/옥상지붕: 물받이 Section — 4면 칩 + 길이(자동: 처마외곽둘레 × 면가중치 앞30/뒤30/좌20/우20%).
+  - steelWaterproof: "배수로 / 물받이" Section — 스테인리스 배수로 길이 + 홈통 개수(`downspoutCount`) + **차양 물받이(옵션, gutterLength 재사용)**. 배수로 길이 0 이면 confirm.
+  - 카탈로그 `gutter` 카테고리 라벨은 steelWaterproof 에서 "배수로 / 물받이 부속" 으로 override (`CatalogPicker categoryLabels` prop).
+- **물받이 라인은 더 이상 type-gated 아님** — `buildLineItems` 가 `gutterLengthM>0 && gutterMode!=none` 이면 유형 무관 emit (스틸방수 gutterMode="full" → 라벨 "차양"). 스테인리스 배수로 라인은 steelWaterproof 전용으로 별도.
+- **엔드캡** — 기와지붕 외엔 거의 안 써서(보통 접어 마감) 별도 UI 제거. 필요 시 카탈로그 finishing 에서 선택.
 - **난간 / 두겁** (steelWaterproof) — `handrail` 토글 시 `SCOPE_FORCES`로 `cap` 자동 ON. 토글 아래 **파라펫 높이 + 난간 둘레** 직접 입력. 두겁/미시/파라펫강판 = 난간(+옥탑) 둘레 기반. (옛 `capLengthM` 직접입력은 deprecated — 둘레로 계산.)
 - **옥탑 구조물** (steelWaterproof) — `rooftopStructure` 토글 시 아래 **둘레 / 높이(`rooftopStructureHeightCm`) / 출입문 수 / 창문 수** 입력. 옥탑 외벽 강판 + 문/창 트림 절곡 생성.
 - **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). Priced per ㎡ of construction area, **로스율 적용**. 목재=붙임, 철재=띄움(아래 창고 공간). 띄움 측면 강판은 자동 X — 필요 시 수동 추가.

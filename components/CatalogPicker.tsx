@@ -31,6 +31,8 @@ interface Props {
   materialTotalEstimate?: number;
   catalog?: CatalogItem[];
   defaults?: CategoryModesMap;
+  /** 카테고리 표시 라벨 override (예: 스틸방수에서 gutter → "배수로 / 물받이 부속"). */
+  categoryLabels?: Partial<Record<CatalogCategory, string>>;
 }
 
 /**
@@ -41,7 +43,7 @@ interface Props {
  */
 function CatalogPickerBase({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
-  areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0,
+  areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0, categoryLabels,
 }: Props) {
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
   const resolved = useMemo(() => resolveCategoryDefaults({ ...defaults, ...modes }), [modes, defaults]);
@@ -130,7 +132,7 @@ function CatalogPickerBase({
         return (
           <CategoryCard
             key={cat.value}
-            label={cat.label}
+            label={categoryLabels?.[cat.value] ?? cat.label}
             icon={cat.icon}
             mode={m.mode}
             onToggleMode={() => setMode(cat.value, { mode: m.mode === "simple" ? "detailed" : "simple" })}

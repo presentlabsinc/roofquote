@@ -435,13 +435,13 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
       workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
       workDays: parseFloat(workDays) || 2,
-      // 스틸방수는 물받이 비활성 — 기존 데이터가 있어도 null/0 로 보낸다.
-      gutterMode: constructionType === "steelWaterproof" || gutterSides.size === 0
-        ? null
-        : serializeGutterSides(gutterSides),
-      gutterLengthM: constructionType === "steelWaterproof" || gutterSides.size === 0
-        ? 0
-        : parseFloat(gutterLength) || 0,
+      // 물받이 — 지붕/옥상지붕은 면 선택 기반, 스틸방수는 차양 물받이(gutterLength 재사용).
+      gutterMode: constructionType === "steelWaterproof"
+        ? ((parseFloat(gutterLength) || 0) > 0 ? "full" : null)
+        : (gutterSides.size === 0 ? null : serializeGutterSides(gutterSides)),
+      gutterLengthM: constructionType === "steelWaterproof"
+        ? (parseFloat(gutterLength) || 0)
+        : (gutterSides.size === 0 ? 0 : parseFloat(gutterLength) || 0),
       stainlessDrainLengthM: constructionType === "steelWaterproof"
         ? parseFloat(stainlessDrainLength) || 0
         : 0,
@@ -967,6 +967,111 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               </div>
             </Section>
 
+            {/* ── 물받이 / 배수로 — 시공 범위의 일부라 공사 범위 바로 뒤에 배치 ──
+                (물받이 부속 자재는 추가 자재 카탈로그 'gutter' 카테고리에 별도로 있음) */}
+            {constructionType !== "steelWaterproof" ? (
+              <Section icon={<CloudRain size={18} />} title="물받이">
+                <Label className="text-[11px] text-muted-foreground mb-2 block">
+                  설치 면 (전부 = 4면, 0개 = 안함)
+                </Label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {GUTTER_SIDES.map((side) => {
+                    const active = gutterSides.has(side);
+                    return (
+                      <button
+                        key={side}
+                        type="button"
+                        onClick={() => toggleGutterSide(side)}
+                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                          active
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-card text-foreground border-border/60"
+                        }`}
+                      >
+                        {GUTTER_SIDE_LABELS[side]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {gutterSides.size > 0 && (
+                  <div className="mt-3">
+                    <Label className="text-[11px] text-muted-foreground mb-1 block">
+                      총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={gutterLength}
+                        onChange={(e) => setGutterLength(e.target.value)}
+                        placeholder="총 길이"
+                        className="h-11 rounded-xl tabular-nums flex-1"
+                      />
+                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                    </div>
+                  </div>
+                )}
+              </Section>
+            ) : (
+              <Section icon={<Waves size={18} />} title="배수로 / 물받이">
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                      스테인리스 배수로 길이
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      옥상 바닥 배수로 · {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원/m · 0 = 안함
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={stainlessDrainLength}
+                        onChange={(e) => setStainlessDrainLength(e.target.value)}
+                        placeholder="0"
+                        className="h-11 rounded-xl tabular-nums flex-1"
+                      />
+                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                    </div>
+                  </div>
+                  <div className="pt-3 border-t border-border/40">
+                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                      홈통 개수
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      배수로에서 아래로 내려오는 홈통 · {eff.downspoutUnitPrice.toLocaleString("ko-KR")}원/개
+                    </p>
+                    <NumberStepper
+                      value={downspoutCount}
+                      onChange={setDownspoutCount}
+                      min={0} max={30} step={1}
+                      unit="개"
+                    />
+                  </div>
+                  {/* 차양 물받이 (옵션) — 옥상에 차양이 따로 있으면 물받이 필요할 수 있음 */}
+                  <div className="pt-3 border-t border-border/40">
+                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                      차양 물받이 (옵션)
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      차양이 따로 있는 경우만 · {eff.gutterPricePerM.toLocaleString("ko-KR")}원/m · 0 = 안함
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        inputMode="decimal"
+                        value={gutterLength}
+                        onChange={(e) => setGutterLength(e.target.value)}
+                        placeholder="0"
+                        className="h-11 rounded-xl tabular-nums flex-1"
+                      />
+                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                    </div>
+                  </div>
+                </div>
+              </Section>
+            )}
+
             {/* STEP 3: Steel sheet type */}
             <Section icon={<Hammer size={18} />} title="지붕재 (칼라강판) — 종류" step={3}>
               <div className="grid grid-cols-2 gap-2">
@@ -1166,96 +1271,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 areaM2={parseFloat(sqmInput) || 0}
                 gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
                 materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
+                categoryLabels={constructionType === "steelWaterproof" ? { gutter: "배수로 / 물받이 부속" } : undefined}
               />
             </Section>
 
-            {/* ── 물받이 — steelWaterproof 외 ── */}
-            {/* 엔드캡은 사용 빈도가 낮아 (기와지붕 외엔 거의 안 씀, 보통 접어서 마감)
-                추가 자재 / 부속 카탈로그(finishing) 에서 필요할 때 선택하면 됨. */}
-            {constructionType !== "steelWaterproof" && (
-              <Section icon={<CloudRain size={18} />} title="물받이">
-                <Label className="text-[11px] text-muted-foreground mb-2 block">
-                  설치 면 (전부 = 4면, 0개 = 안함)
-                </Label>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {GUTTER_SIDES.map((side) => {
-                    const active = gutterSides.has(side);
-                    return (
-                      <button
-                        key={side}
-                        type="button"
-                        onClick={() => toggleGutterSide(side)}
-                        className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                          active
-                            ? "bg-primary text-primary-foreground border-primary"
-                            : "bg-card text-foreground border-border/60"
-                        }`}
-                      >
-                        {GUTTER_SIDE_LABELS[side]}
-                      </button>
-                    );
-                  })}
-                </div>
-                {gutterSides.size > 0 && (
-                  <div className="mt-3">
-                    <Label className="text-[11px] text-muted-foreground mb-1 block">
-                      총 길이 ({eff.gutterPricePerM.toLocaleString("ko-KR")}원/m)
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        value={gutterLength}
-                        onChange={(e) => setGutterLength(e.target.value)}
-                        placeholder="총 길이"
-                        className="h-11 rounded-xl tabular-nums flex-1"
-                      />
-                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                    </div>
-                  </div>
-                )}
-              </Section>
-            )}
-
-            {constructionType === "steelWaterproof" && (
-              <Section icon={<Waves size={18} />} title="스테인리스 배수로">
-                <div className="space-y-3">
-                  <div>
-                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
-                      총 길이
-                    </Label>
-                    <p className="text-[11px] text-muted-foreground mb-2">
-                      옥상 바닥의 배수로 — 물받이 대신 사용 · {eff.stainlessDrainPricePerM.toLocaleString("ko-KR")}원/m · 0 = 안함
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        value={stainlessDrainLength}
-                        onChange={(e) => setStainlessDrainLength(e.target.value)}
-                        placeholder="0"
-                        className="h-11 rounded-xl tabular-nums flex-1"
-                      />
-                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                    </div>
-                  </div>
-                  <div className="pt-3 border-t border-border/40">
-                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
-                      홈통 개수
-                    </Label>
-                    <p className="text-[11px] text-muted-foreground mb-2">
-                      배수로에서 아래로 내려오는 홈통 · {eff.downspoutUnitPrice.toLocaleString("ko-KR")}원/개
-                    </p>
-                    <NumberStepper
-                      value={downspoutCount}
-                      onChange={setDownspoutCount}
-                      min={0} max={30} step={1}
-                      unit="개"
-                    />
-                  </div>
-                </div>
-              </Section>
-            )}
 
             {/* ── 단열재 (옵션, 마지막) — 펼침/접기 + 기타 노트 ── */}
             <Section
