@@ -259,6 +259,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [stainlessDrainLength, setStainlessDrainLength] = useState(
     existing?.stainlessDrainLengthM ? String(existing.stainlessDrainLengthM) : "",
   );
+  // 차양 물받이 (스틸방수 옵션) — 거의 안 써서 기본 접힘. 기존값 있으면 펼침.
+  const [showAwningGutter, setShowAwningGutter] = useState(
+    !!(existing && existing.constructionType === "steelWaterproof" && existing.gutterLengthM),
+  );
 
   function toggleGutterSide(side: GutterSide) {
     setGutterSides((s) => {
@@ -435,12 +439,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
       workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
       workDays: parseFloat(workDays) || 2,
-      // 물받이 — 지붕/옥상지붕은 면 선택 기반, 스틸방수는 차양 물받이(gutterLength 재사용).
+      // 물받이 — 지붕/옥상지붕은 면 선택 기반, 스틸방수는 차양 물받이(접힘 옵션, gutterLength 재사용).
       gutterMode: constructionType === "steelWaterproof"
-        ? ((parseFloat(gutterLength) || 0) > 0 ? "full" : null)
+        ? (showAwningGutter && (parseFloat(gutterLength) || 0) > 0 ? "full" : null)
         : (gutterSides.size === 0 ? null : serializeGutterSides(gutterSides)),
       gutterLengthM: constructionType === "steelWaterproof"
-        ? (parseFloat(gutterLength) || 0)
+        ? (showAwningGutter ? (parseFloat(gutterLength) || 0) : 0)
         : (gutterSides.size === 0 ? 0 : parseFloat(gutterLength) || 0),
       stainlessDrainLengthM: constructionType === "steelWaterproof"
         ? parseFloat(stainlessDrainLength) || 0
@@ -1048,25 +1052,36 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       unit="개"
                     />
                   </div>
-                  {/* 차양 물받이 (옵션) — 옥상에 차양이 따로 있으면 물받이 필요할 수 있음 */}
+                  {/* 차양 물받이 (옵션) — 거의 안 써서 건물 면적처럼 접어둠 */}
                   <div className="pt-3 border-t border-border/40">
-                    <Label className="text-sm font-semibold text-foreground mb-1.5 block">
+                    <button
+                      type="button"
+                      onClick={() => setShowAwningGutter((v) => !v)}
+                      className="flex items-center gap-2 text-xs font-medium text-primary pressable"
+                    >
+                      <span className="w-5 h-5 rounded-md border border-primary/40 flex items-center justify-center text-[11px]">
+                        {showAwningGutter ? "−" : "+"}
+                      </span>
                       차양 물받이 (옵션)
-                    </Label>
-                    <p className="text-[11px] text-muted-foreground mb-2">
-                      차양이 따로 있는 경우만 · {eff.gutterPricePerM.toLocaleString("ko-KR")}원/m · 0 = 안함
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        inputMode="decimal"
-                        value={gutterLength}
-                        onChange={(e) => setGutterLength(e.target.value)}
-                        placeholder="0"
-                        className="h-11 rounded-xl tabular-nums flex-1"
-                      />
-                      <span className="text-sm text-muted-foreground font-medium w-6">m</span>
-                    </div>
+                    </button>
+                    {showAwningGutter && (
+                      <div className="mt-3">
+                        <p className="text-[11px] text-muted-foreground mb-2">
+                          차양이 따로 있는 경우만 · {eff.gutterPricePerM.toLocaleString("ko-KR")}원/m · 0 = 안함
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            value={gutterLength}
+                            onChange={(e) => setGutterLength(e.target.value)}
+                            placeholder="0"
+                            className="h-11 rounded-xl tabular-nums flex-1"
+                          />
+                          <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </Section>
