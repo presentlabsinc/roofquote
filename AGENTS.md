@@ -16,6 +16,35 @@ The full product spec lives in [roofing_app_spec.md](roofing_app_spec.md) (Korea
 
 [README.md](README.md) is the human-facing setup + architecture guide. Refer to it before duplicating explanations.
 
+## ⭐ Product north star (read this before touching estimation logic)
+
+**The goal is NOT an objectively "correct" quote. It's that each user can easily
+tune the app to *their own* way of quoting and get a satisfying quote out fast.**
+
+Every roofer prices differently — different unit prices, different material
+quantities, different methods (목재 vs 철재 하지, 붙임 vs 띄움), different crew
+sizes and schedules, and a different gut number for the same building. We do not
+try to be right for all of them. We give a *reasonable starting point* and make
+it frictionless to bend toward the user's own numbers. After a few quotes the
+output converges to that user's style.
+
+This reorders priorities — keep them in this order when making tradeoffs:
+1. **Adjustability** — easy to change anything, anywhere, and the change sticks (per-user).
+2. **Good defaults** — close-enough out of the box so there's less to change.
+3. **Precision** — least important. The user overrides to their own number anyway;
+   don't chase ±5% in the engine when the override lever already exists.
+
+The app is built as a **5-layer adjustment stack** (all already implemented):
+1. **설정** — per-user defaults (prices, margin, loss rate, methods). Fully tenant-isolated.
+2. **견적별 단가 override** (`Estimate.pricingOverrides`) — special pricing for one estimate.
+3. **라인아이템 직접 수정/추가/삭제** — fix any auto-generated quantity/amount in place.
+4. **마진 / 평당가 / 최종가 직접 입력** — "I want this to be 850만원" → back-calculated.
+5. **고객 PDF는 원가 숨기고 마진 분배** — internal cost vs customer-facing number kept separate.
+
+When in doubt: make it editable and give a sane default, rather than hard-coding
+a "true" value. Auto-estimation exists to fill the blank with something plausible,
+not to be authoritative.
+
 ## Stage
 
 **v0 MVP only.** The spec has an explicit "v0에 들어가지 않는 것" list — do not implement any of:
@@ -129,6 +158,59 @@ These are real constraints. Violating them silently corrupts past quotes — a u
   - If one scope item *requires* another (like 난간 → 두겁 — water leaks without the cap), add an entry to `SCOPE_FORCES` — `toggleScope` auto-checks the required partner.
   - **Do not add multipliers** that auto-inflate the material area based on scope flags. User feedback: they prefer to enter the actual 시공면적 themselves and use these flags as annotations only.
 
+### Material auto-estimation engine (lib/calculations.ts)
+
+**Concept** — fill the quote with plausible material quantities from minimal input,
+as a *starting point* the user then edits (see north star at top). Spec'd in
+`MATERIAL_ESTIMATION_UPDATE.md` (in user's Downloads, not in repo) as a **two-layer**
+system:
+- **Layer 1 — baseline data** (`PricingSettings.baselineData`, JSON): real per-size
+  job history. Takes priority when present. **Currently empty** → never fires yet.
+  `findAndScaleBaseline()` looks up nearest 평수 + 형태 and scales by area.
+- **Layer 2 — geometric estimation** (`estimateGeometrically()`): always-on fallback.
+  building shape (ㅁ/ㄱ/ㄷ) → `BUILDING_SHAPE_FACTORS` (perimeter factor, corner count);
+  roof shape (박공/모임/팔작/외쪽/멘사드/기타) → `ROOF_SHAPE_FACTORS` (ridge/eave ratio, loss rate).
+
+**Perimeter is type-specific** — `estimateBasePerimeter(constructionType, ...)`:
+- `roof`: √(시공면적÷1.4) × shapeFactor **+ 8×처마돌출**(eaveOverhangCm). 기존 지붕 재시공.
+- `rooftopRoof`: √(시공면적) × shapeFactor — **no ÷1.4, no overhang** (새로 짓는 지붕이라
+  시공면적 자체가 외곽 footprint). 처마 돌출 입력 폼에서 숨김.
+- `steelWaterproof`: **no auto-estimate** — user directly inputs 난간 둘레(`railPerimeterM`)
+  + 옥탑 둘레(`rooftopStructurePerimeterM`). 옥탑 변수가 커서 면적 추정이 신뢰 불가.
+
+**Bending cost** = `calcBendingCost(widthMm, lengthM, pricePerMmPer3m)` = `width × unit × (length/3)`.
+Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMmPer3m` (기본 36).
+
+**Per-type line generation** (all gated on scope flags; user edits after):
+- roof / rooftopRoof: 용마루 마감+절곡, 처마 마감+절곡, 프래싱 절곡(꺾인 건물), 물받이 OR 엔드캡, 하지, 철거(roof만).
+- steelWaterproof: 두겁/미시/프래싱 절곡, 파라펫 강판(난간둘레×높이), 옥탑 외벽 강판(옥탑둘레×옥탑높이),
+  옥탑 문/창 트림(개수×평균둘레), 처마/덴조, 스테인리스 배수로, 홈통, 배수구 타공.
+- 공통 소모품 (buildingShape 있을 때만): 스크류 대(면적×2/㎡), 스크류 소(절곡길이×3.3/m), 실리콘(접합부÷6m).
+- 단열재(insulationTypes multi-select), PE폼(hasPeFoam, 기본 ON — 강판/바닥에 ㎡당 추가).
+
+**Loss rate** — `resolveEffectiveLossRate(lossRateMode, roofShape, manualRate)`:
+`PricingSettings.lossRateMode` = `"auto"` (지붕형태별 ROOF_SHAPE_FACTORS lossRate) | `"manual"`
+(항상 defaultLossRate). 강판 + 하지 자재에만 적용 (소모품 제외). 토글 off면 0.
+
+**Measurement-first hybrid** (the practical philosophy): big-money quantities
+(면적/둘레/용마루·처마·물받이·난간 길이/절곡 m) should be **direct input with a
+geometric auto-fill default the user can override**; small consumables
+(스크류/실리콘) stay coefficient-based. Don't derive everything from area — it stacks error.
+
+**Planned upgrade (awaiting 포스코 data) — spec-driven engine:**
+- Replace guessed coefficients with real consumption rules ("방수스크류 50cm 간격",
+  "하지 2×4 @ 60cm 격자 + 서포트 격자", 강판 겹침/로스) stored as **settings constants** (global, set once).
+- Use real 30/50/80/100평 job data to **calibrate/verify** the constants — NOT as the
+  primary engine (only 4 points, real jobs are 37·63·112평). Plug a real job's dims in,
+  compare output to actual usage, tune constants + loss until they match.
+- Defaults stay industry-standard so it works without the data; data just sharpens defaults.
+
+**⚠️ OPEN DECISION (must resolve before finalizing 단가표):** does a 마감 unit price
+like `ridgePricePerM`(용마루 m당) **already include bending**, or is the auto 절곡 line
+separate? Right now roof emits BOTH `용마루 마감` (length × ridgePricePerM) AND
+`용마루 절곡` (bending) — **potential double-count**. Confirm with user: all-in unit
+price (drop 절곡 lines) vs separated (keep). Quote total can differ ~2× on this.
+
 ### Special non-scope-flag pickers
 - **물받이** is multi-select (front / back / left / right). Stored on `Estimate.gutterMode` as a comma-separated string. Helpers in [lib/types.ts](lib/types.ts):
   - `GutterSide`, `GUTTER_SIDES`, `GUTTER_SIDE_LABELS`
@@ -138,13 +220,16 @@ These are real constraints. Violating them silently corrupts past quotes — a u
   - Form shows 4 toggle chips with the length input appearing when ≥1 side is selected.
   - Calculation: if `sides.size > 0` and `gutterLengthM > 0`, emit one line with the formatted label.
   - **스틸방수 예외:** for `constructionType === "steelWaterproof"` the gutter UI is hidden and replaced with the 스테인리스 배수로 input (see below). `buildLineItems` also skips the gutter line for that type.
-- **스테인리스 배수로** (steelWaterproof only) replaces 물받이 in 스틸방수. Single "총 길이" input, priced as `stainlessDrainLengthM × stainlessDrainPricePerM`. Stored on `Estimate.stainlessDrainLengthM`. Price default 50,000원/m, configurable in 설정 → 스틸방수 단가.
-- **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option. Priced per ㎡ of construction area using `PricingSettings.substructureWoodPricePerSqm` / `substructureSteelPricePerSqm`.
-- **폐기물** uses `wasteTruckCount` (defaults 1). When 폐기물 scope is checked, a stepper appears. Cost = `wasteDisposalCost × wasteTruckCount`. (The `wasteDisposalCost` field is now interpreted as "per truck" — default updated to ₩1,000,000.)
-- **비계** uses two inputs (days + area in ㎡) → `area × days × scaffoldPricePerSqmDay`. If area is 0, falls back to legacy `scaffoldDailyCost × days` lump-sum model.
-- **두겁 (cap)** is a scope flag with inline length input. When 난간 (handrail) is checked, `SCOPE_FORCES` auto-checks 두겁 (water leaks otherwise). Cost = `capLengthM × capBendingPricePerM`. Stored on `Estimate.capLengthM`.
-- **새 배수구 타공 (drainHole)** is a scope flag with inline count stepper. Cost = `drainHoleCount × drainHolePrice`. Stored on `Estimate.drainHoleCount`.
-- **엔드캡 (endCap)** is a scope flag (지붕공사 + 옥상지붕 only) with inline count stepper. Cost = `endCapCount × endCapPrice` (default 3,500원/개, configurable in 설정 → 자재 단가).
+- **스테인리스 배수로** (steelWaterproof only) replaces 물받이 in 스틸방수. "총 길이" input + **홈통 개수**(`downspoutCount`, NumberStepper) — 홈통 = `count × downspoutUnitPrice` (기본 50,000원/개). 배수로 길이 0 이면 confirm 다이얼로그.
+- **물받이 ↔ 엔드캡** (지붕/옥상지붕) are **mutually exclusive** in the form — one Section with 2 chips. 물받이 선택 시 4면 + 길이(자동: 처마외곽둘레 × 면가중치 앞30/뒤30/좌20/우20%), 엔드캡 선택 시 개수 stepper. 둘 다 해제 가능.
+- **난간 / 두겁** (steelWaterproof) — `handrail` 토글 시 `SCOPE_FORCES`로 `cap` 자동 ON. 토글 아래 **파라펫 높이 + 난간 둘레** 직접 입력. 두겁/미시/파라펫강판 = 난간(+옥탑) 둘레 기반. (옛 `capLengthM` 직접입력은 deprecated — 둘레로 계산.)
+- **옥탑 구조물** (steelWaterproof) — `rooftopStructure` 토글 시 아래 **둘레 / 높이(`rooftopStructureHeightCm`) / 출입문 수 / 창문 수** 입력. 옥탑 외벽 강판 + 문/창 트림 절곡 생성.
+- **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). Priced per ㎡ of construction area, **로스율 적용**. 목재=붙임, 철재=띄움(아래 창고 공간). 띄움 측면 강판은 자동 X — 필요 시 수동 추가.
+- **폐기물** uses `wasteTruckCount` (defaults 1). Cost = `wasteDisposalCost × wasteTruckCount` (per truck, 기본 ₩1,000,000).
+- **비계** = `area × days × scaffoldPricePerSqmDay`. area 0 이면 legacy `scaffoldDailyCost × days`.
+- **새 배수구 타공 (drainHole)** scope flag + count stepper. Cost = `drainHoleCount × drainHolePrice`.
+- **PE폼 (hasPeFoam, 기본 ON)** — 강판 종류 섹션 체크박스. 강판 면적 × `peFoamPricePerSqm`. 견적서 PDF에선 강판 라인에 합산 표시(`mergePeFoamIntoMaterial`), 내부는 별도 라인.
+- **단열재 (insulationTypes, multi-select)** — 스티로폼(EPS)/아이소핑크(XPS)/경질우레탄폼(PIR)/열반사단열재/기타. 기타 선택 시 `insulationNote`. 면적 × `insulationPricePerSqm`.
 
 ### Numeric stepper
 - `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.
@@ -219,6 +304,13 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 - **Internal data is never modified.** `EstimateLineItem` rows stay cost-only (snapshot rule). This is purely a presentation transform applied at PDF render time. In-app `EstimateDetail` still shows the true cost breakdown + margin separately for the salesperson.
 - **Wiring:** `app/api/estimates/[eid]/pdf/route.ts` reads the current user's ratios from PricingSettings and passes them to `EstimatePDFDoc` as `marginRatios`. Settings UI: `MarginDistributionCard` at the bottom of `SettingsForm.tsx` with three % inputs + live sum check + "기본값 (50/25/25)" reset button.
 - **Ratios are read live**, not snapshotted — changing the split re-renders existing estimates' PDFs with the new distribution. Line item totals don't change, only the presentation does.
+
+### Margin is revenue-based (매출 대비), not cost-based
+`calcTotals`: **`supplyPrice = totalCost / (1 - marginRate)`**, `marginAmount = supplyPrice - totalCost`.
+i.e. marginRate = 마진 / 공급가 (매출 대비), NOT 마진 / 원가. Example: 원가 800만 + 마진율 20%
+→ 공급가 1,000만, 마진 200만. `calcFromFinalPrice` back-derives `marginRate = marginAmount / supplyPrice`.
+Clamped at 99% (denominator). Negative rate (손해) allowed. EstimateDetail labels say "매출 대비".
+**Old estimates** keep their stored marginRate (computed the old 원가-대비 way) until re-saved — not migrated.
 
 ### Margin adjustment — 4 editable inputs in `EstimateDetail`
 Order in the margin card (most-used → least-used):
