@@ -577,15 +577,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
-  // Frame reinforcement — rooftopRoof only
-  if (constructionType === "rooftopRoof" && scope.frameReinforcement) {
-    // No dedicated unit price; bill at 1 lump-sum derived from material price × area × 0.3
-    const lumpSum = Math.round(areaM2 * settings.materialPricePerSqm * 0.3);
-    items.push({
-      category: "other", name: "골조 보강", quantity: 1, unit: "식",
-      unitPrice: lumpSum, total: lumpSum, sortOrder: order++,
-    });
-  }
+  // (골조 보강 — 제거됨. 옥상지붕도 필요 없다고 확인. 필요 시 기타 비용으로 추가.)
 
   // Steel-waterproof-specific items.
   if (constructionType === "steelWaterproof") {

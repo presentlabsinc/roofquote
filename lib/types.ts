@@ -285,7 +285,7 @@ export interface ScopeFlags {
   ridge?: boolean;               // 용마루 마감
   eave?: boolean;                // 처마 마감
   gutter?: boolean;              // 물받이 교체 (with length)
-  frameReinforcement?: boolean;  // 골조 보강 (rooftopRoof only)
+  frameReinforcement?: boolean;  // [DEPRECATED] 골조 보강 — 제거됨. 옛 데이터 호환용으로만 유지.
 
   // — Steel Waterproof (옥상방수 바닥형) —
   handrailAndCap?: boolean;      // [DEPRECATED] legacy combined flag — kept for back-compat
