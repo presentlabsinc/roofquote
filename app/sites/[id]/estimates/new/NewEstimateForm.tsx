@@ -18,7 +18,7 @@
  * 색상: 본문 = text-foreground, 보조/회색 = text-muted-foreground, 강조 = text-primary.
  * ─────────────────────────────────────────────────────────────────────
  */
-import { memo, useCallback, useEffect, useRef, useState, useMemo } from "react";
+import { memo, useEffect, useRef, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,11 @@ interface Props {
   settings: PricingSettings;
   existing?: Estimate;
 }
+
+// 물받이 면별 길이 가중치 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%). 모듈 스코프 = 재렌더링마다 재생성 안 함.
+const GUTTER_SIDE_WEIGHTS: Record<GutterSide, number> = {
+  front: 0.30, back: 0.30, left: 0.20, right: 0.20,
+};
 
 export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const router = useRouter();
@@ -552,9 +557,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)
   //   - 둘레/처마 돌출만 바뀌면 면이 1개 이상 선택돼 있을 때만 갱신 (수동 입력 보존)
   //   - 스틸방수는 물받이 없음 → 적용 안 함
-  const GUTTER_SIDE_WEIGHTS: Record<GutterSide, number> = {
-    front: 0.30, back: 0.30, left: 0.20, right: 0.20,
-  };
   const prevGutterSerializedRef = useRef<string>("");
   useEffect(() => {
     if (constructionType === "steelWaterproof") return;
@@ -1507,8 +1509,11 @@ function Section({ icon, title, step, headerRight, children }: {
  * concern (자재 / 하지·스틸방수 / 인건·체류 / 장비·운송). Each field's
  * placeholder shows the current settings default. Filling it in records
  * an override for this estimate only.
+ *
+ * memo — props(overrides state / 안정 setter / settings)가 안정적이라
+ * pricingOverrides 안 바뀌면 폼 다른 입력 시 재렌더링 스킵 (가격 필드 多 → 효과 큼).
  */
-function PricingOverridesSection({
+const PricingOverridesSection = memo(function PricingOverridesSection({
   overrides, onChange, settings,
 }: {
   overrides: PricingOverrides;
@@ -1608,7 +1613,7 @@ function PricingOverridesSection({
       )}
     </div>
   );
-}
+});
 
 function UnitInput({ unit, value, onChange }: { label?: string; unit: string; value: string; onChange: (v: string) => void }) {
   // 단위는 input 안 우측에 표시되므로 위쪽 라벨은 제거 (중복 제거 — 사용자 요청).

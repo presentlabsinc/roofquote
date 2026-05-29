@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo } from "react";
+import { memo, useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
@@ -39,7 +39,7 @@ interface Props {
  * mode label sits next to the toggle. Card body shows the appropriate
  * inputs for the chosen mode. Simple mode includes live "예상 X원" preview.
  */
-export function CatalogPicker({
+function CatalogPickerBase({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
   areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0,
 }: Props) {
@@ -180,6 +180,13 @@ export function CatalogPicker({
     </div>
   );
 }
+
+/**
+ * memo — 부모(견적 폼)에서 무관한 입력(면적·작업일수 등) 칠 때마다 이 482줄 트리가
+ * 통째로 재렌더링되던 걸 막음. props 가 다 안정적이면(setter 는 안정, defaults 는
+ * 부모에서 useMemo) 관련 값(selections/modes/areaM2 등) 바뀔 때만 재렌더링.
+ */
+export const CatalogPicker = memo(CatalogPickerBase);
 
 function CategoryCard({
   label, icon, mode, onToggleMode, open, onToggleOpen, simpleCost, children,
