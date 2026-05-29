@@ -22,9 +22,17 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const data = await req.json();
-  // Strip any attempt to change userId — should never come from the body.
-  delete data.userId;
+  const body = await req.json();
+  // Whitelist editable fields — never trust the body for userId/id/photos shape etc.
+  const data: Record<string, unknown> = {};
+  if (typeof body.customerName === "string") data.customerName = body.customerName.trim();
+  if ("customerPhone" in body) data.customerPhone = body.customerPhone || null;
+  if (typeof body.siteAddress === "string") data.siteAddress = body.siteAddress.trim();
+  if ("generalMemo" in body) data.generalMemo = body.generalMemo || null;
+  if ("photos" in body) data.photos = body.photos; // SitePhotos already PATCHes this shape
+  if (Object.keys(data).length === 0) {
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+  }
   // updateMany scoped to id+userId is atomic — returns 0 affected if not owned.
   const result = await prisma.site.updateMany({ where: { id, userId: user.id }, data });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });

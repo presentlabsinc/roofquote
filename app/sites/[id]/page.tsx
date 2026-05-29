@@ -2,9 +2,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { MapPin, Phone, FileText, Plus, ChevronRight, Send } from "lucide-react";
+import { FileText, Plus, ChevronRight, Send } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SitePhotos } from "@/components/SitePhotos";
+import { EditableSiteCard } from "@/components/EditableSiteCard";
 import type { PhotoItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -25,28 +26,14 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
       <AppHeader title={site.customerName} subtitle={site.siteAddress} />
 
       <div className="max-w-lg mx-auto px-4 pt-4 pb-4 space-y-3">
-        {/* Customer card */}
-        <div className="bg-card rounded-2xl border border-border/60 p-5">
-          <p className="text-xl font-bold text-foreground">{site.customerName}</p>
-          <div className="space-y-2 mt-3">
-            <div className="flex items-start gap-2 text-sm">
-              <MapPin size={15} className="text-muted-foreground mt-0.5 shrink-0" />
-              <span className="text-foreground">{site.siteAddress}</span>
-            </div>
-            {site.customerPhone && (
-              <a href={`tel:${site.customerPhone}`}
-                className="flex items-center gap-2 text-sm pressable rounded-lg -mx-1 px-1 py-0.5">
-                <Phone size={15} className="text-primary" />
-                <span className="text-primary font-semibold tabular-nums">{site.customerPhone}</span>
-              </a>
-            )}
-          </div>
-          {site.generalMemo && (
-            <div className="mt-4 p-3 bg-muted/60 rounded-xl text-sm text-foreground leading-relaxed">
-              {site.generalMemo}
-            </div>
-          )}
-        </div>
+        {/* Customer card — 보기/편집 토글 */}
+        <EditableSiteCard
+          siteId={id}
+          customerName={site.customerName}
+          customerPhone={site.customerPhone}
+          siteAddress={site.siteAddress}
+          generalMemo={site.generalMemo}
+        />
 
         {/* Photos — always shown (with empty-state CTA inside) so the user
             can add more even when no photos exist yet. */}

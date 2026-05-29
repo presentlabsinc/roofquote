@@ -10,7 +10,12 @@ export default async function HomePage() {
   const { user, settings } = await requireUserAndSettings();
   const sites = await prisma.site.findMany({
     where: { userId: user.id },
-    include: { estimates: { orderBy: { createdAt: "desc" }, take: 1 } },
+    include: {
+      // 최신 견적 1건만 가격 표시용으로 가져오되, 실제 개수는 _count 로 따로 센다.
+      // (take:1 만 쓰면 estimates.length 가 항상 1 이라 "견적 1건" 버그가 났었음.)
+      estimates: { orderBy: { createdAt: "desc" }, take: 1 },
+      _count: { select: { estimates: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
 
@@ -98,7 +103,7 @@ export default async function HomePage() {
                           </span>
                         )}
                         <span className="text-muted-foreground">
-                          견적 {site.estimates.length}건
+                          견적 {site._count.estimates}건{site._count.estimates > 1 ? " · 최신가" : ""}
                         </span>
                       </div>
                     )}
