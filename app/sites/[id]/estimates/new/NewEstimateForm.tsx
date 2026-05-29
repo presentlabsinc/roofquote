@@ -61,7 +61,7 @@ import {
   BUILDING_SHAPES,
   ROOF_SHAPES,
 } from "@/lib/types";
-import { applyOverrides, estimatePerimeter, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { applyOverrides, estimateBasePerimeter, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
@@ -465,9 +465,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       parapetHeightCm: constructionType === "steelWaterproof"
         ? (parapetHeightInput ? parseInt(parapetHeightInput) || 60 : 60)
         : null,
-      eaveOverhangCm: constructionType === "steelWaterproof"
-        ? 0
-        : (parseInt(eaveOverhangInput) || 0),
+      // 처마 돌출은 지붕공사(roof)만. 옥상지붕은 시공면적에 포함, 스틸방수는 평지붕.
+      eaveOverhangCm: constructionType === "roof"
+        ? (parseInt(eaveOverhangInput) || 0)
+        : 0,
       // 스틸방수 전용 — 난간/옥탑 둘레 직접 입력 + 홈통 개수
       railPerimeterM: constructionType === "steelWaterproof"
         ? (parseFloat(railPerimeterInput) || 0)
@@ -534,7 +535,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const sqm = parseFloat(sqmInput) || 0;
     if (sqm <= 0) return;
     const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
-    const est = Math.round(estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null));
+    const est = constructionType
+      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null))
+      : 0;
     if (est <= 0) return;
 
     const shapeChanged = prevShapeRef.current !== buildingShape;
@@ -543,7 +546,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (shapeChanged || !perimeterInput) {
       setPerimeterInput(String(est));
     }
-  }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput]);
+  }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput, constructionType]);
 
   // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
   //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)
@@ -556,7 +559,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   useEffect(() => {
     if (constructionType === "steelWaterproof") return;
     const sqm = parseFloat(sqmInput) || 0;
-    const overhangCm = parseInt(eaveOverhangInput) || 0;
+    // 처마 돌출은 지붕공사(roof)만 둘레에 더함. 옥상지붕은 시공면적에 포함.
+    const overhangCm = constructionType === "roof" ? (parseInt(eaveOverhangInput) || 0) : 0;
     const inputPerim = parseFloat(perimeterInput) || 0;
     if (sqm <= 0 || !buildingShape || inputPerim <= 0) return;
     // 처마 외곽 둘레 사용 (물받이는 처마 끝에 달림)
@@ -679,11 +683,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     const bSqm = showBuildingArea && buildingSqmInput
                       ? parseFloat(buildingSqmInput) || 0
                       : 0;
-                    const estPerim = sqm > 0
-                      ? Math.round(estimatePerimeter(sqm, buildingShape, bSqm > 0 ? bSqm : null))
+                    const isRoof = constructionType === "roof";
+                    const estPerim = (sqm > 0 && constructionType)
+                      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null))
                       : 0;
-                    const source = bSqm > 0 ? "건물면적" : "시공면적÷1.4";
-                    const overhangCm = parseInt(eaveOverhangInput) || 0;
+                    // 옥상지붕은 시공면적 자체가 지붕 footprint
+                    const source = isRoof
+                      ? (bSqm > 0 ? "건물면적" : "시공면적÷1.4")
+                      : "시공면적 기준";
+                    const overhangCm = isRoof ? (parseInt(eaveOverhangInput) || 0) : 0;
                     const currentPerim = parseFloat(perimeterInput) || estPerim;
                     const eavePerim = currentPerim > 0
                       ? Math.round(currentPerim + 8 * (overhangCm / 100))
@@ -692,7 +700,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       <>
                         <div>
                           <Label className="text-sm font-semibold text-foreground mb-1.5 block">
-                            건물 둘레
+                            {isRoof ? "건물 둘레" : "지붕 둘레"}
                           </Label>
                           {estPerim > 0 && (
                             <p className="text-[11px] text-muted-foreground mb-2 tabular-nums">
@@ -706,7 +714,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                             unit="m"
                           />
                         </div>
-                        {/* 처마 돌출 — 외벽 둘레 → 처마 외곽 둘레 보정 */}
+                        {/* 처마 돌출 — 지붕공사(roof)만. 옥상지붕은 시공면적에 이미 돌출 포함. */}
+                        {isRoof && (
                         <div>
                           <Label className="text-sm font-semibold text-foreground mb-1.5 block">
                             처마 돌출 (사방)
@@ -726,6 +735,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                             </p>
                           )}
                         </div>
+                        )}
                       </>
                     );
                   })()}

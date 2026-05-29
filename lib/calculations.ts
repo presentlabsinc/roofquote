@@ -117,6 +117,27 @@ export function estimatePerimeter(
   ) / 10;
 }
 
+/**
+ * 공사 유형별 베이스 둘레 추정 (처마 돌출 보정 전).
+ *   - rooftopRoof: 옥상지붕은 시공면적 = 지붕 footprint (돌출 포함). ÷1.4 안 함,
+ *     처마 돌출도 보정 안 함 (이미 면적에 들어가 있음). √(시공면적) × 형태계수 직접.
+ *   - roof: 기존 지붕 재시공 — 시공면적÷1.4 = 건물면적 추정 후 √ × 형태계수 (estimatePerimeter).
+ *     처마 돌출은 호출부에서 +8d 보정.
+ *   - steelWaterproof: 난간 둘레 직접 입력이라 여기선 사용 안 함.
+ */
+export function estimateBasePerimeter(
+  constructionType: ConstructionType,
+  areaM2: number,
+  shape: BuildingShape,
+  buildingAreaM2?: number | null,
+): number {
+  if (constructionType === "rooftopRoof") {
+    if (areaM2 <= 0) return 0;
+    return Math.round(Math.sqrt(areaM2) * BUILDING_SHAPE_FACTORS[shape].perimeterFactor * 10) / 10;
+  }
+  return estimatePerimeter(areaM2, shape, buildingAreaM2);
+}
+
 /** 장변 길이 추정 — 둘레 = 2(L+S), 장단비 1.5 가정. ㄱ/ㄷ자도 주동 길이로 근사. */
 function estimateLongSide(perimeter: number): number {
   return Math.round((perimeter / 5) * 1.5 * 10) / 10;
@@ -153,9 +174,11 @@ export function estimateGeometrically(args: {
   const { constructionType, areaM2, buildingAreaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride, eaveOverhangCm = 0 } = args;
   const buildingPerimeter = (perimeterOverride && perimeterOverride > 0)
     ? perimeterOverride
-    : estimatePerimeter(areaM2, building, buildingAreaM2);
-  // 처마 외곽 둘레 = 건물 둘레 + 8d (지붕공사/옥상지붕만, 스틸방수는 그대로).
-  const eaveOverhangM = constructionType === "steelWaterproof" ? 0 : (eaveOverhangCm / 100);
+    : estimateBasePerimeter(constructionType, areaM2, building, buildingAreaM2);
+  // 처마 외곽 둘레 = 건물 둘레 + 8d — 지붕공사(roof)만.
+  //   옥상지붕은 시공면적에 돌출 포함 (새로 짓는 지붕이라 외곽까지 다 잼) → 보정 X.
+  //   스틸방수는 평지붕 → 보정 X.
+  const eaveOverhangM = constructionType === "roof" ? (eaveOverhangCm / 100) : 0;
   const perimeter = buildingPerimeter + 8 * eaveOverhangM;
   const longSide = estimateLongSide(perimeter);
   const buildingF = BUILDING_SHAPE_FACTORS[building];
