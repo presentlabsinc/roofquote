@@ -193,10 +193,12 @@ function CatalogPickerBase({
 export const CatalogPicker = memo(CatalogPickerBase);
 
 function CategoryCard({
-  label, icon, mode, onToggleMode, open, onToggleOpen, simpleCost, children,
+  label, icon, enabled, onToggleEnabled, mode, onToggleMode, open, onToggleOpen, simpleCost, children,
 }: {
   label: string;
   icon: string;
+  enabled: boolean;
+  onToggleEnabled: () => void;
   mode: "simple" | "detailed";
   onToggleMode: () => void;
   open: boolean;
@@ -205,35 +207,46 @@ function CategoryCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
-      <div className="flex items-center gap-3 px-4 py-3">
+    <div className={`bg-card rounded-2xl border overflow-hidden ${enabled ? "border-border/60" : "border-border/40 opacity-60"}`}>
+      <div className="flex items-center gap-2 px-3 py-3">
+        {/* 사용 여부 체크박스 */}
+        <button type="button" onClick={onToggleEnabled} aria-label="사용 여부" className="shrink-0 pressable">
+          <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center ${
+            enabled ? "bg-primary border-primary" : "bg-card border-border"
+          }`}>
+            {enabled && <span className="text-white text-xs leading-none">✓</span>}
+          </span>
+        </button>
+        {/* 라벨 / 펼침 (사용 중일 때만 펼침, 아니면 클릭 시 켜짐) */}
         <button
           type="button"
-          onClick={onToggleOpen}
-          className="flex-1 flex items-center gap-3 pressable text-left"
+          onClick={enabled ? onToggleOpen : onToggleEnabled}
+          className="flex-1 flex items-center gap-2 pressable text-left min-w-0"
         >
           <span className="text-xl">{icon}</span>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-foreground">{label}</div>
-            {/* Cost preview in collapsed header — simple mode only */}
-            {mode === "simple" && simpleCost > 0 && !open ? (
+            <div className={`text-sm font-semibold ${enabled ? "text-foreground" : "text-muted-foreground"}`}>{label}</div>
+            {enabled && mode === "simple" && simpleCost > 0 && !open ? (
               <div className="text-[11px] font-semibold text-primary tabular-nums">
                 예상 {simpleCost.toLocaleString("ko-KR")}원
               </div>
             ) : null}
           </div>
-          {open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+          {enabled && (open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />)}
         </button>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-[11px] font-semibold tabular-nums w-7 text-right ${
-            mode === "detailed" ? "text-primary" : "text-muted-foreground"
-          }`}>
-            {mode === "detailed" ? "상세" : "심플"}
-          </span>
-          <ModeToggleSwitch detailed={mode === "detailed"} onChange={onToggleMode} />
-        </div>
+        {/* 심플/상세 토글 — 사용 중일 때만 */}
+        {enabled && (
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`text-[11px] font-semibold tabular-nums w-7 text-right ${
+              mode === "detailed" ? "text-primary" : "text-muted-foreground"
+            }`}>
+              {mode === "detailed" ? "상세" : "심플"}
+            </span>
+            <ModeToggleSwitch detailed={mode === "detailed"} onChange={onToggleMode} />
+          </div>
+        )}
       </div>
-      {open && (
+      {enabled && open && (
         <div className="px-3 pb-3 pt-1 border-t border-border/40">{children}</div>
       )}
     </div>

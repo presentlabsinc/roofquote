@@ -11,14 +11,27 @@
  * 단가는 한국 지붕공사 시장의 평균 추정치 — 업체별로 실제 단가는 다를 수 있음.
  */
 
-export type CatalogCategory = "finishing" | "gutter" | "accessory" | "bending";
+// 8 카테고리 — 천보칼라강판 도매 단가표 기준으로 재설계 (PRICING_AND_CATALOG_OVERHAUL.md).
+// accessory → fastener 로 대체, roofingExtras/substructure/translucent/sealing 신규.
+export type CatalogCategory =
+  | "finishing"      // 마감재 — 용마루/처마/미시/엔드캡/하우막기/몰딩
+  | "roofingExtras"  // 한옥/기와 전용 — 대봉/중봉/소봉/한옥캡/회침
+  | "gutter"         // 물받이/홈통/엘보 부속
+  | "fastener"       // 피스/못/볼트/타정기못
+  | "substructure"   // 목재/판재 — 각목/사선판/평판/파이프
+  | "translucent"    // 채광판 — PC 라이트
+  | "sealing"        // 실링 — F30/ST64 (실리콘은 자동 계산)
+  | "bending";       // 절곡
 
 export const CATALOG_CATEGORIES: { value: CatalogCategory; label: string; icon: string; lineItemCategory: string }[] = [
-  { value: "finishing", label: "마감재",      icon: "📐", lineItemCategory: "material" },
-  { value: "gutter",    label: "물받이 부속", icon: "🌧️", lineItemCategory: "material" },
-  { value: "accessory", label: "부자재",      icon: "🔩", lineItemCategory: "material" },
-  // 절곡은 자재 카테고리 — 견적서 PDF 의 "자재공사" 그룹에 묶이도록 material 로 매핑.
-  { value: "bending",   label: "절곡",        icon: "📏", lineItemCategory: "material" },
+  { value: "finishing",     label: "마감재",      icon: "📐", lineItemCategory: "material" },
+  { value: "roofingExtras", label: "한옥/기와",   icon: "🏯", lineItemCategory: "material" },
+  { value: "gutter",        label: "물받이 부속", icon: "🌧️", lineItemCategory: "material" },
+  { value: "fastener",      label: "피스/못",     icon: "🔩", lineItemCategory: "material" },
+  { value: "substructure",  label: "목재/판재",   icon: "🪵", lineItemCategory: "material" },
+  { value: "translucent",   label: "채광판",      icon: "💡", lineItemCategory: "material" },
+  { value: "sealing",       label: "실링",        icon: "🧴", lineItemCategory: "material" },
+  { value: "bending",       label: "절곡",        icon: "📏", lineItemCategory: "material" },
 ];
 
 export interface CatalogItem {
