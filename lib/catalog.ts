@@ -72,23 +72,24 @@ export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;
  * a specific estimate can override any category via Estimate.catalogModes.
  */
 export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
-  // finishing default is now total 0 (perSqm chip hidden from UI per user req).
-  // User enters the total amount, or switches to 상세 to itemize.
-  finishing: { enabled: true, mode: "simple", simpleType: "total",   simpleValue: 0 },
-  gutter:    { enabled: true, mode: "simple", simpleType: "perM",    simpleValue: 2000 },
-  accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.03 },
-  bending:   { enabled: true, mode: "simple", simpleType: "total",   simpleValue: 0 },
+  finishing:     { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
+  roofingExtras: { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 한옥/기와 공사만
+  gutter:        { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
+  fastener:      { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
+  substructure:  { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 필요할 때만
+  translucent:   { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 채광판 있을 때만
+  sealing:       { enabled: true,  mode: "simple", simpleType: "perSqm",  simpleValue: 500 },
+  bending:       { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
 };
 
 /** Merge user-defined defaults (from PricingSettings.catalogDefaults) over the built-in defaults. */
 export function resolveCategoryDefaults(savedDefaults: CategoryModesMap | null | undefined): Record<CatalogCategory, CategoryMode> {
   const saved = savedDefaults ?? {};
-  return {
-    finishing: { ...DEFAULT_CATEGORY_MODES.finishing, ...saved.finishing },
-    gutter:    { ...DEFAULT_CATEGORY_MODES.gutter,    ...saved.gutter },
-    accessory: { ...DEFAULT_CATEGORY_MODES.accessory, ...saved.accessory },
-    bending:   { ...DEFAULT_CATEGORY_MODES.bending,   ...saved.bending },
-  };
+  const out = {} as Record<CatalogCategory, CategoryMode>;
+  for (const cat of CATALOG_CATEGORIES) {
+    out[cat.value] = { ...DEFAULT_CATEGORY_MODES[cat.value], ...saved[cat.value] };
+  }
+  return out;
 }
 
 export const SIMPLE_TYPE_LABELS: Record<SimpleType, { label: string; suffix: string }> = {
@@ -98,52 +99,91 @@ export const SIMPLE_TYPE_LABELS: Record<SimpleType, { label: string; suffix: str
   total:   { label: "총금액",    suffix: "원" },
 };
 
+// 천보칼라강판 도매가 × 1.1 (VAT 포함) + 100원 올림. 업체별 실거래가는 설정에서 수정.
 export const DEFAULT_CATALOG: CatalogItem[] = [
   // ─── 마감재 (finishing) ──────────────────────────────────────────────
-  { key: "ridge",        category: "finishing", label: "용마루",     unit: "m", price: 25000, sortOrder: 10 },
-  { key: "eave",         category: "finishing", label: "처마",       unit: "m", price: 20000, sortOrder: 20 },
-  { key: "mishi",        category: "finishing", label: "미시",       unit: "m", price: 18000, sortOrder: 30 },
-  { key: "haumakki",     category: "finishing", label: "하우마끼",   unit: "m", price: 18000, sortOrder: 40 },
-  { key: "endCap",       category: "finishing", label: "엔드캡",     unit: "개", price: 12000, sortOrder: 50 },
-  { key: "crosha",       category: "finishing", label: "크로샤",     unit: "m", price: 15000, sortOrder: 60 },
-  { key: "flashing",     category: "finishing", label: "프래싱",     unit: "m", price: 18000, sortOrder: 70 },
-  { key: "snowGuard",    category: "finishing", label: "눈방지턱",   unit: "m", price: 22000, sortOrder: 80 },
-  { key: "valley",       category: "finishing", label: "회침",       unit: "m", price: 20000, sortOrder: 90 },
-  { key: "valleyCover",  category: "finishing", label: "회침커버",   unit: "m", price: 12000, sortOrder: 100 },
-  { key: "ridgeLarge",   category: "finishing", label: "대봉",       unit: "m", price: 28000, sortOrder: 110 },
-  { key: "ridgeSmall",   category: "finishing", label: "소봉",       unit: "m", price: 18000, sortOrder: 120 },
+  { key: "ridgeClassic",       category: "finishing", label: "용마루 (고전)",   unit: "개", price: 14300, sortOrder: 10 },   // 3,000mm
+  { key: "ridgeStraight",      category: "finishing", label: "용마루 (일자)",   unit: "개", price: 12100, sortOrder: 20 },   // 3,000mm
+  { key: "ridgeStraightLarge", category: "finishing", label: "일자용마루 대",   unit: "개", price: 26400, sortOrder: 30 },   // 3,000mm
+  { key: "multiRidge",         category: "finishing", label: "멀티용마루",      unit: "개", price: 13200, sortOrder: 40 },   // 3,000mm
+  { key: "ridgeCap",           category: "finishing", label: "용마루캡",        unit: "개", price: 5500,  sortOrder: 50 },
+  { key: "houCap",             category: "finishing", label: "하우캡",          unit: "개", price: 4400,  sortOrder: 60 },
+  { key: "houMakkiNormal",     category: "finishing", label: "하우막기 (일반)", unit: "개", price: 12100, sortOrder: 70 },   // 3,000mm
+  { key: "houMakkiWood",       category: "finishing", label: "하우막기 (우드)", unit: "개", price: 22000, sortOrder: 80 },   // 3,000mm
+  { key: "mishi",              category: "finishing", label: "미시",            unit: "개", price: 8800,  sortOrder: 90 },   // 3,000mm
+  { key: "endCap",             category: "finishing", label: "엔드캡",          unit: "개", price: 3000,  sortOrder: 100 },
+  { key: "molding",            category: "finishing", label: "몰딩",            unit: "개", price: 3900,  sortOrder: 110 },   // 3,000mm
+  { key: "moldingD",           category: "finishing", label: "ㄷ몰딩",          unit: "개", price: 6100,  sortOrder: 120 },   // 3,000mm
 
-  // ─── 물받이 부속 (gutter) ─────────────────────────────────────────────
-  { key: "gutter",       category: "gutter", label: "물받이",      unit: "m", price: 30000, sortOrder: 10 },
-  { key: "gutterHook",   category: "gutter", label: "물받이 걸쇠", unit: "개", price: 3500,  sortOrder: 20 },
-  { key: "outerCorner",  category: "gutter", label: "바깥코너",    unit: "개", price: 18000, sortOrder: 30 },
-  { key: "innerCorner",  category: "gutter", label: "안코너",      unit: "개", price: 18000, sortOrder: 40 },
-  { key: "gutterEndCap", category: "gutter", label: "마감캡",      unit: "개", price: 8000,  sortOrder: 50 },
-  { key: "collector",    category: "gutter", label: "물모음통",    unit: "개", price: 35000, sortOrder: 60 },
-  { key: "downspout",    category: "gutter", label: "홈통",        unit: "m", price: 25000, sortOrder: 70 },
-  { key: "elbow",        category: "gutter", label: "엘보",        unit: "개", price: 8000,  sortOrder: 80 },
+  // ─── 한옥/기와 전용 (roofingExtras) ──────────────────────────────────
+  { key: "bongLarge",          category: "roofingExtras", label: "대봉 (고전)",     unit: "개", price: 29700, sortOrder: 10 },
+  { key: "bongMid",            category: "roofingExtras", label: "중봉 (고전)",     unit: "개", price: 24200, sortOrder: 20 },
+  { key: "bongSmallDouble",    category: "roofingExtras", label: "양면소봉 (고전)", unit: "개", price: 9900,  sortOrder: 30 },
+  { key: "bongSmall",          category: "roofingExtras", label: "소봉 (고전)",     unit: "개", price: 7700,  sortOrder: 40 },
+  { key: "hanokCap",           category: "roofingExtras", label: "한옥캡",          unit: "개", price: 3300,  sortOrder: 50 },
+  { key: "hanokChakgo",        category: "roofingExtras", label: "한옥착고",        unit: "개", price: 2800,  sortOrder: 60 },
+  { key: "hoechim",            category: "roofingExtras", label: "회침",            unit: "개", price: 12100, sortOrder: 70 },   // 3,000mm
+  { key: "hoechimCover",       category: "roofingExtras", label: "회침카바",        unit: "개", price: 9900,  sortOrder: 80 },   // 3,000mm
 
-  // ─── 부자재 (accessory) ──────────────────────────────────────────────
-  { key: "silicone",     category: "accessory", label: "실리콘",        unit: "개", price: 5000,  sortOrder: 10 },
-  { key: "screwLarge",   category: "accessory", label: "스크류 (대)",   unit: "개", price: 300,   sortOrder: 20 },
-  { key: "screwSmall",   category: "accessory", label: "스크류 (소)",   unit: "개", price: 100,   sortOrder: 30 },
-  { key: "fastener",     category: "accessory", label: "Fastener",      unit: "개", price: 800,   sortOrder: 40 },
-  { key: "anchorBolt",   category: "accessory", label: "앵커볼트",      unit: "개", price: 1500,  sortOrder: 50 },
+  // ─── 물받이 부속 (gutter) ────────────────────────────────────────────
+  { key: "gutterCopper",       category: "gutter", label: "물받이 (동색)",   unit: "개", price: 16500, sortOrder: 10 },   // 5m
+  { key: "gutterOther",        category: "gutter", label: "물받이 (동색외)", unit: "개", price: 16500, sortOrder: 20 },   // 5m
+  { key: "gutterHook",         category: "gutter", label: "물받이쇠",        unit: "개", price: 1100,  sortOrder: 30 },
+  { key: "collectorLarge",     category: "gutter", label: "물모임통 (대)",   unit: "개", price: 6100,  sortOrder: 40 },
+  { key: "collectorSmall",     category: "gutter", label: "물모임통 (소)",   unit: "개", price: 5000,  sortOrder: 50 },
+  { key: "downspoutLarge",     category: "gutter", label: "원형홈통 (대)",   unit: "개", price: 5000,  sortOrder: 60 },   // 900mm
+  { key: "downspoutSmall",     category: "gutter", label: "원형홈통 (소)",   unit: "개", price: 3100,  sortOrder: 70 },   // 900mm
+  { key: "elbowLarge",         category: "gutter", label: "원형엘보 (대)",   unit: "개", price: 2800,  sortOrder: 80 },
+  { key: "elbowSmall",         category: "gutter", label: "원형엘보 (소)",   unit: "개", price: 2000,  sortOrder: 90 },
+  { key: "squareMas",          category: "gutter", label: "사각마스",        unit: "개", price: 5500,  sortOrder: 100 },
+  { key: "squareDownspout",    category: "gutter", label: "사각홈통",        unit: "개", price: 9400,  sortOrder: 110 },
+  { key: "squareElbow",        category: "gutter", label: "사각엘보",        unit: "개", price: 3100,  sortOrder: 120 },
+  { key: "squareWallMount",    category: "gutter", label: "사각벽고정",      unit: "개", price: 8800,  sortOrder: 130 },
 
-  // ─── 절곡 (bending) ───────────────────────────────────────────────────
-  { key: "bend1",        category: "bending", label: "1회 절곡",     unit: "m", price: 3000,  sortOrder: 10 },
-  { key: "bend2",        category: "bending", label: "2회 절곡",     unit: "m", price: 5000,  sortOrder: 20 },
-  { key: "bend3",        category: "bending", label: "3회 절곡",     unit: "m", price: 7000,  sortOrder: 30 },
-  { key: "customBend",   category: "bending", label: "커스텀 절곡",  unit: "m", price: 10000, sortOrder: 40 },
+  // ─── 피스/못 (fastener) ──────────────────────────────────────────────
+  { key: "screw",              category: "fastener", label: "피스 (외)",            unit: "봉",      price: 13200, sortOrder: 10 },
+  { key: "colorBolt55",        category: "fastener", label: "칼라볼트 55mm",        unit: "봉",      price: 11000, sortOrder: 20 },
+  { key: "colorBolt75",        category: "fastener", label: "칼라볼트 75mm",        unit: "봉",      price: 13200, sortOrder: 30 },
+  { key: "plateNail55",        category: "fastener", label: "판못 55mm",            unit: "봉(2kg)", price: 8800,  sortOrder: 40 },
+  { key: "plateNail75",        category: "fastener", label: "판못 75mm",            unit: "봉(2kg)", price: 8800,  sortOrder: 50 },
+  { key: "plateNailBlack55",   category: "fastener", label: "판못 (검) 55mm",       unit: "kg",      price: 4400,  sortOrder: 60 },
+  { key: "plateNailBlack75",   category: "fastener", label: "판못 (검) 75mm",       unit: "kg",      price: 4400,  sortOrder: 70 },
+  { key: "shotNail",           category: "fastener", label: "타정기못",             unit: "box",     price: 30800, sortOrder: 80 },
+  { key: "rollNail",           category: "fastener", label: "타정롤못",             unit: "box",     price: 55000, sortOrder: 90 },
+  { key: "packingNail",        category: "fastener", label: "빠킹못 (55/75mm)",     unit: "kg",      price: 8800,  sortOrder: 100 },
+  { key: "doubleSidedScrew",   category: "fastener", label: "양날피스 (매그니/차콜)", unit: "개",    price: 17600, sortOrder: 110 },
+
+  // ─── 목재/판재 (substructure) ────────────────────────────────────────
+  { key: "lumberBundle",       category: "substructure", label: "각목",           unit: "단", price: 22000, sortOrder: 10 },
+  { key: "sasunWood",          category: "substructure", label: "사선판 (목무늬)", unit: "m",  price: 9900,  sortOrder: 20 },   // 폭 1219
+  { key: "sasunCharcoal",      category: "substructure", label: "사선판 (차콜)",   unit: "m",  price: 9900,  sortOrder: 30 },   // 폭 1219
+  { key: "flatPanel",          category: "substructure", label: "평판",           unit: "m",  price: 9900,  sortOrder: 40 },
+  { key: "pipe3m",             category: "substructure", label: "파이프",         unit: "개", price: 16500, sortOrder: 50 },   // 3,000mm
+
+  // ─── 채광판 (translucent) ────────────────────────────────────────────
+  { key: "pcLite1800",         category: "translucent", label: "PC 라이트 1,800mm", unit: "장", price: 19800, sortOrder: 10 },  // 폭 1m
+  { key: "pcLite2100",         category: "translucent", label: "PC 라이트 2,100mm", unit: "장", price: 23100, sortOrder: 20 },
+  { key: "pcLite2400",         category: "translucent", label: "PC 라이트 2,400mm", unit: "장", price: 26400, sortOrder: 30 },
+  { key: "pcLite3000",         category: "translucent", label: "PC 라이트 3,000mm", unit: "장", price: 33000, sortOrder: 40 },
+
+  // ─── 실링 (sealing) ──────────────────────────────────────────────────
+  { key: "f30",                category: "sealing", label: "F30",  unit: "갑", price: 4400, sortOrder: 10 },
+  { key: "st64",               category: "sealing", label: "ST64", unit: "갑", price: 8800, sortOrder: 20 },
+
+  // ─── 절곡 (bending) ──────────────────────────────────────────────────
+  // 절곡은 mm × 36원 × (길이/3m) 공식 (settings.bendingPricePerMmPer3m). 아래는 1m 기준 추정 표시값.
+  { key: "bend1",              category: "bending", label: "1회 절곡",    unit: "m", price: 3000,  sortOrder: 10 },
+  { key: "bend2",              category: "bending", label: "2회 절곡",    unit: "m", price: 5000,  sortOrder: 20 },
+  { key: "bend3",              category: "bending", label: "3회 절곡",    unit: "m", price: 7000,  sortOrder: 30 },
+  { key: "customBend",         category: "bending", label: "커스텀 절곡", unit: "m", price: 10000, sortOrder: 40 },
 ];
 
 /** Group a catalog list by category, preserving sortOrder within each. */
 export function groupCatalog(items: CatalogItem[]): Record<CatalogCategory, CatalogItem[]> {
-  const result: Record<CatalogCategory, CatalogItem[]> = {
-    finishing: [], gutter: [], accessory: [], bending: [],
-  };
+  const result = {} as Record<CatalogCategory, CatalogItem[]>;
+  for (const cat of CATALOG_CATEGORIES) result[cat.value] = [];
   for (const it of items) {
-    result[it.category].push(it);
+    (result[it.category] ??= []).push(it);
   }
   for (const k of Object.keys(result) as CatalogCategory[]) {
     result[k].sort((a, b) => a.sortOrder - b.sortOrder);

@@ -134,6 +134,8 @@ function CatalogPickerBase({
             key={cat.value}
             label={categoryLabels?.[cat.value] ?? cat.label}
             icon={cat.icon}
+            enabled={m.enabled !== false}
+            onToggleEnabled={() => setMode(cat.value, { enabled: m.enabled === false })}
             mode={m.mode}
             onToggleMode={() => setMode(cat.value, { mode: m.mode === "simple" ? "detailed" : "simple" })}
             open={!!openMap[cat.value]}

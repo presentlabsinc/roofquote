@@ -1061,6 +1061,14 @@ export function formatKRW(amount: number): string {
   return amount.toLocaleString("ko-KR") + "원";
 }
 
+/**
+ * 자재 가격 100원 단위 올림 (절대 내림 X — 마진 보호 + 가격 일관성).
+ * 부가세 포함 환산 후 단가 정리에 사용. 예: 8,580 → 8,600.
+ */
+export function roundUpTo100(price: number): number {
+  return Math.ceil(price / 100) * 100;
+}
+
 // ─── Margin distribution for customer PDF ─────────────────────────────
 // Internal lineItems store cost only — no margin. For the customer-facing
 // PDF we want the displayed amounts to sum to (cost + margin) so the math
