@@ -46,6 +46,10 @@ model PricingSettings {
   materialPriceParapetPerM         Int @default(12200)  // 파라펫
   materialPriceOverlayPanelPerM    Int @default(13300)  // 덧방용
   materialPriceTambourPerM         Int @default(0)      // 템바징크 — 가격 미정 (TBD)
+
+  // 자재별 유효폭 (mm) 사용자 override — { slate: 700, realZinc: 600, ... }.
+  // 비어있으면 MATERIAL_EFFECTIVE_WIDTH_MM 코드 상수 폴백. m당 단가 → ㎡당 환산에 사용.
+  materialWidths                   Json @default("{}")
   ridgePricePerM            Int   // 용마루 m당
   eavePricePerM             Int   // 처마 마감 m당
   gutterPricePerM           Int   // 물받이 m당

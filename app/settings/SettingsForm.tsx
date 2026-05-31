@@ -9,6 +9,21 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Upload, X } from "lucide-react";
 import type { PricingSettings } from "@prisma/client";
+import { MATERIAL_TYPES, MATERIAL_EFFECTIVE_WIDTH_MM, type MaterialType } from "@/lib/types";
+import { convertMPriceToSqmPrice } from "@/lib/calculations";
+
+// 강판 자재별 단가 카드에 표시할 자재 + 해당 m당 단가 키 매핑.
+const STEEL_PRICE_KEYS: { type: MaterialType; label: string; key: string }[] = [
+  { type: "slate",           label: "S골 / 슬레이트",   key: "materialPriceSlatePerM" },
+  { type: "zinc250",         label: "징크250",          key: "materialPriceZinc250PerM" },
+  { type: "v250",            label: "V250",             key: "materialPriceV250PerM" },
+  { type: "generalTile",     label: "일반기와형",       key: "materialPriceGeneralTilePerM" },
+  { type: "traditionalTile", label: "전통기와형",       key: "materialPriceTraditionalTilePerM" },
+  { type: "realZinc",        label: "징크 / 리얼징크",  key: "materialPriceRealZincPerM" },
+  { type: "parapet",         label: "파라펫",           key: "materialPriceParapetPerM" },
+  { type: "overlayPanel",    label: "덧방용 강판",      key: "materialPriceOverlayPanelPerM" },
+  { type: "tambour",         label: "템바징크 (미정)",  key: "materialPriceTambourPerM" },
+];
 
 const DEFAULTS = {
   companyName: "",
@@ -30,6 +45,7 @@ const DEFAULTS = {
   materialPriceOverlayPanelPerM: 13300,
   materialPriceTambourPerM: 0,
   accessoryRate: 0.15,
+  // materialPricePerSqm 은 DEFAULTS 에 이미 있음 (구버전 폴백). FIELDS 에선 숨김.
   ridgePricePerM: 25000,
   eavePricePerM: 20000,
   gutterPricePerM: 5000,
@@ -127,28 +143,12 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   // ─── tier 3: 단가표 ───
-  {
-    section: "강판 자재별 단가 (m당)",
-    emoji: "🪟",
-    tier: "price",
-    items: [
-      { key: "materialPriceSlatePerM", label: "S골 / 슬레이트", unit: "원/m" },
-      { key: "materialPriceZinc250PerM", label: "징크250", unit: "원/m" },
-      { key: "materialPriceV250PerM", label: "V250", unit: "원/m" },
-      { key: "materialPriceGeneralTilePerM", label: "일반기와형", unit: "원/m" },
-      { key: "materialPriceTraditionalTilePerM", label: "전통기와형", unit: "원/m" },
-      { key: "materialPriceRealZincPerM", label: "징크 / 리얼징크", unit: "원/m" },
-      { key: "materialPriceParapetPerM", label: "파라펫", unit: "원/m" },
-      { key: "materialPriceOverlayPanelPerM", label: "덧방용 강판", unit: "원/m" },
-      { key: "materialPriceTambourPerM", label: "템바징크 (미정)", unit: "원/m" },
-    ],
-  },
+  // 강판 자재별 단가는 전용 카드(SteelSheetPricingCard)로 렌더 — 유효폭+m당→㎡당 환산 표시.
   {
     section: "자재 단가",
     emoji: "🧱",
     tier: "price",
     items: [
-      { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (구버전 폴백)", unit: "원" },
       { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
@@ -307,6 +307,14 @@ export function SettingsForm({ defaultValues }: Props) {
     setValues((v) => ({ ...v, [key]: val }));
   }
 
+  // 자재별 유효폭(mm) override — JSON 맵이라 values 와 별도 state. 비면 코드 상수 폴백.
+  const [materialWidths, setMaterialWidths] = useState<Record<string, number>>(
+    () => ((defaultValues as unknown as { materialWidths?: Record<string, number> } | null)?.materialWidths) ?? {},
+  );
+  function setWidth(materialType: string, mm: number) {
+    setMaterialWidths((w) => ({ ...w, [materialType]: mm }));
+  }
+
   async function handleSave() {
     if (!values.companyName.trim()) {
       toast.error("회사명을 입력해 주세요.");
@@ -316,6 +324,7 @@ export function SettingsForm({ defaultValues }: Props) {
     try {
       const payload = {
         ...values,
+        materialWidths,
         companyPhone: values.companyPhone || null,
         companyAddress: values.companyAddress || null,
         businessRegistrationNumber: values.businessRegistrationNumber || null,
@@ -348,6 +357,15 @@ export function SettingsForm({ defaultValues }: Props) {
                 <span className="flex-1 h-px bg-border/60" />
               </div>
             )}
+          {/* 강판 자재별 단가 — 단가표 tier 맨 앞 (자재 단가 카드 직전)에 전용 카드로 렌더 */}
+          {section === "자재 단가" && (
+            <SteelSheetPricingCard
+              values={values}
+              widths={materialWidths}
+              onPriceChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
+              onWidthChange={setWidth}
+            />
+          )}
           <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-center gap-2">
               <span className="text-lg">{emoji}</span>
@@ -517,6 +535,71 @@ export function SettingsForm({ defaultValues }: Props) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * 강판 자재별 단가 카드 — 자재마다 [유효폭 mm] + [m당 단가] 입력하면
+ * ㎡당 환산가를 자동 표시 (천보 단가표는 m당 → 시공은 ㎡ 이라서).
+ * 유효폭/m당 단가 모두 사용자가 직접 조정 가능. 환산 = convertMPriceToSqmPrice.
+ */
+function SteelSheetPricingCard({
+  values, widths, onPriceChange, onWidthChange,
+}: {
+  values: Record<string, number>;
+  widths: Record<string, number>;
+  onPriceChange: (key: string, v: number) => void;
+  onWidthChange: (type: string, mm: number) => void;
+}) {
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">🪟</span>
+        <h2 className="font-semibold text-foreground">강판 자재별 단가</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        유효폭 + m당 단가 입력 → ㎡당 환산가 자동 계산 (시공은 ㎡ 기준)
+      </p>
+      <div className="divide-y divide-border/40">
+        {STEEL_PRICE_KEYS.map(({ type, label, key }) => {
+          const pricePerM = values[key] ?? 0;
+          const widthMm = widths[type] ?? MATERIAL_EFFECTIVE_WIDTH_MM[type] ?? 700;
+          const sqm = pricePerM > 0 ? convertMPriceToSqmPrice(pricePerM, type, widths) : 0;
+          return (
+            <div key={type} className="px-5 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <span className="text-[11px] font-semibold text-primary tabular-nums">
+                  {sqm > 0 ? `→ ㎡당 ${sqm.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* 유효폭 */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(widthMm)}
+                    onChange={(e) => onWidthChange(type, parseInt(e.target.value) || 0)}
+                    className="h-11 text-right pr-9 tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">폭mm</span>
+                </div>
+                {/* m당 단가 */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(pricePerM)}
+                    onChange={(e) => onPriceChange(key, parseInt(e.target.value) || 0)}
+                    className="h-11 text-right pr-9 font-semibold tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/m</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 

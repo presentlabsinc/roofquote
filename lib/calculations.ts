@@ -1067,9 +1067,29 @@ export function roundUpTo100(price: number): number {
   return Math.ceil(price / 100) * 100;
 }
 
-/** m당 가격 → ㎡당 가격 (유효폭 기준, 100원 올림). 예: 8,600/m ÷ 0.7m = 12,286 → 12,300/㎡ */
-export function convertMPriceToSqmPrice(pricePerM: number, materialType: MaterialType): number {
-  const widthM = (MATERIAL_EFFECTIVE_WIDTH_MM[materialType] ?? 700) / 1000;
+/**
+ * 자재 유효폭(mm) 조회 — 사용자 override(materialWidths JSON) 우선, 없으면 코드 상수.
+ * 설정 UI 와 견적 계산 양쪽에서 동일하게 사용 (단일 진실).
+ */
+export function resolveMaterialWidthMm(
+  materialType: MaterialType,
+  widthOverrides?: Record<string, number> | null,
+): number {
+  const override = widthOverrides?.[materialType];
+  if (override && override > 0) return override;
+  return MATERIAL_EFFECTIVE_WIDTH_MM[materialType] ?? 700;
+}
+
+/**
+ * m당 가격 → ㎡당 가격 (유효폭 기준, 100원 올림). 예: 8,600/m ÷ 0.7m = 12,286 → 12,300/㎡
+ * widthOverrides 주면 사용자 설정 유효폭 사용 (설정 화면 환산 미리보기 + 견적 계산 공용).
+ */
+export function convertMPriceToSqmPrice(
+  pricePerM: number,
+  materialType: MaterialType,
+  widthOverrides?: Record<string, number> | null,
+): number {
+  const widthM = resolveMaterialWidthMm(materialType, widthOverrides) / 1000;
   if (widthM <= 0 || pricePerM <= 0) return 0;
   return roundUpTo100(pricePerM / widthM);
 }
@@ -1105,7 +1125,8 @@ export function getMaterialPriceSqm(
   }
   const mult = thickness ? THICKNESS_MULT[thickness] : 1;
   const adjustedPerM = pricePerM * mult;
-  return convertMPriceToSqmPrice(adjustedPerM, mt as MaterialType);
+  const widthOverrides = (settings as unknown as { materialWidths?: Record<string, number> }).materialWidths ?? null;
+  return convertMPriceToSqmPrice(adjustedPerM, mt as MaterialType, widthOverrides);
 }
 
 // ─── Margin distribution for customer PDF ─────────────────────────────
