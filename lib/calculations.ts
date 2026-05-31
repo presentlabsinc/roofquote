@@ -1,5 +1,5 @@
 import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
-import { BASELINE_AREAS, INSULATION_LABEL, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
+import { BASELINE_AREAS, INSULATION_LABEL, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
 import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -411,8 +411,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   // 시공면적은 사용자가 입력한 그대로 사용 (난간/두겁/창고/계단실/옥탑방은 시공면적에 포함된 것으로 가정).
   // Optional 자재 로스율 — 시공 시 자투리/낭비분을 반영하면 자재 면적이 증가.
   {
-    const mult = thickness ? THICKNESS_MULT[thickness] : 1;
-    const unitPrice = Math.round(settings.materialPricePerSqm * mult);
+    // 자재 타입별 m당 단가 → ㎡당 환산 (두께 배수 포함). 미정가는 LEGACY ㎡ 단가 폴백.
+    const unitPrice = getMaterialPriceSqm(settings, materialType, thickness);
     const lossMult = applyLossRate && lossRate > 0 ? 1 + lossRate : 1;
     const effectiveArea = Math.round(areaM2 * lossMult * 100) / 100;
     const lossNote = applyLossRate && lossRate > 0
@@ -635,8 +635,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     if ((scope.handrail || scope.cap) && railP > 0 && parapetHeightM > 0) {
       const parapetArea = Math.round(railP * parapetHeightM * 1.10 * 10) / 10;
       if (parapetArea > 0) {
-        const mult = thickness ? THICKNESS_MULT[thickness] : 1;
-        const unitPrice = Math.round(settings.materialPricePerSqm * mult);
+        const unitPrice = getMaterialPriceSqm(settings, materialType, thickness);
         items.push({
           category: "material", name: "파라펫 강판 (난간)",
           quantity: parapetArea, unit: "㎡",
@@ -649,8 +648,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     if (scope.rooftopStructure && rooftopP > 0 && rooftopHeightM > 0) {
       const rooftopArea = Math.round(rooftopP * rooftopHeightM * 1.10 * 10) / 10;
       if (rooftopArea > 0) {
-        const mult = thickness ? THICKNESS_MULT[thickness] : 1;
-        const unitPrice = Math.round(settings.materialPricePerSqm * mult);
+        const unitPrice = getMaterialPriceSqm(settings, materialType, thickness);
         items.push({
           category: "material", name: "옥탑 외벽 강판",
           quantity: rooftopArea, unit: "㎡",
@@ -1067,6 +1065,47 @@ export function formatKRW(amount: number): string {
  */
 export function roundUpTo100(price: number): number {
   return Math.ceil(price / 100) * 100;
+}
+
+/** m당 가격 → ㎡당 가격 (유효폭 기준, 100원 올림). 예: 8,600/m ÷ 0.7m = 12,286 → 12,300/㎡ */
+export function convertMPriceToSqmPrice(pricePerM: number, materialType: MaterialType): number {
+  const widthM = (MATERIAL_EFFECTIVE_WIDTH_MM[materialType] ?? 700) / 1000;
+  if (widthM <= 0 || pricePerM <= 0) return 0;
+  return roundUpTo100(pricePerM / widthM);
+}
+
+/**
+ * 자재 타입별 ㎡당 강판 단가 산출 — 신규 견적의 메인 강판 + 파라펫/옥탑 강판 라인이 사용.
+ * 자재타입별 m당 단가(천보가) → 두께 배수 → ㎡당 환산(유효폭). PE폼은 여기 미포함(별도 라인).
+ * 단가 0 (예: 템바 미정) 이면 LEGACY materialPricePerSqm 로 폴백.
+ */
+export function getMaterialPriceSqm(
+  settings: PricingSettings,
+  materialType: MaterialType | null | undefined,
+  thickness: Thickness | null | undefined,
+): number {
+  const s = settings as unknown as Record<string, number>;
+  const perMByType: Record<string, number | undefined> = {
+    slate: s.materialPriceSlatePerM,
+    v250: s.materialPriceV250PerM,
+    zinc250: s.materialPriceZinc250PerM,
+    generalTile: s.materialPriceGeneralTilePerM,
+    traditionalTile: s.materialPriceTraditionalTilePerM,
+    realZinc: s.materialPriceRealZincPerM,
+    parapet: s.materialPriceParapetPerM,
+    overlayPanel: s.materialPriceOverlayPanelPerM,
+    tambour: s.materialPriceTambourPerM,
+  };
+  const mt = materialType ?? "slate";
+  const pricePerM = perMByType[mt] ?? s.materialPriceSlatePerM ?? 0;
+  // m당 단가 0 (미정) → LEGACY ㎡ 단가로 폴백 (두께 배수만 적용).
+  if (!pricePerM || pricePerM <= 0) {
+    const mult = thickness ? THICKNESS_MULT[thickness] : 1;
+    return Math.round((settings.materialPricePerSqm ?? 0) * mult);
+  }
+  const mult = thickness ? THICKNESS_MULT[thickness] : 1;
+  const adjustedPerM = pricePerM * mult;
+  return convertMPriceToSqmPrice(adjustedPerM, mt as MaterialType);
 }
 
 // ─── Margin distribution for customer PDF ─────────────────────────────

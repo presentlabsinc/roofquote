@@ -32,8 +32,20 @@ model PricingSettings {
   noticeText                String?  // 견적서 안내 문구 (줄바꿈 = \n 으로 구분, 자동 번호 매김)
 
   // Unit prices (all in Korean Won, integers)
-  materialPricePerSqm       Int   // 칼라강판 ㎡당
+  materialPricePerSqm       Int   // [LEGACY] 칼라강판 ㎡당 — 구 견적 호환용. 신규는 아래 자재타입별 m당 단가 사용.
   accessoryRate             Float // 부자재 비율 (e.g. 0.15 = 15%)
+
+  // 자재 타입별 m당 단가 (부가세 포함, 0.45t 기준, 100원 올림). 천보칼라강판 도매가 기준.
+  // m당 → ㎡당 변환은 MATERIAL_EFFECTIVE_WIDTH_MM + convertMPriceToSqmPrice 사용.
+  materialPriceSlatePerM           Int @default(8100)   // S골 / 스레트 / 징크250 동일가
+  materialPriceV250PerM            Int @default(8100)
+  materialPriceZinc250PerM         Int @default(8100)
+  materialPriceGeneralTilePerM     Int @default(8600)   // 기와형
+  materialPriceTraditionalTilePerM Int @default(8600)   // 한옥
+  materialPriceRealZincPerM        Int @default(12000)  // 리얼징크 (추정)
+  materialPriceParapetPerM         Int @default(12200)  // 파라펫
+  materialPriceOverlayPanelPerM    Int @default(13300)  // 덧방용
+  materialPriceTambourPerM         Int @default(0)      // 템바징크 — 가격 미정 (TBD)
   ridgePricePerM            Int   // 용마루 m당
   eavePricePerM             Int   // 처마 마감 m당
   gutterPricePerM           Int   // 물받이 m당

@@ -60,6 +60,16 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       companyAddress: null,
       // Pricing — sensible Korean industry defaults
       materialPricePerSqm: 12000,
+      // 자재 타입별 m당 단가 (천보 도매가, VAT포함, 0.45t, 100원 올림)
+      materialPriceSlatePerM: 8100,
+      materialPriceV250PerM: 8100,
+      materialPriceZinc250PerM: 8100,
+      materialPriceGeneralTilePerM: 8600,
+      materialPriceTraditionalTilePerM: 8600,
+      materialPriceRealZincPerM: 12000,
+      materialPriceParapetPerM: 12200,
+      materialPriceOverlayPanelPerM: 13300,
+      materialPriceTambourPerM: 0,
       accessoryRate: 0.03,
       ridgePricePerM: 25000,
       eavePricePerM: 20000,

@@ -7,12 +7,15 @@ export const CONSTRUCTION_TYPES: { value: ConstructionType; label: string; desc:
 ];
 
 export type MaterialType =
-  | "slate"            // 슬레이트골
+  | "slate"            // 슬레이트골 / S골
   | "v250"             // V250
   | "zinc250"          // 징크250
   | "generalTile"      // 일반기와형
   | "traditionalTile"  // 전통기와형
   | "realZinc"         // 리얼징크 (standing seam)
+  | "parapet"          // 파라펫 (옥상 흉벽/난간 마감)
+  | "overlayPanel"     // 덧방용 강판
+  | "tambour"          // 템바징크 (외벽용 — 가격 미정)
   | "other";
 
 export const MATERIAL_TYPES: { value: MaterialType; label: string }[] = [
@@ -22,8 +25,29 @@ export const MATERIAL_TYPES: { value: MaterialType; label: string }[] = [
   { value: "generalTile", label: "일반기와형" },
   { value: "traditionalTile", label: "전통기와형" },
   { value: "realZinc", label: "징크 / 리얼징크" },
+  { value: "parapet", label: "파라펫 (옥상 마감)" },
+  { value: "overlayPanel", label: "덧방용 강판" },
+  { value: "tambour", label: "템바징크 (외벽용)" },
   { value: "other", label: "기타" },
 ];
+
+/**
+ * 강판 유효폭 (mm) — 시공 시 한 장이 실제 덮는 너비.
+ * 단가표는 m당 가격이지만 시공 면적은 ㎡로 계산하므로 m당 → ㎡당 환산에 사용.
+ * 환산: ㎡당 = m당 ÷ (유효폭/1000), 100원 올림 (convertMPriceToSqmPrice in calculations.ts).
+ */
+export const MATERIAL_EFFECTIVE_WIDTH_MM: Record<MaterialType, number> = {
+  slate: 700,
+  generalTile: 700,
+  traditionalTile: 700,
+  v250: 700,
+  zinc250: 700,
+  realZinc: 600,
+  parapet: 700,
+  overlayPanel: 700,
+  tambour: 200,   // 템바징크는 좁음 (실폭 확인 필요)
+  other: 700,
+};
 
 export type Thickness = "0.4" | "0.45" | "0.5" | "0.6";
 

@@ -91,7 +91,7 @@ export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
   fastener:      { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
   substructure:  { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 필요할 때만
   translucent:   { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 채광판 있을 때만
-  sealing:       { enabled: true,  mode: "simple", simpleType: "perSqm",  simpleValue: 500 },
+  sealing:       { enabled: false, mode: "simple", simpleType: "perSqm",  simpleValue: 500 },  // 자동 실리콘과 중복 방지 — 기본 off
   bending:       { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
 };
 
