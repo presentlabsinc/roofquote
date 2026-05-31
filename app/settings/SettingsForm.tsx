@@ -128,11 +128,27 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
   },
   // ─── tier 3: 단가표 ───
   {
+    section: "강판 자재별 단가 (m당)",
+    emoji: "🪟",
+    tier: "price",
+    items: [
+      { key: "materialPriceSlatePerM", label: "S골 / 슬레이트", unit: "원/m" },
+      { key: "materialPriceZinc250PerM", label: "징크250", unit: "원/m" },
+      { key: "materialPriceV250PerM", label: "V250", unit: "원/m" },
+      { key: "materialPriceGeneralTilePerM", label: "일반기와형", unit: "원/m" },
+      { key: "materialPriceTraditionalTilePerM", label: "전통기와형", unit: "원/m" },
+      { key: "materialPriceRealZincPerM", label: "징크 / 리얼징크", unit: "원/m" },
+      { key: "materialPriceParapetPerM", label: "파라펫", unit: "원/m" },
+      { key: "materialPriceOverlayPanelPerM", label: "덧방용 강판", unit: "원/m" },
+      { key: "materialPriceTambourPerM", label: "템바징크 (미정)", unit: "원/m" },
+    ],
+  },
+  {
     section: "자재 단가",
     emoji: "🧱",
     tier: "price",
     items: [
-      { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (0.45t 기준)", unit: "원" },
+      { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (구버전 폴백)", unit: "원" },
       { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
