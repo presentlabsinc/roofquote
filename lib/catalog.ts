@@ -128,6 +128,7 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
   { key: "houMakkiWood",       category: "finishing", label: "하우막기 (우드)", unit: "개", price: 22000, lengthMm: 3000, sortOrder: 80 },
   { key: "mishi",              category: "finishing", label: "미시",            unit: "개", price: 8800,  lengthMm: 3000, sortOrder: 90 },
   { key: "endCap",             category: "finishing", label: "엔드캡",          unit: "개", price: 3000,  sortOrder: 100 },
+  { key: "fascia",             category: "finishing", label: "페이샤 / 후레싱", unit: "개", price: 11000, lengthMm: 3000, sortOrder: 105 },  // 기성품 3m, 추정가
   { key: "molding",            category: "finishing", label: "몰딩",            unit: "개", price: 3900,  lengthMm: 3000, sortOrder: 110 },
   { key: "moldingD",           category: "finishing", label: "ㄷ몰딩",          unit: "개", price: 6100,  lengthMm: 3000, sortOrder: 120 },
 

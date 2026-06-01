@@ -89,6 +89,7 @@ const DEFAULTS = {
   bendingWidthFlashing: 200,
   bendingWidthValley: 300,
   bendingWidthSnowGuard: 180,
+  bendingWidthFascia: 200,
   // ── 소모품 ──
   screwLargePrice: 300,
   screwSmallPrice: 100,
@@ -176,6 +177,7 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "bendingWidthCap", label: "두겁 기본 넓이", unit: "mm" },
       { key: "bendingWidthMishi", label: "미시 기본 넓이", unit: "mm" },
       { key: "bendingWidthFlashing", label: "프래싱 기본 넓이", unit: "mm" },
+      { key: "bendingWidthFascia", label: "페이샤/후레싱 기본 넓이", unit: "mm" },
       { key: "bendingWidthValley", label: "회침 기본 넓이", unit: "mm" },
       { key: "bendingWidthSnowGuard", label: "눈방지턱 기본 넓이", unit: "mm" },
     ],
@@ -210,9 +212,8 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "dailyWage", label: "1인 1일 인건비", unit: "원" },
       { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
       { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
-      // 철거·폐기물은 자재가 아니라 인건/처리 비용이라 노무비로 이동 (자재 단가에서).
+      // 철거는 인건이라 노무비. (폐기물은 트럭 운반이라 장비·운송으로.)
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
-      { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
     ],
   },
   {
@@ -224,6 +225,8 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
       { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
       { key: "baseTransportCost", label: "기본 운송비", unit: "원" },
+      // 폐기물은 트럭 운반비라 장비·운송.
+      { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
     ],
   },
 ];
@@ -302,6 +305,7 @@ export function SettingsForm({ defaultValues }: Props) {
       bendingWidthFlashing: defaultValues.bendingWidthFlashing ?? 200,
       bendingWidthValley: defaultValues.bendingWidthValley ?? 300,
       bendingWidthSnowGuard: defaultValues.bendingWidthSnowGuard ?? 180,
+      bendingWidthFascia: (defaultValues as unknown as Record<string, number>).bendingWidthFascia ?? 200,
       screwLargePrice: defaultValues.screwLargePrice ?? 300,
       screwSmallPrice: defaultValues.screwSmallPrice ?? 100,
       siliconePrice: defaultValues.siliconePrice ?? 5000,

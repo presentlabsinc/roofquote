@@ -106,6 +106,7 @@ model PricingSettings {
   bendingWidthFlashing    Int  @default(200)  // 프래싱 기본 넓이 mm
   bendingWidthValley      Int  @default(300)  // 회침 기본 넓이 mm
   bendingWidthSnowGuard   Int  @default(180)  // 눈방지턱 기본 넓이 mm
+  bendingWidthFascia      Int  @default(200)  // 페이샤/후레싱 기본 넓이 mm
 
   // ── 소모품 (자재 자동 추정용) ──
   screwLargePrice         Int  @default(300)    // 스크류 대 1개당
