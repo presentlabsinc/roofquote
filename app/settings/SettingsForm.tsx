@@ -187,16 +187,7 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
     ],
   },
-  {
-    // 절곡 단가(1mm·3m) 1줄만 일반 행. 부재별 넓이+3m당 환산은 전용 카드(BendingPricingCard).
-    section: "절곡 단가",
-    emoji: "📏",
-    tier: "price",
-    items: [
-      { key: "bendingPricePerMmPer3m", label: "절곡 단가 (1mm × 3m 기준)", unit: "원" },
-    ],
-  },
-  // 소모품(스크류 봉지환산 + 실리콘 낱개) + 단열재는 전용 카드로 "스틸방수 단가" 섹션 직전 렌더 (render 참고).
+  // 절곡(단가+부재 넓이) + 소모품(스크류+실리콘) + 단열재는 전용 카드로 "스틸방수 단가" 섹션 직전 렌더 (render 참고).
   {
     section: "스틸방수 단가",
     emoji: "🟦",
@@ -474,15 +465,13 @@ export function SettingsForm({ defaultValues }: Props) {
             />
           )}
 
-          {/* 절곡 단가(1mm·3m) 행 바로 아래 — 부재별 넓이 + 3m당 환산 카드 */}
-          {section === "절곡 단가" && (
+          {/* 스틸방수 섹션 직전 — 절곡 / 소모품 / 단열재 카드 */}
+          {section === "스틸방수 단가" && (
             <BendingPricingCard
               values={values}
-              onWidthChange={(key, mm) => setField(key as keyof typeof DEFAULTS, mm as never)}
+              onChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
             />
           )}
-
-          {/* 스틸방수 섹션 직전 — 소모품(스크류+실리콘) 카드 + 단열재 카드 */}
           {section === "스틸방수 단가" && (
             <ConsumablesPricingCard
               values={values}
@@ -775,26 +764,39 @@ function AccessoryPricingCard({
 }
 
 /**
- * 절곡 부재별 단가 카드 — 부재마다 [넓이mm] 입력 → "3m당 X원" 환산 표시.
- * 3m당 = 넓이mm × bendingPricePerMmPer3m (절곡은 3m 단위 가공). 강판 카드와 동일 패턴.
+ * 절곡 단가 카드 — 절곡 기준 단가(1mm·3m) + 부재별 넓이(mm)를 한 곳에.
+ * 부재마다 3m당 = 넓이 × 기준단가 환산 표시. 강판 카드와 동일 패턴.
  */
 function BendingPricingCard({
-  values, onWidthChange,
+  values, onChange,
 }: {
   values: Record<string, number | string | boolean>;
-  onWidthChange: (key: string, mm: number) => void;
+  onChange: (key: string, v: number) => void;
 }) {
   const unit = Number(values.bendingPricePerMmPer3m ?? 0);
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
       <div className="px-5 pt-4 pb-2 flex items-center gap-2">
         <span className="text-lg">📐</span>
-        <h2 className="font-semibold text-foreground">절곡 부재별 넓이</h2>
+        <h2 className="font-semibold text-foreground">절곡 단가</h2>
       </div>
       <p className="px-5 pb-2 text-[11px] text-muted-foreground">
-        부재 넓이(mm) 입력 → 3m당 절곡 가격 자동 표시 (= 넓이 × {unit.toLocaleString("ko-KR")}원)
+        기준 단가(1mm·3m) × 부재 넓이 → 3m당 절곡 가격 자동 표시
       </p>
       <div className="divide-y divide-border/40">
+        {/* 기준 단가 행 */}
+        <div className="px-5 py-3 flex items-center gap-3">
+          <Label className="flex-1 text-sm text-muted-foreground">절곡 단가 (1mm × 3m 기준)</Label>
+          <div className="relative w-36 shrink-0">
+            <Input
+              type="number" inputMode="numeric"
+              value={String(unit)}
+              onChange={(e) => onChange("bendingPricePerMmPer3m", parseInt(e.target.value) || 0)}
+              className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원</span>
+          </div>
+        </div>
         {BENDING_PART_KEYS.map(({ key, label }) => {
           const widthMm = Number(values[key] ?? 0);
           const per3m = widthMm > 0 && unit > 0 ? widthMm * unit : 0;
@@ -811,7 +813,7 @@ function BendingPricingCard({
                 <Input
                   type="number" inputMode="numeric"
                   value={String(widthMm)}
-                  onChange={(e) => onWidthChange(key, parseInt(e.target.value) || 0)}
+                  onChange={(e) => onChange(key, parseInt(e.target.value) || 0)}
                   className="h-11 text-right pr-10 font-semibold tabular-nums rounded-xl"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">넓이mm</span>
