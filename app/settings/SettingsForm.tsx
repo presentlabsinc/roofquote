@@ -25,11 +25,16 @@ const STEEL_PRICE_KEYS: { type: MaterialType; label: string; key: string }[] = [
   { type: "tambour",         label: "템바징크 (미정)",  key: "materialPriceTambourPerM" },
 ];
 
-// 규격(기성품) 부자재 — [규격 길이] + [규격당 가격] → m당 환산 표시.
-// priceKey 는 m당 단가로 저장됨 (자동 추정 로직 호환). lenKey 는 accessoryLengths JSON 키.
+// 부자재 단가 — 한 카드에 통합.
+//  - spec: 규격(3m/5m) 기성품. [규격 길이]+[규격당 가격] → m당 환산. priceKey 엔 m당 저장.
+//  - flat: 규격 없는 단순 단가 (처마 m당, 엔드캡 개당). priceKey 단가 그대로.
 const ACCESSORY_SPEC_KEYS: { lenKey: string; priceKey: string; label: string; defaultLenMm: number }[] = [
   { lenKey: "ridge",  priceKey: "ridgePricePerM",  label: "용마루",  defaultLenMm: 3000 },
   { lenKey: "gutter", priceKey: "gutterPricePerM", label: "물받이",  defaultLenMm: 5000 },
+];
+const ACCESSORY_FLAT_KEYS: { priceKey: string; label: string; unit: string }[] = [
+  { priceKey: "eavePricePerM", label: "처마 마감", unit: "원/m" },
+  { priceKey: "endCapPrice",   label: "엔드캡",   unit: "원/개" },
 ];
 
 const DEFAULTS = {
@@ -156,19 +161,9 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   // ─── tier 3: 단가표 ───
-  // 강판 자재별 단가는 전용 카드(SteelSheetPricingCard)로 렌더 — "부자재 단가" 카드 직전.
-  // PE폼은 강판 카드로 이동, 철거/폐기물은 노무비로 이동, 처마는 덴조로 (Phase 4).
-  {
-    // 용마루/물받이는 규격(3m/5m) 기성품이라 전용 카드(AccessoryPricingCard)로 — "규격당 가격 → m당 환산".
-    // 처마/엔드캡은 규격 없어 일반 행. (카드는 이 섹션 직전에 렌더 — render 참고.)
-    section: "부자재 단가",
-    emoji: "🧱",
-    tier: "price",
-    items: [
-      { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
-      { key: "endCapPrice", label: "엔드캡 (개당)", unit: "원" },
-    ],
-  },
+  // 단가표 첫 섹션("하지 작업 단가") 직전에 전용 카드 2개 렌더 (render 참고):
+  //   ① 강판 자재별 단가 (SteelSheetPricingCard, PE폼 포함)
+  //   ② 부자재 단가 (AccessoryPricingCard — 용마루/물받이 규격환산 + 처마/엔드캡 단순단가 통합)
   {
     section: "하지 작업 단가",
     emoji: "🪵",
@@ -407,8 +402,8 @@ export function SettingsForm({ defaultValues }: Props) {
                 <span className="flex-1 h-px bg-border/60" />
               </div>
             )}
-          {/* 강판 자재별 단가 — "부자재 단가" 카드 직전에 전용 카드로 렌더 (PE폼 포함) */}
-          {section === "부자재 단가" && (
+          {/* 단가표 첫 섹션 직전에 강판 + 부자재 전용 카드 2개 렌더 */}
+          {section === "하지 작업 단가" && (
             <SteelSheetPricingCard
               values={values}
               widths={materialWidths}
@@ -418,8 +413,7 @@ export function SettingsForm({ defaultValues }: Props) {
               onPeFoamChange={(v) => setField("peFoamPricePerSqm", v)}
             />
           )}
-          {/* 부자재 규격 단가 — 강판 카드 다음, "부자재 단가"(처마/엔드캡) 카드 직전 */}
-          {section === "부자재 단가" && (
+          {section === "하지 작업 단가" && (
             <AccessoryPricingCard
               values={values}
               lengths={accessoryLengths}
@@ -691,17 +685,17 @@ function AccessoryPricingCard({
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
       <div className="px-5 pt-4 pb-2 flex items-center gap-2">
-        <span className="text-lg">📏</span>
-        <h2 className="font-semibold text-foreground">부자재 규격 단가 (기성품)</h2>
+        <span className="text-lg">🧱</span>
+        <h2 className="font-semibold text-foreground">부자재 단가</h2>
       </div>
       <p className="px-5 pb-2 text-[11px] text-muted-foreground">
-        규격 길이 + 규격당 가격 입력 → m당 환산 (용마루 3m, 물받이 5m 등 토막 자재)
+        규격 자재(용마루 3m·물받이 5m)는 규격당 가격 입력 → m당 환산. 처마·엔드캡은 단순 단가.
       </p>
       <div className="divide-y divide-border/40">
+        {/* 규격 기성품 — 규격 + 규격당 가격 → m당 환산 */}
         {ACCESSORY_SPEC_KEYS.map(({ lenKey, priceKey, label, defaultLenMm }) => {
           const lenMm = lengths[lenKey] ?? defaultLenMm;
           const perM = Number(values[priceKey] ?? 0);
-          // 규격당 가격 = m당 × (규격/1000). 표시·입력은 규격당, 저장은 m당.
           const lenM = lenMm / 1000;
           const pricePerSpec = lenM > 0 ? Math.round(perM * lenM) : 0;
           return (
@@ -713,7 +707,6 @@ function AccessoryPricingCard({
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {/* 규격 길이 mm */}
                 <div className="relative flex-1">
                   <Input
                     type="number" inputMode="numeric"
@@ -723,7 +716,6 @@ function AccessoryPricingCard({
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">규격mm</span>
                 </div>
-                {/* 규격당 가격 → m당으로 환산 저장 */}
                 <div className="relative flex-1">
                   <Input
                     type="number" inputMode="numeric"
@@ -740,6 +732,21 @@ function AccessoryPricingCard({
             </div>
           );
         })}
+        {/* 규격 없는 단순 단가 — 처마(m당)/엔드캡(개당) */}
+        {ACCESSORY_FLAT_KEYS.map(({ priceKey, label, unit }) => (
+          <div key={priceKey} className="px-5 py-3 flex items-center gap-3">
+            <Label className="flex-1 text-sm text-muted-foreground">{label}</Label>
+            <div className="relative w-36 shrink-0">
+              <Input
+                type="number" inputMode="numeric"
+                value={String(Number(values[priceKey] ?? 0))}
+                onChange={(e) => onPriceChange(priceKey, parseInt(e.target.value) || 0)}
+                className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{unit}</span>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
