@@ -196,17 +196,7 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "bendingPricePerMmPer3m", label: "절곡 단가 (1mm × 3m 기준)", unit: "원" },
     ],
   },
-  {
-    // 스크류는 봉지 입력 전용 카드(ScrewPricingCard)로 — 섹션 직전 렌더. 실리콘만 일반 행.
-    section: "소모품 단가",
-    emoji: "🔩",
-    tier: "price",
-    items: [
-      { key: "siliconePrice", label: "실리콘 (개당)", unit: "원" },
-    ],
-  },
-  // 단열재 단가는 전용 카드(InsulationPricingCard)로 — 소모품 단가 섹션 직후 렌더 (render 참고).
-  // 제품별 [단위면적]+[단위가격] → ㎡당 환산.
+  // 소모품(스크류 봉지환산 + 실리콘 낱개) + 단열재는 전용 카드로 "스틸방수 단가" 섹션 직전 렌더 (render 참고).
   {
     section: "스틸방수 단가",
     emoji: "🟦",
@@ -492,16 +482,14 @@ export function SettingsForm({ defaultValues }: Props) {
             />
           )}
 
-          {/* 소모품 — 스크류 봉지 입력 카드 (실리콘은 섹션 일반 행) */}
-          {section === "소모품 단가" && (
-            <ScrewPricingCard
+          {/* 스틸방수 섹션 직전 — 소모품(스크류+실리콘) 카드 + 단열재 카드 */}
+          {section === "스틸방수 단가" && (
+            <ConsumablesPricingCard
               values={values}
               onChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
             />
           )}
-
-          {/* 단열재 단가 — 소모품 다음. 제품별 단위면적+단위가격 → ㎡당 환산 */}
-          {section === "소모품 단가" && (
+          {section === "스틸방수 단가" && (
             <InsulationPricingCard
               values={values}
               unitAreas={insulationUnitAreas}
@@ -811,16 +799,15 @@ function BendingPricingCard({
           const widthMm = Number(values[key] ?? 0);
           const per3m = widthMm > 0 && unit > 0 ? widthMm * unit : 0;
           return (
-            <div key={key} className="px-5 py-3 flex items-center gap-3">
-              <div className="flex-1">
+            <div key={key} className="px-5 py-3">
+              {/* 강판 카드와 동일 레이아웃 — 라벨 + 환산단가(우상단), 입력 아래 풀폭 */}
+              <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground">{label}</span>
-                {per3m > 0 && (
-                  <span className="block text-[11px] font-semibold text-primary tabular-nums">
-                    → 3m당 {per3m.toLocaleString("ko-KR")}원
-                  </span>
-                )}
+                <span className="text-[11px] font-semibold text-primary tabular-nums">
+                  {per3m > 0 ? `→ 3m당 ${per3m.toLocaleString("ko-KR")}원` : "넓이 입력 필요"}
+                </span>
               </div>
-              <div className="relative w-32 shrink-0">
+              <div className="relative">
                 <Input
                   type="number" inputMode="numeric"
                   value={String(widthMm)}
@@ -838,69 +825,119 @@ function BendingPricingCard({
 }
 
 /**
- * 스크류 봉지 단가 카드 — [봉지당 개수] + [봉지 가격] → "1개당 X원" 환산.
- * priceKey(screwLargePrice 등)엔 1개당 단가로 저장 (자동 추정 로직 호환). 봉지 개수는 perBagKey.
+ * 소모품 단가 카드 — 스크류(봉지 환산) + 실리콘(낱개) 한 곳에.
+ * 스크류: [봉지당 개수]+[봉지 가격] → "1개당 X원" 환산, priceKey 엔 1개당 저장.
+ * 실리콘: 낱개 단가 직접.
  */
-function ScrewPricingCard({
+function ConsumablesPricingCard({
   values, onChange,
 }: {
   values: Record<string, number | string | boolean>;
   onChange: (key: string, v: number) => void;
 }) {
-  const ROWS = [
-    { label: "스크류 (대)", priceKey: "screwLargePrice", perBagKey: "screwLargePerBag" },
-    { label: "스크류 (소)", priceKey: "screwSmallPrice", perBagKey: "screwSmallPerBag" },
-  ];
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
       <div className="px-5 pt-4 pb-2 flex items-center gap-2">
         <span className="text-lg">🔩</span>
-        <h2 className="font-semibold text-foreground">스크류 (봉지 단가)</h2>
+        <h2 className="font-semibold text-foreground">소모품 단가</h2>
       </div>
       <p className="px-5 pb-2 text-[11px] text-muted-foreground">
-        봉지당 개수 + 봉지 가격 입력 → 1개당 단가 자동 환산
+        스크류는 봉지당 개수 + 봉지 가격 → 1개당 환산. 실리콘은 낱개 단가.
       </p>
       <div className="divide-y divide-border/40">
-        {ROWS.map(({ label, priceKey, perBagKey }) => {
-          const perPiece = Number(values[priceKey] ?? 0);
-          const perBag = Number(values[perBagKey] ?? 0);
-          const bagPrice = perBag > 0 ? Math.round(perPiece * perBag) : 0;
-          return (
-            <div key={priceKey} className="px-5 py-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-foreground">{label}</span>
-                <span className="text-[11px] font-semibold text-primary tabular-nums">
-                  {perPiece > 0 ? `→ 1개당 ${perPiece.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* 봉지당 개수 */}
-                <div className="relative flex-1">
-                  <Input
-                    type="number" inputMode="numeric"
-                    value={String(perBag)}
-                    onChange={(e) => onChange(perBagKey, parseInt(e.target.value) || 0)}
-                    className="h-11 text-right pr-12 tabular-nums rounded-xl"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">개/봉</span>
-                </div>
-                {/* 봉지 가격 → 1개당 환산 저장 */}
-                <div className="relative flex-1">
-                  <Input
-                    type="number" inputMode="numeric"
-                    value={String(bagPrice)}
-                    onChange={(e) => {
-                      const bp = parseInt(e.target.value) || 0;
-                      onChange(priceKey, perBag > 0 ? Math.round(bp / perBag) : 0);
-                    }}
-                    className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/봉</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <ScrewRow
+          label="스크류 (대)"
+          perPiece={Number(values.screwLargePrice ?? 0)}
+          perBag={Number(values.screwLargePerBag ?? 0)}
+          onPerBagChange={(n) => onChange("screwLargePerBag", n)}
+          onPerPieceChange={(p) => onChange("screwLargePrice", p)}
+        />
+        <ScrewRow
+          label="스크류 (소)"
+          perPiece={Number(values.screwSmallPrice ?? 0)}
+          perBag={Number(values.screwSmallPerBag ?? 0)}
+          onPerBagChange={(n) => onChange("screwSmallPerBag", n)}
+          onPerPieceChange={(p) => onChange("screwSmallPrice", p)}
+        />
+        {/* 실리콘 — 낱개 */}
+        <div className="px-5 py-3 flex items-center gap-3">
+          <Label className="flex-1 text-sm text-muted-foreground">실리콘 (개당)</Label>
+          <div className="relative w-36 shrink-0">
+            <Input
+              type="number" inputMode="numeric"
+              value={String(Number(values.siliconePrice ?? 0))}
+              onChange={(e) => onChange("siliconePrice", parseInt(e.target.value) || 0)}
+              className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 스크류 한 행 — 봉지 가격 로컬 버퍼로 받아서(타이핑 중 재계산 간섭 X)
+ * 1개당 = round(봉지가격 / 봉지개수) 저장. InsulationRow 와 동일 패턴.
+ */
+function ScrewRow({
+  label, perPiece, perBag, onPerBagChange, onPerPieceChange,
+}: {
+  label: string;
+  perPiece: number;
+  perBag: number;
+  onPerBagChange: (n: number) => void;
+  onPerPieceChange: (p: number) => void;
+}) {
+  const [bagBuf, setBagBuf] = useState(() => String(perBag > 0 ? Math.round(perPiece * perBag) : 0));
+  const syncRef = useRef({ perBag, perPiece });
+  useEffect(() => {
+    if (syncRef.current.perBag !== perBag || syncRef.current.perPiece !== perPiece) {
+      syncRef.current = { perBag, perPiece };
+      setBagBuf(String(perBag > 0 ? Math.round(perPiece * perBag) : 0));
+    }
+  }, [perBag, perPiece]);
+
+  function commitBagPrice(raw: string) {
+    setBagBuf(raw);
+    const bp = parseInt(raw) || 0;
+    onPerPieceChange(perBag > 0 ? Math.round(bp / perBag) : 0);
+  }
+  function commitCount(raw: string) {
+    const n = parseInt(raw) || 0;
+    onPerBagChange(n);
+    const bp = parseInt(bagBuf) || 0;
+    onPerPieceChange(n > 0 ? Math.round(bp / n) : 0);
+  }
+
+  return (
+    <div className="px-5 py-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="text-[11px] font-semibold text-primary tabular-nums">
+          {perPiece > 0 ? `→ 1개당 ${perPiece.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Input
+            type="number" inputMode="numeric"
+            value={String(perBag)}
+            onChange={(e) => commitCount(e.target.value)}
+            className="h-11 text-right pr-12 tabular-nums rounded-xl"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">개/봉</span>
+        </div>
+        <div className="relative flex-1">
+          <Input
+            type="number" inputMode="numeric"
+            value={bagBuf}
+            onChange={(e) => commitBagPrice(e.target.value)}
+            className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/봉</span>
+        </div>
       </div>
     </div>
   );
@@ -918,11 +955,12 @@ function InsulationPricingCard({
   onPriceChange: (key: string, perSqm: number) => void;
   onAreaChange: (typeKey: string, area: number) => void;
 }) {
+  // 판재(EPS/XPS/PIR)는 장 단위(보통 0.72㎡=600×1200), 열반사는 롤(보통 36㎡=1.2×30).
   const ROWS = [
-    { typeKey: "eps",            priceKey: "insulationPriceEps",            label: "스티로폼 (EPS)" },
-    { typeKey: "xps",            priceKey: "insulationPriceXps",            label: "아이소핑크 (XPS)" },
-    { typeKey: "pir",            priceKey: "insulationPricePir",            label: "경질우레탄폼 (PIR)" },
-    { typeKey: "thermalReflect", priceKey: "insulationPriceThermalReflect", label: "열반사단열재" },
+    { typeKey: "eps",            priceKey: "insulationPriceEps",            label: "스티로폼 (EPS)",    unitLabel: "장", defaultArea: 0.72 },
+    { typeKey: "xps",            priceKey: "insulationPriceXps",            label: "아이소핑크 (XPS)",  unitLabel: "장", defaultArea: 0.72 },
+    { typeKey: "pir",            priceKey: "insulationPricePir",            label: "경질우레탄폼 (PIR)", unitLabel: "장", defaultArea: 0.72 },
+    { typeKey: "thermalReflect", priceKey: "insulationPriceThermalReflect", label: "열반사단열재",      unitLabel: "롤", defaultArea: 36 },
   ];
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
@@ -931,13 +969,14 @@ function InsulationPricingCard({
         <h2 className="font-semibold text-foreground">단열재 단가</h2>
       </div>
       <p className="px-5 pb-2 text-[11px] text-muted-foreground">
-        단위(롤/판) 면적 + 롤/개당 가격 입력 → ㎡당 단가 자동 환산. 면적 0이면 ㎡당 직접 입력.
+        판/롤 면적(㎡) + 장/롤당 가격 입력 → ㎡당 단가 자동 환산. 면적 0이면 ㎡당 직접 입력.
       </p>
       <div className="divide-y divide-border/40">
         {ROWS.map((row) => (
           <InsulationRow
             key={row.typeKey}
             label={row.label}
+            unitLabel={row.unitLabel}
             perSqm={Number(values[row.priceKey] ?? 0)}
             area={unitAreas[row.typeKey] ?? 0}
             onAreaChange={(a) => onAreaChange(row.typeKey, a)}
@@ -955,9 +994,10 @@ function InsulationPricingCard({
  * 면적 0이면 가격 입력칸이 곧 ㎡당 (환산 없음).
  */
 function InsulationRow({
-  label, perSqm, area, onAreaChange, onPerSqmChange,
+  label, unitLabel, perSqm, area, onAreaChange, onPerSqmChange,
 }: {
   label: string;
+  unitLabel: string;  // "장" | "롤"
   perSqm: number;
   area: number;
   onAreaChange: (area: number) => void;
@@ -1006,9 +1046,9 @@ function InsulationRow({
             onChange={(e) => commitArea(e.target.value)}
             className="h-11 text-right pr-10 tabular-nums rounded-xl"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">㎡/단위</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">㎡/{unitLabel}</span>
         </div>
-        {/* 롤/개당 가격 (면적 0이면 ㎡당 직접) */}
+        {/* 장/롤당 가격 (면적 0이면 ㎡당 직접) */}
         <div className="relative flex-1">
           <Input
             type="number" inputMode="numeric"
@@ -1016,7 +1056,7 @@ function InsulationRow({
             onChange={(e) => commitPrice(e.target.value)}
             className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
           />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{area > 0 ? "원/단위" : "원/㎡"}</span>
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{area > 0 ? `원/${unitLabel}` : "원/㎡"}</span>
         </div>
       </div>
     </div>
