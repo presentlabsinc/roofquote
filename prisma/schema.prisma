@@ -127,6 +127,9 @@ model PricingSettings {
   insulationPriceXps           Int  @default(11000)  // 아이소핑크
   insulationPricePir           Int  @default(16000)  // 경질우레탄폼
   insulationPriceThermalReflect Int @default(6000)   // 열반사단열재
+  // 단열재 제품별 1단위(롤/판) 면적 ㎡ — { eps: 0.72, thermalReflect: 36, ... }.
+  // 설정에서 [단위면적]+[단위가격] → ㎡당 환산 표시용. 비면 환산 안 함(㎡당 직접).
+  insulationUnitAreas          Json @default("{}")
 
   // ── 베이스라인 데이터 (Phase 2 — 실제 시공 데이터 기반 추정용) ──
   // 비어있으면 기하학적 추정 fallback. 채워져 있으면 데이터 우선.

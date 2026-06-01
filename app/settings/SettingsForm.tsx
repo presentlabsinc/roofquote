@@ -205,17 +205,8 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "siliconePrice", label: "실리콘 (개당)", unit: "원" },
     ],
   },
-  {
-    section: "단열재 단가",
-    emoji: "🧊",
-    tier: "price",
-    items: [
-      { key: "insulationPriceEps", label: "스티로폼 (EPS) ㎡당", unit: "원" },
-      { key: "insulationPriceXps", label: "아이소핑크 (XPS) ㎡당", unit: "원" },
-      { key: "insulationPricePir", label: "경질우레탄폼 (PIR) ㎡당", unit: "원" },
-      { key: "insulationPriceThermalReflect", label: "열반사단열재 ㎡당", unit: "원" },
-    ],
-  },
+  // 단열재 단가는 전용 카드(InsulationPricingCard)로 — 소모품 단가 섹션 직후 렌더 (render 참고).
+  // 제품별 [단위면적]+[단위가격] → ㎡당 환산.
   {
     section: "스틸방수 단가",
     emoji: "🟦",
@@ -367,6 +358,14 @@ export function SettingsForm({ defaultValues }: Props) {
     setAccessoryLengths((m) => ({ ...m, [lenKey]: mm }));
   }
 
+  // 단열재 제품별 단위(롤/판) 면적 ㎡ override.
+  const [insulationUnitAreas, setInsulationUnitAreas] = useState<Record<string, number>>(
+    () => ((defaultValues as unknown as { insulationUnitAreas?: Record<string, number> } | null)?.insulationUnitAreas) ?? {},
+  );
+  function setInsArea(typeKey: string, area: number) {
+    setInsulationUnitAreas((m) => ({ ...m, [typeKey]: area }));
+  }
+
   async function handleSave() {
     if (!values.companyName.trim()) {
       toast.error("회사명을 입력해 주세요.");
@@ -378,6 +377,7 @@ export function SettingsForm({ defaultValues }: Props) {
         ...values,
         materialWidths,
         accessoryLengths,
+        insulationUnitAreas,
         companyPhone: values.companyPhone || null,
         companyAddress: values.companyAddress || null,
         businessRegistrationNumber: values.businessRegistrationNumber || null,
@@ -497,6 +497,16 @@ export function SettingsForm({ defaultValues }: Props) {
             <ScrewPricingCard
               values={values}
               onChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
+            />
+          )}
+
+          {/* 단열재 단가 — 소모품 다음. 제품별 단위면적+단위가격 → ㎡당 환산 */}
+          {section === "소모품 단가" && (
+            <InsulationPricingCard
+              values={values}
+              unitAreas={insulationUnitAreas}
+              onPriceChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
+              onAreaChange={setInsArea}
             />
           )}
 
@@ -886,6 +896,79 @@ function ScrewPricingCard({
                     className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/봉</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 단열재 제품별 단가 카드 — [단위(롤/판) 면적 ㎡] + [단위 가격] → "㎡당 X원" 환산.
+ * 단위면적 미입력(0)이면 환산 없이 ㎡당 직접 입력. priceKey 엔 ㎡당 저장 (로직 호환).
+ */
+function InsulationPricingCard({
+  values, unitAreas, onPriceChange, onAreaChange,
+}: {
+  values: Record<string, number | string | boolean>;
+  unitAreas: Record<string, number>;
+  onPriceChange: (key: string, perSqm: number) => void;
+  onAreaChange: (typeKey: string, area: number) => void;
+}) {
+  const ROWS = [
+    { typeKey: "eps",            priceKey: "insulationPriceEps",            label: "스티로폼 (EPS)" },
+    { typeKey: "xps",            priceKey: "insulationPriceXps",            label: "아이소핑크 (XPS)" },
+    { typeKey: "pir",            priceKey: "insulationPricePir",            label: "경질우레탄폼 (PIR)" },
+    { typeKey: "thermalReflect", priceKey: "insulationPriceThermalReflect", label: "열반사단열재" },
+  ];
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">🧊</span>
+        <h2 className="font-semibold text-foreground">단열재 단가</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        단위(롤/판) 면적 + 단위 가격 → ㎡당 환산. 면적 0이면 ㎡당 직접 입력.
+      </p>
+      <div className="divide-y divide-border/40">
+        {ROWS.map(({ typeKey, priceKey, label }) => {
+          const perSqm = Number(values[priceKey] ?? 0);
+          const area = unitAreas[typeKey] ?? 0;
+          const unitPrice = area > 0 ? Math.round(perSqm * area) : 0;
+          return (
+            <div key={typeKey} className="px-5 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <span className="text-[11px] font-semibold text-primary tabular-nums">
+                  {perSqm > 0 ? `→ ㎡당 ${perSqm.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* 단위 면적 ㎡ (롤/판 1개) */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="decimal" step={0.01}
+                    value={String(area)}
+                    onChange={(e) => onAreaChange(typeKey, parseFloat(e.target.value) || 0)}
+                    className="h-11 text-right pr-10 tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">㎡/단위</span>
+                </div>
+                {/* 단위 가격 → ㎡당 환산 저장 (면적 0이면 입력값을 ㎡당으로 직접) */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(area > 0 ? unitPrice : perSqm)}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value) || 0;
+                      onPriceChange(priceKey, area > 0 ? Math.round(v / area) : v);
+                    }}
+                    className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{area > 0 ? "원/단위" : "원/㎡"}</span>
                 </div>
               </div>
             </div>
