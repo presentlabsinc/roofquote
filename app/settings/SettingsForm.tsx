@@ -73,6 +73,7 @@ const DEFAULTS = {
   stainlessDrainPricePerM: 50000,
   peFoamPricePerSqm: 1000,
   downspoutUnitPrice: 50000,
+  denjoPricePerUnit: 700000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.15,
   estimateNumberStart: 1,
@@ -221,6 +222,8 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
       // 철거는 인건이라 노무비. (폐기물은 트럭 운반이라 장비·운송으로.)
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
+      // 처마/덴조 — 건당 시공 (대부분 인건). 후레싱 등 자재는 별도.
+      { key: "denjoPricePerUnit", label: "처마/덴조 시공 (건당)", unit: "원" },
     ],
   },
   {
@@ -319,6 +322,7 @@ export function SettingsForm({ defaultValues }: Props) {
       insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
       lossRateMode: (((defaultValues as unknown as { lossRateMode?: string }).lossRateMode === "manual") ? "manual" : "auto") as "auto" | "manual",
       downspoutUnitPrice: (defaultValues as unknown as { downspoutUnitPrice?: number }).downspoutUnitPrice ?? 50000,
+      denjoPricePerUnit: (defaultValues as unknown as { denjoPricePerUnit?: number }).denjoPricePerUnit ?? 700000,
     };
   });
 

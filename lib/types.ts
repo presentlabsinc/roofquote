@@ -344,7 +344,7 @@ export const SCOPE_LABELS: Record<keyof ScopeFlags, string> = {
   overlay: "기존 지붕 덧씌우기",
   removal: "기존 지붕 철거",
   ridge: "용마루 마감",
-  eave: "처마 / 덴조 마감",
+  eave: "처마 / 덴조 시공",
   endCap: "엔드캡",
   gutter: "물받이 교체",
   frameReinforcement: "골조 보강",
@@ -378,6 +378,7 @@ export const SCOPE_HINTS: Partial<Record<keyof ScopeFlags, string>> = {
   rooftopStructure: "창고 / 계단실 / 옥탑방 등 — 시공면적에 포함하여 입력",
   drainHole: "1개당 단가 × 개수",
   endCap: "1개당 단가 × 개수",
+  eave: "건당 시공비 × 건수 (대부분 인건, 자재는 후레싱 등 별도)",
 };
 
 /** Which scope items are shown for each construction type, in display order.

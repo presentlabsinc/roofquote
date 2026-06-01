@@ -86,8 +86,11 @@ model PricingSettings {
   drainHolePrice               Int    @default(200000)  // 새 배수구 타공 1개당
   stainlessDrainPricePerM      Int    @default(50000)   // 스테인리스 배수로 m당 (스틸방수에서 물받이 대체)
 
-  // 두겁 — 절곡 작업 m당 단가 (난간 시공 시 두겁 필수)
+  // 두겁 — 절곡 작업 m당 단가 (난간 시공 시 두겁 필수) [LEGACY — 절곡 그룹으로 대체]
   capBendingPricePerM          Int    @default(5000)
+
+  // 처마/덴조 — 건당 시공 단가 (대부분 인건비, 자재 소량). 후레싱/파라펫/제이채널 자재는 별도 라인.
+  denjoPricePerUnit            Int    @default(700000)
 
   // 지붕공사 / 옥상지붕 — 엔드캡 1개당
   endCapPrice                  Int    @default(3500)
@@ -235,6 +238,9 @@ model Estimate {
 
   // 엔드캡 개수 (지붕공사 / 옥상지붕)
   endCapCount       Int      @default(0)
+
+  // 처마/덴조 건수 (scope.eave 시공 시 — 건당 단가 × 개수)
+  denjoCount        Int      @default(0)
 
   // ── 건물/지붕 형태 (자재 자동 추정용) ──
   buildingShape     String?  // 'rectangle' | 'lshape' | 'ushape'

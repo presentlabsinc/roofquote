@@ -90,6 +90,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       endCapPrice: 3500,
       stainlessDrainPricePerM: 50000,
       downspoutUnitPrice: 50000,
+      denjoPricePerUnit: 700000,
       parapetMultiplier: 1.4,
       defaultLossRate: 0.15,
       useLossRateByDefault: false,

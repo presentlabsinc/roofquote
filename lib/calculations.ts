@@ -311,6 +311,8 @@ export interface BuildLineItemsInput {
   capLengthM?: number;
   drainHoleCount?: number;
   endCapCount?: number;
+  /** 처마/덴조 건수 (scope.eave 시공) */
+  denjoCount?: number;
   skyliftDays: number;
   ladderTruckDays: number;
   scaffoldDays: number;
@@ -375,7 +377,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     areaM2, scope, workerCount, workDays,
     gutterMode = null, gutterLengthM,
     stainlessDrainLengthM = 0,
-    capLengthM = 0, drainHoleCount = 0, endCapCount = 0,
+    capLengthM = 0, drainHoleCount = 0, endCapCount = 0, denjoCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
     extraCosts = [], pricingOverrides = {},
@@ -489,24 +491,14 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         }
       }
     }
-    if (scope.eave) {
-      const eaveLength = est("eaveBendingM", "eaveLengthM", () => Math.round(Math.sqrt(areaM2) * 2));
+    // 처마/덴조 — 건당 시공 (대부분 인건비). 자재(후레싱/페이샤)는 카탈로그·절곡에서 별도.
+    if (scope.eave && denjoCount > 0 && settings.denjoPricePerUnit > 0) {
       items.push({
-        category: "material", name: "처마 마감", quantity: eaveLength, unit: "m",
-        unitPrice: settings.eavePricePerM, total: Math.round(eaveLength * settings.eavePricePerM),
+        category: "labor", name: "처마 / 덴조 시공", quantity: denjoCount, unit: "건",
+        unitPrice: settings.denjoPricePerUnit,
+        total: denjoCount * settings.denjoPricePerUnit,
         sortOrder: order++,
       });
-      if (buildingShape && eaveLength > 0) {
-        const bend = calcBendingCost(settings.bendingWidthEave, eaveLength, settings.bendingPricePerMmPer3m);
-        if (bend > 0) {
-          items.push({
-            category: "material", name: `처마 절곡 (${settings.bendingWidthEave}mm)`,
-            quantity: eaveLength, unit: "m",
-            unitPrice: Math.round(bend / Math.max(1, eaveLength)), total: bend,
-            sortOrder: order++,
-          });
-        }
-      }
     }
     // 프래싱 (꺾인 건물에만) — 기존 견적에는 없던 자동 생성 라인
     if (buildingShape && geom && geom.flashingLengthM > 0) {
@@ -688,27 +680,14 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         }
       }
     }
-    // 처마/덴조 (eave) — 스틸방수에도 옥탑 처마 마감 들어가는 경우 (사용자 요청 추가)
-    if (scope.eave) {
-      // 옥탑 둘레가 있으면 그것 사용 (옥탑 처마), 없으면 난간 둘레의 일부 사용
-      const eaveLen = rooftopP > 0 ? rooftopP : Math.round(railP * 0.5);
-      if (eaveLen > 0) {
-        items.push({
-          category: "material", name: "처마 / 덴조 마감", quantity: eaveLen, unit: "m",
-          unitPrice: settings.eavePricePerM,
-          total: Math.round(eaveLen * settings.eavePricePerM),
-          sortOrder: order++,
-        });
-        const bend = calcBendingCost(settings.bendingWidthEave, eaveLen, settings.bendingPricePerMmPer3m);
-        if (bend > 0) {
-          items.push({
-            category: "material", name: `처마 절곡 (${settings.bendingWidthEave}mm)`,
-            quantity: eaveLen, unit: "m",
-            unitPrice: Math.round(bend / Math.max(1, eaveLen)), total: bend,
-            sortOrder: order++,
-          });
-        }
-      }
+    // 처마/덴조 — 건당 시공 (스틸방수 옥탑 처마 등). 지붕공사와 동일하게 건당.
+    if (scope.eave && denjoCount > 0 && settings.denjoPricePerUnit > 0) {
+      items.push({
+        category: "labor", name: "처마 / 덴조 시공", quantity: denjoCount, unit: "건",
+        unitPrice: settings.denjoPricePerUnit,
+        total: denjoCount * settings.denjoPricePerUnit,
+        sortOrder: order++,
+      });
     }
     // 새 배수구 타공
     if (scope.drainHole && drainHoleCount > 0) {

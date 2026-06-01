@@ -281,6 +281,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   // 엔드캡 개수 (지붕공사 / 옥상지붕)
   const [endCaps, setEndCaps] = useState(existing?.endCapCount ? String(existing.endCapCount) : "1");
+  // 처마/덴조 건수 (eave 시공)
+  const [denjoCount, setDenjoCount] = useState(
+    (existing as unknown as { denjoCount?: number } | undefined)?.denjoCount ? String((existing as unknown as { denjoCount?: number }).denjoCount) : "1",
+  );
 
   // 폐기물 트럭 수
   const [wasteTrucks, setWasteTrucks] = useState(existing?.wasteTruckCount ? String(existing.wasteTruckCount) : "1");
@@ -452,6 +456,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       capLengthM: (scope.cap || scope.handrail) ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
       endCapCount: scope.endCap ? Math.max(1, parseInt(endCaps) || 1) : 0,
+      denjoCount: scope.eave ? Math.max(1, parseInt(denjoCount) || 1) : 0,
       substructureType: substructureType === "none" ? null : substructureType,
       wasteTruckCount: scope.waste ? Math.max(1, parseInt(wasteTrucks) || 1) : 1,
       skyliftDays: scope.skylift ? parseFloat(skyliftDays) || 1 : 0,
@@ -962,6 +967,20 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                             onChange={setEndCaps}
                             min={1} max={50} step={1}
                             unit="개"
+                          />
+                        </div>
+                      )}
+                      {/* 처마/덴조 건수 — 건당 시공 */}
+                      {key === "eave" && scope.eave && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">
+                            건수 ({(eff as unknown as { denjoPricePerUnit?: number }).denjoPricePerUnit?.toLocaleString("ko-KR") ?? "—"}원/건)
+                          </Label>
+                          <NumberStepper
+                            value={denjoCount}
+                            onChange={setDenjoCount}
+                            min={1} max={20} step={1}
+                            unit="건"
                           />
                         </div>
                       )}
