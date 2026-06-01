@@ -37,6 +37,18 @@ const ACCESSORY_FLAT_KEYS: { priceKey: string; label: string; unit: string }[] =
   { priceKey: "endCapPrice",   label: "엔드캡",   unit: "원/개" },
 ];
 
+// 절곡 부재 — 넓이mm 입력 → 3m당 가격 = 넓이 × 절곡단가 미리보기. (절곡은 3m 단위 가공이라 3m당이 직관적.)
+const BENDING_PART_KEYS: { key: string; label: string }[] = [
+  { key: "bendingWidthRidge",     label: "용마루" },
+  { key: "bendingWidthEave",      label: "처마" },
+  { key: "bendingWidthCap",       label: "두겁" },
+  { key: "bendingWidthMishi",     label: "미시" },
+  { key: "bendingWidthFlashing",  label: "프래싱" },
+  { key: "bendingWidthFascia",    label: "페이샤/후레싱" },
+  { key: "bendingWidthValley",    label: "회침" },
+  { key: "bendingWidthSnowGuard", label: "눈방지턱" },
+];
+
 const DEFAULTS = {
   companyName: "",
   companyPhone: "",
@@ -174,19 +186,12 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   {
+    // 절곡 단가(1mm·3m) 1줄만 일반 행. 부재별 넓이+3m당 환산은 전용 카드(BendingPricingCard).
     section: "절곡 단가",
     emoji: "📏",
     tier: "price",
     items: [
       { key: "bendingPricePerMmPer3m", label: "절곡 단가 (1mm × 3m 기준)", unit: "원" },
-      { key: "bendingWidthRidge", label: "용마루 기본 넓이", unit: "mm" },
-      { key: "bendingWidthEave", label: "처마 기본 넓이", unit: "mm" },
-      { key: "bendingWidthCap", label: "두겁 기본 넓이", unit: "mm" },
-      { key: "bendingWidthMishi", label: "미시 기본 넓이", unit: "mm" },
-      { key: "bendingWidthFlashing", label: "프래싱 기본 넓이", unit: "mm" },
-      { key: "bendingWidthFascia", label: "페이샤/후레싱 기본 넓이", unit: "mm" },
-      { key: "bendingWidthValley", label: "회침 기본 넓이", unit: "mm" },
-      { key: "bendingWidthSnowGuard", label: "눈방지턱 기본 넓이", unit: "mm" },
     ],
   },
   {
@@ -476,6 +481,14 @@ export function SettingsForm({ defaultValues }: Props) {
             />
           )}
 
+          {/* 절곡 단가(1mm·3m) 행 바로 아래 — 부재별 넓이 + 3m당 환산 카드 */}
+          {section === "절곡 단가" && (
+            <BendingPricingCard
+              values={values}
+              onWidthChange={(key, mm) => setField(key as keyof typeof DEFAULTS, mm as never)}
+            />
+          )}
+
           {/* 기본 마진율 바로 아래 — 마진 분배 비율 */}
           {section === "마진" && (
             <MarginDistributionCard
@@ -747,6 +760,57 @@ function AccessoryPricingCard({
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 절곡 부재별 단가 카드 — 부재마다 [넓이mm] 입력 → "3m당 X원" 환산 표시.
+ * 3m당 = 넓이mm × bendingPricePerMmPer3m (절곡은 3m 단위 가공). 강판 카드와 동일 패턴.
+ */
+function BendingPricingCard({
+  values, onWidthChange,
+}: {
+  values: Record<string, number | string | boolean>;
+  onWidthChange: (key: string, mm: number) => void;
+}) {
+  const unit = Number(values.bendingPricePerMmPer3m ?? 0);
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📐</span>
+        <h2 className="font-semibold text-foreground">절곡 부재별 넓이</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        부재 넓이(mm) 입력 → 3m당 절곡 가격 자동 표시 (= 넓이 × {unit.toLocaleString("ko-KR")}원)
+      </p>
+      <div className="divide-y divide-border/40">
+        {BENDING_PART_KEYS.map(({ key, label }) => {
+          const widthMm = Number(values[key] ?? 0);
+          const per3m = widthMm > 0 && unit > 0 ? widthMm * unit : 0;
+          return (
+            <div key={key} className="px-5 py-3 flex items-center gap-3">
+              <div className="flex-1">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                {per3m > 0 && (
+                  <span className="block text-[11px] font-semibold text-primary tabular-nums">
+                    → 3m당 {per3m.toLocaleString("ko-KR")}원
+                  </span>
+                )}
+              </div>
+              <div className="relative w-32 shrink-0">
+                <Input
+                  type="number" inputMode="numeric"
+                  value={String(widthMm)}
+                  onChange={(e) => onWidthChange(key, parseInt(e.target.value) || 0)}
+                  className="h-11 text-right pr-10 font-semibold tabular-nums rounded-xl"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">넓이mm</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
