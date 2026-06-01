@@ -39,7 +39,10 @@ export interface CatalogItem {
   category: CatalogCategory;
   label: string;               // 표시 이름
   unit: string;                // "m", "개", "kg" 등
-  price: number;               // 기본 단가 (원)
+  price: number;               // 기본 단가 (원) — unit 1개당
+  /** 한 개(또는 한 장)의 길이 mm. 있으면 "= X원 (m당 Y원)" 환산 표시.
+   *  예: 용마루 3,000mm → 14,300원/개 = m당 4,767원. 단가성(갑/kg/box)은 미지정. */
+  lengthMm?: number;
   sortOrder: number;
 }
 
@@ -115,18 +118,18 @@ export const SIMPLE_TYPE_LABELS: Record<SimpleType, { label: string; suffix: str
 // 천보칼라강판 도매가 × 1.1 (VAT 포함) + 100원 올림. 업체별 실거래가는 설정에서 수정.
 export const DEFAULT_CATALOG: CatalogItem[] = [
   // ─── 마감재 (finishing) ──────────────────────────────────────────────
-  { key: "ridgeClassic",       category: "finishing", label: "용마루 (고전)",   unit: "개", price: 14300, sortOrder: 10 },   // 3,000mm
-  { key: "ridgeStraight",      category: "finishing", label: "용마루 (일자)",   unit: "개", price: 12100, sortOrder: 20 },   // 3,000mm
-  { key: "ridgeStraightLarge", category: "finishing", label: "일자용마루 대",   unit: "개", price: 26400, sortOrder: 30 },   // 3,000mm
-  { key: "multiRidge",         category: "finishing", label: "멀티용마루",      unit: "개", price: 13200, sortOrder: 40 },   // 3,000mm
+  { key: "ridgeClassic",       category: "finishing", label: "용마루 (고전)",   unit: "개", price: 14300, lengthMm: 3000, sortOrder: 10 },
+  { key: "ridgeStraight",      category: "finishing", label: "용마루 (일자)",   unit: "개", price: 12100, lengthMm: 3000, sortOrder: 20 },
+  { key: "ridgeStraightLarge", category: "finishing", label: "일자용마루 대",   unit: "개", price: 26400, lengthMm: 3000, sortOrder: 30 },
+  { key: "multiRidge",         category: "finishing", label: "멀티용마루",      unit: "개", price: 13200, lengthMm: 3000, sortOrder: 40 },
   { key: "ridgeCap",           category: "finishing", label: "용마루캡",        unit: "개", price: 5500,  sortOrder: 50 },
   { key: "houCap",             category: "finishing", label: "하우캡",          unit: "개", price: 4400,  sortOrder: 60 },
-  { key: "houMakkiNormal",     category: "finishing", label: "하우막기 (일반)", unit: "개", price: 12100, sortOrder: 70 },   // 3,000mm
-  { key: "houMakkiWood",       category: "finishing", label: "하우막기 (우드)", unit: "개", price: 22000, sortOrder: 80 },   // 3,000mm
-  { key: "mishi",              category: "finishing", label: "미시",            unit: "개", price: 8800,  sortOrder: 90 },   // 3,000mm
+  { key: "houMakkiNormal",     category: "finishing", label: "하우막기 (일반)", unit: "개", price: 12100, lengthMm: 3000, sortOrder: 70 },
+  { key: "houMakkiWood",       category: "finishing", label: "하우막기 (우드)", unit: "개", price: 22000, lengthMm: 3000, sortOrder: 80 },
+  { key: "mishi",              category: "finishing", label: "미시",            unit: "개", price: 8800,  lengthMm: 3000, sortOrder: 90 },
   { key: "endCap",             category: "finishing", label: "엔드캡",          unit: "개", price: 3000,  sortOrder: 100 },
-  { key: "molding",            category: "finishing", label: "몰딩",            unit: "개", price: 3900,  sortOrder: 110 },   // 3,000mm
-  { key: "moldingD",           category: "finishing", label: "ㄷ몰딩",          unit: "개", price: 6100,  sortOrder: 120 },   // 3,000mm
+  { key: "molding",            category: "finishing", label: "몰딩",            unit: "개", price: 3900,  lengthMm: 3000, sortOrder: 110 },
+  { key: "moldingD",           category: "finishing", label: "ㄷ몰딩",          unit: "개", price: 6100,  lengthMm: 3000, sortOrder: 120 },
 
   // ─── 한옥/기와 전용 (roofingExtras) ──────────────────────────────────
   { key: "bongLarge",          category: "roofingExtras", label: "대봉 (고전)",     unit: "개", price: 29700, sortOrder: 10 },
@@ -135,17 +138,17 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
   { key: "bongSmall",          category: "roofingExtras", label: "소봉 (고전)",     unit: "개", price: 7700,  sortOrder: 40 },
   { key: "hanokCap",           category: "roofingExtras", label: "한옥캡",          unit: "개", price: 3300,  sortOrder: 50 },
   { key: "hanokChakgo",        category: "roofingExtras", label: "한옥착고",        unit: "개", price: 2800,  sortOrder: 60 },
-  { key: "hoechim",            category: "roofingExtras", label: "회침",            unit: "개", price: 12100, sortOrder: 70 },   // 3,000mm
-  { key: "hoechimCover",       category: "roofingExtras", label: "회침카바",        unit: "개", price: 9900,  sortOrder: 80 },   // 3,000mm
+  { key: "hoechim",            category: "roofingExtras", label: "회침",            unit: "개", price: 12100, lengthMm: 3000, sortOrder: 70 },
+  { key: "hoechimCover",       category: "roofingExtras", label: "회침카바",        unit: "개", price: 9900,  lengthMm: 3000, sortOrder: 80 },
 
   // ─── 물받이 부속 (gutter) ────────────────────────────────────────────
-  { key: "gutterCopper",       category: "gutter", label: "물받이 (동색)",   unit: "개", price: 16500, sortOrder: 10 },   // 5m
-  { key: "gutterOther",        category: "gutter", label: "물받이 (동색외)", unit: "개", price: 16500, sortOrder: 20 },   // 5m
+  { key: "gutterCopper",       category: "gutter", label: "물받이 (동색)",   unit: "개", price: 16500, lengthMm: 5000, sortOrder: 10 },
+  { key: "gutterOther",        category: "gutter", label: "물받이 (동색외)", unit: "개", price: 16500, lengthMm: 5000, sortOrder: 20 },
   { key: "gutterHook",         category: "gutter", label: "물받이쇠",        unit: "개", price: 1100,  sortOrder: 30 },
   { key: "collectorLarge",     category: "gutter", label: "물모임통 (대)",   unit: "개", price: 6100,  sortOrder: 40 },
   { key: "collectorSmall",     category: "gutter", label: "물모임통 (소)",   unit: "개", price: 5000,  sortOrder: 50 },
-  { key: "downspoutLarge",     category: "gutter", label: "원형홈통 (대)",   unit: "개", price: 5000,  sortOrder: 60 },   // 900mm
-  { key: "downspoutSmall",     category: "gutter", label: "원형홈통 (소)",   unit: "개", price: 3100,  sortOrder: 70 },   // 900mm
+  { key: "downspoutLarge",     category: "gutter", label: "원형홈통 (대)",   unit: "개", price: 5000,  lengthMm: 900, sortOrder: 60 },
+  { key: "downspoutSmall",     category: "gutter", label: "원형홈통 (소)",   unit: "개", price: 3100,  lengthMm: 900, sortOrder: 70 },
   { key: "elbowLarge",         category: "gutter", label: "원형엘보 (대)",   unit: "개", price: 2800,  sortOrder: 80 },
   { key: "elbowSmall",         category: "gutter", label: "원형엘보 (소)",   unit: "개", price: 2000,  sortOrder: 90 },
   { key: "squareMas",          category: "gutter", label: "사각마스",        unit: "개", price: 5500,  sortOrder: 100 },
@@ -171,13 +174,13 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
   { key: "sasunWood",          category: "substructure", label: "사선판 (목무늬)", unit: "m",  price: 9900,  sortOrder: 20 },   // 폭 1219
   { key: "sasunCharcoal",      category: "substructure", label: "사선판 (차콜)",   unit: "m",  price: 9900,  sortOrder: 30 },   // 폭 1219
   { key: "flatPanel",          category: "substructure", label: "평판",           unit: "m",  price: 9900,  sortOrder: 40 },
-  { key: "pipe3m",             category: "substructure", label: "파이프",         unit: "개", price: 16500, sortOrder: 50 },   // 3,000mm
+  { key: "pipe3m",             category: "substructure", label: "파이프",         unit: "개", price: 16500, lengthMm: 3000, sortOrder: 50 },
 
   // ─── 채광판 (translucent) ────────────────────────────────────────────
-  { key: "pcLite1800",         category: "translucent", label: "PC 라이트 1,800mm", unit: "장", price: 19800, sortOrder: 10 },  // 폭 1m
-  { key: "pcLite2100",         category: "translucent", label: "PC 라이트 2,100mm", unit: "장", price: 23100, sortOrder: 20 },
-  { key: "pcLite2400",         category: "translucent", label: "PC 라이트 2,400mm", unit: "장", price: 26400, sortOrder: 30 },
-  { key: "pcLite3000",         category: "translucent", label: "PC 라이트 3,000mm", unit: "장", price: 33000, sortOrder: 40 },
+  { key: "pcLite1800",         category: "translucent", label: "PC 라이트 1,800mm", unit: "장", price: 19800, lengthMm: 1800, sortOrder: 10 },  // 폭 1m
+  { key: "pcLite2100",         category: "translucent", label: "PC 라이트 2,100mm", unit: "장", price: 23100, lengthMm: 2100, sortOrder: 20 },
+  { key: "pcLite2400",         category: "translucent", label: "PC 라이트 2,400mm", unit: "장", price: 26400, lengthMm: 2400, sortOrder: 30 },
+  { key: "pcLite3000",         category: "translucent", label: "PC 라이트 3,000mm", unit: "장", price: 33000, lengthMm: 3000, sortOrder: 40 },
 
   // ─── 실링 (sealing) ──────────────────────────────────────────────────
   { key: "f30",                category: "sealing", label: "F30",  unit: "갑", price: 4400, sortOrder: 10 },

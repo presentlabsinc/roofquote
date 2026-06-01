@@ -403,12 +403,17 @@ function CatalogRow({
   const quantity = selection?.quantity ?? 0;
   const unitPrice = selection?.unitPrice ?? item.price;
   const isActive = quantity > 0;
+  // 길이성 자재(개=3m 등)면 m당 환산 표시 — "인간이 규격으로 입력, 환산은 앱이".
+  const perM = item.lengthMm && item.lengthMm > 0 ? Math.round(unitPrice / (item.lengthMm / 1000)) : 0;
 
   return (
     <div className={`rounded-xl p-2.5 ${isActive ? "bg-primary/5 border border-primary/20" : "bg-muted/30 border border-transparent"}`}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <span className="text-sm font-medium text-foreground">{item.label}</span>
-        <span className="text-[10px] text-muted-foreground">{item.unit}당</span>
+        <span className="text-[10px] text-muted-foreground">
+          {item.lengthMm ? `${(item.lengthMm / 1000).toLocaleString("ko-KR")}m/${item.unit}` : `${item.unit}당`}
+          {perM > 0 && <span className="text-primary font-semibold"> · m당 {perM.toLocaleString("ko-KR")}원</span>}
+        </span>
       </div>
       <div className="flex items-center gap-2">
         <div className="flex-1">
