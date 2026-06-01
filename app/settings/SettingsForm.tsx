@@ -118,6 +118,8 @@ const DEFAULTS = {
   // ── 소모품 ──
   screwLargePrice: 300,
   screwSmallPrice: 100,
+  screwLargePerBag: 100,
+  screwSmallPerBag: 100,
   siliconePrice: 5000,
   insulationPricePerSqm: 15000,
   insulationPriceEps: 4000,
@@ -195,13 +197,12 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   {
+    // 스크류는 봉지 입력 전용 카드(ScrewPricingCard)로 — 섹션 직전 렌더. 실리콘만 일반 행.
     section: "소모품 단가",
     emoji: "🔩",
     tier: "price",
     items: [
-      { key: "screwLargePrice", label: "스크류 (대) 개당", unit: "원" },
-      { key: "screwSmallPrice", label: "스크류 (소) 개당", unit: "원" },
-      { key: "siliconePrice", label: "실리콘 개당", unit: "원" },
+      { key: "siliconePrice", label: "실리콘 (개당)", unit: "원" },
     ],
   },
   {
@@ -332,6 +333,8 @@ export function SettingsForm({ defaultValues }: Props) {
       bendingWidthFascia: (defaultValues as unknown as Record<string, number>).bendingWidthFascia ?? 200,
       screwLargePrice: defaultValues.screwLargePrice ?? 300,
       screwSmallPrice: defaultValues.screwSmallPrice ?? 100,
+      screwLargePerBag: (defaultValues as unknown as Record<string, number>).screwLargePerBag ?? 100,
+      screwSmallPerBag: (defaultValues as unknown as Record<string, number>).screwSmallPerBag ?? 100,
       siliconePrice: defaultValues.siliconePrice ?? 5000,
       insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
       insulationPriceEps: (defaultValues as unknown as Record<string, number>).insulationPriceEps ?? 4000,
@@ -486,6 +489,14 @@ export function SettingsForm({ defaultValues }: Props) {
             <BendingPricingCard
               values={values}
               onWidthChange={(key, mm) => setField(key as keyof typeof DEFAULTS, mm as never)}
+            />
+          )}
+
+          {/* 소모품 — 스크류 봉지 입력 카드 (실리콘은 섹션 일반 행) */}
+          {section === "소모품 단가" && (
+            <ScrewPricingCard
+              values={values}
+              onChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
             />
           )}
 
@@ -807,6 +818,75 @@ function BendingPricingCard({
                   className="h-11 text-right pr-10 font-semibold tabular-nums rounded-xl"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">넓이mm</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 스크류 봉지 단가 카드 — [봉지당 개수] + [봉지 가격] → "1개당 X원" 환산.
+ * priceKey(screwLargePrice 등)엔 1개당 단가로 저장 (자동 추정 로직 호환). 봉지 개수는 perBagKey.
+ */
+function ScrewPricingCard({
+  values, onChange,
+}: {
+  values: Record<string, number | string | boolean>;
+  onChange: (key: string, v: number) => void;
+}) {
+  const ROWS = [
+    { label: "스크류 (대)", priceKey: "screwLargePrice", perBagKey: "screwLargePerBag" },
+    { label: "스크류 (소)", priceKey: "screwSmallPrice", perBagKey: "screwSmallPerBag" },
+  ];
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">🔩</span>
+        <h2 className="font-semibold text-foreground">스크류 (봉지 단가)</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        봉지당 개수 + 봉지 가격 입력 → 1개당 단가 자동 환산
+      </p>
+      <div className="divide-y divide-border/40">
+        {ROWS.map(({ label, priceKey, perBagKey }) => {
+          const perPiece = Number(values[priceKey] ?? 0);
+          const perBag = Number(values[perBagKey] ?? 0);
+          const bagPrice = perBag > 0 ? Math.round(perPiece * perBag) : 0;
+          return (
+            <div key={priceKey} className="px-5 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <span className="text-[11px] font-semibold text-primary tabular-nums">
+                  {perPiece > 0 ? `→ 1개당 ${perPiece.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* 봉지당 개수 */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(perBag)}
+                    onChange={(e) => onChange(perBagKey, parseInt(e.target.value) || 0)}
+                    className="h-11 text-right pr-12 tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">개/봉</span>
+                </div>
+                {/* 봉지 가격 → 1개당 환산 저장 */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(bagPrice)}
+                    onChange={(e) => {
+                      const bp = parseInt(e.target.value) || 0;
+                      onChange(priceKey, perBag > 0 ? Math.round(bp / perBag) : 0);
+                    }}
+                    className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/봉</span>
+                </div>
               </div>
             </div>
           );

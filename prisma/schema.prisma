@@ -115,9 +115,12 @@ model PricingSettings {
   bendingWidthFascia      Int  @default(200)  // 페이샤/후레싱 기본 넓이 mm
 
   // ── 소모품 (자재 자동 추정용) ──
-  screwLargePrice         Int  @default(300)    // 스크류 대 1개당
-  screwSmallPrice         Int  @default(100)    // 스크류 소 1개당
-  siliconePrice           Int  @default(5000)   // 실리콘 1개당
+  // 스크류는 봉지로 구매 → 설정에서 [봉지가격]+[봉지 개수] 입력, 1개당 단가는 환산 저장.
+  screwLargePrice         Int  @default(300)    // 스크류 대 1개당 (환산값)
+  screwSmallPrice         Int  @default(100)    // 스크류 소 1개당 (환산값)
+  screwLargePerBag        Int  @default(100)    // 스크류 대 봉지당 개수
+  screwSmallPerBag        Int  @default(100)    // 스크류 소 봉지당 개수
+  siliconePrice           Int  @default(5000)   // 실리콘 1개당 (낱개)
   insulationPricePerSqm   Int  @default(15000)  // [LEGACY] 단열재 공통 ㎡당 — 종류별 단가 폴백
   // 단열재 제품별 ㎡당 단가 (VAT포함 추정, 50T 기준). 종류 선택 시 각 단가로 별도 라인.
   insulationPriceEps           Int  @default(4000)   // 스티로폼
