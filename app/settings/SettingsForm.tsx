@@ -546,7 +546,7 @@ export function SettingsForm({ defaultValues }: Props) {
 function SteelSheetPricingCard({
   values, widths, onPriceChange, onWidthChange,
 }: {
-  values: Record<string, number>;
+  values: Record<string, number | string | boolean>;
   widths: Record<string, number>;
   onPriceChange: (key: string, v: number) => void;
   onWidthChange: (type: string, mm: number) => void;
@@ -562,7 +562,7 @@ function SteelSheetPricingCard({
       </p>
       <div className="divide-y divide-border/40">
         {STEEL_PRICE_KEYS.map(({ type, label, key }) => {
-          const pricePerM = values[key] ?? 0;
+          const pricePerM = Number(values[key] ?? 0);
           const widthMm = widths[type] ?? MATERIAL_EFFECTIVE_WIDTH_MM[type] ?? 700;
           const sqm = pricePerM > 0 ? convertMPriceToSqmPrice(pricePerM, type, widths) : 0;
           return (
