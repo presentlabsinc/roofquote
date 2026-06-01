@@ -25,6 +25,13 @@ const STEEL_PRICE_KEYS: { type: MaterialType; label: string; key: string }[] = [
   { type: "tambour",         label: "템바징크 (미정)",  key: "materialPriceTambourPerM" },
 ];
 
+// 규격(기성품) 부자재 — [규격 길이] + [규격당 가격] → m당 환산 표시.
+// priceKey 는 m당 단가로 저장됨 (자동 추정 로직 호환). lenKey 는 accessoryLengths JSON 키.
+const ACCESSORY_SPEC_KEYS: { lenKey: string; priceKey: string; label: string; defaultLenMm: number }[] = [
+  { lenKey: "ridge",  priceKey: "ridgePricePerM",  label: "용마루",  defaultLenMm: 3000 },
+  { lenKey: "gutter", priceKey: "gutterPricePerM", label: "물받이",  defaultLenMm: 5000 },
+];
+
 const DEFAULTS = {
   companyName: "",
   companyPhone: "",
@@ -147,13 +154,13 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
   // 강판 자재별 단가는 전용 카드(SteelSheetPricingCard)로 렌더 — "부자재 단가" 카드 직전.
   // PE폼은 강판 카드로 이동, 철거/폐기물은 노무비로 이동, 처마는 덴조로 (Phase 4).
   {
+    // 용마루/물받이는 규격(3m/5m) 기성품이라 전용 카드(AccessoryPricingCard)로 — "규격당 가격 → m당 환산".
+    // 처마/엔드캡은 규격 없어 일반 행. (카드는 이 섹션 직전에 렌더 — render 참고.)
     section: "부자재 단가",
     emoji: "🧱",
     tier: "price",
     items: [
-      { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
-      { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
       { key: "endCapPrice", label: "엔드캡 (개당)", unit: "원" },
     ],
   },
@@ -201,7 +208,7 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
       { key: "downspoutUnitPrice", label: "홈통 (개당)", unit: "원" },
       { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
-      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
+      // 두겁 절곡은 절곡 단가 그룹(bendingWidthCap)으로 계산 — capBendingPricePerM 은 레거시라 UI에서 제거.
     ],
   },
   {
@@ -327,6 +334,14 @@ export function SettingsForm({ defaultValues }: Props) {
     setMaterialWidths((w) => ({ ...w, [materialType]: mm }));
   }
 
+  // 부자재 규격 길이(mm) override — 비면 ACCESSORY_SPEC_KEYS defaultLenMm 폴백.
+  const [accessoryLengths, setAccessoryLengths] = useState<Record<string, number>>(
+    () => ((defaultValues as unknown as { accessoryLengths?: Record<string, number> } | null)?.accessoryLengths) ?? {},
+  );
+  function setAccLen(lenKey: string, mm: number) {
+    setAccessoryLengths((m) => ({ ...m, [lenKey]: mm }));
+  }
+
   async function handleSave() {
     if (!values.companyName.trim()) {
       toast.error("회사명을 입력해 주세요.");
@@ -337,6 +352,7 @@ export function SettingsForm({ defaultValues }: Props) {
       const payload = {
         ...values,
         materialWidths,
+        accessoryLengths,
         companyPhone: values.companyPhone || null,
         companyAddress: values.companyAddress || null,
         businessRegistrationNumber: values.businessRegistrationNumber || null,
@@ -378,6 +394,15 @@ export function SettingsForm({ defaultValues }: Props) {
               onPriceChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
               onWidthChange={setWidth}
               onPeFoamChange={(v) => setField("peFoamPricePerSqm", v)}
+            />
+          )}
+          {/* 부자재 규격 단가 — 강판 카드 다음, "부자재 단가"(처마/엔드캡) 카드 직전 */}
+          {section === "부자재 단가" && (
+            <AccessoryPricingCard
+              values={values}
+              lengths={accessoryLengths}
+              onPriceChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
+              onLenChange={setAccLen}
             />
           )}
           <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
@@ -622,6 +647,77 @@ function SteelSheetPricingCard({
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">원</span>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 부자재 규격 단가 카드 — 용마루/물받이처럼 규격(3m/5m) 기성품.
+ * [규격 길이 mm] + [규격당 가격] 입력 → "m당 X원" 환산 표시.
+ * priceKey 에는 m당 단가로 저장 (자동 추정 로직 호환). 길이는 accessoryLengths JSON.
+ * (실제 견적 시 규격 단위 올림 — 10m면 3m×4개 — 은 Phase 3 엔진에서.)
+ */
+function AccessoryPricingCard({
+  values, lengths, onPriceChange, onLenChange,
+}: {
+  values: Record<string, number | string | boolean>;
+  lengths: Record<string, number>;
+  onPriceChange: (key: string, perM: number) => void;
+  onLenChange: (lenKey: string, mm: number) => void;
+}) {
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📏</span>
+        <h2 className="font-semibold text-foreground">부자재 규격 단가 (기성품)</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        규격 길이 + 규격당 가격 입력 → m당 환산 (용마루 3m, 물받이 5m 등 토막 자재)
+      </p>
+      <div className="divide-y divide-border/40">
+        {ACCESSORY_SPEC_KEYS.map(({ lenKey, priceKey, label, defaultLenMm }) => {
+          const lenMm = lengths[lenKey] ?? defaultLenMm;
+          const perM = Number(values[priceKey] ?? 0);
+          // 규격당 가격 = m당 × (규격/1000). 표시·입력은 규격당, 저장은 m당.
+          const lenM = lenMm / 1000;
+          const pricePerSpec = lenM > 0 ? Math.round(perM * lenM) : 0;
+          return (
+            <div key={lenKey} className="px-5 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-foreground">{label}</span>
+                <span className="text-[11px] font-semibold text-primary tabular-nums">
+                  {perM > 0 ? `→ m당 ${perM.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* 규격 길이 mm */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(lenMm)}
+                    onChange={(e) => onLenChange(lenKey, parseInt(e.target.value) || 0)}
+                    className="h-11 text-right pr-10 tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">규격mm</span>
+                </div>
+                {/* 규격당 가격 → m당으로 환산 저장 */}
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(pricePerSpec)}
+                    onChange={(e) => {
+                      const spec = parseInt(e.target.value) || 0;
+                      onPriceChange(priceKey, lenM > 0 ? Math.round(spec / lenM) : 0);
+                    }}
+                    className="h-11 text-right pr-9 font-semibold tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/개</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

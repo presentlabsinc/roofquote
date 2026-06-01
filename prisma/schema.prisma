@@ -50,6 +50,9 @@ model PricingSettings {
   // 자재별 유효폭 (mm) 사용자 override — { slate: 700, realZinc: 600, ... }.
   // 비어있으면 MATERIAL_EFFECTIVE_WIDTH_MM 코드 상수 폴백. m당 단가 → ㎡당 환산에 사용.
   materialWidths                   Json @default("{}")
+  // 부자재 규격 길이 (mm) — { ridge: 3000, gutter: 5000 }. 설정에서 "규격당 가격 → m당 환산" 표시용.
+  // 비면 기본 규격 폴백. (자동 추정 라인의 규격단위 올림 계산은 Phase 3 엔진에서.)
+  accessoryLengths                 Json @default("{}")
   ridgePricePerM            Int   // 용마루 m당
   eavePricePerM             Int   // 처마 마감 m당
   gutterPricePerM           Int   // 물받이 m당
