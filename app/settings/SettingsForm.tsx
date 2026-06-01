@@ -723,7 +723,7 @@ function AccessoryPricingCard({
                     type="number" inputMode="numeric"
                     value={String(lenMm)}
                     onChange={(e) => onLenChange(lenKey, parseInt(e.target.value) || 0)}
-                    className="h-11 text-right pr-7 tabular-nums rounded-xl"
+                    className="h-11 text-right pr-9 tabular-nums rounded-xl"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">mm</span>
                 </div>
@@ -814,7 +814,7 @@ function BendingPricingCard({
                   type="number" inputMode="numeric"
                   value={String(widthMm)}
                   onChange={(e) => onChange(key, parseInt(e.target.value) || 0)}
-                  className="h-11 text-right pr-7 font-semibold tabular-nums rounded-xl"
+                  className="h-11 text-right pr-9 font-semibold tabular-nums rounded-xl"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">mm</span>
               </div>
