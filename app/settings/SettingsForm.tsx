@@ -143,9 +143,10 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   // ─── tier 3: 단가표 ───
-  // 강판 자재별 단가는 전용 카드(SteelSheetPricingCard)로 렌더 — 유효폭+m당→㎡당 환산 표시.
+  // 강판 자재별 단가는 전용 카드(SteelSheetPricingCard)로 렌더 — "부자재 단가" 카드 직전.
+  // PE폼은 강판 카드로 이동, 철거/폐기물은 노무비로 이동, 처마는 덴조로 (Phase 4).
   {
-    section: "자재 단가",
+    section: "부자재 단가",
     emoji: "🧱",
     tier: "price",
     items: [
@@ -153,9 +154,6 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
       { key: "endCapPrice", label: "엔드캡 (개당)", unit: "원" },
-      { key: "peFoamPricePerSqm", label: "PE폼 부착 ㎡당", unit: "원" },
-      { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
-      { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
     ],
   },
   {
@@ -205,17 +203,27 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   {
-    section: "노무·장비·운송 단가",
-    emoji: "🚚",
+    section: "노무비",
+    emoji: "👷",
     tier: "price",
     items: [
       { key: "dailyWage", label: "1인 1일 인건비", unit: "원" },
+      { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
+      { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
+      // 철거·폐기물은 자재가 아니라 인건/처리 비용이라 노무비로 이동 (자재 단가에서).
+      { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
+      { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
+    ],
+  },
+  {
+    section: "장비·운송 단가",
+    emoji: "🚚",
+    tier: "price",
+    items: [
       { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
       { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
       { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
       { key: "baseTransportCost", label: "기본 운송비", unit: "원" },
-      { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
-      { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
     ],
   },
 ];
@@ -357,13 +365,15 @@ export function SettingsForm({ defaultValues }: Props) {
                 <span className="flex-1 h-px bg-border/60" />
               </div>
             )}
-          {/* 강판 자재별 단가 — 단가표 tier 맨 앞 (자재 단가 카드 직전)에 전용 카드로 렌더 */}
-          {section === "자재 단가" && (
+          {/* 강판 자재별 단가 — "부자재 단가" 카드 직전에 전용 카드로 렌더 (PE폼 포함) */}
+          {section === "부자재 단가" && (
             <SteelSheetPricingCard
               values={values}
               widths={materialWidths}
+              peFoam={values.peFoamPricePerSqm}
               onPriceChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
               onWidthChange={setWidth}
+              onPeFoamChange={(v) => setField("peFoamPricePerSqm", v)}
             />
           )}
           <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
@@ -371,11 +381,6 @@ export function SettingsForm({ defaultValues }: Props) {
               <span className="text-lg">{emoji}</span>
               <h2 className="font-semibold text-foreground">{section}</h2>
             </div>
-            {section === "자재 단가" && (
-              <PriceCalculator
-                onApply={(perSqm) => setField("materialPricePerSqm", perSqm)}
-              />
-            )}
             <div className="divide-y divide-border/40">
               {items.map(({ key, label, unit, step, pct }) => {
                 const rawVal = values[key];
@@ -544,12 +549,14 @@ export function SettingsForm({ defaultValues }: Props) {
  * 유효폭/m당 단가 모두 사용자가 직접 조정 가능. 환산 = convertMPriceToSqmPrice.
  */
 function SteelSheetPricingCard({
-  values, widths, onPriceChange, onWidthChange,
+  values, widths, peFoam, onPriceChange, onWidthChange, onPeFoamChange,
 }: {
   values: Record<string, number | string | boolean>;
   widths: Record<string, number>;
+  peFoam: number;
   onPriceChange: (key: string, v: number) => void;
   onWidthChange: (type: string, mm: number) => void;
+  onPeFoamChange: (v: number) => void;
 }) {
   return (
     <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
@@ -598,6 +605,19 @@ function SteelSheetPricingCard({
             </div>
           );
         })}
+        {/* PE폼 부착 추가비용 — 강판 옵션이라 여기로 (㎡당, 강판 면적에 가산) */}
+        <div className="px-5 py-3 flex items-center gap-3 bg-muted/20">
+          <Label className="flex-1 text-sm text-muted-foreground">PE폼 부착 추가 (㎡당)</Label>
+          <div className="relative w-36 shrink-0">
+            <Input
+              type="number" inputMode="numeric"
+              value={String(peFoam)}
+              onChange={(e) => onPeFoamChange(parseInt(e.target.value) || 0)}
+              className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">원</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -690,68 +710,6 @@ function SealAndNoticeCard({
           />
           <p className="text-[10px] text-muted-foreground mt-1">PDF에 1, 2, ... 자동 번호 매겨짐</p>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/**
- * Helper widget: convert (강판 너비 × m단가) → ㎡당 단가.
- * Different material models come in different widths (e.g. 슬레이트골 1.0m,
- * 징크250 0.75m, 기와형 0.7m). Suppliers usually quote per-meter, so this
- * lets the user input the supplier's number and auto-derive the ㎡ price.
- */
-function PriceCalculator({ onApply }: { onApply: (perSqm: number) => void }) {
-  // 기본값: 징크250 (너비 0.75m) × 9,000원/m — 가장 자주 쓰는 조합.
-  // 다른 폭(슬레이트골 1.0m, 기와형 0.7m 등) 은 사용자가 너비만 바꾸면 됨.
-  const [width, setWidth] = useState("0.75");
-  const [perM, setPerM] = useState("9000");
-
-  const w = parseFloat(width);
-  const pm = parseFloat(perM);
-  const perSqm = Number.isFinite(w) && Number.isFinite(pm) && w > 0
-    ? Math.round(pm / w)
-    : 0;
-
-  return (
-    <div className="bg-primary/5 border-t border-b border-primary/10 px-5 py-3 space-y-2.5">
-      <div className="flex items-center gap-1.5">
-        <span className="text-sm">📐</span>
-        <span className="text-xs font-semibold text-primary">㎡당 단가 계산기</span>
-      </div>
-      {/* 1m × [너비] m = [m단가] 원  →  ㎡당 = m단가 / 너비 */}
-      <div className="flex items-center gap-1.5 text-xs">
-        <span className="text-sm font-semibold text-foreground tabular-nums whitespace-nowrap">1m ×</span>
-        <div className="relative flex-1">
-          <Input
-            type="number" inputMode="decimal" step={0.05}
-            value={width} onChange={(e) => setWidth(e.target.value)}
-            placeholder="너비" className="h-10 pr-6 text-right text-sm tabular-nums rounded-lg"
-          />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">m</span>
-        </div>
-        <span className="text-sm font-semibold text-foreground px-0.5">=</span>
-        <div className="relative flex-1">
-          <Input
-            type="number" inputMode="numeric"
-            value={perM} onChange={(e) => setPerM(e.target.value)}
-            placeholder="m단가" className="h-10 pr-6 text-right text-sm tabular-nums rounded-lg"
-          />
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">원</span>
-        </div>
-      </div>
-      <div className="flex items-center justify-between gap-2 pt-1">
-        <div className="text-xs text-muted-foreground">
-          ㎡당 = <span className="font-bold text-foreground tabular-nums">{perSqm.toLocaleString("ko-KR")}원</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => perSqm > 0 && onApply(perSqm)}
-          disabled={perSqm <= 0}
-          className="text-xs font-semibold text-primary bg-primary/10 px-3 py-1.5 rounded-full pressable disabled:opacity-40"
-        >
-          이 값으로 설정
-        </button>
       </div>
     </div>
   );
