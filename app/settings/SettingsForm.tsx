@@ -103,6 +103,10 @@ const DEFAULTS = {
   screwSmallPrice: 100,
   siliconePrice: 5000,
   insulationPricePerSqm: 15000,
+  insulationPriceEps: 4000,
+  insulationPriceXps: 11000,
+  insulationPricePir: 16000,
+  insulationPriceThermalReflect: 6000,
 };
 
 type FieldDef = { key: keyof typeof DEFAULTS; label: string; unit?: string; step?: number; pct?: boolean };
@@ -198,7 +202,17 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "screwLargePrice", label: "스크류 (대) 개당", unit: "원" },
       { key: "screwSmallPrice", label: "스크류 (소) 개당", unit: "원" },
       { key: "siliconePrice", label: "실리콘 개당", unit: "원" },
-      { key: "insulationPricePerSqm", label: "단열재 ㎡당", unit: "원" },
+    ],
+  },
+  {
+    section: "단열재 단가",
+    emoji: "🧊",
+    tier: "price",
+    items: [
+      { key: "insulationPriceEps", label: "스티로폼 (EPS) ㎡당", unit: "원" },
+      { key: "insulationPriceXps", label: "아이소핑크 (XPS) ㎡당", unit: "원" },
+      { key: "insulationPricePir", label: "경질우레탄폼 (PIR) ㎡당", unit: "원" },
+      { key: "insulationPriceThermalReflect", label: "열반사단열재 ㎡당", unit: "원" },
     ],
   },
   {
@@ -320,6 +334,10 @@ export function SettingsForm({ defaultValues }: Props) {
       screwSmallPrice: defaultValues.screwSmallPrice ?? 100,
       siliconePrice: defaultValues.siliconePrice ?? 5000,
       insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
+      insulationPriceEps: (defaultValues as unknown as Record<string, number>).insulationPriceEps ?? 4000,
+      insulationPriceXps: (defaultValues as unknown as Record<string, number>).insulationPriceXps ?? 11000,
+      insulationPricePir: (defaultValues as unknown as Record<string, number>).insulationPricePir ?? 16000,
+      insulationPriceThermalReflect: (defaultValues as unknown as Record<string, number>).insulationPriceThermalReflect ?? 6000,
       lossRateMode: (((defaultValues as unknown as { lossRateMode?: string }).lossRateMode === "manual") ? "manual" : "auto") as "auto" | "manual",
       downspoutUnitPrice: (defaultValues as unknown as { downspoutUnitPrice?: number }).downspoutUnitPrice ?? 50000,
       denjoPricePerUnit: (defaultValues as unknown as { denjoPricePerUnit?: number }).denjoPricePerUnit ?? 700000,

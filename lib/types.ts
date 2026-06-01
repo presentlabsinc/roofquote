@@ -136,6 +136,15 @@ export const INSULATION_LABEL: Record<InsulationType, string> = {
   other: "기타",
 };
 
+/** 단열재 종류 → PricingSettings 단가 필드 키. "기타"는 LEGACY 공통가(insulationPricePerSqm) 사용. */
+export const INSULATION_PRICE_KEY: Record<InsulationType, string> = {
+  eps: "insulationPriceEps",
+  xps: "insulationPriceXps",
+  pir: "insulationPricePir",
+  thermalReflect: "insulationPriceThermalReflect",
+  other: "insulationPricePerSqm",
+};
+
 export type SubstructureType = "wood" | "steel";
 
 export const SUBSTRUCTURE_OPTIONS: { value: SubstructureType | "none"; label: string; icon: string }[] = [

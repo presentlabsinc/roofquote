@@ -1,5 +1,5 @@
 import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
-import { BASELINE_AREAS, INSULATION_LABEL, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
+import { BASELINE_AREAS, INSULATION_LABEL, INSULATION_PRICE_KEY, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
 import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
@@ -855,18 +855,28 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // 단열재 — multi-select. 선택된 종류가 1개 이상이거나 (구버전) hasInsulation 토글 true 이면 라인 생성.
-  // 가격은 모든 종류 동일 (insulationPricePerSqm) — qty = 시공면적 × 1.10 (자투리 포함).
-  // 라인 이름에 선택한 종류들 표시: 예) "단열재 (XPS, PIR)".
+  // 단열재 — multi-select. 종류별로 제품 단가가 다르므로 각 종류마다 별도 라인.
+  // qty = 시공면적 × 1.10 (자투리). 종류 단가는 INSULATION_PRICE_KEY 로 조회 (없으면 LEGACY 공통가).
   const insTypeList: string[] = Array.isArray(insulationTypes) ? insulationTypes.filter(Boolean) : [];
-  if ((insTypeList.length > 0 || hasInsulation) && settings.insulationPricePerSqm > 0) {
+  const sett = settings as unknown as Record<string, number>;
+  if (insTypeList.length > 0) {
     const insulationArea = Math.round(areaM2 * 1.10 * 10) / 10;
-    const typeNames = insTypeList
-      .map((t) => INSULATION_LABEL[t as InsulationType] ?? t)
-      .join(", ");
-    const name = typeNames ? `단열재 (${typeNames})` : "단열재";
+    for (const t of insTypeList) {
+      const priceKey = INSULATION_PRICE_KEY[t as InsulationType] ?? "insulationPricePerSqm";
+      const unitPrice = sett[priceKey] || settings.insulationPricePerSqm || 0;
+      if (unitPrice <= 0) continue;
+      items.push({
+        category: "material", name: `단열재 (${INSULATION_LABEL[t as InsulationType] ?? t})`,
+        quantity: insulationArea, unit: "㎡",
+        unitPrice, total: Math.round(insulationArea * unitPrice),
+        sortOrder: order++,
+      });
+    }
+  } else if (hasInsulation && settings.insulationPricePerSqm > 0) {
+    // 구버전 호환 — 종류 정보 없는 옛 견적은 공통가로 1줄.
+    const insulationArea = Math.round(areaM2 * 1.10 * 10) / 10;
     items.push({
-      category: "material", name, quantity: insulationArea, unit: "㎡",
+      category: "material", name: "단열재", quantity: insulationArea, unit: "㎡",
       unitPrice: settings.insulationPricePerSqm,
       total: Math.round(insulationArea * settings.insulationPricePerSqm),
       sortOrder: order++,

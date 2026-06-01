@@ -40,6 +40,7 @@ import {
   type RoofShape,
   type InsulationType,
   INSULATION_TYPES,
+  INSULATION_PRICE_KEY,
   CONSTRUCTION_TYPES,
   MATERIAL_TYPES,
   THICKNESSES,
@@ -1330,7 +1331,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               }
             >
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
-                복수 선택 · ㎡당 {eff.insulationPricePerSqm.toLocaleString("ko-KR")}원
+                복수 선택 · 종류별 단가
                 {insulationTypes.length > 0 && !showInsulation && (
                   <> · 선택됨: <b>{insulationTypes.length}종</b></>
                 )}
@@ -1340,18 +1341,25 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   <div className="grid grid-cols-2 gap-1.5">
                     {INSULATION_TYPES.map((t) => {
                       const active = insulationTypes.includes(t.value);
+                      const priceKey = INSULATION_PRICE_KEY[t.value];
+                      const price = (eff as unknown as Record<string, number>)[priceKey] || 0;
                       return (
                         <button
                           key={t.value}
                           type="button"
                           onClick={() => toggleInsulationType(t.value)}
-                          className={`pressable rounded-xl px-2 py-2.5 text-sm font-semibold border ${
+                          className={`pressable rounded-xl px-2 py-2 border flex flex-col items-center gap-0.5 ${
                             active
                               ? "bg-primary text-primary-foreground border-primary"
                               : "bg-card text-foreground border-border/60"
                           }`}
                         >
-                          {t.label}
+                          <span className="text-sm font-semibold">{t.label}</span>
+                          {t.value !== "other" && price > 0 && (
+                            <span className={`text-[10px] tabular-nums ${active ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                              ㎡당 {price.toLocaleString("ko-KR")}원
+                            </span>
+                          )}
                         </button>
                       );
                     })}

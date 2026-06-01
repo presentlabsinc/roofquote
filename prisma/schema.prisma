@@ -118,7 +118,12 @@ model PricingSettings {
   screwLargePrice         Int  @default(300)    // 스크류 대 1개당
   screwSmallPrice         Int  @default(100)    // 스크류 소 1개당
   siliconePrice           Int  @default(5000)   // 실리콘 1개당
-  insulationPricePerSqm   Int  @default(15000)  // 단열재 ㎡당
+  insulationPricePerSqm   Int  @default(15000)  // [LEGACY] 단열재 공통 ㎡당 — 종류별 단가 폴백
+  // 단열재 제품별 ㎡당 단가 (VAT포함 추정, 50T 기준). 종류 선택 시 각 단가로 별도 라인.
+  insulationPriceEps           Int  @default(4000)   // 스티로폼
+  insulationPriceXps           Int  @default(11000)  // 아이소핑크
+  insulationPricePir           Int  @default(16000)  // 경질우레탄폼
+  insulationPriceThermalReflect Int @default(6000)   // 열반사단열재
 
   // ── 베이스라인 데이터 (Phase 2 — 실제 시공 데이터 기반 추정용) ──
   // 비어있으면 기하학적 추정 fallback. 채워져 있으면 데이터 우선.
