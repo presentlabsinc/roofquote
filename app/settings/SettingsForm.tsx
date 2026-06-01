@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -931,49 +931,93 @@ function InsulationPricingCard({
         <h2 className="font-semibold text-foreground">단열재 단가</h2>
       </div>
       <p className="px-5 pb-2 text-[11px] text-muted-foreground">
-        단위(롤/판) 면적 + 단위 가격 → ㎡당 환산. 면적 0이면 ㎡당 직접 입력.
+        단위(롤/판) 면적 + 롤/개당 가격 입력 → ㎡당 단가 자동 환산. 면적 0이면 ㎡당 직접 입력.
       </p>
       <div className="divide-y divide-border/40">
-        {ROWS.map(({ typeKey, priceKey, label }) => {
-          const perSqm = Number(values[priceKey] ?? 0);
-          const area = unitAreas[typeKey] ?? 0;
-          const unitPrice = area > 0 ? Math.round(perSqm * area) : 0;
-          return (
-            <div key={typeKey} className="px-5 py-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-medium text-foreground">{label}</span>
-                <span className="text-[11px] font-semibold text-primary tabular-nums">
-                  {perSqm > 0 ? `→ ㎡당 ${perSqm.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {/* 단위 면적 ㎡ (롤/판 1개) */}
-                <div className="relative flex-1">
-                  <Input
-                    type="number" inputMode="decimal" step={0.01}
-                    value={String(area)}
-                    onChange={(e) => onAreaChange(typeKey, parseFloat(e.target.value) || 0)}
-                    className="h-11 text-right pr-10 tabular-nums rounded-xl"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">㎡/단위</span>
-                </div>
-                {/* 단위 가격 → ㎡당 환산 저장 (면적 0이면 입력값을 ㎡당으로 직접) */}
-                <div className="relative flex-1">
-                  <Input
-                    type="number" inputMode="numeric"
-                    value={String(area > 0 ? unitPrice : perSqm)}
-                    onChange={(e) => {
-                      const v = parseInt(e.target.value) || 0;
-                      onPriceChange(priceKey, area > 0 ? Math.round(v / area) : v);
-                    }}
-                    className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{area > 0 ? "원/단위" : "원/㎡"}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {ROWS.map((row) => (
+          <InsulationRow
+            key={row.typeKey}
+            label={row.label}
+            perSqm={Number(values[row.priceKey] ?? 0)}
+            area={unitAreas[row.typeKey] ?? 0}
+            onAreaChange={(a) => onAreaChange(row.typeKey, a)}
+            onPerSqmChange={(p) => onPriceChange(row.priceKey, p)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 단열재 한 행 — 롤/개당 가격을 로컬 버퍼로 받아서(타이핑 중 재계산 간섭 X)
+ * ㎡당 = round(롤가격 / 면적) 으로 저장. 면적 바뀌면 현재 롤가격 유지하며 ㎡당 재계산.
+ * 면적 0이면 가격 입력칸이 곧 ㎡당 (환산 없음).
+ */
+function InsulationRow({
+  label, perSqm, area, onAreaChange, onPerSqmChange,
+}: {
+  label: string;
+  perSqm: number;
+  area: number;
+  onAreaChange: (area: number) => void;
+  onPerSqmChange: (perSqm: number) => void;
+}) {
+  // 가격 입력 버퍼 — 면적>0이면 "롤/개당", 면적 0이면 "㎡당". 저장값에서 역산한 초기값.
+  const [priceBuf, setPriceBuf] = useState(() =>
+    area > 0 ? String(Math.round(perSqm * area)) : String(perSqm)
+  );
+  // 면적이나 저장 ㎡당이 바뀌면 버퍼 재동기화 (다른 곳에서 값 변경 시).
+  const syncRef = useRef({ area, perSqm });
+  useEffect(() => {
+    if (syncRef.current.area !== area || syncRef.current.perSqm !== perSqm) {
+      syncRef.current = { area, perSqm };
+      setPriceBuf(area > 0 ? String(Math.round(perSqm * area)) : String(perSqm));
+    }
+  }, [area, perSqm]);
+
+  function commitPrice(raw: string) {
+    setPriceBuf(raw);
+    const v = parseInt(raw) || 0;
+    onPerSqmChange(area > 0 ? Math.round(v / area) : v);
+  }
+  function commitArea(raw: string) {
+    const a = parseFloat(raw) || 0;
+    onAreaChange(a);
+    // 면적 바뀌면 현재 가격 버퍼(롤가격) 기준으로 ㎡당 재계산.
+    const v = parseInt(priceBuf) || 0;
+    onPerSqmChange(a > 0 ? Math.round(v / a) : v);
+  }
+
+  return (
+    <div className="px-5 py-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="text-[11px] font-semibold text-primary tabular-nums">
+          {perSqm > 0 ? `→ ㎡당 ${perSqm.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        {/* 단위 면적 ㎡ (롤/판 1개) */}
+        <div className="relative flex-1">
+          <Input
+            type="number" inputMode="decimal" step={0.01}
+            value={String(area)}
+            onChange={(e) => commitArea(e.target.value)}
+            className="h-11 text-right pr-10 tabular-nums rounded-xl"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">㎡/단위</span>
+        </div>
+        {/* 롤/개당 가격 (면적 0이면 ㎡당 직접) */}
+        <div className="relative flex-1">
+          <Input
+            type="number" inputMode="numeric"
+            value={priceBuf}
+            onChange={(e) => commitPrice(e.target.value)}
+            className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{area > 0 ? "원/단위" : "원/㎡"}</span>
+        </div>
       </div>
     </div>
   );
