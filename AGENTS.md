@@ -272,7 +272,9 @@ Each catalog category has **two modes** — the user toggles per category:
 
 **Auto-fill for detailed mode** (per user request, deferred): each catalog item could carry a `perSqm` coefficient so switching to 상세 모드 auto-populates quantities based on construction area. Needs industry-standard data the user said they'd supply.
 
-**내 단가 프리셋 저장/불러오기** (deferred — post-v0): user wants to be able to save their pricing settings as multiple named snapshots and switch between them (e.g. "표준", "겨울 비수기", "프리미엄"). Plus a "기본설정으로 리셋" button that's available immediately. Probably one new model `PricingPreset { id, userId, name, snapshotJson, createdAt }` and a dropdown in settings header. Wait until auth is in place since presets are per-user.
+**내 단가 프리셋 저장/불러오기** (deferred — post-v0): user wants to be able to save their pricing settings as multiple named snapshots and switch between them (e.g. "표준", "겨울 비수기", "프리미엄"). Plus a "기본설정으로 리셋" button that's available immediately. Probably one new model `PricingPreset { id, userId, name, snapshotJson, createdAt }` and a dropdown in settings header. ~~Wait until auth is in place since presets are per-user.~~ (auth ✅ 완료) **지금 미루는 이유: 기본 단가표가 미확정** (절곡 OPEN DECISION 포함) — 단가표 확정 후 착수.
+- **snapshotJson 범위 (2026-06-12 확정):** 단가·계수 필드만. 제외: 회사정보 (`companyName`, `companyPhone`, `companyAddress`, `businessRegistrationNumber`, `sealImageUrl`, `bankAccount`, `noticeText`), `estimateNumberStart`, `baselineData`. 프리셋 전환이 회사 정보·채번·시공 이력을 건드리면 안 된다.
+- 프리셋 전환 × 과거 견적 재수정의 동작은 "Pricing overrides" 섹션의 절대값 assertion 참조.
 
 ### Estimate edit API — 10 actions total
 `PATCH /api/estimates/[eid]` dispatches on the request body shape. Order in the route handler matters (first match wins):
@@ -308,6 +310,7 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
 - **Internal data is never modified.** `EstimateLineItem` rows stay cost-only (snapshot rule). This is purely a presentation transform applied at PDF render time. In-app `EstimateDetail` still shows the true cost breakdown + margin separately for the salesperson.
 - **Wiring:** `app/api/estimates/[eid]/pdf/route.ts` reads the current user's ratios from PricingSettings and passes them to `EstimatePDFDoc` as `marginRatios`. Settings UI: `MarginDistributionCard` at the bottom of `SettingsForm.tsx` with three % inputs + live sum check + "기본값 (50/25/25)" reset button.
 - **Ratios are read live**, not snapshotted — changing the split re-renders existing estimates' PDFs with the new distribution. Line item totals don't change, only the presentation does.
+- **⚠️ 외부 감사 (2026-06-12) — live read 는 분쟁 시나리오에서 결함:** 사용자가 분배 비율을 바꾼 뒤 과거 견적 PDF를 재다운로드하면, 고객이 원래 받은 PDF와 라인별 단가가 다른 사본이 나온다 (총액은 동일). 고객이 두 사본을 비교하면 신뢰 문제. live read 는 유연성을 위한 의도적 결정이었지만 invariant #2 의 정신("PDF 재렌더 시 PricingSettings 재조회 금지")과 모순. **Fix (백로그):** 비율 3개를 견적 생성 시 `Estimate` 에 스냅샷 (replace 시 재스냅샷 — replace 의미론과 일치), 마이그레이션 이전 행은 live 폴백. 컬럼 3개 + 폴백.
 
 ### Margin is revenue-based (매출 대비), not cost-based
 `calcTotals`: **`supplyPrice = totalCost / (1 - marginRate)`**, `marginAmount = supplyPrice - totalCost`.
@@ -331,6 +334,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 - Form: `PricingOverridesSection` at the end of the new-estimate form (collapsed by default, badge shows N개 변경됨 when any). Empty field = use settings default; filled = override for this estimate.
 - Inline price hints in the form (e.g. "트럭 수 (1,000,000원/차)") use `eff` = `applyOverrides(settings, pricingOverrides)` so they reflect the override live.
 - **Critical:** `PricingSettings` itself is never modified by an override — the snapshot rule still holds. Old estimates with no overrides keep the original behavior.
+- **Assertion — overrides 는 절대값(absolute)이다 (2026-06-12 확정):** `pricingOverrides` 는 저장 당시 설정에 대한 상대값(delta)이 아니라 절대 단가다. `applyOverrides` 는 shallow merge 로 값을 그대로 덮어쓴다. 따라서 (프리셋 기능 도입 후) 프리셋 전환 뒤 과거 견적을 `?edit → replace` 하면 override 는 **새 프리셋 base 위에 절대값으로** merge 된다 — 이것이 정의된 동작이며, delta 방식으로 바꾸지 말 것.
 - API: POST + PATCH replace both accept `pricingOverrides` and persist it. Edit-mode prefills from the existing estimate's `pricingOverrides`.
 
 ### Edit mode (full edit of an existing estimate)
@@ -345,6 +349,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 - **What's preserved:** `estimateNumber`, `pdfSentAt`.
 - **What's re-snapshotted:** all company info from current PricingSettings (so if user updated company phone after the original create, the edited estimate picks up the new phone).
 - **What's NOT preserved:** the `extraCosts` array — those became line items at create time and are wiped + must be re-entered if needed. (We don't store the original extraCosts on the Estimate.)
+- **Invariant — replace = 전체 재산정 (intended, 2026-06-12 외부 감사로 확정):** replace 는 단가를 **현재** PricingSettings(+제출된 overrides) 기준으로 다시 스냅샷한다. 그 사이 설정 단가가 바뀌었으면 수정 저장 시 새 단가를 흡수한다 — 이것이 정의된 동작. UI 도 고지함 (EstimateDetail `EditEstimateButton` 확인 다이얼로그: "회사 정보와 단가는 현재 단가 설정값으로 다시 snapshot 됩니다"). 이 문구를 약화시키지 말 것. 결제조건/유효기간 같은 메타만 고칠 땐 replace 가 아니라 action 10 (whitelist meta update) 경로를 쓴다 — 재산정 없음.
 
 ### PDF preview flow
 - Estimate detail → "견적서 미리보기" button navigates to `/sites/[id]/estimates/[eid]/preview?detail=simple` (default).
@@ -400,6 +405,18 @@ All four are mutually derived: editing one updates the other three. The hero car
 - **react-pdf fonts must be full-coverage TTF/OTF, not Google Fonts chunks.** A URL like `fonts.gstatic.com/s/notosanskr/v36/...woff2` is a *subset* covering ~100 codepoints — render any Hangul outside the subset and react-pdf v4 will misbehave. Use a self-contained font. We use **Pretendard OTF** from `cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-{Regular,Bold}.otf`. Note the **`.otf`** extension — the same repo does NOT serve `.ttf` files (a 404 on the font URL surfaces as `Failed to fetch font from ...: 404 Not Found` and 500s the whole PDF route). Always wrap `Font.register` in try/catch and call `Font.registerHyphenationCallback((w) => [w])` to disable hyphenation (its default also returns null for unknown chars and contributes to the same crash class).
 - **Never put `"use client"` on a component that's only imported by a server route.** `components/EstimatePDF.tsx` is rendered by the server-side PDF route through react-pdf's reconciler. With `"use client"`, Next.js replaces the export with a client-reference proxy when imported in a server module — the proxy doesn't execute the function during reconciliation, so the `<Document>` host node never appears, `container.document` stays null, and react-pdf throws `Cannot read properties of null (reading 'props')` at `react-pdf.js:139`. Same applies to any component that's only ever called from a route handler / server action / RSC.
 - **react-pdf and `: null` JSX conditionals.** Patterns like `{cond ? <X/> : null}` inside a `<View>` can occasionally cause the same "null props" crash because react-pdf's children flattener doesn't strip `null` as cleanly as React DOM does. Prefer building child arrays via `.filter(Boolean).map(...)` or `.flatMap(...)` when conditionally including elements. `{cond && <X/>}` (without the `: null`) is also OK because react-pdf strips `false`.
+
+## 우선순위 백로그 (2026-06-12 — 외부 감사 반영, 순서 고정)
+
+이 순서는 의존성이다. 건너뛰면 되돌아오게 된다.
+
+1. **절곡 포함/별도 확정** — 포스코 사장님 확인. 위 OPEN DECISION 참조. 단가표 확정의 선행 조건.
+2. **calculations.ts 핵심 함수 vitest** — 1번에서 확정된 수식 기준. 대상: `calcTotals`, `calcFromFinalPrice`, `distributeMarginForDisplay` (라운딩 스윕 ±1원, 빈 버킷 spill-over), `buildLineItems` 절곡 경로, `resolveEffectiveLossRate` 모드. **편의 기능보다 먼저** — 이후 작업들이 돈 계산 엔진을 건드릴 때의 안전망.
+3. **마진 분배 비율 스냅샷** — "Margin distribution" 섹션의 외부 감사 fix. 컬럼 3개 + live 폴백. 작음 — 2번 직후 또는 2번과 같이.
+4. **현장 즉시성 묶음** (calc 엔진 안 건드림 — 2번과 병행 가능): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체), ③ 견적 복사.
+5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
+6. **단가표 확정 → 프리셋** — 위 "내 단가 프리셋" 노트의 범위 규칙 준수.
+7. **이력 기반 baseline / 포스코 데이터 보정** — 견적 이력이 쌓인 뒤.
 
 ## Documentation hygiene (you reading this)
 
