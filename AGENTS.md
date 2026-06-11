@@ -182,7 +182,7 @@ system:
 Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMmPer3m` (기본 36).
 
 **Per-type line generation** (all gated on scope flags; user edits after):
-- roof / rooftopRoof: 용마루 마감+절곡, 처마 마감+절곡, 프래싱 절곡(꺾인 건물), 물받이 OR 엔드캡, 하지, 철거(roof만).
+- roof / rooftopRoof: 용마루 마감+절곡(**유일한 마감+절곡 쌍** — OPEN DECISION 참조), 처마/덴조 **건당 시공(labor)** (구 "처마 마감 m당" 라인은 6/1 리팩토링에서 제거 — `eavePricePerM` 은 현재 미사용, `bendingWidthEave` 는 옥탑 트림 넓이로만 재사용), 프래싱 절곡(꺾인 건물), 물받이 OR 엔드캡, 하지, 철거(roof만).
 - steelWaterproof: 두겁/미시/프래싱 절곡, 파라펫 강판(난간둘레×높이), 옥탑 외벽 강판(옥탑둘레×옥탑높이),
   옥탑 문/창 트림(개수×평균둘레), 처마/덴조, 스테인리스 배수로, 홈통, 배수구 타공.
 - 공통 소모품 (buildingShape 있을 때만): 스크류 대(면적×2/㎡), 스크류 소(절곡길이×3.3/m), 실리콘(접합부÷6m).
@@ -207,9 +207,17 @@ geometric auto-fill default the user can override**; small consumables
 
 **⚠️ OPEN DECISION (must resolve before finalizing 단가표):** does a 마감 unit price
 like `ridgePricePerM`(용마루 m당) **already include bending**, or is the auto 절곡 line
-separate? Right now roof emits BOTH `용마루 마감` (length × ridgePricePerM) AND
-`용마루 절곡` (bending) — **potential double-count**. Confirm with user: all-in unit
-price (drop 절곡 lines) vs separated (keep). Quote total can differ ~2× on this.
+separate? Confirm with user: all-in unit price (drop 절곡 lines) vs separated (keep).
+
+정확한 범위 (2026-06-12 코드 확인):
+- **실제 이중 계산 가능 지점은 용마루 한 곳뿐** — `용마루 마감` (length × ridgePricePerM) 과
+  `용마루 절곡` (같은 length 에 절곡 공식) 이 둘 다 emit 되는 유일한 마감+절곡 쌍.
+  단가가 all-in 이면 절곡분이 두 번 청구됨.
+- 절곡 라인은 **buildingShape 입력 시에만** 자동 생성 — 건물형태를 안 쓰면 발현 안 함.
+- 두겁/미시/프래싱/옥탑 트림은 **절곡 라인만** 있음 (마감 짝 없음) → 이중은 아니지만,
+  사장님 답이 이 라인들의 의미도 결정함: 단가에 절곡 포함(all-in)이라면 이 절곡-only
+  라인들이 해당 부재의 유일한 라인으로서 단가·라벨을 all-in 으로 재해석해야 함.
+- 처마는 건당 시공(labor)으로 재정의되어 이 문제에서 빠짐.
 
 ### Special non-scope-flag pickers
 - **물받이** is multi-select (front / back / left / right). Stored on `Estimate.gutterMode` as a comma-separated string. Helpers in [lib/types.ts](lib/types.ts):
