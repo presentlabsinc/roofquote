@@ -1338,11 +1338,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       );
                     })}
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
-                      ? "기성품 용마루 — 3m 규격 개수로 자동 환산 (아래 마감재 카드와 연동)"
-                      : "절곡 단가에 자재비 포함 — 용마루 절곡 라인으로 자동 계산"}
-                  </p>
+                  {resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready" && (
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      용마루 길이 ÷ 3m 규격 → 개수로 자동 환산
+                    </p>
+                  )}
                 </div>
               )}
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
