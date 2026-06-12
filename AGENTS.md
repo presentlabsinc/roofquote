@@ -289,8 +289,10 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 **심플 모드 (default)** — one auto-calculated line per group:
 - `simpleType`: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
 - Defaults in `DEFAULT_GROUP_MODES`:
-  - finishing → **enabled: false**, total 0원 — 주요 마감(용마루)은 폼의 '마감 방식'이 자동 계산하므로
-    추가분 있을 때만 체크. ("체크 ON + 0원" 혼란 방지)
+  - finishing → enabled: true, total 0원. 주요 마감(용마루 절곡/기성품)은 폼의 '마감 방식'이 자동
+    계산하고, 카드는 접힘 상태에서 **"마감 방식에서 자동 계산 중"** 상태를 표시 (`autoNote`) —
+    꺼진 모양이면 마감재가 빠진 걸로 오해하고(2026-06-12 피드백), 켜져 있는데 0원이면 버그로
+    오해해서, "켜짐 + 자동 상태 표시 + 입력값은 추가분" 으로 정리. 여기 입력 금액은 자동 계산 외 추가분.
   - accessory → percent 3%
   - gutter → perM 2,000원/m (길이 0 이면 라인 없음)
 - Settings override: `PricingSettings.catalogDefaults` (Json, 그룹 키), merged via `resolveGroupDefaults()`.

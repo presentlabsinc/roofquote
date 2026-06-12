@@ -153,6 +153,7 @@ function CatalogPickerBase({
             open={!!openMap[grp.value]}
             onToggleOpen={() => toggleOpen(grp.value)}
             simpleCost={m.mode === "simple" ? previewCostFor(grp.value) : 0}
+            autoNote={grp.value === "finishing" && finishingAutoHint ? "마감 방식에서 자동 계산 중" : undefined}
           >
             {grp.value === "finishing" && finishingAutoHint ? (
               <p className="text-[10px] text-muted-foreground mt-2 bg-muted/40 rounded-lg px-2.5 py-2">
@@ -223,7 +224,7 @@ function CatalogPickerBase({
 export const CatalogPicker = memo(CatalogPickerBase);
 
 function CategoryCard({
-  label, icon, enabled, onToggleEnabled, mode, onToggleMode, open, onToggleOpen, simpleCost, children,
+  label, icon, enabled, onToggleEnabled, mode, onToggleMode, open, onToggleOpen, simpleCost, autoNote, children,
 }: {
   label: string;
   icon: string;
@@ -234,6 +235,8 @@ function CategoryCard({
   open: boolean;
   onToggleOpen: () => void;
   simpleCost: number;
+  /** 접힘 상태에서 금액 대신 보여줄 자동 계산 상태 (예: "마감 방식에서 자동 계산 중"). */
+  autoNote?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -260,6 +263,9 @@ function CategoryCard({
               <div className="text-[11px] font-semibold text-primary tabular-nums">
                 예상 {simpleCost.toLocaleString("ko-KR")}원
               </div>
+            ) : null}
+            {enabled && !open && simpleCost <= 0 && autoNote ? (
+              <div className="text-[11px] font-medium text-primary/80">{autoNote}</div>
             ) : null}
           </div>
           {enabled && (open ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />)}

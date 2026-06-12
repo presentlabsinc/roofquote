@@ -124,8 +124,9 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
 
 /**
  * 그룹별 기본 모드.
- * - finishing: 기본 꺼짐 — 주요 마감(용마루 절곡/기성품)은 폼의 '마감 방식'이 자동 계산.
- *   추가 기성품·추가 절곡이 있을 때만 체크.
+ * - finishing: 켜짐 + 추가 금액 0 — 주요 마감(용마루 절곡/기성품)은 폼의 '마감 방식'이
+ *   자동 계산하고, 카드는 "자동 계산 중" 상태를 표시 (꺼진 모양이면 마감재가 빠진 걸로
+ *   오해 — 2026-06-12 사용자 피드백). 여기 입력값은 자동 계산 외 추가분.
  * - accessory: 자재비 3% 자동 (피스/실링 등 소모품 일괄).
  * - gutter: 물받이 길이 × 2,000원/m 자동 (길이 0이면 라인 없음).
  *
@@ -133,7 +134,7 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
  * 구 8분류 키 중 "finishing"/"gutter" 는 그룹 키와 이름이 같아 자연 호환, 나머지는 무시됨.
  */
 export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = {
-  finishing: { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },
+  finishing: { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
   accessory: { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
   gutter:    { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
 };

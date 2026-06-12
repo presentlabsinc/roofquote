@@ -1354,11 +1354,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
                 materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
                 categoryLabels={constructionType === "steelWaterproof" ? { gutter: "배수로 / 물받이 부속" } : undefined}
-                finishingAutoHint={constructionType !== "steelWaterproof" && scope.ridge
-                  ? (resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
-                    ? "용마루 기성품은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서 용마루를 직접 고르면 자동 라인 대신 적용됩니다."
-                    : "용마루 절곡은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서는 추가 기성품·추가 절곡만 선택하세요.")
-                  : undefined}
+                finishingAutoHint={constructionType === "steelWaterproof"
+                  ? ((scope.handrail || scope.cap)
+                    ? "두겁·미시·프래싱 절곡은 난간/두겁 입력에서 자동 계산 중 — 여기서는 추가 마감재만 선택하세요."
+                    : undefined)
+                  : (scope.ridge
+                    ? (resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
+                      ? "용마루 기성품은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서 용마루를 직접 고르면 자동 라인 대신 적용됩니다."
+                      : "용마루 절곡은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서는 추가 기성품·추가 절곡만 선택하세요.")
+                    : undefined)}
               />
             </Section>
 
