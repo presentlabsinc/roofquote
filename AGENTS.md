@@ -137,6 +137,7 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 - Mobile-first. Max width container is `max-w-lg`. All touch targets ≥ 44px. Use the `pressable` utility from `globals.css` for tactile feedback.
 - All input fields have `font-size: 16px` minimum to prevent iOS Safari from auto-zooming on focus.
 - Korean numerals: prefer `tabular-nums` Tailwind class wherever money or counts are displayed so digits align.
+- **UI 도움말 문구 원칙 (2026-06-12 사용자 피드백): 도메인 지식을 설명하지 말 것.** 사용자는 지붕 전문가다 — "절곡 단가에 자재비 포함" 같은 업계 상식 설명은 노이즈(그건 개발자 자신을 위한 메모). 도움말은 **앱이 무엇을 하는지**(예: "길이 ÷ 3m 규격 → 개수로 자동 환산", "여기서 고르면 자동 라인 대신 적용")만 안내한다.
 - Photo URLs in `Site.photos` are Supabase Storage public URLs. The hostname must be present in `next.config.ts` `images.remotePatterns` if you ever use `<Image>` (we currently use `<img>`).
 
 ## Working on this repo
