@@ -214,14 +214,17 @@ geometric auto-fill default the user can override**; small consumables
 - 기성품 단가는 카탈로그에 이미 있음: `finishing` (용마루 고전/일자/멀티, 용마루캡),
   `roofingExtras` (대봉/소봉/양면소봉) — 천보 실단가.
 
-**확정된 설계 방향 — `finishingMethod: "bending" | "ready"` (견적별, 자재 타입으로 default):**
-- default: `materialType ∈ {generalTile, traditionalTile}` → `ready`, 그 외 → `bending`.
-  폼에서 칩 토글로 override 가능 (기와도 절곡으로, 코루게이티드도 기성품으로 가능해야 함).
-- `bending` 모드: 용마루/미시/페이샤 **절곡 라인만** emit — `용마루 마감`(ridgePricePerM) 라인 제거.
-  → 이중 계산 구조적으로 소멸.
-- `ready` 모드: 절곡 라인 suppress, `용마루 (기성품)` m당 라인 유지(ridgePricePerM = 기성품 단가로 재해석,
-  설정 라벨 변경). 하우마끼/대봉/소봉은 카탈로그 상세 모드에서 선택 (현행 유지).
-  개선 옵션: 용마루 개수 = ceil(추정 길이 ÷ 3m 규격) 자동 환산 (`lengthMm` 필드 활용).
+**확정된 설계 방향 — `finishingMethods` 부재별 JSON (2026-06-12 혼합 사용 요구로 견적 단위 → 부재 단위로 세분화):**
+- 저장: `Estimate.finishingMethods Json` — `{ ridge: "bending"|"ready", mishi: ..., fascia: ... }`.
+- default: `materialType ∈ {generalTile, traditionalTile}` → 전 부재 `ready`, 그 외 → 전 부재 `bending`.
+- 폼 UI: 자재 섹션에 "마감 방식" 한 줄 (접힘 = 요약 "절곡 제작 · 전체"). [전체 절곡]/[전체 기성품]
+  일괄 칩 + 펼치면 부재별 세그먼트 3줄 (용마루/미시/페이샤). 혼합 = 부재별 탭 1번.
+- 라인 생성 규칙: **부재당 정확히 한 라인.**
+  - `bending` → 절곡 라인 (현행 공식). `용마루 마감`(ridgePricePerM) 라인은 bending 모드에서 제거.
+  - `ready` → 개수 라인: ceil(추정 길이 ÷ 3m 규격) × 기성품 단가 (`lengthMm` 환산 활용).
+    부재별 기본 기성품 아이템은 설정에서 지정 (예: 용마루 기본 = `multiRidge` 13,200원/개 천보가).
+    카탈로그 상세 모드에서 견적별 변경 시 그게 우선. 하우마끼/대봉/소봉은 카탈로그 현행 유지.
+- 이중 계산은 "부재당 한 라인" 규칙으로 구조적으로 불가.
 
 **남은 확인 1개 (사장님):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)에 **무엇이 포함**되나 —
 강판 자재값+가공비인지, 가공비만인지(자재는 본 강판 발주에 포함?), 시공 인건비는 별도(인건비 라인)인지.
