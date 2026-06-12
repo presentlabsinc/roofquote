@@ -98,12 +98,52 @@ export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
   bending:       { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 자동 절곡 라인(용마루/두겁 등) 외 추가 절곡 있을 때만
 };
 
-/** Merge user-defined defaults (from PricingSettings.catalogDefaults) over the built-in defaults. */
+/** [LEGACY] 카테고리 단위 defaults 병합 — 그룹 체계(resolveGroupDefaults)로 대체됨. */
 export function resolveCategoryDefaults(savedDefaults: CategoryModesMap | null | undefined): Record<CatalogCategory, CategoryMode> {
   const saved = savedDefaults ?? {};
   const out = {} as Record<CatalogCategory, CategoryMode>;
   for (const cat of CATALOG_CATEGORIES) {
     out[cat.value] = { ...DEFAULT_CATEGORY_MODES[cat.value], ...saved[cat.value] };
+  }
+  return out;
+}
+
+// ─── 카드 그룹 (3분류 UI) ────────────────────────────────────────────
+// 2026-06-12 사용자 피드백: 8분류 카드는 도매상 단가표 구조지 현장 멘탈 모델이 아님.
+// UI/심플모드는 3그룹으로 묶고, 8분류는 상세 모드 안의 소제목으로만 유지.
+// 마감재 상세에서 기성품(용마루 등)과 절곡을 한 화면에서 같이 담을 수 있음.
+export type CatalogGroup = "finishing" | "accessory" | "gutter";
+
+export const CATALOG_GROUPS: { value: CatalogGroup; label: string; icon: string; categories: CatalogCategory[] }[] = [
+  { value: "finishing", label: "마감재 (기성품·절곡)",  icon: "🏠", categories: ["finishing", "roofingExtras", "bending"] },
+  { value: "accessory", label: "부자재 (피스·실링 등)", icon: "🔩", categories: ["fastener", "sealing", "substructure", "translucent"] },
+  { value: "gutter",    label: "물받이 부속",           icon: "🌧️", categories: ["gutter"] },
+];
+
+export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
+
+/**
+ * 그룹별 기본 모드.
+ * - finishing: 기본 꺼짐 — 주요 마감(용마루 절곡/기성품)은 폼의 '마감 방식'이 자동 계산.
+ *   추가 기성품·추가 절곡이 있을 때만 체크.
+ * - accessory: 자재비 3% 자동 (피스/실링 등 소모품 일괄).
+ * - gutter: 물받이 길이 × 2,000원/m 자동 (길이 0이면 라인 없음).
+ *
+ * 주의: Estimate.catalogModes / PricingSettings.catalogDefaults JSON 키가 그룹 키로 바뀜.
+ * 구 8분류 키 중 "finishing"/"gutter" 는 그룹 키와 이름이 같아 자연 호환, 나머지는 무시됨.
+ */
+export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = {
+  finishing: { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },
+  accessory: { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
+  gutter:    { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
+};
+
+/** Merge user-defined group defaults (PricingSettings.catalogDefaults) over built-ins. */
+export function resolveGroupDefaults(savedDefaults: GroupModesMap | null | undefined): Record<CatalogGroup, CategoryMode> {
+  const saved = savedDefaults ?? {};
+  const out = {} as Record<CatalogGroup, CategoryMode>;
+  for (const g of CATALOG_GROUPS) {
+    out[g.value] = { ...DEFAULT_GROUP_MODES[g.value], ...saved[g.value] };
   }
   return out;
 }

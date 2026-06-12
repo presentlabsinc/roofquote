@@ -274,32 +274,44 @@ geometric auto-fill default the user can override**; small consumables
 - `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.
 - Don't use for wide-range numerics (면적, 가격) — plain inputs are better.
 
-### Catalog system (부자재 / 마감재 / 물받이 부속 / 절곡)
-Each catalog category has **two modes** — the user toggles per category:
+### Catalog system — 3그룹 카드 (2026-06-12 재설계)
+**UI/심플모드는 3그룹**, 천보 8분류는 상세 모드 안의 소제목으로만 유지. 사용자 피드백:
+"8개 카드는 도매상 단가표 구조지 현장 멘탈 모델이 아니다 — 마감재/부자재/물받이부속 3개면 된다."
 
-**심플 모드 (default)** — one auto-calculated line per category:
-- `simpleType` is one of: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
-- `simpleValue` is the multiplier or amount
-- Defaults in `lib/catalog.ts` `DEFAULT_CATEGORY_MODES`:
-  - finishing → perSqm 5,000원/㎡
-  - gutter → perM 3,000원/m
-  - accessory → percent 15%  (replaces the old auto-added 부자재 line)
-  - bending → total 0원 (user fills in if needed)
-- Settings override: `PricingSettings.catalogDefaults` (Json), merged on top of `DEFAULT_CATEGORY_MODES` via `resolveCategoryDefaults()`.
+`lib/catalog.ts` `CATALOG_GROUPS`:
+- **finishing "마감재 (기성품·절곡)"** = finishing + roofingExtras + bending 분류.
+  상세에서 기성품 용마루와 절곡 항목을 한 화면에서 같이 담음.
+- **accessory "부자재 (피스·실링 등)"** = fastener + sealing + substructure + translucent 분류.
+- **gutter "물받이 부속"** = gutter 분류. (스틸방수에선 라벨 "배수로 / 물받이 부속" override.)
 
-**상세 모드** — itemized from [lib/catalog.ts](lib/catalog.ts) `DEFAULT_CATALOG` (~30 prepopulated items):
-- Each row in [components/CatalogPicker.tsx](components/CatalogPicker.tsx) has a quantity stepper + inline-editable unit price snapshot (so a job-specific price override doesn't change the defaults).
-- "+ 직접 추가" per category creates a custom row (key starts with `custom_`).
+Each group has **two modes** — the user toggles per group (+ enabled 체크박스):
+
+**심플 모드 (default)** — one auto-calculated line per group:
+- `simpleType`: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
+- Defaults in `DEFAULT_GROUP_MODES`:
+  - finishing → **enabled: false**, total 0원 — 주요 마감(용마루)은 폼의 '마감 방식'이 자동 계산하므로
+    추가분 있을 때만 체크. ("체크 ON + 0원" 혼란 방지)
+  - accessory → percent 3%
+  - gutter → perM 2,000원/m (길이 0 이면 라인 없음)
+- Settings override: `PricingSettings.catalogDefaults` (Json, 그룹 키), merged via `resolveGroupDefaults()`.
+
+**상세 모드** — itemized from `DEFAULT_CATALOG` (~30 천보 실단가 items), 8분류 소제목으로 그룹핑:
+- Each row in [components/CatalogPicker.tsx](components/CatalogPicker.tsx) has a quantity stepper + inline-editable unit price snapshot.
+- "+ 직접 추가" per group creates a custom row (key starts with `custom_`, category = 그룹 첫 분류).
+- **마감 방식과의 싱크**: scope.ridge 켜진 지붕 견적에선 마감재 카드 상단에 `finishingAutoHint` 안내
+  ("용마루는 마감 방식에서 자동 계산 중 …") — 자동 라인과 카탈로그 선택의 관계를 명시.
 
 **Snapshot storage** (both modes coexist on `Estimate`):
-- `Estimate.catalogSelections Json @default("[]")` — itemized picks (used when mode === "detailed")
-- `Estimate.catalogModes Json @default("{}")` — per-category mode + simple value (used when mode === "simple")
+- `Estimate.catalogSelections Json @default("[]")` — itemized picks (item 분류 키 유지)
+- `Estimate.catalogModes Json @default("{}")` — **그룹 키** mode + simple value.
+  Back-compat: 구 8분류 키 중 "finishing"/"gutter" 는 그룹 키와 동명이라 자연 호환, 나머지 키는 무시.
 
-**Calculation flow** (`buildLineItems` in `lib/calculations.ts`):
-- For each of the 4 categories, look up effective mode (estimate override → settings default → built-in default)
-- Simple mode → emit one `EstimateLineItem` via `simpleModeLineItem()` (returns null if value ≤ 0)
-- Detailed mode → emit one item per `catalogSelections[]` row in that category with quantity > 0
-- `categoryToLineItemCategory()` maps catalog categories to line-item categories (finishing/gutter/accessory → "material", bending → "other") so colors + customer PDF grouping work consistently.
+**Calculation flow** (`buildLineItems`):
+- For each of the 3 groups, look up effective mode (estimate override → settings default → built-in default)
+- enabled === false → 그룹 전체 스킵 (상세 선택 항목 포함)
+- Simple mode → emit one line via `simpleModeLineItem()` (returns null if value ≤ 0)
+- Detailed mode → emit one item per `catalogSelections[]` row whose item-category ∈ group with quantity > 0
+- `categoryToLineItemCategory()` maps item categories to line-item categories so colors + customer PDF grouping work consistently.
 
 **Note:** The old auto-added 부자재 line (materialTotal × accessoryRate) has been removed — it's now expressed as the accessory category's simple-mode percent. `PricingSettings.accessoryRate` is left in the DB for back-compat but no longer drives calculations.
 

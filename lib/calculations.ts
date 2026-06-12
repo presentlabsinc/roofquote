@@ -1,6 +1,6 @@
 import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
 import { BASELINE_AREAS, INSULATION_LABEL, INSULATION_PRICE_KEY, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel, resolveFinishingMethod } from "./types";
-import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, DEFAULT_CATALOG, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
+import { categoryToLineItemCategory, resolveGroupDefaults, CATALOG_GROUPS, DEFAULT_CATALOG, type CatalogCategory, type CatalogSelection, type CategoryMode, type GroupModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export interface LineItemDraft {
@@ -335,9 +335,10 @@ export interface BuildLineItemsInput {
   /** Catalog items the user picked with their quantities + snapshot prices.
    *  Only used for categories whose mode === "detailed". */
   catalogSelections?: CatalogSelection[];
-  /** Per-category mode + simple-mode value. Falls back to PricingSettings.catalogDefaults
-   *  (and ultimately DEFAULT_CATEGORY_MODES) when a category is missing. */
-  catalogModes?: CategoryModesMap;
+  /** Per-group mode + simple-mode value (마감재/부자재/물받이 부속 3그룹).
+   *  Falls back to PricingSettings.catalogDefaults (and ultimately
+   *  DEFAULT_GROUP_MODES) when a group is missing. */
+  catalogModes?: GroupModesMap;
   /** When true, multiply material area by (1 + lossRate) */
   applyLossRate?: boolean;
   /** Loss rate to apply (e.g. 0.10 = 10%). Used only when applyLossRate is true. */
@@ -407,9 +408,9 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   // function can use it transparently.
   const settings: PricingSettings = applyOverrides(rawSettings, pricingOverrides);
 
-  // Resolve effective category modes by layering: defaults → settings → estimate override
-  const settingsDefaults = (settings.catalogDefaults as CategoryModesMap | null) ?? null;
-  const effectiveModes = resolveCategoryDefaults({
+  // Resolve effective group modes by layering: defaults → settings → estimate override
+  const settingsDefaults = (settings.catalogDefaults as GroupModesMap | null) ?? null;
+  const effectiveModes = resolveGroupDefaults({
     ...settingsDefaults,
     ...(catalogModes ?? {}),
   });
@@ -910,28 +911,29 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
-  // Catalog categories (마감재 / 물받이 부속 / 부자재 / 절곡)
-  // Each category is either:
+  // Catalog groups (마감재(기성품·절곡) / 부자재 / 물받이 부속 — 3그룹)
+  // Each group is either:
   //   - 심플 (simple) mode: one auto-calculated line based on simpleType + simpleValue
   //   - 상세 (detailed) mode: individual line items from catalogSelections
+  //     (8분류 item categories는 상세 모드 안의 소제목 — 그룹이 모드를 결정)
   //
-  // The user toggles mode per-category in the form. Sensible defaults are
-  // applied for categories the user hasn't explicitly configured.
-  for (const cat of CATALOG_CATEGORIES) {
-    const m: CategoryMode = effectiveModes[cat.value];
-    // Skip the category entirely when the user disabled it
+  // The user toggles mode per-group in the form. Sensible defaults are
+  // applied for groups the user hasn't explicitly configured.
+  for (const grp of CATALOG_GROUPS) {
+    const m: CategoryMode = effectiveModes[grp.value];
+    // Skip the group entirely when the user disabled it
     if (m.enabled === false) continue;
     if (m.mode === "simple") {
-      const sline = simpleModeLineItem(cat.value, cat.label, m, {
+      const sline = simpleModeLineItem(grp.categories[0], grp.label, m, {
         materialTotal: materialTotalForCategoryPercent,
         areaM2,
         gutterLengthM,
       });
       if (sline) items.push({ ...sline, sortOrder: order++ });
     } else {
-      // detailed — emit from catalogSelections (filter to this category)
+      // detailed — emit from catalogSelections (filter to this group's categories)
       for (const sel of catalogSelections) {
-        if (sel.category !== cat.value) continue;
+        if (!grp.categories.includes(sel.category)) continue;
         if (!sel.quantity || sel.quantity <= 0) continue;
         items.push({
           category: categoryToLineItemCategory(sel.category),

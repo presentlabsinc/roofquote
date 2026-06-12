@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals, resolveEffectiveLossRate } from "@/lib/calculations";
 import type { BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
-import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
+import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { user, settings } = await requireUserAndSettings();
@@ -123,7 +123,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     pricingOverrides: pricingOverrides as PricingOverrides,
     finishingMethods: finishingMethods as FinishingMethods,
     catalogSelections: catalogSelections as CatalogSelection[],
-    catalogModes: catalogModes as CategoryModesMap,
+    catalogModes: catalogModes as GroupModesMap,
     applyLossRate,
     lossRate: effectiveLossRate,
     buildingShape: buildingShape as BuildingShape | null,

@@ -340,6 +340,48 @@ describe("buildLineItems — 미시 마감 방식 (스틸방수)", () => {
   });
 });
 
+describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이 부속)", () => {
+  it("기본값: 부자재 심플 3% 라인 생성, 마감재 그룹은 꺼짐 (0원 라인 없음)", () => {
+    const items = buildLineItems(baseInput());
+    const accessory = items.find((i) => i.name.includes("부자재"));
+    expect(accessory).toBeDefined();
+    expect(accessory?.name).toContain("(심플)");
+    expect(items.find((i) => i.name.includes("마감재"))).toBeUndefined();
+    expect(items.find((i) => i.total === 0)).toBeUndefined(); // 0원 라인 금지
+  });
+
+  it("마감재 상세 모드: 기성품(용마루)과 절곡 항목을 같이 담을 수 있음", () => {
+    const items = buildLineItems(baseInput({
+      catalogModes: { finishing: { enabled: true, mode: "detailed" } },
+      catalogSelections: [
+        { category: "finishing", key: "multiRidge", label: "멀티용마루", unit: "개", quantity: 2, unitPrice: 13_200 },
+        { category: "bending", key: "custom_bending_1", label: "추가 절곡", unit: "m", quantity: 5, unitPrice: 4_000 },
+      ],
+    }));
+    expect(items.find((i) => i.name === "멀티용마루")?.total).toBe(26_400);
+    expect(items.find((i) => i.name === "추가 절곡")?.total).toBe(20_000);
+  });
+
+  it("그룹 체크 해제 시 상세 선택 항목도 전부 제외", () => {
+    const items = buildLineItems(baseInput({
+      catalogModes: { accessory: { enabled: false, mode: "detailed" } },
+      catalogSelections: [
+        { category: "fastener", key: "custom_fastener_1", label: "피스", unit: "개", quantity: 100, unitPrice: 300 },
+      ],
+    }));
+    expect(items.find((i) => i.name === "피스")).toBeUndefined();
+    expect(items.find((i) => i.name.includes("부자재"))).toBeUndefined();
+  });
+
+  it("물받이 부속 심플 perM — 물받이 길이 없으면 라인 없음, 있으면 길이 × 단가", () => {
+    const without = buildLineItems(baseInput());
+    expect(without.find((i) => i.name.includes("물받이 부속"))).toBeUndefined();
+    const withGutter = buildLineItems(baseInput({ gutterMode: "front", gutterLengthM: 10 }));
+    const line = withGutter.find((i) => i.name.includes("물받이 부속"));
+    expect(line?.total).toBe(20_000); // 10m × 2,000원
+  });
+});
+
 describe("buildLineItems — 로스율", () => {
   it("로스율 적용 시 강판 면적 = 면적 × (1 + 로스율)", () => {
     const items = buildLineItems(baseInput({ applyLossRate: true, lossRate: 0.1 }));

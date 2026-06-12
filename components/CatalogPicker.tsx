@@ -6,66 +6,76 @@ import { NumberStepper } from "@/components/ui/number-stepper";
 import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
 import {
   type CatalogCategory,
+  type CatalogGroup,
   type CatalogItem,
   type CatalogSelection,
   type CategoryMode,
-  type CategoryModesMap,
+  type GroupModesMap,
   type SimpleType,
   CATALOG_CATEGORIES,
+  CATALOG_GROUPS,
   DEFAULT_CATALOG,
-  DEFAULT_CATEGORY_MODES,
   SIMPLE_TYPE_LABELS,
   groupCatalog,
-  resolveCategoryDefaults,
+  resolveGroupDefaults,
 } from "@/lib/catalog";
 
 interface Props {
   selections: CatalogSelection[];
   onChange: (sel: CatalogSelection[]) => void;
-  modes: CategoryModesMap;
-  onModesChange: (m: CategoryModesMap) => void;
+  modes: GroupModesMap;
+  onModesChange: (m: GroupModesMap) => void;
   /** Construction area + gutter length used for live-cost preview in simple mode */
   areaM2?: number;
   gutterLengthM?: number;
   /** Rough material total used for the "percent" simple type live preview */
   materialTotalEstimate?: number;
   catalog?: CatalogItem[];
-  defaults?: CategoryModesMap;
-  /** 카테고리 표시 라벨 override (예: 스틸방수에서 gutter → "배수로 / 물받이 부속"). */
-  categoryLabels?: Partial<Record<CatalogCategory, string>>;
+  defaults?: GroupModesMap;
+  /** 그룹 표시 라벨 override (예: 스틸방수에서 gutter → "배수로 / 물받이 부속"). */
+  categoryLabels?: Partial<Record<CatalogGroup, string>>;
+  /** 마감재 그룹 상단에 표시할 안내 — '마감 방식' 자동 계산과의 관계 (싱크 표시). */
+  finishingAutoHint?: string;
 }
 
+// 8분류 라벨 — 상세 모드 안의 소제목으로만 사용 (카드는 3그룹).
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  CATALOG_CATEGORIES.map((c) => [c.value, c.label]),
+);
+
 /**
- * Catalog picker — 4 collapsible category cards. Header has an iOS-style
- * toggle that switches between 심플 (OFF) ↔ 상세 (ON) modes. The current
- * mode label sits next to the toggle. Card body shows the appropriate
- * inputs for the chosen mode. Simple mode includes live "예상 X원" preview.
+ * Catalog picker — 3 collapsible group cards (마감재(기성품·절곡) / 부자재 / 물받이 부속).
+ * Header has an iOS-style toggle that switches between 심플 (OFF) ↔ 상세 (ON) modes.
+ * 상세 모드 lists items grouped by the 8 천보 카탈로그 분류 as small subsection headers —
+ * e.g. 마감재 상세에서 기성품 용마루와 절곡 항목을 한 화면에서 같이 담을 수 있다.
+ * Simple mode includes live "예상 X원" preview.
  */
 function CatalogPickerBase({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
   areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0, categoryLabels,
+  finishingAutoHint,
 }: Props) {
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
-  const resolved = useMemo(() => resolveCategoryDefaults({ ...defaults, ...modes }), [modes, defaults]);
+  const resolved = useMemo(() => resolveGroupDefaults({ ...defaults, ...modes }), [modes, defaults]);
 
-  // Track open/expanded state per category so we can auto-open on mode→detailed
+  // Track open/expanded state per group so we can auto-open on mode→detailed
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
-  function toggleOpen(cat: CatalogCategory) {
-    setOpenMap((o) => ({ ...o, [cat]: !o[cat] }));
+  function toggleOpen(grp: CatalogGroup) {
+    setOpenMap((o) => ({ ...o, [grp]: !o[grp] }));
   }
 
-  function setMode(cat: CatalogCategory, patch: Partial<CategoryMode>) {
-    onModesChange({ ...modes, [cat]: { ...resolved[cat], ...patch } });
+  function setMode(grp: CatalogGroup, patch: Partial<CategoryMode>) {
+    onModesChange({ ...modes, [grp]: { ...resolved[grp], ...patch } });
     // Auto-expand the card when user flips to 상세 — they're going to want
     // to see the items. (Doesn't auto-collapse on flip to 심플.)
     if (patch.mode === "detailed") {
-      setOpenMap((o) => ({ ...o, [cat]: true }));
+      setOpenMap((o) => ({ ...o, [grp]: true }));
     }
   }
 
-  /** Compute the simple-mode cost preview for a category */
-  function previewCostFor(cat: CatalogCategory): number {
-    const m = resolved[cat];
+  /** Compute the simple-mode cost preview for a group */
+  function previewCostFor(grp: CatalogGroup): number {
+    const m = resolved[grp];
     if (m.mode !== "simple") return 0;
     const v = m.simpleValue ?? 0;
     if (!v || v <= 0) return 0;
@@ -124,42 +134,62 @@ function CatalogPickerBase({
 
   return (
     <div className="space-y-2">
-      {CATALOG_CATEGORIES.map((cat) => {
-        const m = resolved[cat.value];
-        const items = grouped[cat.value];
-        const customItems = selections.filter((s) => s.category === cat.value && s.key.startsWith("custom_"));
+      {CATALOG_GROUPS.map((grp) => {
+        const m = resolved[grp.value];
+        const showSubheaders = grp.categories.length > 1;
+        const customItems = selections.filter(
+          (s) => grp.categories.includes(s.category) && s.key.startsWith("custom_"),
+        );
 
         return (
           <CategoryCard
-            key={cat.value}
-            label={categoryLabels?.[cat.value] ?? cat.label}
-            icon={cat.icon}
+            key={grp.value}
+            label={categoryLabels?.[grp.value] ?? grp.label}
+            icon={grp.icon}
             enabled={m.enabled !== false}
-            onToggleEnabled={() => setMode(cat.value, { enabled: m.enabled === false })}
+            onToggleEnabled={() => setMode(grp.value, { enabled: m.enabled === false })}
             mode={m.mode}
-            onToggleMode={() => setMode(cat.value, { mode: m.mode === "simple" ? "detailed" : "simple" })}
-            open={!!openMap[cat.value]}
-            onToggleOpen={() => toggleOpen(cat.value)}
-            simpleCost={m.mode === "simple" ? previewCostFor(cat.value) : 0}
+            onToggleMode={() => setMode(grp.value, { mode: m.mode === "simple" ? "detailed" : "simple" })}
+            open={!!openMap[grp.value]}
+            onToggleOpen={() => toggleOpen(grp.value)}
+            simpleCost={m.mode === "simple" ? previewCostFor(grp.value) : 0}
           >
+            {grp.value === "finishing" && finishingAutoHint ? (
+              <p className="text-[10px] text-muted-foreground mt-2 bg-muted/40 rounded-lg px-2.5 py-2">
+                {finishingAutoHint}
+              </p>
+            ) : null}
             {m.mode === "simple" ? (
               <SimpleModeBlock
                 mode={m}
-                onChange={(patch) => setMode(cat.value, patch)}
+                onChange={(patch) => setMode(grp.value, patch)}
                 areaM2={areaM2}
                 gutterLengthM={gutterLengthM}
                 materialTotalEstimate={materialTotalEstimate}
               />
             ) : (
               <div className="space-y-1.5 mt-3">
-                {items.map((item) => (
-                  <CatalogRow
-                    key={item.key}
-                    item={item}
-                    selection={selectionForKey(item.key)}
-                    onUpdate={(patch) => updateSelection(item.key, item, patch)}
-                  />
-                ))}
+                {grp.categories.map((cat) => {
+                  const items = grouped[cat];
+                  if (!items || items.length === 0) return null;
+                  return (
+                    <div key={cat} className="space-y-1.5">
+                      {showSubheaders && (
+                        <div className="text-[10px] font-semibold text-muted-foreground pt-1.5 first:pt-0">
+                          {CATEGORY_LABELS[cat]}
+                        </div>
+                      )}
+                      {items.map((item) => (
+                        <CatalogRow
+                          key={item.key}
+                          item={item}
+                          selection={selectionForKey(item.key)}
+                          onUpdate={(patch) => updateSelection(item.key, item, patch)}
+                        />
+                      ))}
+                    </div>
+                  );
+                })}
                 {customItems.map((cs) => (
                   <CustomRow
                     key={cs.key}
@@ -171,7 +201,7 @@ function CatalogPickerBase({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => addCustom(cat.value)}
+                  onClick={() => addCustom(grp.categories[0])}
                   className="w-full h-10 rounded-xl text-xs font-medium border-dashed border-primary/40 text-primary pressable mt-2"
                 >
                   <Plus size={14} className="mr-1" /> 직접 추가
@@ -507,5 +537,3 @@ function CustomRow({
   );
 }
 
-// Suppress unused-export lint for DEFAULT_CATEGORY_MODES which is re-imported by other consumers
-export const _keepDefaultsExportLive = DEFAULT_CATEGORY_MODES;

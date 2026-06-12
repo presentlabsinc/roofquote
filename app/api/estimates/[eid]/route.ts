@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals, calcFromFinalPrice, resolveEffectiveLossRate } from "@/lib/calculations";
-import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
+import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
 import type { BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { Estimate } from "@prisma/client";
 
@@ -164,7 +164,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       pricingOverrides: pricingOverrides as PricingOverrides,
       finishingMethods: finishingMethods as FinishingMethods,
       catalogSelections: catalogSelections as CatalogSelection[],
-      catalogModes: catalogModes as CategoryModesMap,
+      catalogModes: catalogModes as GroupModesMap,
       applyLossRate, lossRate: effectiveLossRate,
       buildingShape: buildingShape as BuildingShape | null,
       roofShape: roofShape as RoofShape | null,

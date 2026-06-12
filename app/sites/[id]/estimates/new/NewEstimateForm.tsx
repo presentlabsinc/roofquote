@@ -68,7 +68,7 @@ import {
 } from "@/lib/types";
 import { applyOverrides, estimateBasePerimeter, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
-import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
+import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
 import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar, Coins, ChevronDown, ChevronUp, CloudRain, Waves } from "lucide-react";
 
@@ -309,8 +309,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>(
     (existing?.catalogSelections as unknown as CatalogSelection[]) ?? [],
   );
-  const [catalogModes, setCatalogModes] = useState<CategoryModesMap>(
-    (existing?.catalogModes as unknown as CategoryModesMap) ?? {},
+  const [catalogModes, setCatalogModes] = useState<GroupModesMap>(
+    (existing?.catalogModes as unknown as GroupModesMap) ?? {},
   );
 
   // Step 9: 기타 비용 — not stored separately on Estimate; only relevant for new creation.
@@ -1349,11 +1349,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 onChange={setCatalogSelections}
                 modes={catalogModes}
                 onModesChange={setCatalogModes}
-                defaults={(settings.catalogDefaults as CategoryModesMap | null) ?? undefined}
+                defaults={(settings.catalogDefaults as GroupModesMap | null) ?? undefined}
                 areaM2={parseFloat(sqmInput) || 0}
                 gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
                 materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
                 categoryLabels={constructionType === "steelWaterproof" ? { gutter: "배수로 / 물받이 부속" } : undefined}
+                finishingAutoHint={constructionType !== "steelWaterproof" && scope.ridge
+                  ? (resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
+                    ? "용마루 기성품은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서 용마루를 직접 고르면 자동 라인 대신 적용됩니다."
+                    : "용마루 절곡은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서는 추가 기성품·추가 절곡만 선택하세요.")
+                  : undefined}
               />
             </Section>
 
