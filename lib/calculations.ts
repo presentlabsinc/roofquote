@@ -1,6 +1,6 @@
-import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
-import { BASELINE_AREAS, INSULATION_LABEL, INSULATION_PRICE_KEY, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel } from "./types";
-import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
+import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
+import { BASELINE_AREAS, INSULATION_LABEL, INSULATION_PRICE_KEY, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel, resolveFinishingMethod } from "./types";
+import { categoryToLineItemCategory, resolveCategoryDefaults, CATALOG_CATEGORIES, DEFAULT_CATALOG, type CatalogCategory, type CatalogSelection, type CategoryMode, type CategoryModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export interface LineItemDraft {
@@ -295,6 +295,10 @@ export function calcBendingCost(widthMm: number, lengthM: number, pricePerMmPer3
   return Math.round(widthMm * pricePerMmPer3m * (lengthM / 3));
 }
 
+/** 카탈로그의 기성품 용마루 본체 키들 — ready 모드 자동 라인의 중복 방지 가드에 사용.
+ *  (용마루캡은 부속이라 제외 — 캡만 골랐다고 본체 자동 라인을 막으면 안 됨.) */
+const READY_RIDGE_KEYS = new Set(["ridgeClassic", "ridgeStraight", "ridgeStraightLarge", "multiRidge"]);
+
 export interface BuildLineItemsInput {
   settings: PricingSettings;
   constructionType: ConstructionType;
@@ -325,6 +329,9 @@ export interface BuildLineItemsInput {
   /** Per-estimate price overrides. Merged over settings so individual prices
    *  can be changed for this estimate without modifying PricingSettings. */
   pricingOverrides?: PricingOverrides;
+  /** 부재별 마감 방식 (절곡/기성품). 키 없으면 자재 타입 default
+   *  (기와형 → ready, 그 외 → bending). resolveFinishingMethod 참조. */
+  finishingMethods?: FinishingMethods | null;
   /** Catalog items the user picked with their quantities + snapshot prices.
    *  Only used for categories whose mode === "detailed". */
   catalogSelections?: CatalogSelection[];
@@ -380,7 +387,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     capLengthM = 0, drainHoleCount = 0, endCapCount = 0, denjoCount = 0,
     skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2 = 0,
     wasteTruckCount = 1, substructureType = null,
-    extraCosts = [], pricingOverrides = {},
+    extraCosts = [], pricingOverrides = {}, finishingMethods = null,
     catalogSelections = [], catalogModes,
     applyLossRate = false, lossRate = 0,
     buildingShape = null, roofShape = null,
@@ -471,15 +478,33 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   // Ridge / Eave — only for roof / rooftopRoof
   if (constructionType !== "steelWaterproof") {
     if (scope.ridge) {
-      // 자재 (마감재) 라인
+      // 마감 방식에 따라 부재당 정확히 한 라인 (이중 계산 금지 — AGENTS.md OPEN DECISION).
       const ridgeLength = est("ridgeBendingM", "ridgeLengthM", () => Math.round(Math.sqrt(areaM2) * 0.8));
-      items.push({
-        category: "material", name: "용마루 마감", quantity: ridgeLength, unit: "m",
-        unitPrice: settings.ridgePricePerM, total: Math.round(ridgeLength * settings.ridgePricePerM),
-        sortOrder: order++,
-      });
-      // 절곡 라인 (buildingShape 입력 시에만 자동 생성)
-      if (buildingShape && ridgeLength > 0) {
+      const ridgeMethod = resolveFinishingMethod("ridge", finishingMethods, materialType);
+      if (ridgeMethod === "ready") {
+        // 기성품 용마루 — 규격(3m) 개수 환산 × 카탈로그 천보가.
+        // 기와형은 고전 용마루, 그 외(코루게이티드 + 기성품 혼용)는 멀티용마루 기본.
+        // 카탈로그 상세 모드에서 이미 용마루 제품을 골랐으면 자동 라인 생략 (중복 방지).
+        const pickedRidgeFromCatalog = catalogSelections.some(
+          (s) => READY_RIDGE_KEYS.has(s.key) && s.quantity > 0,
+        );
+        if (!pickedRidgeFromCatalog && ridgeLength > 0) {
+          const itemKey = materialType === "generalTile" || materialType === "traditionalTile"
+            ? "ridgeClassic" : "multiRidge";
+          const item = DEFAULT_CATALOG.find((c) => c.key === itemKey);
+          if (item && item.price > 0) {
+            const segmentM = (item.lengthMm ?? 3000) / 1000;
+            const count = Math.max(1, Math.ceil(ridgeLength / segmentM));
+            items.push({
+              category: "material", name: `용마루 (기성품 — ${item.label})`,
+              quantity: count, unit: "개", unitPrice: item.price,
+              total: count * item.price, sortOrder: order++,
+            });
+          }
+        }
+      } else if (ridgeLength > 0) {
+        // 절곡 제작 — 단가에 자재비+가공비 포함 (2026-06-12 확정).
+        // 구 "용마루 마감" m당 라인(ridgePricePerM)은 제거됨 — 절곡과 병행하면 이중 계산.
         const bend = calcBendingCost(settings.bendingWidthRidge, ridgeLength, settings.bendingPricePerMmPer3m);
         if (bend > 0) {
           items.push({
@@ -594,8 +619,10 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         });
       }
     }
-    // 미시 절곡 — 옥상 바닥-외벽 접합부 + 옥탑 base 접합부 (난간 + 옥탑 둘레)
-    if ((scope.handrail || scope.cap) && capTotal > 0) {
+    // 미시 절곡 — 옥상 바닥-외벽 접합부 + 옥탑 base 접합부 (난간 + 옥탑 둘레).
+    // 마감 방식이 "기성품"이면 자동 절곡 라인 생략 — 사용자가 카탈로그에서 기성품 미시 선택.
+    if ((scope.handrail || scope.cap) && capTotal > 0
+        && resolveFinishingMethod("mishi", finishingMethods, materialType) === "bending") {
       const mishiLen = baseline?.mishiBendingM ?? Math.round(capTotal);
       const bend = calcBendingCost(settings.bendingWidthMishi, mishiLen, settings.bendingPricePerMmPer3m);
       if (bend > 0) {

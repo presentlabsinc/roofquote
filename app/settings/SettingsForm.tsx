@@ -28,12 +28,13 @@ const STEEL_PRICE_KEYS: { type: MaterialType; label: string; key: string }[] = [
 // 부자재 단가 — 한 카드에 통합.
 //  - spec: 규격(3m/5m) 기성품. [규격 길이]+[규격당 가격] → m당 환산. priceKey 엔 m당 저장.
 //  - flat: 규격 없는 단순 단가 (처마 m당, 엔드캡 개당). priceKey 단가 그대로.
+// 용마루 규격 단가 행 제거 (2026-06-12): finishingMethods 도입으로 ridgePricePerM 은
+// 엔진 미사용 — 절곡 모드는 절곡 단가, 기성품 모드는 카탈로그(천보가) 사용.
+// 처마 마감(eavePricePerM) 행도 제거 — 처마는 건당 시공(denjo)으로 재정의되어 미사용.
 const ACCESSORY_SPEC_KEYS: { lenKey: string; priceKey: string; label: string; defaultLenMm: number }[] = [
-  { lenKey: "ridge",  priceKey: "ridgePricePerM",  label: "용마루",  defaultLenMm: 3000 },
   { lenKey: "gutter", priceKey: "gutterPricePerM", label: "물받이",  defaultLenMm: 5000 },
 ];
 const ACCESSORY_FLAT_KEYS: { priceKey: string; label: string; unit: string }[] = [
-  { priceKey: "eavePricePerM", label: "처마 마감", unit: "원/m" },
   { priceKey: "endCapPrice",   label: "엔드캡",   unit: "원/개" },
 ];
 

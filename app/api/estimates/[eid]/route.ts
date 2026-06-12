@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals, calcFromFinalPrice, resolveEffectiveLossRate } from "@/lib/calculations";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
-import type { BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import type { BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { Estimate } from "@prisma/client";
 
 /**
@@ -121,7 +121,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       skyliftDays = 0, ladderTruckDays = 0, scaffoldDays = 0, scaffoldAreaM2 = 0,
       wasteTruckCount = 1, substructureType = null,
       otherEquipment = null,
-      scopeFlags, extraCosts = [], pricingOverrides = {},
+      scopeFlags, extraCosts = [], pricingOverrides = {}, finishingMethods = {},
       catalogSelections = [], catalogModes = {},
       applyLossRate = false, lossRate = null,
       buildingShape = null, roofShape = null,
@@ -162,6 +162,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       substructureType: substructureType as SubstructureType | null,
       extraCosts: extraCosts as ExtraCost[],
       pricingOverrides: pricingOverrides as PricingOverrides,
+      finishingMethods: finishingMethods as FinishingMethods,
       catalogSelections: catalogSelections as CatalogSelection[],
       catalogModes: catalogModes as CategoryModesMap,
       applyLossRate, lossRate: effectiveLossRate,
@@ -222,6 +223,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
             .filter((s) => s.quantity > 0) as unknown as object,
           catalogModes: catalogModes as object,
           pricingOverrides: pricingOverrides as object,
+          finishingMethods: (finishingMethods ?? {}) as object,
           ...totals,
           marginMode: "percent",
           marginRate,

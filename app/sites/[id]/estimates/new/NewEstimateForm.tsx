@@ -61,6 +61,10 @@ import {
   PRICING_OVERRIDE_GROUPS,
   BUILDING_SHAPES,
   ROOF_SHAPES,
+  type FinishingMember,
+  type FinishingMethod,
+  type FinishingMethods,
+  resolveFinishingMethod,
 } from "@/lib/types";
 import { applyOverrides, estimateBasePerimeter, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
@@ -318,6 +322,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     (existing?.pricingOverrides as unknown as PricingOverrides) ?? {},
   );
 
+  // 부재별 마감 방식 (절곡/기성품) — 키 없으면 자재 타입 default (기와형 → 기성품).
+  // 사용자가 명시적으로 고른 부재만 저장 → 자재를 바꾸면 안 고른 부재는 default 따라감.
+  const [finishingMethods, setFinishingMethods] = useState<FinishingMethods>(
+    (existing?.finishingMethods as unknown as FinishingMethods) ?? {},
+  );
+  function setFinishingMethod(member: FinishingMember, method: FinishingMethod) {
+    setFinishingMethods((prev) => ({ ...prev, [member]: method }));
+  }
+
   function pickConstructionType(t: ConstructionType) {
     setConstructionType(t);
     // Defaults per construction type:
@@ -470,6 +483,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       catalogSelections: catalogSelections.filter((s) => s.quantity > 0 && s.label.trim()),
       catalogModes,
       pricingOverrides,
+      finishingMethods,
       applyLossRate,
       lossRate,
       // 건물/지붕 형태 + 단열재 (자재 자동 추정)
@@ -850,6 +864,36 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           />
                         </div>
                       )}
+                      {/* 용마루 마감 방식 — 절곡 제작(징크250 등 기본) vs 기성품(기와형 기본) */}
+                      {key === "ridge" && scope.ridge && (
+                        <div className="mt-2 ml-3">
+                          <Label className="text-[10px] text-muted-foreground mb-1 block">마감 방식</Label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {([["bending", "절곡 제작"], ["ready", "기성품"]] as [FinishingMethod, string][]).map(([v, label]) => {
+                              const active = resolveFinishingMethod("ridge", finishingMethods, materialType) === v;
+                              return (
+                                <button
+                                  key={v}
+                                  type="button"
+                                  onClick={() => setFinishingMethod("ridge", v)}
+                                  className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                                    active
+                                      ? "bg-primary text-primary-foreground border-primary"
+                                      : "bg-card text-foreground border-border/60"
+                                  }`}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
+                              ? "기성품 용마루 — 3m 규격 개수로 자동 환산"
+                              : "절곡 단가에 자재비 포함 (절곡 라인 하나로 계산)"}
+                          </p>
+                        </div>
+                      )}
                       {/* 난간 / 두겁 활성 시 — 파라펫 높이 + 난간 둘레 */}
                       {key === "handrail" && scope.handrail && (
                         <div className="mt-3 ml-3 space-y-3 pt-3 border-t border-border/40">
@@ -877,6 +921,33 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                               min={0} max={999} step={1}
                               unit="m"
                             />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground mb-1 block">미시 마감 방식</Label>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {([["bending", "절곡 제작"], ["ready", "기성품"]] as [FinishingMethod, string][]).map(([v, label]) => {
+                                const active = resolveFinishingMethod("mishi", finishingMethods, materialType) === v;
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => setFinishingMethod("mishi", v)}
+                                    className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                                      active
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "bg-card text-foreground border-border/60"
+                                    }`}
+                                  >
+                                    {label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {resolveFinishingMethod("mishi", finishingMethods, materialType) === "ready" && (
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                기성품 미시는 추가 자재 (마감재) 에서 선택하세요 — 자동 절곡 라인 생략
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}

@@ -53,6 +53,38 @@ export type Thickness = "0.4" | "0.45" | "0.5" | "0.6";
 
 export const THICKNESSES: Thickness[] = ["0.4", "0.45", "0.5", "0.6"];
 
+// ─── 마감 방식 (절곡 제작 vs 기성품) ─────────────────────────────────
+// 2026-06-12 사용자 확인: 징크250 코루게이티드(주류)는 용마루·미시·후레싱(페이샤)
+// 전부 절곡 제작, 기와형(일반/전통)은 기성품(용마루·하우마끼·대봉·소봉) 사용.
+// 절곡 단가(bendingPricePerMmPer3m)는 자재비+가공비 모두 포함 — 절곡 라인이
+// 해당 부재의 유일한 자재 라인이다 (마감 m당 라인과 병행 금지 = 이중 계산).
+
+/** 마감 방식 선택 대상 부재. fascia 는 아직 자동 라인이 없어 예약만 해둠. */
+export type FinishingMember = "ridge" | "mishi" | "fascia";
+export type FinishingMethod = "bending" | "ready";
+/** Estimate.finishingMethods JSON shape — 키 없으면 자재 타입 기반 default. */
+export type FinishingMethods = Partial<Record<FinishingMember, FinishingMethod>>;
+
+export const FINISHING_MEMBER_LABELS: Record<FinishingMember, string> = {
+  ridge: "용마루",
+  mishi: "미시",
+  fascia: "페이샤 (후레싱)",
+};
+
+/** 기와형(일반/전통)은 기성품 마감이 기본, 그 외(징크250 등)는 절곡 제작이 기본. */
+export function defaultFinishingMethod(materialType: MaterialType | null | undefined): FinishingMethod {
+  return materialType === "generalTile" || materialType === "traditionalTile" ? "ready" : "bending";
+}
+
+/** 부재별 마감 방식 결정 — 견적 저장값 우선, 없으면 자재 타입 default. */
+export function resolveFinishingMethod(
+  member: FinishingMember,
+  methods: FinishingMethods | null | undefined,
+  materialType: MaterialType | null | undefined,
+): FinishingMethod {
+  return methods?.[member] ?? defaultFinishingMethod(materialType);
+}
+
 /**
  * 건물 평면 형태 — 자재 자동 추정에 사용.
  * 둘레 추정 + 코너/꺾임 카운트로 프래싱 길이 산정에 영향.
@@ -237,8 +269,12 @@ export interface ExtraCost {
 export interface PricingOverrides {
   materialPricePerSqm?: number;
   accessoryRate?: number;
+  /** [LEGACY] 용마루 마감 m당 — finishingMethods 도입(2026-06-12)으로 엔진 미사용. 구 견적 JSON 호환용. */
   ridgePricePerM?: number;
+  /** [LEGACY] 처마 마감 m당 — 처마는 건당 시공(denjo)으로 재정의되어 미사용. */
   eavePricePerM?: number;
+  /** 절곡 단가 (원/mm·3m) — 용마루/두겁/미시/프래싱/트림 절곡 라인의 단가 베이스. */
+  bendingPricePerMmPer3m?: number;
   gutterPricePerM?: number;
   removalPricePerSqm?: number;
   wasteDisposalCost?: number;
@@ -267,8 +303,7 @@ export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { k
     fields: [
       { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (0.45t 기준)", unit: "원" },
       { key: "accessoryRate", label: "부자재 비율", unit: "%", pct: true },
-      { key: "ridgePricePerM", label: "용마루 m당", unit: "원" },
-      { key: "eavePricePerM", label: "처마 마감 m당", unit: "원" },
+      { key: "bendingPricePerMmPer3m", label: "절곡 단가 (mm·3m당, 자재 포함)", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
       { key: "wasteDisposalCost", label: "폐기물 트럭 1차당", unit: "원" },
@@ -281,7 +316,6 @@ export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { k
       { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
       { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
       { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
-      { key: "capBendingPricePerM", label: "두겁 절곡 m당", unit: "원" },
       { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
     ],
   },

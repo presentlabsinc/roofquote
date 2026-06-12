@@ -148,7 +148,7 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 4. Update the API route that creates/updates Estimate
 5. Update the form + the EstimateDetail UI
 6. Update [components/EstimatePDF.tsx](components/EstimatePDF.tsx) if it should appear on the PDF
-7. Type check: `npx tsc --noEmit`. Build: `npm run build`
+7. Type check: `npx tsc --noEmit`. Test: `npm test` (vitest — 계산 로직 건드렸으면 케이스 추가). Build: `npm run build`
 
 ### Adding a new construction type / scope item
 - Construction types: extend `ConstructionType` and `CONSTRUCTION_TYPES` in [lib/types.ts](lib/types.ts), then handle in `buildLineItems` ([lib/calculations.ts](lib/calculations.ts)), `SCOPE_BY_TYPE`, the form, and the PDF helpers (`buildWorkTitle`, `scopeLabel`, `constructionTypeLabel`).
@@ -182,7 +182,7 @@ system:
 Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMmPer3m` (기본 36).
 
 **Per-type line generation** (all gated on scope flags; user edits after):
-- roof / rooftopRoof: 용마루 마감+절곡(**유일한 마감+절곡 쌍** — OPEN DECISION 참조), 처마/덴조 **건당 시공(labor)** (구 "처마 마감 m당" 라인은 6/1 리팩토링에서 제거 — `eavePricePerM` 은 현재 미사용, `bendingWidthEave` 는 옥탑 트림 넓이로만 재사용), 프래싱 절곡(꺾인 건물), 물받이 OR 엔드캡, 하지, 철거(roof만).
+- roof / rooftopRoof: 용마루 — **마감 방식에 따라 절곡 라인 또는 기성품 개수 라인 중 하나만** (`finishingMethods`, 아래 RESOLVED 섹션), 처마/덴조 **건당 시공(labor)** (구 "처마 마감 m당" 라인은 6/1 리팩토링에서 제거 — `eavePricePerM` 은 미사용, `bendingWidthEave` 는 옥탑 트림 넓이로만 재사용), 프래싱 절곡(꺾인 건물), 물받이 OR 엔드캡, 하지, 철거(roof만).
 - steelWaterproof: 두겁/미시/프래싱 절곡, 파라펫 강판(난간둘레×높이), 옥탑 외벽 강판(옥탑둘레×옥탑높이),
   옥탑 문/창 트림(개수×평균둘레), 처마/덴조, 스테인리스 배수로, 홈통, 배수구 타공.
 - 공통 소모품 (buildingShape 있을 때만): 스크류 대(면적×2/㎡), 스크류 소(절곡길이×3.3/m), 실리콘(접합부÷6m).
@@ -205,7 +205,7 @@ geometric auto-fill default the user can override**; small consumables
   compare output to actual usage, tune constants + loss until they match.
 - Defaults stay industry-standard so it works without the data; data just sharpens defaults.
 
-**⚠️ OPEN DECISION — 2026-06-12 사용자 확인으로 대부분 해소. 남은 건 절곡 단가 구성 1개.**
+**✅ RESOLVED + 구현 완료 (2026-06-12) — 절곡 이중 계산 해소. `finishingMethods` 시스템:**
 
 **현장 실태 (사용자 확인):** 마감 방식은 자재 타입에 따라 갈린다.
 - **징크250 코루게이티드 (현재 주류):** 용마루·미시·후레싱(현장 용어 "페이샤") 전부 **절곡 제작**.
@@ -214,31 +214,35 @@ geometric auto-fill default the user can override**; small consumables
 - 기성품 단가는 카탈로그에 이미 있음: `finishing` (용마루 고전/일자/멀티, 용마루캡),
   `roofingExtras` (대봉/소봉/양면소봉) — 천보 실단가.
 
-**확정된 설계 방향 — `finishingMethods` 부재별 JSON (2026-06-12 혼합 사용 요구로 견적 단위 → 부재 단위로 세분화):**
-- 저장: `Estimate.finishingMethods Json` — `{ ridge: "bending"|"ready", mishi: ..., fascia: ... }`.
+**구현된 설계 — `finishingMethods` 부재별 JSON (혼합 사용 지원, 견적 단위 → 부재 단위):**
+- 저장: `Estimate.finishingMethods Json @default("{}")` — `{ ridge: "bending"|"ready", mishi: ..., fascia: ... }`.
+  helpers: `lib/types.ts` `defaultFinishingMethod` / `resolveFinishingMethod` / `FINISHING_MEMBER_LABELS`.
 - default: `materialType ∈ {generalTile, traditionalTile}` → 전 부재 `ready`, 그 외 → 전 부재 `bending`.
-- 폼 UI: 자재 섹션에 "마감 방식" 한 줄 (접힘 = 요약 "절곡 제작 · 전체"). [전체 절곡]/[전체 기성품]
-  일괄 칩 + 펼치면 부재별 세그먼트 3줄 (용마루/미시/페이샤). 혼합 = 부재별 탭 1번.
+  사용자가 명시적으로 고른 부재만 JSON 에 저장 — 자재를 바꾸면 안 고른 부재는 default 따라감.
+- 폼 UI: 공사 범위의 scope 토글 아래 세그먼트 칩 — `ridge` 체크 시 "마감 방식" (지붕/옥상지붕),
+  `handrail` 체크 시 "미시 마감 방식" (스틸방수). fascia 는 자동 라인이 아직 없어 UI 미노출 (키만 예약).
 - 라인 생성 규칙: **부재당 정확히 한 라인.**
-  - `bending` → 절곡 라인 (현행 공식). `용마루 마감`(ridgePricePerM) 라인은 bending 모드에서 제거.
-  - `ready` → 개수 라인: ceil(추정 길이 ÷ 3m 규격) × 기성품 단가 (`lengthMm` 환산 활용).
-    부재별 기본 기성품 아이템은 설정에서 지정 (예: 용마루 기본 = `multiRidge` 13,200원/개 천보가).
-    카탈로그 상세 모드에서 견적별 변경 시 그게 우선. 하우마끼/대봉/소봉은 카탈로그 현행 유지.
-- 이중 계산은 "부재당 한 라인" 규칙으로 구조적으로 불가.
+  - `bending` → 절곡 라인 (현행 공식, **단가에 자재비 포함**). `용마루 마감`(ridgePricePerM) 라인 삭제됨.
+    구 buildingShape 가드도 제거 — 건물형태 없어도 √면적 추정 길이로 절곡 라인 생성.
+  - `ready` (용마루) → 개수 라인: ceil(추정 길이 ÷ 3m) × 카탈로그 천보가. 기와형 → `ridgeClassic`(14,300),
+    그 외 → `multiRidge`(13,200). **중복 가드**: 카탈로그 상세에서 용마루 본체(`READY_RIDGE_KEYS`)를
+    이미 골랐으면 자동 라인 생략. 하우마끼/대봉/소봉은 카탈로그 현행 유지.
+  - `ready` (미시) → 자동 절곡 라인 생략, 사용자가 카탈로그에서 기성품 선택 (폼에 힌트 표시).
+- **레거시 정리**: `ridgePricePerM`/`eavePricePerM`/`capBendingPricePerM` 은 엔진 미사용 —
+  설정 카드·override UI 에서 행 제거 (DB 컬럼은 구버전 호환으로 유지). override 그룹에
+  `bendingPricePerMmPer3m`(절곡 단가) 추가 — 이제 이게 마감 부재들의 실질 단가 노브.
+- 테스트: `lib/__tests__/calculations.test.ts` (vitest, `npm test`) — 마감 방식 분기 + 이중 계산
+  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 28케이스.
 
-**남은 확인 1개 (사장님):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)에 **무엇이 포함**되나 —
-강판 자재값+가공비인지, 가공비만인지(자재는 본 강판 발주에 포함?), 시공 인건비는 별도(인건비 라인)인지.
-이 답이 나와야 절곡 라인의 단가·라벨이 확정되고 단가표 마감 가능.
+**✅ RESOLVED (2026-06-12 사용자 확인):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)는
+**자재비 + 절곡 가공비 모두 포함.** 함의:
+- 절곡 라인은 self-contained 자재 라인이다 — 절곡 부재의 강판 자재가 본 강판 면적 라인과 겹치지 않음.
+- 시공(설치) 인건비는 별도 — 공통 인건비 라인이 커버 (현행 구조 그대로).
+- 로스율이 절곡 라인에 안 붙는 현행 동작도 유지 (단가가 이미 완성품 가격).
 
-정확한 범위 (2026-06-12 코드 확인):
-- **실제 이중 계산 가능 지점은 용마루 한 곳뿐** — `용마루 마감` (length × ridgePricePerM) 과
-  `용마루 절곡` (같은 length 에 절곡 공식) 이 둘 다 emit 되는 유일한 마감+절곡 쌍.
-  단가가 all-in 이면 절곡분이 두 번 청구됨.
-- 절곡 라인은 **buildingShape 입력 시에만** 자동 생성 — 건물형태를 안 쓰면 발현 안 함.
-- 두겁/미시/프래싱/옥탑 트림은 **절곡 라인만** 있음 (마감 짝 없음) → 이중은 아니지만,
-  사장님 답이 이 라인들의 의미도 결정함: 단가에 절곡 포함(all-in)이라면 이 절곡-only
-  라인들이 해당 부재의 유일한 라인으로서 단가·라벨을 all-in 으로 재해석해야 함.
-- 처마는 건당 시공(labor)으로 재정의되어 이 문제에서 빠짐.
+(과거 이중 계산 지점은 용마루 하나였음 — `용마루 마감` m당 라인과 `용마루 절곡` 라인이
+같은 길이에 둘 다 emit. 아래 구현으로 삭제됨. 두겁/미시/프래싱/트림은 원래 절곡-only,
+처마는 건당 시공이라 무관.)
 
 ### Special non-scope-flag pickers
 - **물받이** is multi-select (front / back / left / right). Stored on `Estimate.gutterMode` as a comma-separated string. Helpers in [lib/types.ts](lib/types.ts):
@@ -439,8 +443,8 @@ All four are mutually derived: editing one updates the other three. The hero car
 
 이 순서는 의존성이다. 건너뛰면 되돌아오게 된다.
 
-1. **절곡 포함/별도 확정** — 2026-06-12 대부분 해소 (자재 타입별 `finishingMethod` 설계 확정 — OPEN DECISION 참조). 남은 것: ① 절곡 단가 구성(자재 포함 여부) 사장님 확인, ② `finishingMethod` 구현.
-2. **calculations.ts 핵심 함수 vitest** — 1번에서 확정된 수식 기준. 대상: `calcTotals`, `calcFromFinalPrice`, `distributeMarginForDisplay` (라운딩 스윕 ±1원, 빈 버킷 spill-over), `buildLineItems` 절곡 경로, `resolveEffectiveLossRate` 모드. **편의 기능보다 먼저** — 이후 작업들이 돈 계산 엔진을 건드릴 때의 안전망.
+1. ~~**절곡 포함/별도 확정**~~ ✅ 완료 (2026-06-12) — 절곡 단가 = 자재비+가공비 포함 확정, `finishingMethods` 부재별 시스템 구현. RESOLVED 섹션 참조.
+2. ~~**calculations.ts 핵심 함수 vitest**~~ ✅ 완료 (2026-06-12) — `lib/__tests__/calculations.test.ts` 28케이스 (`npm test`). 계산 엔진 수정 시 반드시 테스트 추가/갱신.
 3. **마진 분배 비율 스냅샷** — "Margin distribution" 섹션의 외부 감사 fix. 컬럼 3개 + live 폴백. 작음 — 2번 직후 또는 2번과 같이.
 4. **현장 즉시성 묶음** (calc 엔진 안 건드림 — 2번과 병행 가능): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체), ③ 견적 복사.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.

@@ -226,6 +226,11 @@ model Estimate {
   // PricingSettings itself is never modified.
   pricingOverrides  Json @default("{}")
 
+  // 부재별 마감 방식 — { ridge: "bending"|"ready", mishi: ..., fascia: ... }.
+  // 키 없으면 자재 타입 default (기와형 → ready, 그 외 → bending).
+  // 절곡 단가는 자재비+가공비 포함 (2026-06-12 확정) — 부재당 라인 하나.
+  finishingMethods  Json @default("{}")
+
   // 하지작업 (substructure)
   substructureType  String? // null = 안함, 'wood' = 목재, 'steel' = 철재
 

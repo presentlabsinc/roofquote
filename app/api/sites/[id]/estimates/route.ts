@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserAndSettings } from "@/lib/auth";
 import { buildLineItems, calcTotals, resolveEffectiveLossRate } from "@/lib/calculations";
-import type { BuildingShape, ConstructionType, ExtraCost, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import type { BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
 import type { CatalogSelection, CategoryModesMap } from "@/lib/catalog";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -57,6 +57,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     scopeFlags,
     extraCosts = [],
     pricingOverrides = {},
+    finishingMethods = {},
     catalogSelections = [],
     catalogModes = {},
     applyLossRate = false,
@@ -120,6 +121,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     substructureType: substructureType as SubstructureType | null,
     extraCosts: extraCosts as ExtraCost[],
     pricingOverrides: pricingOverrides as PricingOverrides,
+    finishingMethods: finishingMethods as FinishingMethods,
     catalogSelections: catalogSelections as CatalogSelection[],
     catalogModes: catalogModes as CategoryModesMap,
     applyLossRate,
@@ -195,6 +197,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         .filter((s) => s.quantity > 0) as unknown as object,
       catalogModes: catalogModes as object,
       pricingOverrides: pricingOverrides as object,
+      finishingMethods: (finishingMethods ?? {}) as object,
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,
