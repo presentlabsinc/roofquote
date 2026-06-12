@@ -37,6 +37,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className="h-full">
       <head>
+        {/* 폰트 CDN 연결 선행 — 첫 페인트 전 DNS+TLS 핸드셰이크를 미리 끝냄 */}
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link
           rel="preload"
           as="style"

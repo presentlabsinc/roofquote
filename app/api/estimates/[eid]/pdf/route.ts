@@ -60,19 +60,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
 
   try {
     const user = await requireUser();
-    const estimate = await prisma.estimate.findFirst({
-      where: { id: eid, site: { userId: user.id } },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
+    // 견적 + 설정 병렬 조회 (독립 쿼리 — 직렬이면 왕복 2번).
+    const [estimate, settings] = await Promise.all([
+      prisma.estimate.findFirst({
+        where: { id: eid, site: { userId: user.id } },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      }),
+      // Pull the current user's margin distribution ratios. We deliberately
+      // read CURRENT settings (not snapshotted on the estimate) so the user
+      // can re-render an old estimate's PDF with a new split — the underlying
+      // line item totals don't change, only how the margin is presented.
+      // (⚠️ 외부 감사 백로그: 비율 스냅샷으로 전환 예정 — AGENTS.md 참조)
+      prisma.pricingSettings.findUnique({ where: { userId: user.id } }),
+    ]);
     if (!estimate) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
-
-    // Pull the current user's margin distribution ratios. We deliberately
-    // read CURRENT settings (not snapshotted on the estimate) so the user
-    // can re-render an old estimate's PDF with a new split — the underlying
-    // line item totals don't change, only how the margin is presented.
-    const settings = await prisma.pricingSettings.findUnique({ where: { userId: user.id } });
     const ratios = {
       material: settings?.marginMaterialRatio ?? 0.5,
       labor: settings?.marginLaborRatio ?? 0.25,

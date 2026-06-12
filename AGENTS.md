@@ -81,6 +81,17 @@ Multi-tenant. Every page + API route requires a signed-in user; data is scoped b
   - `app/auth/callback/route.ts` — OAuth return URL → exchange code for session → forward to `next`.
   - `app/api/auth/logout/route.ts` — POSTs sign out, redirects to /login.
 
+### ⚡ Auth 성능 패턴 (2026-06-12) — 검증은 미들웨어에서 1번만
+- `middleware.ts` 의 `getUser()` 가 **유일한 실제 토큰 검증 + 갱신 지점** (Supabase Auth 서버 왕복).
+- `requireUser()` / `getUser()` (lib/auth.ts) 는 `getSession()` 사용 — 쿠키 파싱만, 네트워크 0.
+  미들웨어가 같은 요청에서 이미 검증했으므로 안전 (위조 쿠키는 미들웨어에서 /login 리다이렉트).
+- **⚠️ 이 패턴의 전제: 미들웨어의 `getUser()` 호출과 matcher 범위(/api 포함)를 절대 약화시키지 말 것.**
+  미들웨어 검증을 빼면 페이지/라우트가 서명 미검증 쿠키를 신뢰하게 된다.
+- 페이지 내 독립 쿼리는 `Promise.all` 병렬 (home: 설정+현장목록, 견적상세/PDF: 견적+설정).
+- `next.config.ts` `experimental.staleTimes.dynamic: 30` — 클라이언트 라우터 캐시 30초.
+  탭 이동/뒤로가기가 30초 내 재방문이면 서버 왕복 없음. 변경 직후 화면은 폼들이
+  `router.refresh()` 를 호출하므로 stale 안 보임.
+
 ### Data ownership rules
 - `PricingSettings.userId` is `@unique` — exactly one settings row per user. Created lazily on first request via `getOrCreatePricingSettings()`.
 - `Site.userId` is indexed; `Estimate` ownership flows through `Site` (no own column).

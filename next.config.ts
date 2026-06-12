@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
   // Marking it external makes Next.js load it from node_modules at runtime
   // instead of bundling it through Turbopack.
   serverExternalPackages: ["@prisma/client", "@react-pdf/renderer"],
+  experimental: {
+    // Client router cache for dynamic pages — without this every tab tap /
+    // back navigation refetches the full RSC payload (auth + DB roundtrips).
+    // 30s staleness is fine for a single-user-per-account field app; forms
+    // call router.refresh() after mutations which bypasses this cache.
+    staleTimes: {
+      dynamic: 30,
+    },
+  },
   images: {
     remotePatterns: [
       {

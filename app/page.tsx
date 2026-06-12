@@ -1,23 +1,27 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { requireUserAndSettings } from "@/lib/auth";
+import { requireUser, getOrCreatePricingSettings } from "@/lib/auth";
 import { MapPin, FileText, ChevronRight, Building2, Send } from "lucide-react";
 import { LargeTitle } from "@/components/AppHeader";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const { user, settings } = await requireUserAndSettings();
-  const sites = await prisma.site.findMany({
-    where: { userId: user.id },
-    include: {
-      // 최신 견적 1건만 가격 표시용으로 가져오되, 실제 개수는 _count 로 따로 센다.
-      // (take:1 만 쓰면 estimates.length 가 항상 1 이라 "견적 1건" 버그가 났었음.)
-      estimates: { orderBy: { createdAt: "desc" }, take: 1 },
-      _count: { select: { estimates: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const user = await requireUser();
+  // 설정과 현장 목록은 서로 독립 — 병렬로 (직렬이면 왕복 2번 비용).
+  const [settings, sites] = await Promise.all([
+    getOrCreatePricingSettings(user.id, user.email),
+    prisma.site.findMany({
+      where: { userId: user.id },
+      include: {
+        // 최신 견적 1건만 가격 표시용으로 가져오되, 실제 개수는 _count 로 따로 센다.
+        // (take:1 만 쓰면 estimates.length 가 항상 1 이라 "견적 1건" 버그가 났었음.)
+        estimates: { orderBy: { createdAt: "desc" }, take: 1 },
+        _count: { select: { estimates: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
   return (
     <div className="max-w-lg mx-auto">

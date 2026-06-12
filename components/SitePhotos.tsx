@@ -154,6 +154,8 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
                   <img
                     src={p.url}
                     alt={p.memo ?? ""}
+                    loading="lazy"
+                    decoding="async"
                     className="w-24 h-24 object-cover border border-border/40"
                   />
                 </button>

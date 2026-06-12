@@ -21,7 +21,15 @@ import { prisma } from "./prisma";
  */
 export async function requireUser(redirectTo: string = "/login") {
   const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
+  // getSession() parses the JWT from the request cookie — NO network call.
+  // Safe here because middleware.ts already ran getUser() (full server-side
+  // signature verification + token refresh) on this very request before any
+  // page/route executes; a forged or expired cookie never gets past the
+  // middleware redirect. Calling getUser() again here (the old behavior)
+  // added a second Supabase Auth roundtrip to EVERY page render — one of the
+  // main reasons navigation felt slow (2026-06-12 perf pass).
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
   if (!user) {
     redirect(redirectTo);
   }
@@ -30,11 +38,12 @@ export async function requireUser(redirectTo: string = "/login") {
 
 /** Non-redirecting variant — returns null if not signed in. Use for pages that
  *  show different UI for guests vs. signed-in users (we don't have any yet
- *  but the auth callback uses this). */
+ *  but the auth callback uses this). Cookie-parse only (no network) — see
+ *  requireUser comment for why that's safe behind the middleware. */
 export async function getUser() {
   const supabase = await supabaseServer();
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user ?? null;
 }
 
 /**
