@@ -205,9 +205,27 @@ geometric auto-fill default the user can override**; small consumables
   compare output to actual usage, tune constants + loss until they match.
 - Defaults stay industry-standard so it works without the data; data just sharpens defaults.
 
-**⚠️ OPEN DECISION (must resolve before finalizing 단가표):** does a 마감 unit price
-like `ridgePricePerM`(용마루 m당) **already include bending**, or is the auto 절곡 line
-separate? Confirm with user: all-in unit price (drop 절곡 lines) vs separated (keep).
+**⚠️ OPEN DECISION — 2026-06-12 사용자 확인으로 대부분 해소. 남은 건 절곡 단가 구성 1개.**
+
+**현장 실태 (사용자 확인):** 마감 방식은 자재 타입에 따라 갈린다.
+- **징크250 코루게이티드 (현재 주류):** 용마루·미시·후레싱(현장 용어 "페이샤") 전부 **절곡 제작**.
+  기성품(멀티용마루·미시)을 쓰는 경우도 일부 있음.
+- **기와형 (일반기와/전통기와):** 기성품 사용 — 용마루·하우마끼·대봉·소봉. 단 시골 외엔 수요 감소 추세.
+- 기성품 단가는 카탈로그에 이미 있음: `finishing` (용마루 고전/일자/멀티, 용마루캡),
+  `roofingExtras` (대봉/소봉/양면소봉) — 천보 실단가.
+
+**확정된 설계 방향 — `finishingMethod: "bending" | "ready"` (견적별, 자재 타입으로 default):**
+- default: `materialType ∈ {generalTile, traditionalTile}` → `ready`, 그 외 → `bending`.
+  폼에서 칩 토글로 override 가능 (기와도 절곡으로, 코루게이티드도 기성품으로 가능해야 함).
+- `bending` 모드: 용마루/미시/페이샤 **절곡 라인만** emit — `용마루 마감`(ridgePricePerM) 라인 제거.
+  → 이중 계산 구조적으로 소멸.
+- `ready` 모드: 절곡 라인 suppress, `용마루 (기성품)` m당 라인 유지(ridgePricePerM = 기성품 단가로 재해석,
+  설정 라벨 변경). 하우마끼/대봉/소봉은 카탈로그 상세 모드에서 선택 (현행 유지).
+  개선 옵션: 용마루 개수 = ceil(추정 길이 ÷ 3m 규격) 자동 환산 (`lengthMm` 필드 활용).
+
+**남은 확인 1개 (사장님):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)에 **무엇이 포함**되나 —
+강판 자재값+가공비인지, 가공비만인지(자재는 본 강판 발주에 포함?), 시공 인건비는 별도(인건비 라인)인지.
+이 답이 나와야 절곡 라인의 단가·라벨이 확정되고 단가표 마감 가능.
 
 정확한 범위 (2026-06-12 코드 확인):
 - **실제 이중 계산 가능 지점은 용마루 한 곳뿐** — `용마루 마감` (length × ridgePricePerM) 과
@@ -418,7 +436,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 
 이 순서는 의존성이다. 건너뛰면 되돌아오게 된다.
 
-1. **절곡 포함/별도 확정** — 포스코 사장님 확인. 위 OPEN DECISION 참조. 단가표 확정의 선행 조건.
+1. **절곡 포함/별도 확정** — 2026-06-12 대부분 해소 (자재 타입별 `finishingMethod` 설계 확정 — OPEN DECISION 참조). 남은 것: ① 절곡 단가 구성(자재 포함 여부) 사장님 확인, ② `finishingMethod` 구현.
 2. **calculations.ts 핵심 함수 vitest** — 1번에서 확정된 수식 기준. 대상: `calcTotals`, `calcFromFinalPrice`, `distributeMarginForDisplay` (라운딩 스윕 ±1원, 빈 버킷 spill-over), `buildLineItems` 절곡 경로, `resolveEffectiveLossRate` 모드. **편의 기능보다 먼저** — 이후 작업들이 돈 계산 엔진을 건드릴 때의 안전망.
 3. **마진 분배 비율 스냅샷** — "Margin distribution" 섹션의 외부 감사 fix. 컬럼 3개 + live 폴백. 작음 — 2번 직후 또는 2번과 같이.
 4. **현장 즉시성 묶음** (calc 엔진 안 건드림 — 2번과 병행 가능): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체), ③ 견적 복사.
