@@ -864,36 +864,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           />
                         </div>
                       )}
-                      {/* 용마루 마감 방식 — 절곡 제작(징크250 등 기본) vs 기성품(기와형 기본) */}
-                      {key === "ridge" && scope.ridge && (
-                        <div className="mt-2 ml-3">
-                          <Label className="text-[10px] text-muted-foreground mb-1 block">마감 방식</Label>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {([["bending", "절곡 제작"], ["ready", "기성품"]] as [FinishingMethod, string][]).map(([v, label]) => {
-                              const active = resolveFinishingMethod("ridge", finishingMethods, materialType) === v;
-                              return (
-                                <button
-                                  key={v}
-                                  type="button"
-                                  onClick={() => setFinishingMethod("ridge", v)}
-                                  className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                                    active
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "bg-card text-foreground border-border/60"
-                                  }`}
-                                >
-                                  {label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
-                              ? "기성품 용마루 — 3m 규격 개수로 자동 환산"
-                              : "절곡 단가에 자재비 포함 (절곡 라인 하나로 계산)"}
-                          </p>
-                        </div>
-                      )}
+                      {/* 용마루 마감 방식 칩은 여기 안 둠 — 자재 선택(3번)보다 앞이라
+                          자재 기반 기본값이 의미를 잃고, 위쪽에서 몰래 바뀌는 문제
+                          (2026-06-12 사용자 피드백). 5번 추가 자재 맨 위로 이동. */}
                       {/* 난간 / 두겁 활성 시 — 파라펫 높이 + 난간 둘레 */}
                       {key === "handrail" && scope.handrail && (
                         <div className="mt-3 ml-3 space-y-3 pt-3 border-t border-border/40">
@@ -1340,6 +1313,38 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             {/* ── 부자재 영역 ── */}
             {/* STEP 5: Catalog — 추가 자재가 부자재 중 제일 중요 */}
             <Section icon={<Package size={18} />} title="추가 자재 / 부속" step={5}>
+              {/* 용마루 마감 방식 — 자재 선택(3번) 뒤 + 마감재 카드 바로 위.
+                  자재가 기본값을 정하고(징크250 등→절곡, 기와형→기성품),
+                  사용자가 직접 탭한 선택은 자재를 바꿔도 절대 안 바뀜. */}
+              {constructionType !== "steelWaterproof" && scope.ridge && (
+                <div className="mb-3">
+                  <Label className="text-sm font-semibold text-foreground mb-1.5 block">용마루 마감 방식</Label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {([["bending", "절곡 제작"], ["ready", "기성품"]] as [FinishingMethod, string][]).map(([v, label]) => {
+                      const active = resolveFinishingMethod("ridge", finishingMethods, materialType) === v;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setFinishingMethod("ridge", v)}
+                          className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
+                            active
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-card text-foreground border-border/60"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
+                      ? "기성품 용마루 — 3m 규격 개수로 자동 환산 (아래 마감재 카드와 연동)"
+                      : "절곡 단가에 자재비 포함 — 용마루 절곡 라인으로 자동 계산"}
+                  </p>
+                </div>
+              )}
               <p className="text-[11px] text-muted-foreground -mt-1 mb-2">
                 각 카테고리는 <b>심플</b>(한 줄 자동 계산) 또는 <b>상세</b>(항목별) 모드 토글.
                 심플 = 빠름, 상세 = 정확. 단가는 모두 인라인 수정 가능.
@@ -1360,8 +1365,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     : undefined)
                   : (scope.ridge
                     ? (resolveFinishingMethod("ridge", finishingMethods, materialType) === "ready"
-                      ? "용마루 기성품은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서 용마루를 직접 고르면 자동 라인 대신 적용됩니다."
-                      : "용마루 절곡은 공사 범위의 '마감 방식'에서 자동 계산 중 — 여기서는 추가 기성품·추가 절곡만 선택하세요.")
+                      ? "용마루 기성품은 위 '용마루 마감 방식'에서 자동 계산 중 — 여기서 용마루를 직접 고르면 자동 라인 대신 적용됩니다."
+                      : "용마루 절곡은 위 '용마루 마감 방식'에서 자동 계산 중 — 여기서는 추가 기성품·추가 절곡만 선택하세요.")
                     : undefined)}
               />
             </Section>
