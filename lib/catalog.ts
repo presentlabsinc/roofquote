@@ -88,14 +88,14 @@ export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;
  * a specific estimate can override any category via Estimate.catalogModes.
  */
 export const DEFAULT_CATEGORY_MODES: Record<CatalogCategory, CategoryMode> = {
-  finishing:     { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
+  finishing:     { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 기성품 마감재 쓸 때만 (용마루 기성품은 finishingMethods 자동 라인)
   roofingExtras: { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 한옥/기와 공사만
   gutter:        { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
   fastener:      { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
   substructure:  { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 필요할 때만
   translucent:   { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 채광판 있을 때만
   sealing:       { enabled: false, mode: "simple", simpleType: "perSqm",  simpleValue: 500 },  // 자동 실리콘과 중복 방지 — 기본 off
-  bending:       { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
+  bending:       { enabled: false, mode: "simple", simpleType: "total",   simpleValue: 0 },  // 자동 절곡 라인(용마루/두겁 등) 외 추가 절곡 있을 때만
 };
 
 /** Merge user-defined defaults (from PricingSettings.catalogDefaults) over the built-in defaults. */
