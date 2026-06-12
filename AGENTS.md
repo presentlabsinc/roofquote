@@ -219,8 +219,10 @@ geometric auto-fill default the user can override**; small consumables
   helpers: `lib/types.ts` `defaultFinishingMethod` / `resolveFinishingMethod` / `FINISHING_MEMBER_LABELS`.
 - default: `materialType ∈ {generalTile, traditionalTile}` → 전 부재 `ready`, 그 외 → 전 부재 `bending`.
   사용자가 명시적으로 고른 부재만 JSON 에 저장 — 자재를 바꾸면 안 고른 부재는 default 따라감.
-- 폼 UI: 공사 범위의 scope 토글 아래 세그먼트 칩 — `ridge` 체크 시 "마감 방식" (지붕/옥상지붕),
-  `handrail` 체크 시 "미시 마감 방식" (스틸방수). fascia 는 자동 라인이 아직 없어 UI 미노출 (키만 예약).
+- 폼 UI: 공사 범위의 `ridge` 토글 아래 세그먼트 칩 "마감 방식" (지붕/옥상지붕만).
+  **미시 칩은 폼에 안 둠** — 스틸방수에서 기성품 미시는 거의 안 씀 (사용자 확인 2026-06-12);
+  엔진은 `finishingMethods.mishi` 를 지원하므로 필요 시 칩만 복원. fascia 는 자동 라인이
+  아직 없어 UI 미노출 (키만 예약).
 - 라인 생성 규칙: **부재당 정확히 한 라인.**
   - `bending` → 절곡 라인 (현행 공식, **단가에 자재비 포함**). `용마루 마감`(ridgePricePerM) 라인 삭제됨.
     구 buildingShape 가드도 제거 — 건물형태 없어도 √면적 추정 길이로 절곡 라인 생성.

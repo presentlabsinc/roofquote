@@ -922,33 +922,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                               unit="m"
                             />
                           </div>
-                          <div>
-                            <Label className="text-[10px] text-muted-foreground mb-1 block">미시 마감 방식</Label>
-                            <div className="grid grid-cols-2 gap-1.5">
-                              {([["bending", "절곡 제작"], ["ready", "기성품"]] as [FinishingMethod, string][]).map(([v, label]) => {
-                                const active = resolveFinishingMethod("mishi", finishingMethods, materialType) === v;
-                                return (
-                                  <button
-                                    key={v}
-                                    type="button"
-                                    onClick={() => setFinishingMethod("mishi", v)}
-                                    className={`pressable rounded-xl py-2.5 text-sm font-semibold border ${
-                                      active
-                                        ? "bg-primary text-primary-foreground border-primary"
-                                        : "bg-card text-foreground border-border/60"
-                                    }`}
-                                  >
-                                    {label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {resolveFinishingMethod("mishi", finishingMethods, materialType) === "ready" && (
-                              <p className="text-[10px] text-muted-foreground mt-1">
-                                기성품 미시는 추가 자재 (마감재) 에서 선택하세요 — 자동 절곡 라인 생략
-                              </p>
-                            )}
-                          </div>
+                          {/* 미시 마감 방식 칩은 안 둠 — 스틸방수에서 기성품 미시는 거의 안 씀
+                              (사용자 확인 2026-06-12). 엔진은 finishingMethods.mishi 를 지원하므로
+                              필요해지면 칩만 복원하면 됨. */}
                         </div>
                       )}
                       {/* 옥탑 구조물 활성 시 — 둘레 + 높이 + 문 + 창문 */}
