@@ -130,6 +130,10 @@ model PricingSettings {
   screwLargePerBag        Int  @default(100)    // 스크류 대 봉지당 개수
   screwSmallPerBag        Int  @default(100)    // 스크류 소 봉지당 개수
   siliconePrice           Int  @default(5000)   // 실리콘 1개당 (낱개)
+  // ── 소모품 소비 계수 (자재 자동 추정 — 설정에서 조정 가능) ──
+  screwLargePerSqm        Float @default(2)     // 스크류 대 개/㎡ (강판 면적 기준, 면적 기반)
+  screwSmallPerBendM      Float @default(3.3)   // 스크류 소 개/절곡m (길이 기반)
+  siliconeCoverageM       Float @default(6)     // 실리콘 1개가 커버하는 접합부 길이 m (길이 기반)
   insulationPricePerSqm   Int  @default(15000)  // [LEGACY] 단열재 공통 ㎡당 — 종류별 단가 폴백
   // 단열재 제품별 ㎡당 단가 (VAT포함 추정, 50T 기준). 종류 선택 시 각 단가로 별도 라인.
   insulationPriceEps           Int  @default(4000)   // 스티로폼

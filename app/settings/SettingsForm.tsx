@@ -126,6 +126,9 @@ const DEFAULTS = {
   screwLargePerBag: 100,
   screwSmallPerBag: 100,
   siliconePrice: 5000,
+  screwLargePerSqm: 2,
+  screwSmallPerBendM: 3.3,
+  siliconeCoverageM: 6,
   insulationPricePerSqm: 15000,
   insulationPriceEps: 4000,
   insulationPriceXps: 11000,
@@ -316,6 +319,9 @@ export function SettingsForm({ defaultValues }: Props) {
       screwLargePerBag: (defaultValues as unknown as Record<string, number>).screwLargePerBag ?? 100,
       screwSmallPerBag: (defaultValues as unknown as Record<string, number>).screwSmallPerBag ?? 100,
       siliconePrice: defaultValues.siliconePrice ?? 5000,
+      screwLargePerSqm: (defaultValues as unknown as Record<string, number>).screwLargePerSqm ?? 2,
+      screwSmallPerBendM: (defaultValues as unknown as Record<string, number>).screwSmallPerBendM ?? 3.3,
+      siliconeCoverageM: (defaultValues as unknown as Record<string, number>).siliconeCoverageM ?? 6,
       insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
       insulationPriceEps: (defaultValues as unknown as Record<string, number>).insulationPriceEps ?? 4000,
       insulationPriceXps: (defaultValues as unknown as Record<string, number>).insulationPriceXps ?? 11000,
@@ -809,12 +815,14 @@ function SubstructurePricingCard({
           const pricePerPiece = Number(values[priceKey] ?? 0);
           const piecesPerSqm = Number(values[coeffKey] ?? 0);
           const perSqm = Math.round(pricePerPiece * piecesPerSqm);
+          const piecesPerPyeong = Math.round(piecesPerSqm * 3.3058 * 10) / 10;
+          const perPyeong = Math.round(perSqm * 3.3058);
           return (
             <div key={priceKey} className="px-5 py-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-medium text-foreground">{label} <span className="text-[10px] text-muted-foreground font-normal">{spec}</span></span>
                 <span className="text-[11px] font-semibold text-primary tabular-nums">
-                  {perSqm > 0 ? `→ ㎡당 ${perSqm.toLocaleString("ko-KR")}원` : "값 입력 필요"}
+                  {perSqm > 0 ? `평당 ${piecesPerPyeong}개 · ${perPyeong.toLocaleString("ko-KR")}원` : "값 입력 필요"}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -934,27 +942,51 @@ function ConsumablesPricingCard({
           label="스크류 (대)"
           perPiece={Number(values.screwLargePrice ?? 0)}
           perBag={Number(values.screwLargePerBag ?? 0)}
+          coeff={Number(values.screwLargePerSqm ?? 0)}
+          coeffUnit="개/㎡"
+          areaDriven
           onPerBagChange={(n) => onChange("screwLargePerBag", n)}
           onPerPieceChange={(p) => onChange("screwLargePrice", p)}
+          onCoeffChange={(c) => onChange("screwLargePerSqm", c)}
         />
         <ScrewRow
           label="스크류 (소)"
           perPiece={Number(values.screwSmallPrice ?? 0)}
           perBag={Number(values.screwSmallPerBag ?? 0)}
+          coeff={Number(values.screwSmallPerBendM ?? 0)}
+          coeffUnit="개/m"
           onPerBagChange={(n) => onChange("screwSmallPerBag", n)}
           onPerPieceChange={(p) => onChange("screwSmallPrice", p)}
+          onCoeffChange={(c) => onChange("screwSmallPerBendM", c)}
         />
-        {/* 실리콘 — 낱개 */}
-        <div className="px-5 py-3 flex items-center gap-3">
-          <Label className="flex-1 text-sm text-muted-foreground">실리콘 (개당)</Label>
-          <div className="relative w-36 shrink-0">
-            <Input
-              type="number" inputMode="numeric"
-              value={String(Number(values.siliconePrice ?? 0))}
-              onChange={(e) => onChange("siliconePrice", parseInt(e.target.value) || 0)}
-              className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
-            />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원</span>
+        {/* 실리콘 — 낱개 단가 + 1개 커버 길이 */}
+        <div className="px-5 py-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-medium text-foreground">실리콘</span>
+            <span className="text-[11px] font-semibold text-primary tabular-nums">
+              접합부 {Number(values.siliconeCoverageM ?? 6)}m당 1개
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="number" inputMode="numeric"
+                value={String(Number(values.siliconePrice ?? 0))}
+                onChange={(e) => onChange("siliconePrice", parseInt(e.target.value) || 0)}
+                className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/개</span>
+            </div>
+            <span className="text-xs text-muted-foreground">/</span>
+            <div className="relative flex-1">
+              <Input
+                type="number" inputMode="decimal" step={0.5}
+                value={String(Number(values.siliconeCoverageM ?? 6))}
+                onChange={(e) => onChange("siliconeCoverageM", parseFloat(e.target.value) || 0)}
+                className="h-11 text-right pr-12 tabular-nums rounded-xl"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">m/개</span>
+            </div>
           </div>
         </div>
       </div>
@@ -967,13 +999,17 @@ function ConsumablesPricingCard({
  * 1개당 = round(봉지가격 / 봉지개수) 저장. InsulationRow 와 동일 패턴.
  */
 function ScrewRow({
-  label, perPiece, perBag, onPerBagChange, onPerPieceChange,
+  label, perPiece, perBag, coeff, coeffUnit, areaDriven, onPerBagChange, onPerPieceChange, onCoeffChange,
 }: {
   label: string;
   perPiece: number;
   perBag: number;
+  coeff: number;
+  coeffUnit: string;
+  areaDriven?: boolean;
   onPerBagChange: (n: number) => void;
   onPerPieceChange: (p: number) => void;
+  onCoeffChange: (c: number) => void;
 }) {
   const [bagBuf, setBagBuf] = useState(() => String(perBag > 0 ? Math.round(perPiece * perBag) : 0));
   const syncRef = useRef({ perBag, perPiece });
@@ -996,12 +1032,20 @@ function ScrewRow({
     onPerPieceChange(n > 0 ? Math.round(bp / n) : 0);
   }
 
+  // 소비량 미리보기 — 면적 기반이면 평당 갯수, 길이 기반이면 단위당 그대로.
+  const consumptionNote = coeff > 0
+    ? (areaDriven
+        ? `평당 ${(Math.round(coeff * 3.3058 * 10) / 10).toLocaleString("ko-KR")}개`
+        : `절곡 m당 ${coeff.toLocaleString("ko-KR")}개`)
+    : "";
+
   return (
     <div className="px-5 py-3">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-sm font-medium text-foreground">{label}</span>
         <span className="text-[11px] font-semibold text-primary tabular-nums">
-          {perPiece > 0 ? `→ 1개당 ${perPiece.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+          {perPiece > 0 ? `1개당 ${perPiece.toLocaleString("ko-KR")}원` : "단가 입력 필요"}
+          {consumptionNote && <span className="text-muted-foreground font-normal"> · {consumptionNote}</span>}
         </span>
       </div>
       <div className="flex items-center gap-2">
@@ -1022,6 +1066,15 @@ function ScrewRow({
             className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/봉</span>
+        </div>
+        <div className="relative flex-1">
+          <Input
+            type="number" inputMode="decimal" step={0.1}
+            value={String(coeff)}
+            onChange={(e) => onCoeffChange(parseFloat(e.target.value) || 0)}
+            className="h-11 text-right pr-12 tabular-nums rounded-xl"
+          />
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{coeffUnit}</span>
         </div>
       </div>
     </div>

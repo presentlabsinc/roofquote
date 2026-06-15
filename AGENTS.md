@@ -204,6 +204,14 @@ Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMm
 `PricingSettings.lossRateMode` = `"auto"` (지붕형태별 ROOF_SHAPE_FACTORS lossRate) | `"manual"`
 (항상 defaultLossRate). 강판 + 하지 자재에만 적용 (소모품 제외). 토글 off면 0.
 
+**소비 계수는 설정에서 조정 가능 (2026-06-15) — 자재마다 자연 단위:**
+- 하지: 개/㎡ (목재 1.4, 철재 0.76) + 개당단가. 면적 기반.
+- 스크류 대: `screwLargePerSqm`(개/㎡, 면적 기반). 스크류 소: `screwSmallPerBendM`(개/절곡m, 길이 기반).
+- 실리콘: `siliconeCoverageM`(1개 커버 m, 길이 기반).
+- 설정 카드에 평당 갯수·평당 금액 표시 (업자가 감으로 검증하는 정보 — 사용자 피드백).
+- **driver 2종**: 면적 기반(시공면적 ㎡ — 항상 입력) vs 길이 기반(부재 길이 — 형태에서 기하 추정 + √면적 폴백).
+  길이 기반은 평당으로 우기지 않음(정사각/길쭉 건물이 같은 평수라도 길이 천차). 단가만 설정, 길이는 자동/직접입력.
+
 **Measurement-first hybrid** (the practical philosophy): big-money quantities
 (면적/둘레/용마루·처마·물받이·난간 길이/절곡 m) should be **direct input with a
 geometric auto-fill default the user can override**; small consumables
@@ -479,7 +487,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 4. **현장 즉시성 묶음** (calc 엔진 안 건드림 — 2번과 병행 가능): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체), ③ 견적 복사.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
 6. **단가표 확정 → 프리셋** — 위 "내 단가 프리셋" 노트의 범위 규칙 준수.
-7. **이력 기반 baseline / 포스코 데이터 보정** — 견적 이력이 쌓인 뒤.
+7. **이력 기반 자동 계수 (사용자 요구 — "와 대박" 수준)** — 견적 이력의 `자재수량 ÷ 면적`을 자재별로 집계해 소비 계수를 자동 보정/제안. ML 아님 — 사용자 자기 이력 평균(투명·수렴). **사용자 조건 (2026-06-15): ① 2~3개로 섣불리 발동 금지 — 통계적으로 의미 있는 큰 표본이 쌓였을 때만, ② 단순 평균 넘어 진짜 똑똑한 모델(형태·평수 구간·이상치 제외 등) 목표 — "내가 생각한 그대로 나오네" 수준.** 데이터 임계치 도달 전엔 기하 디폴트 유지. override→기본값 승격(5번)과 한 묶음.
 
 ## Documentation hygiene (you reading this)
 

@@ -84,6 +84,9 @@ const baseSettings = {
   screwLargePerBag: 100,
   screwSmallPerBag: 100,
   siliconePrice: 5000,
+  screwLargePerSqm: 2,
+  screwSmallPerBendM: 3.3,
+  siliconeCoverageM: 6,
   insulationPricePerSqm: 15000,
   insulationPriceEps: 4000,
   insulationPriceXps: 11000,
@@ -426,6 +429,37 @@ describe("buildLineItems — 하지 (개수 × 개당단가 × 계수)", () => {
       pricingOverrides: { substructureWoodPricePerPiece: 4000 },
     }));
     expect(items.find((i) => i.name === "목재 하지")?.unitPrice).toBe(4000);
+  });
+});
+
+describe("buildLineItems — 소모품 계수 (설정값에서 읽음)", () => {
+  // 소모품은 buildingShape 있을 때만 자동 생성.
+  it("스크류 대 = 면적 × screwLargePerSqm (설정값)", () => {
+    const items = buildLineItems(baseInput({
+      buildingShape: "rectangle",
+      settings: { ...baseSettings, screwLargePerSqm: 5 } as typeof baseSettings,
+    }));
+    // 100㎡ × 5 = 500개
+    expect(items.find((i) => i.name === "스크류 (대)")?.quantity).toBe(500);
+  });
+
+  it("실리콘 = ceil(접합부 ÷ siliconeCoverageM)", () => {
+    // 절곡 라인이 있어야 접합부 길이가 생김 — ridge bending (8m) 사용
+    const items = buildLineItems(baseInput({
+      buildingShape: "rectangle",
+      scope: { ridge: true },
+      settings: { ...baseSettings, siliconeCoverageM: 4 } as typeof baseSettings,
+    }));
+    const silicone = items.find((i) => i.name === "실리콘");
+    // 용마루 절곡 8m ÷ 4 = 2개 (다른 절곡 없으면)
+    expect(silicone).toBeDefined();
+    expect(silicone!.quantity).toBeGreaterThan(0);
+  });
+
+  it("buildingShape 없으면 소모품 라인 없음 (현행 게이트 유지)", () => {
+    const items = buildLineItems(baseInput());
+    expect(items.find((i) => i.name.startsWith("스크류"))).toBeUndefined();
+    expect(items.find((i) => i.name === "실리콘")).toBeUndefined();
   });
 });
 

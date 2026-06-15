@@ -849,8 +849,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     // 강판 면적 — 메인 자재 라인 합산 (시공면적 × 로스율 반영 결과). 단순 areaM2 로 근사.
     const sheetArea = areaM2 * (applyLossRate && lossRate > 0 ? 1 + lossRate : 1);
 
-    // 스크류 대 — 강판 1㎡당 약 2개
-    const screwLargeQty = baseline?.screwLarge ?? Math.round(sheetArea * 2);
+    // 스크류 대 — 강판 면적 × (개/㎡ 계수, 설정값). 면적 기반.
+    const screwLargeQty = baseline?.screwLarge ?? Math.round(sheetArea * (settings.screwLargePerSqm ?? 2));
     if (screwLargeQty > 0 && settings.screwLargePrice > 0) {
       items.push({
         category: "material", name: "스크류 (대)", quantity: screwLargeQty, unit: "개",
@@ -864,7 +864,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     const bendingLengthSum = items
       .filter((i) => i.unit === "m" && /절곡/.test(i.name))
       .reduce((s, i) => s + i.quantity, 0);
-    const screwSmallQty = baseline?.screwSmall ?? Math.round(bendingLengthSum * 3.3);
+    const screwSmallQty = baseline?.screwSmall ?? Math.round(bendingLengthSum * (settings.screwSmallPerBendM ?? 3.3));
     if (screwSmallQty > 0 && settings.screwSmallPrice > 0) {
       items.push({
         category: "material", name: "스크류 (소)", quantity: screwSmallQty, unit: "개",
@@ -874,9 +874,10 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       });
     }
 
-    // 실리콘 — 접합부 총 길이 / 6m 당 1개 (올림)
+    // 실리콘 — 접합부 총 길이 ÷ (1개 커버 길이 m, 설정값), 올림. 길이 기반.
     const jointLength = bendingLengthSum + (gutterLengthM || 0) + (stainlessDrainLengthM || 0);
-    const siliconeQty = baseline?.siliconeUnits ?? Math.ceil(jointLength / 6);
+    const siliconeCoverM = settings.siliconeCoverageM && settings.siliconeCoverageM > 0 ? settings.siliconeCoverageM : 6;
+    const siliconeQty = baseline?.siliconeUnits ?? Math.ceil(jointLength / siliconeCoverM);
     if (siliconeQty > 0 && settings.siliconePrice > 0) {
       items.push({
         category: "material", name: "실리콘", quantity: siliconeQty, unit: "개",
