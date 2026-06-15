@@ -85,6 +85,10 @@ const DEFAULTS = {
   substructureMode: "wood",
   substructureWoodPricePerSqm: 30000,
   substructureSteelPricePerSqm: 40000,
+  substructureWoodPricePerPiece: 3333,
+  substructureWoodPiecesPerSqm: 1.4,
+  substructureSteelPricePerPiece: 18000,
+  substructureSteelPiecesPerSqm: 0.76,
   drainHolePrice: 200000,
   capBendingPricePerM: 5000,
   endCapPrice: 3500,
@@ -180,13 +184,12 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
   //   ① 강판 자재별 단가 (SteelSheetPricingCard, PE폼 포함)
   //   ② 부자재 단가 (AccessoryPricingCard — 용마루/물받이 규격환산 + 처마/엔드캡 단순단가 통합)
   {
+    // items 비움 — 하지는 SubstructurePricingCard(개당단가 × 개/㎡ 환산)로 렌더.
+    // 이 섹션은 단가표 tier 의 첫 항목이라 tier 구분선 + 강판/부자재/하지 카드의 앵커.
     section: "하지 작업 단가",
     emoji: "🪵",
     tier: "price",
-    items: [
-      { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
-      { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
-    ],
+    items: [],
   },
   // 절곡(단가+부재 넓이) + 소모품(스크류+실리콘) + 단열재는 전용 카드로 "스틸방수 단가" 섹션 직전 렌더 (render 참고).
   {
@@ -278,6 +281,10 @@ export function SettingsForm({ defaultValues }: Props) {
       substructureMode: defaultValues.substructureMode,
       substructureWoodPricePerSqm: defaultValues.substructureWoodPricePerSqm,
       substructureSteelPricePerSqm: defaultValues.substructureSteelPricePerSqm,
+      substructureWoodPricePerPiece: (defaultValues as unknown as Record<string, number>).substructureWoodPricePerPiece ?? 3333,
+      substructureWoodPiecesPerSqm: (defaultValues as unknown as Record<string, number>).substructureWoodPiecesPerSqm ?? 1.4,
+      substructureSteelPricePerPiece: (defaultValues as unknown as Record<string, number>).substructureSteelPricePerPiece ?? 18000,
+      substructureSteelPiecesPerSqm: (defaultValues as unknown as Record<string, number>).substructureSteelPiecesPerSqm ?? 0.76,
       drainHolePrice: defaultValues.drainHolePrice,
       capBendingPricePerM: defaultValues.capBendingPricePerM,
       endCapPrice: defaultValues.endCapPrice,
@@ -411,6 +418,13 @@ export function SettingsForm({ defaultValues }: Props) {
               onLenChange={setAccLen}
             />
           )}
+          {section === "하지 작업 단가" && (
+            <SubstructurePricingCard
+              values={values}
+              onChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
+            />
+          )}
+          {items.length > 0 && (
           <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
             <div className="px-5 pt-4 pb-2 flex items-center gap-2">
               <span className="text-lg">{emoji}</span>
@@ -456,6 +470,7 @@ export function SettingsForm({ defaultValues }: Props) {
               })}
             </div>
           </div>
+          )}
           {/* 회사 정보 직속 — 직인 + 견적서 안내 문구 */}
           {section === "회사 정보" && (
             <SealAndNoticeCard
@@ -759,6 +774,73 @@ function AccessoryPricingCard({
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 하지 단가 카드 — 개당 매입단가 × 개/㎡ 계수 → ㎡당 환산 표시.
+ * 옛 "㎡당 한 덩어리" 대신, 사장님이 아는 두 숫자(개당 가격 + 격자 기준 개수)로 쪼갬.
+ *   목재 40×50×3.6m 낙송 (30×60 격자 → 1.4개/㎡), 철재 아연각관 40×40×6m (30×80 → 0.76개/㎡).
+ * 견적 결과도 "목재 X개" 발주 수량으로 떨어짐.
+ */
+function SubstructurePricingCard({
+  values, onChange,
+}: {
+  values: Record<string, number | string | boolean>;
+  onChange: (key: string, v: number) => void;
+}) {
+  const ROWS: { priceKey: string; coeffKey: string; label: string; spec: string }[] = [
+    { priceKey: "substructureWoodPricePerPiece",  coeffKey: "substructureWoodPiecesPerSqm",  label: "목재 하지", spec: "40×50×3.6m 낙송" },
+    { priceKey: "substructureSteelPricePerPiece", coeffKey: "substructureSteelPiecesPerSqm", label: "철재 하지", spec: "아연각관 40×40×6m" },
+  ];
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">🪵</span>
+        <h2 className="font-semibold text-foreground">하지 작업 단가</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        개당 매입단가 × ㎡당 개수(격자 기준) → ㎡당 환산. 견적엔 개수로 떨어짐.
+      </p>
+      <div className="divide-y divide-border/40">
+        {ROWS.map(({ priceKey, coeffKey, label, spec }) => {
+          const pricePerPiece = Number(values[priceKey] ?? 0);
+          const piecesPerSqm = Number(values[coeffKey] ?? 0);
+          const perSqm = Math.round(pricePerPiece * piecesPerSqm);
+          return (
+            <div key={priceKey} className="px-5 py-3">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-sm font-medium text-foreground">{label} <span className="text-[10px] text-muted-foreground font-normal">{spec}</span></span>
+                <span className="text-[11px] font-semibold text-primary tabular-nums">
+                  {perSqm > 0 ? `→ ㎡당 ${perSqm.toLocaleString("ko-KR")}원` : "값 입력 필요"}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="numeric"
+                    value={String(pricePerPiece)}
+                    onChange={(e) => onChange(priceKey, parseInt(e.target.value) || 0)}
+                    className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/개</span>
+                </div>
+                <span className="text-xs text-muted-foreground">×</span>
+                <div className="relative flex-1">
+                  <Input
+                    type="number" inputMode="decimal" step={0.1}
+                    value={String(piecesPerSqm)}
+                    onChange={(e) => onChange(coeffKey, parseFloat(e.target.value) || 0)}
+                    className="h-11 text-right pr-12 font-semibold tabular-nums rounded-xl"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">개/㎡</span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

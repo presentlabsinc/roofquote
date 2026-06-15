@@ -79,8 +79,17 @@ model PricingSettings {
 
   // 하지작업 단가
   substructureMode             String @default("wood")  // 'wood' | 'steel' — 새 견적 기본값
+  // [LEGACY] ㎡당 한 덩어리 단가 — 개수×단가×계수 모델로 대체(2026-06-12). 구버전 호환용으로만 유지.
   substructureWoodPricePerSqm  Int    @default(30000)
   substructureSteelPricePerSqm Int    @default(40000)
+  // 개수×단가×계수 모델 — 하지 자재비 = 시공면적 × (개/㎡ 계수) × (개당 매입단가).
+  //   목재 40×50×3.6m 낙송: 한 단 6개 2만원 → 3,333원/개. 30×60 격자 → 1.4개/㎡.
+  //   철재 아연각관 40×40×6m(1.4t): 18,000원/개. 30×80 격자 → 0.76개/㎡.
+  // 단가는 매입원가(마진 0) — 부풀림은 마진 레이어가 담당.
+  substructureWoodPricePerPiece  Int   @default(3333)
+  substructureWoodPiecesPerSqm   Float @default(1.4)
+  substructureSteelPricePerPiece Int   @default(18000)
+  substructureSteelPiecesPerSqm  Float @default(0.76)
 
   // 스틸방수 전용
   drainHolePrice               Int    @default(200000)  // 새 배수구 타공 1개당

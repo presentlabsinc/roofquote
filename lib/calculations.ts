@@ -566,23 +566,27 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
-  // 하지작업 (substructure) — wood or steel, priced per ㎡ of construction area.
-  // 강판과 동일하게 자재 로스율 적용 (자투리 + 절단 낭비).
+  // 하지작업 (substructure) — 개수 × 개당단가 (2026-06-12 개수×계수 모델).
+  //   하지 자재 = 시공면적 × (개/㎡ 계수) × (개당 매입단가), 개수는 올림(발주 단위).
+  //   계수는 격자 간격에서 나온 소비 규칙이라 로스율 미적용 (이미 실사용분 반영).
+  //   단가 = 매입원가 — 고객용 부풀림은 마진 분배가 담당.
   if (substructureType) {
-    const sUnit = substructureType === "wood"
-      ? settings.substructureWoodPricePerSqm
-      : settings.substructureSteelPricePerSqm;
-    const sLabel = substructureType === "wood" ? "목재 하지" : "철재 하지";
-    const sLossMult = applyLossRate && lossRate > 0 ? 1 + lossRate : 1;
-    const sEffectiveArea = Math.round(areaM2 * sLossMult * 100) / 100;
-    const sLossNote = applyLossRate && lossRate > 0
-      ? ` (로스율 ${Math.round(lossRate * 100)}% 포함)`
-      : "";
-    items.push({
-      category: "material", name: `${sLabel}${sLossNote}`, quantity: sEffectiveArea, unit: "㎡",
-      unitPrice: sUnit, total: Math.round(sEffectiveArea * sUnit),
-      sortOrder: order++,
-    });
+    const wood = substructureType === "wood";
+    const piecesPerSqm = wood
+      ? settings.substructureWoodPiecesPerSqm
+      : settings.substructureSteelPiecesPerSqm;
+    const pricePerPiece = wood
+      ? settings.substructureWoodPricePerPiece
+      : settings.substructureSteelPricePerPiece;
+    const sLabel = wood ? "목재 하지" : "철재 하지";
+    const pieces = Math.max(0, Math.ceil(areaM2 * piecesPerSqm));
+    if (pieces > 0 && pricePerPiece > 0) {
+      items.push({
+        category: "material", name: sLabel, quantity: pieces, unit: "개",
+        unitPrice: pricePerPiece, total: pieces * pricePerPiece,
+        sortOrder: order++,
+      });
+    }
   }
 
   // Removal — roof only

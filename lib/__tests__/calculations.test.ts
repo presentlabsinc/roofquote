@@ -59,6 +59,10 @@ const baseSettings = {
   substructureMode: "wood",
   substructureWoodPricePerSqm: 30000,
   substructureSteelPricePerSqm: 40000,
+  substructureWoodPricePerPiece: 3333,
+  substructureWoodPiecesPerSqm: 1.4,
+  substructureSteelPricePerPiece: 18000,
+  substructureSteelPiecesPerSqm: 0.76,
   drainHolePrice: 200000,
   stainlessDrainPricePerM: 50000,
   capBendingPricePerM: 5000,
@@ -379,6 +383,49 @@ describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이
     const withGutter = buildLineItems(baseInput({ gutterMode: "front", gutterLengthM: 10 }));
     const line = withGutter.find((i) => i.name.includes("물받이 부속"));
     expect(line?.total).toBe(20_000); // 10m × 2,000원
+  });
+});
+
+describe("buildLineItems — 하지 (개수 × 개당단가 × 계수)", () => {
+  it("목재: 100㎡ × 1.4개/㎡ = 140개 × 3,333원", () => {
+    const items = buildLineItems(baseInput({ substructureType: "wood" }));
+    const sub = items.find((i) => i.name === "목재 하지");
+    expect(sub).toBeDefined();
+    expect(sub?.quantity).toBe(140); // ceil(100 × 1.4)
+    expect(sub?.unit).toBe("개");
+    expect(sub?.unitPrice).toBe(3333);
+    expect(sub?.total).toBe(140 * 3333);
+  });
+
+  it("철재: 100㎡ × 0.76개/㎡ = 76개 × 18,000원", () => {
+    const items = buildLineItems(baseInput({ substructureType: "steel" }));
+    const sub = items.find((i) => i.name === "철재 하지");
+    expect(sub?.quantity).toBe(76); // ceil(100 × 0.76)
+    expect(sub?.unitPrice).toBe(18000);
+    expect(sub?.total).toBe(76 * 18000);
+  });
+
+  it("개수는 올림 (발주 단위) — 50㎡ × 1.4 = 70개", () => {
+    const items = buildLineItems(baseInput({ areaM2: 50, substructureType: "wood" }));
+    expect(items.find((i) => i.name === "목재 하지")?.quantity).toBe(70);
+  });
+
+  it("로스율은 하지 개수에 영향 없음 (계수가 곧 소비 규칙)", () => {
+    const withLoss = buildLineItems(baseInput({ substructureType: "wood", applyLossRate: true, lossRate: 0.2 }));
+    expect(withLoss.find((i) => i.name === "목재 하지")?.quantity).toBe(140); // 로스 무관
+  });
+
+  it("substructureType 없으면 하지 라인 없음", () => {
+    const items = buildLineItems(baseInput());
+    expect(items.find((i) => i.name.includes("하지"))).toBeUndefined();
+  });
+
+  it("override 로 개당 단가 변경 시 반영", () => {
+    const items = buildLineItems(baseInput({
+      substructureType: "wood",
+      pricingOverrides: { substructureWoodPricePerPiece: 4000 },
+    }));
+    expect(items.find((i) => i.name === "목재 하지")?.unitPrice).toBe(4000);
   });
 });
 

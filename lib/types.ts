@@ -286,8 +286,12 @@ export interface PricingOverrides {
   baseTransportCost?: number;
   mealCostPerPersonMeal?: number;
   lodgingCostPerPersonNight?: number;
+  /** [LEGACY] ㎡당 하지 — 개당 단가 모델로 대체. 구 견적 JSON 호환용. */
   substructureWoodPricePerSqm?: number;
   substructureSteelPricePerSqm?: number;
+  /** 하지 개당 매입단가 (목재/철재) — 견적별 override. 계수(개/㎡)는 설정 레벨. */
+  substructureWoodPricePerPiece?: number;
+  substructureSteelPricePerPiece?: number;
   drainHolePrice?: number;
   capBendingPricePerM?: number;
   stainlessDrainPricePerM?: number;
@@ -313,8 +317,8 @@ export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { k
     group: "하지 / 스틸방수",
     icon: "🪵",
     fields: [
-      { key: "substructureWoodPricePerSqm", label: "목재 하지 ㎡당", unit: "원" },
-      { key: "substructureSteelPricePerSqm", label: "철재 하지 ㎡당", unit: "원" },
+      { key: "substructureWoodPricePerPiece", label: "목재 하지 (개당)", unit: "원" },
+      { key: "substructureSteelPricePerPiece", label: "철재 하지 (개당)", unit: "원" },
       { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
       { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
     ],
