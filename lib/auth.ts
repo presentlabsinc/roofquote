@@ -104,8 +104,8 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       defaultLossRate: 0.15,
       useLossRateByDefault: false,
       baseTransportCost: 250000,
-      mealCostPerPersonMeal: 10000,
-      lodgingCostPerPersonNight: 50000,
+      mealCostPerPersonMeal: 20000,   // 점심 1만 + 음료·간식 1만 (1인 1일)
+      lodgingCostPerPersonNight: 35000, // 2인실 7만 ÷ 2 (1인 1박)
       defaultMarginRate: 0.33,
       vatIncludedByDefault: true,
       estimateNumberStart: 1,

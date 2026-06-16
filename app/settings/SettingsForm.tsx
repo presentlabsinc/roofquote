@@ -104,8 +104,10 @@ const DEFAULTS = {
   marginProfitRatio: 0.25,
   useLossRateByDefault: false,
   baseTransportCost: 250000,
-  mealCostPerPersonMeal: 10000,
-  lodgingCostPerPersonNight: 50000,
+  mealCostPerPersonMeal: 20000,
+  lodgingCostPerPersonNight: 35000,
+  teamExpenseAmount: 150000,
+  insuranceRateOfLabor: 0.05,
   defaultMarginRate: 0.33,
   vatIncludedByDefault: true,
   // 로스율 적용 모드 — "auto" (지붕형태별 자동) | "manual" (디폴트값 항상)
@@ -212,8 +214,11 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     tier: "price",
     items: [
       { key: "dailyWage", label: "1인 1일 인건비", unit: "원" },
-      { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
-      { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
+      { key: "mealCostPerPersonMeal", label: "식대·간식 (1인 1일)", unit: "원" },
+      { key: "lodgingCostPerPersonNight", label: "숙박 (1인 1박)", unit: "원" },
+      // 경비 — 팀 경비(잡비) + 제경비(산재·고용보험, 노무비 대비 %).
+      { key: "teamExpenseAmount", label: "팀 경비 (잡비)", unit: "원" },
+      { key: "insuranceRateOfLabor", label: "제경비 (노무비 대비)", unit: "%", step: 0.01, pct: true },
       // 철거는 인건이라 노무비. (폐기물은 트럭 운반이라 장비·운송으로.)
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },
       // 처마/덴조 — 건당 시공 (대부분 인건). 후레싱 등 자재는 별도.
@@ -299,6 +304,8 @@ export function SettingsForm({ defaultValues }: Props) {
       baseTransportCost: defaultValues.baseTransportCost,
       mealCostPerPersonMeal: defaultValues.mealCostPerPersonMeal,
       lodgingCostPerPersonNight: defaultValues.lodgingCostPerPersonNight,
+      teamExpenseAmount: (defaultValues as unknown as Record<string, number>).teamExpenseAmount ?? 150000,
+      insuranceRateOfLabor: (defaultValues as unknown as Record<string, number>).insuranceRateOfLabor ?? 0.05,
       defaultMarginRate: defaultValues.defaultMarginRate,
       vatIncludedByDefault: defaultValues.vatIncludedByDefault,
       estimateNumberStart: defaultValues.estimateNumberStart ?? 1,

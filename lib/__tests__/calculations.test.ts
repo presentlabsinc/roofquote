@@ -95,8 +95,10 @@ const baseSettings = {
   insulationUnitAreas: {},
   baselineData: null,
   catalogDefaults: {},
-  mealCostPerPersonMeal: 10000,
-  lodgingCostPerPersonNight: 50000,
+  mealCostPerPersonMeal: 20000,
+  lodgingCostPerPersonNight: 35000,
+  teamExpenseAmount: 150000,
+  insuranceRateOfLabor: 0.05,
   defaultMarginRate: 0.25,
   vatIncludedByDefault: false,
   marginMaterialRatio: 0.5,
@@ -460,6 +462,50 @@ describe("buildLineItems — 소모품 계수 (설정값에서 읽음)", () => {
     const items = buildLineItems(baseInput());
     expect(items.find((i) => i.name.startsWith("스크류"))).toBeUndefined();
     expect(items.find((i) => i.name === "실리콘")).toBeUndefined();
+  });
+});
+
+describe("buildLineItems — 부대비용 (경비 토글)", () => {
+  // baseInput: workerCount 3, workDays 2 → 인건비 1,800,000.
+
+  it("제경비(산재·고용) 기본 ON = 노무비 × 5%", () => {
+    const items = buildLineItems(baseInput());
+    const ins = items.find((i) => i.name.startsWith("제경비"));
+    expect(ins).toBeDefined();
+    expect(ins?.total).toBe(90000); // 1,800,000 × 0.05
+  });
+
+  it("제경비 OFF → 라인 없음", () => {
+    const items = buildLineItems(baseInput({ includeInsurance: false }));
+    expect(items.find((i) => i.name.startsWith("제경비"))).toBeUndefined();
+  });
+
+  it("숙박 기본 OFF → 다일 작업이라도 숙박 없음", () => {
+    const items = buildLineItems(baseInput({ workDays: 3 }));
+    expect(items.find((i) => i.name === "숙박비")).toBeUndefined();
+  });
+
+  it("숙박 ON + 다일 → 숙박 라인 (인원 × 박수 × 35,000)", () => {
+    const items = buildLineItems(baseInput({ workDays: 3, includeLodging: true }));
+    const lodging = items.find((i) => i.name === "숙박비");
+    // 3명 × floor(3-1)=2박 × 35,000 = 210,000
+    expect(lodging?.total).toBe(210000);
+  });
+
+  it("팀 경비 ON → 150,000 라인", () => {
+    const items = buildLineItems(baseInput({ includeTeamExpense: true }));
+    expect(items.find((i) => i.name === "팀 경비")?.total).toBe(150000);
+  });
+
+  it("팀 경비 OFF (기본) → 라인 없음", () => {
+    const items = buildLineItems(baseInput());
+    expect(items.find((i) => i.name === "팀 경비")).toBeUndefined();
+  });
+
+  it("식비는 항상 — 인원 × 일수 × 20,000", () => {
+    const items = buildLineItems(baseInput());
+    const meal = items.find((i) => i.name === "식비");
+    expect(meal?.total).toBe(120000); // 3 × 2 × 20,000
   });
 });
 

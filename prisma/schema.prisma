@@ -153,8 +153,13 @@ model PricingSettings {
   // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
   // When null/empty, defaults from lib/catalog.ts DEFAULT_CATEGORY_MODES apply.
   catalogDefaults              Json   @default("{}")
-  mealCostPerPersonMeal     Int   // 1인 1식 식비
-  lodgingCostPerPersonNight Int   // 1인 1박 숙박비
+  mealCostPerPersonMeal     Int   // 1인 1일 식대·간식 (점심 1만 + 음료/간식 1만 ≈ 20,000)
+  lodgingCostPerPersonNight Int   // 1인 1박 숙박비 (2인실 7만 ÷ 2 ≈ 35,000)
+  // 팀 경비(잡비) — 현장 경비 명목 팀 지급 lump sum. includeTeamExpense 토글 시 적용.
+  teamExpenseAmount         Int   @default(150000)
+  // 제경비(산재 3.73% + 고용 1.01% ≈ 4.74% → 5% 반올림) — 노무비(인건비) 대비 비율. includeInsurance 토글 시 적용.
+  // 건강/연금/퇴직은 정규직만이라 제외, 안전관리비는 대형 공사라 제외 (소규모 = 산재+고용만).
+  insuranceRateOfLabor      Float @default(0.05)
 
   // Defaults
   defaultMarginRate    Float   // e.g. 0.25 = 25%
@@ -249,6 +254,14 @@ model Estimate {
 
   // 폐기물 — 트럭당 단가 × 차 수
   wasteTruckCount   Int     @default(1)
+
+  // 부대비용(경비) 토글 — 운송·식비는 항상, 숙박·팀경비는 옵션.
+  /** 숙박비 포함 — 원거리 현장만. 기본 false (로컬은 숙박 없음). 켜면 작업일수 기반 박수. */
+  includeLodging     Boolean @default(false)
+  /** 팀 경비(잡비) 포함 — 현장 경비 명목 팀 지급. 켜면 settings.teamExpenseAmount 라인. */
+  includeTeamExpense Boolean @default(false)
+  /** 제경비(산재·고용보험) 포함 — 노무비 × insuranceRateOfLabor. 기본 true (일용직에도 적용). */
+  includeInsurance   Boolean @default(true)
 
   // 물받이 모드
   gutterMode        String? // null/'none' | 'full' | 'front' | 'back'

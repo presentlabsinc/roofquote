@@ -286,6 +286,12 @@ geometric auto-fill default the user can override**; small consumables
 - **난간 / 두겁** (steelWaterproof) — `handrail` 토글 시 `SCOPE_FORCES`로 `cap` 자동 ON. 토글 아래 **파라펫 높이 + 난간 둘레** 직접 입력. 두겁/미시/파라펫강판 = 난간(+옥탑) 둘레 기반. (옛 `capLengthM` 직접입력은 deprecated — 둘레로 계산.)
 - **옥탑 구조물** (steelWaterproof) — `rooftopStructure` 토글 시 아래 **둘레 / 높이(`rooftopStructureHeightCm`) / 출입문 수 / 창문 수** 입력. 옥탑 외벽 강판 + 문/창 트림 절곡 생성.
 - **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). **개수 × 개당단가 모델 (2026-06-15)**: 자재 = `시공면적 × 개/㎡ 계수 × 개당 매입단가`, 개수 올림(발주 단위), 로스율 미적용(계수가 곧 소비 규칙). 목재 30×60 격자 → 1.4개/㎡ × 3,333원, 철재 30×80 → 0.76개/㎡ × 18,000원. 설정 `SubstructurePricingCard`(개당단가 × 개/㎡ → ㎡당 환산). 단가는 매입원가 — 고객 부풀림은 마진 분배. 레거시 `substructureWoodPricePerSqm`/`Steel` 컬럼은 미사용(호환 유지). 목재=붙임, 철재=띄움.
+- **부대비용 (경비) — 2026-06-16:** 운송·식대는 항상, 숙박·팀경비·제경비는 토글 (`Estimate.includeLodging`/`includeTeamExpense`/`includeInsurance`, 폼 노무비 섹션).
+  - **식대·간식**: 인원×일수×`mealCostPerPersonMeal`(기본 20,000 = 점심1만+음료/간식1만). 항상.
+  - **숙박**: `includeLodging`(기본 OFF — 로컬은 숙박 없음). ON+다일이면 인원×박수×`lodgingCostPerPersonNight`(기본 35,000 = 2인실 7만÷2).
+  - **팀 경비(잡비)**: `includeTeamExpense`(기본 OFF). `teamExpenseAmount`(기본 150,000) lump sum, 인력 직접비. category "other".
+  - **제경비(산재·고용보험)**: `includeInsurance`(기본 ON). 노무비(labor category 합)×`insuranceRateOfLabor`(기본 0.05 = 산재3.73+고용1.01≈4.74 반올림). 일용직에도 산재·고용은 적용 → 소규모도 포함. 건강/연금/퇴직(정규직)·안전관리비(대형)는 제외(샘플 견적이 그렇게 함). category "other".
+  - **회계 구분**: 운송·식대·숙박·팀경비·제경비 = 모두 "경비(기타경비)", 노무비 아님. 회사 일반관리비(overhead)는 마진에 포함(별도 분리 안 함 — 대형 공사 아닌 소규모 대상이라 단순 유지).
 - **폐기물** uses `wasteTruckCount` (defaults 1). Cost = `wasteDisposalCost × wasteTruckCount` (per truck, 기본 ₩1,000,000).
 - **비계** = `area × days × scaffoldPricePerSqmDay`. area 0 이면 legacy `scaffoldDailyCost × days`.
 - **새 배수구 타공 (drainHole)** scope flag + count stepper. Cost = `drainHoleCount × drainHolePrice`.

@@ -377,6 +377,12 @@ export interface BuildLineItemsInput {
   insulationTypes?: InsulationType[] | string[];
   /** PE폼 부착 (강판 ㎡당 추가 단가) */
   hasPeFoam?: boolean;
+  /** 숙박비 포함 (원거리 현장). 기본 false. */
+  includeLodging?: boolean;
+  /** 팀 경비(잡비) 포함. 기본 false. */
+  includeTeamExpense?: boolean;
+  /** 제경비(산재·고용보험) 포함. 기본 true. */
+  includeInsurance?: boolean;
 }
 
 export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
@@ -401,6 +407,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     downspoutCount = 0,
     hasInsulation = false, insulationTypes = [],
     hasPeFoam = false,
+    includeLodging = false, includeTeamExpense = false, includeInsurance = true,
   } = input;
 
   // Apply per-estimate pricing overrides on top of the live PricingSettings.
@@ -832,8 +839,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     sortOrder: order++,
   });
 
-  // Lodging
-  if (workDays > 1) {
+  // Lodging — 원거리 현장만 (includeLodging 토글). 로컬은 숙박 없음.
+  if (includeLodging && workDays > 1) {
     const nights = Math.floor(workDays - 1);
     const lodgingQty = workerCount * nights;
     items.push({
@@ -841,6 +848,31 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       unitPrice: settings.lodgingCostPerPersonNight, total: Math.round(lodgingQty * settings.lodgingCostPerPersonNight),
       sortOrder: order++,
     });
+  }
+
+  // 팀 경비(잡비) — 옵션. 현장 경비 명목 팀 지급 lump sum.
+  if (includeTeamExpense && settings.teamExpenseAmount > 0) {
+    items.push({
+      category: "other", name: "팀 경비", quantity: 1, unit: "식",
+      unitPrice: settings.teamExpenseAmount, total: settings.teamExpenseAmount,
+      sortOrder: order++,
+    });
+  }
+
+  // 제경비(산재·고용보험) — 노무비(인건비) × 비율. 일용직에도 산재·고용은 적용.
+  // 기본 ON (샘플 견적이 항상 포함). 건강/연금/퇴직(정규직)·안전관리비(대형)는 제외.
+  if (includeInsurance && settings.insuranceRateOfLabor > 0) {
+    const laborTotal = items
+      .filter((i) => i.category === "labor")
+      .reduce((s, i) => s + i.total, 0);
+    const insurance = Math.round(laborTotal * settings.insuranceRateOfLabor);
+    if (insurance > 0) {
+      items.push({
+        category: "other", name: "제경비 (산재·고용보험)", quantity: 1, unit: "식",
+        unitPrice: insurance, total: insurance,
+        sortOrder: order++,
+      });
+    }
   }
 
   // ── 소모품 자동 생성 (스크류 / 실리콘 / 단열재) ──

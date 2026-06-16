@@ -305,6 +305,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [workerCount, setWorkerCount] = useState(existing ? String(existing.workerCount) : String(settings.defaultWorkerCount));
   const [workDays, setWorkDays] = useState(existing ? String(existing.workDays) : "2");
 
+  // 부대비용(경비) 토글 — 숙박(원거리만)/팀경비는 기본 OFF, 제경비(보험)는 기본 ON.
+  const ex = existing as unknown as { includeLodging?: boolean; includeTeamExpense?: boolean; includeInsurance?: boolean } | undefined;
+  const [includeLodging, setIncludeLodging] = useState(ex?.includeLodging ?? false);
+  const [includeTeamExpense, setIncludeTeamExpense] = useState(ex?.includeTeamExpense ?? false);
+  const [includeInsurance, setIncludeInsurance] = useState(ex?.includeInsurance ?? true);
+
   // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡)
   const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>(
     (existing?.catalogSelections as unknown as CatalogSelection[]) ?? [],
@@ -522,6 +528,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       insulationNote: insulationTypes.includes("other") ? insulationNote : null,
       roofShapeNote: roofShape === "other" ? roofShapeNote : null,
       hasPeFoam,
+      includeLodging,
+      includeTeamExpense,
+      includeInsurance,
     };
 
     setSaving(true);
@@ -1488,6 +1497,28 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   min={1} max={30} step={1}
                   unit="명"
                 />
+                {/* 부대비용(경비) — 운송·식대는 자동 포함, 숙박·팀경비·제경비는 토글 */}
+                <div className="pt-1 space-y-2">
+                  <Label className="text-[11px] text-muted-foreground">부대비용 (경비)</Label>
+                  {([
+                    { on: includeInsurance, set: setIncludeInsurance, label: "제경비 (산재·고용보험)", hint: `노무비 × ${Math.round((settings.insuranceRateOfLabor ?? 0.047) * 1000) / 10}%` },
+                    { on: includeLodging, set: setIncludeLodging, label: "숙박비 (원거리 현장)", hint: `1박 ${(settings.lodgingCostPerPersonNight ?? 35000).toLocaleString("ko-KR")}원/인` },
+                    { on: includeTeamExpense, set: setIncludeTeamExpense, label: "팀 경비 (잡비)", hint: `${(settings.teamExpenseAmount ?? 150000).toLocaleString("ko-KR")}원` },
+                  ] as const).map((row) => (
+                    <button
+                      key={row.label}
+                      type="button"
+                      onClick={() => row.set(!row.on)}
+                      className="w-full flex items-center gap-3 pressable text-left"
+                    >
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${row.on ? "bg-primary border-primary" : "bg-card border-border"}`}>
+                        {row.on && <span className="text-white text-xs leading-none">✓</span>}
+                      </span>
+                      <span className={`flex-1 text-sm ${row.on ? "text-foreground font-medium" : "text-muted-foreground"}`}>{row.label}</span>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">{row.hint}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </Section>
 
