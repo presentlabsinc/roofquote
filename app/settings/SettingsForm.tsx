@@ -398,6 +398,28 @@ export function SettingsForm({ defaultValues }: Props) {
     }
   }
 
+  // 공장 기본값 리셋 — 단가·계수만 DEFAULTS 로, 회사정보·견적번호는 유지.
+  // 화면(state)만 바꾸고 저장은 사용자가 눌러야 적용 (비파괴 — 안 저장하면 그대로).
+  const [resetConfirm, setResetConfirm] = useState(false);
+  function resetToFactoryDefaults() {
+    setValues((v) => ({
+      ...DEFAULTS,
+      companyName: v.companyName,
+      companyPhone: v.companyPhone,
+      companyAddress: v.companyAddress,
+      businessRegistrationNumber: v.businessRegistrationNumber,
+      sealImageUrl: v.sealImageUrl,
+      bankAccount: v.bankAccount,
+      noticeText: v.noticeText,
+      estimateNumberStart: v.estimateNumberStart,
+    }));
+    setMaterialWidths({});
+    setAccessoryLengths({});
+    setInsulationUnitAreas({});
+    setResetConfirm(false);
+    toast.success("기본 단가로 되돌렸습니다. 저장하면 적용됩니다.");
+  }
+
   return (
     <>
       <div className="space-y-3 pb-4">
@@ -610,6 +632,33 @@ export function SettingsForm({ defaultValues }: Props) {
           </Fragment>
           );
         })}
+      </div>
+
+      {/* 공장 기본값 리셋 — 단가·계수만, 회사정보·견적번호 유지 */}
+      <div className="px-1 pt-2 pb-44">
+        {resetConfirm ? (
+          <div className="bg-card rounded-2xl border border-amber-200/60 p-4 space-y-3">
+            <p className="text-sm font-medium text-foreground text-center">
+              모든 <b className="text-amber-700">단가·계수를 기본값으로</b> 되돌립니다
+            </p>
+            <ul className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-disc">
+              <li>회사 정보·직인·계좌·안내문구·견적번호는 그대로 유지</li>
+              <li>저장을 눌러야 실제 적용됩니다 (지금은 화면만 바뀜)</li>
+            </ul>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setResetConfirm(false)} className="flex-1 h-11 rounded-xl text-sm">취소</Button>
+              <Button onClick={resetToFactoryDefaults} className="flex-1 h-11 rounded-xl text-sm font-semibold">되돌리기</Button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setResetConfirm(true)}
+            className="w-full text-xs text-muted-foreground py-2.5 pressable"
+          >
+            기본 단가로 되돌리기
+          </button>
+        )}
       </div>
 
       {/* Sticky save bar — sits above the BottomNav */}
