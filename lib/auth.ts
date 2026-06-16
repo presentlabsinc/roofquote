@@ -106,7 +106,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       baseTransportCost: 250000,
       mealCostPerPersonMeal: 10000,
       lodgingCostPerPersonNight: 50000,
-      defaultMarginRate: 0.25,
+      defaultMarginRate: 0.33,
       vatIncludedByDefault: true,
       estimateNumberStart: 1,
       marginMaterialRatio: 0.5,

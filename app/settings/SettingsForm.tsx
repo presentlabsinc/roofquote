@@ -106,7 +106,7 @@ const DEFAULTS = {
   baseTransportCost: 250000,
   mealCostPerPersonMeal: 10000,
   lodgingCostPerPersonNight: 50000,
-  defaultMarginRate: 0.25,
+  defaultMarginRate: 0.33,
   vatIncludedByDefault: true,
   // 로스율 적용 모드 — "auto" (지붕형태별 자동) | "manual" (디폴트값 항상)
   lossRateMode: "auto" as "auto" | "manual",
