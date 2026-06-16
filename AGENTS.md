@@ -440,7 +440,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 - **공사 범위**: single line of text joined by " · " (e.g. "칼라강판 지붕공사 (기존 지붕 덧씌우기) · 용마루 및 처마 마감 · 물받이 교체 · 폐기물 처리"). Built by `scopeOneLine()` which combines title + ridge/eave merge + gutter mode + scope flags + equipment blurb.
 - **자재 spec pills**: pill row under scope — 제품명 / 두께 / 텍스처 / 색상.
 - **견적 내역**: two modes (toggle via `?detail=` on the PDF route):
-  - **simple** (`groupForSimple()`) — flat list of 5 buckets (자재 및 마감 / 시공비 / 장비 및 운송 / 철거 및 폐기 / 기타).
+  - **simple** (`groupForSimple()`) — flat list of buckets (자재 및 마감 일체 / 시공비 (현장 관리 포함) / 장비 및 운송 / 철거 및 폐기 / 현장 경비). **이윤은 심플에선 별도 표시 안 하고 시공비에 녹임** (2026-06-16 — 5줄 요약에서 이윤 줄이 튀면 거부감). 상세는 이윤 줄 유지. 빈 버킷은 자동 생략.
   - **detailed** (`groupForDetailed()`) — table with group subheaders: **자재공사 → 노무비 → 기타경비** (Korean industry-standard 3-category structure). Material items shown individually with 품명 / 규격 / 수량 / 금액 columns. Labor + meals + lodging rolled into one "인건비 (기공·조공)" line under 노무비. Subtotal row at bottom: "소계 (부가세 별도/포함)".
 - **최종 견적 금액** card (`#f5f7fa` background): single line "최종 견적 금액 · 부가세 포함/별도" + amount on right.
 - **결제 조건**: `parsePaymentStages()` parses the free-text paymentTerms into structured stages (e.g. "계약금 30% · 계약 시 / 잔금 70% · 완공 시"). When 2+ stages parsed, renders as side-by-side cards with derived amount + percent. Otherwise plain text fallback. Bank account (`bankAccountSnapshot`) appears below.

@@ -1341,6 +1341,9 @@ function MarginDistributionCard({
         견적서 PDF 에서 마진을 어떻게 흩뿌릴지. 자재·인건비는 해당 항목에
         비례 분배되고, "이윤" 은 별도 라인으로 표시됩니다. 합이 100% 가
         되도록 조정해 주세요.
+        <span className="block mt-1 text-muted-foreground/80">
+          ※ 이윤은 상세 견적서에만 별도 표시되고, 간단 견적서에선 시공비에 포함됩니다.
+        </span>
       </p>
       <div className="divide-y divide-border/40 mt-2">
         {(["material", "labor", "profit"] as const).map((field) => {

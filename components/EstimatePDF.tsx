@@ -260,21 +260,21 @@ function mergePeFoamIntoMaterial<T extends EstimateLineItem>(items: T[]): T[] {
 }
 
 /**
- * 5-bucket summary for 간단 내역. The 이윤 synthetic line (added by
- * distributeMarginForDisplay) is pulled out into its OWN bucket — looks
- * cleaner than dumping it into "기타 비용" with other small fees.
+ * 5-bucket summary for 간단 내역.
+ * 이윤(synthetic line)은 심플에선 별도 표시하지 않고 **시공비에 녹인다** — 5줄짜리
+ * 요약에서 "이윤" 줄이 튀면 고객 거부감이 생기기 때문 (2026-06-16 사용자 결정).
+ * 상세 견적서(groupForDetailed)에서는 표준품셈 형식으로 이윤 줄을 유지한다.
  */
 function groupForSimple(items: DisplayLineItem[]): SimpleLine[] {
   const buckets = {
     material: 0,   // 자재 + 마감재 + 부자재 + 하지
-    construction: 0, // 인건 + 식비 + 숙박비
+    construction: 0, // 인건 + 식비 + 숙박비 + 이윤(녹임)
     equipment: 0,  // 장비 + 운송
     waste: 0,      // 폐기 + 철거
-    other: 0,      // 기타 (이윤 제외 — 따로 표시)
-    profit: 0,     // 이윤 (synthetic line)
+    other: 0,      // 현장 경비 (제경비·팀경비 등)
   };
   for (const i of items) {
-    if (i.synthetic && i.name === "이윤") { buckets.profit += i.total; continue; }
+    if (i.synthetic && i.name === "이윤") { buckets.construction += i.total; continue; }
     if (i.category === "material") buckets.material += i.total;
     else if (i.category === "labor" || i.category === "meals" || i.category === "lodging") buckets.construction += i.total;
     else if (i.category === "equipment" || i.category === "transport") buckets.equipment += i.total;
@@ -286,8 +286,7 @@ function groupForSimple(items: DisplayLineItem[]): SimpleLine[] {
   if (buckets.construction) lines.push({ name: "시공비 (현장 관리 포함)", amount: buckets.construction });
   if (buckets.equipment) lines.push({ name: "장비 및 운송", amount: buckets.equipment });
   if (buckets.waste) lines.push({ name: "철거 및 폐기물 처리", amount: buckets.waste });
-  if (buckets.other) lines.push({ name: "기타 비용", amount: buckets.other });
-  if (buckets.profit) lines.push({ name: "이윤", amount: buckets.profit });
+  if (buckets.other) lines.push({ name: "현장 경비", amount: buckets.other });
   return lines;
 }
 
