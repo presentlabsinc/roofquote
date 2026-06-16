@@ -472,10 +472,10 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     }
   }
 
-  // 공장 기본값 리셋 — 단가·계수만 DEFAULTS 로, 회사정보·견적번호는 유지.
-  // 화면(state)만 바꾸고 저장은 사용자가 눌러야 적용 (비파괴 — 안 저장하면 그대로).
-  const [resetConfirm, setResetConfirm] = useState(false);
-  function resetToFactoryDefaults() {
+  // 공장 기본값 불러오기 — 불러오기 목록의 "공장 기본값" 항목에서 호출.
+  // 단가·계수만 DEFAULTS 로, 회사정보·견적번호는 유지. 화면(state)만 바꾸고
+  // 저장해야 적용 (비파괴). 활성 프리셋 해제 (activeId=null = 공장 기본값 상태).
+  function loadFactoryDefaults() {
     setValues((v) => ({
       ...DEFAULTS,
       companyName: v.companyName,
@@ -490,44 +490,42 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     setMaterialWidths({});
     setAccessoryLengths({});
     setInsulationUnitAreas({});
-    setResetConfirm(false);
-    toast.success("기본 단가로 되돌렸습니다. 저장하면 적용됩니다.");
+    setActiveId(null);
+    setPickerOpen(false);
+    toast.success("공장 기본값을 불러왔어요. 저장하면 적용됩니다.");
   }
 
   return (
     <>
-      {/* ── 단가 프리셋 바 ── */}
+      {/* ── 단가표 바 (불러오기: 공장 기본값 + 내 프리셋) ── */}
       <div className="bg-card rounded-2xl border border-border/60 p-3 mb-3">
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[11px] text-muted-foreground">현재 단가표</p>
             <p className="text-sm font-semibold text-foreground truncate">
-              {activeName ?? "미저장 — 저장 시 이름을 정할 수 있어요"}
+              {activeName ?? "공장 기본값"}
             </p>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {presetList.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setPickerOpen((o) => !o)}
-                className="px-3 h-9 rounded-full bg-muted text-foreground text-xs font-semibold pressable"
-              >
-                불러오기
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => { setNaming("saveAs"); setNameInput(""); setPickerOpen(false); }}
-              className="px-3 h-9 rounded-full bg-muted text-foreground text-xs font-semibold pressable"
-            >
-              다른 이름으로
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setPickerOpen((o) => !o)}
+            className="px-3 h-9 rounded-full bg-muted text-foreground text-xs font-semibold pressable shrink-0"
+          >
+            불러오기
+          </button>
         </div>
 
-        {/* 프리셋 목록 (불러오기) */}
-        {pickerOpen && presetList.length > 0 && (
+        {/* 불러오기 목록 — 공장 기본값(못 지움) + 내 프리셋(지울 수 있음) */}
+        {pickerOpen && (
           <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
+            <button
+              type="button"
+              onClick={loadFactoryDefaults}
+              disabled={saving}
+              className={`w-full text-left px-3 py-2 rounded-xl text-sm pressable ${activeId === null ? "bg-primary/10 text-primary font-semibold" : "bg-muted/40 text-foreground"}`}
+            >
+              공장 기본값{activeId === null ? " · 현재" : ""}
+            </button>
             {presetList.map((p) => (
               <div key={p.id} className="flex items-center gap-2">
                 <button
@@ -553,25 +551,6 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
                 </button>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* 이름 입력 (첫 저장 / 다른 이름으로) */}
-        {naming && (
-          <div className="mt-2 pt-2 border-t border-border/40">
-            <p className="text-[11px] text-muted-foreground mb-1.5">
-              {naming === "first" ? "이 단가표를 프리셋으로 저장 (선택)" : "새 프리셋 이름"}
-            </p>
-            <div className="flex gap-2">
-              <Input
-                value={nameInput}
-                onChange={(e) => setNameInput(e.target.value)}
-                placeholder="예: 표준, 겨울 비수기"
-                className="h-10 rounded-xl text-sm flex-1"
-              />
-              <Button onClick={confirmPresetName} disabled={saving} className="h-10 rounded-xl text-sm px-4">저장</Button>
-              <Button variant="outline" onClick={() => { setNaming(null); setNameInput(""); }} className="h-10 rounded-xl text-sm px-3">{naming === "first" ? "나중에" : "취소"}</Button>
-            </div>
           </div>
         )}
       </div>
@@ -788,43 +767,48 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
         })}
       </div>
 
-      {/* 공장 기본값 리셋 — 단가·계수만, 회사정보·견적번호 유지 */}
-      <div className="px-1 pt-2 pb-44">
-        {resetConfirm ? (
-          <div className="bg-card rounded-2xl border border-amber-200/60 p-4 space-y-3">
-            <p className="text-sm font-medium text-foreground text-center">
-              모든 <b className="text-amber-700">단가·계수를 기본값으로</b> 되돌립니다
-            </p>
-            <ul className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-disc">
-              <li>회사 정보·직인·계좌·안내문구·견적번호는 그대로 유지</li>
-              <li>저장을 눌러야 실제 적용됩니다 (지금은 화면만 바뀜)</li>
-            </ul>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setResetConfirm(false)} className="flex-1 h-11 rounded-xl text-sm">취소</Button>
-              <Button onClick={resetToFactoryDefaults} className="flex-1 h-11 rounded-xl text-sm font-semibold">되돌리기</Button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setResetConfirm(true)}
-            className="w-full text-xs text-muted-foreground py-2.5 pressable"
-          >
-            기본 단가로 되돌리기
-          </button>
-        )}
-      </div>
+      <div className="pb-44" />
 
-      {/* Sticky save bar — sits above the BottomNav */}
+      {/* Sticky save bar — sits above the BottomNav.
+          평소: [저장 · 활성 갱신] + [다른 이름으로]. 이름 입력 중: [이름][저장][취소]. */}
       <div className="fixed bottom-28 left-0 right-0 z-30 safe-x pointer-events-none">
         <div className="max-w-lg mx-auto px-4 pointer-events-auto">
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="w-full h-14 text-base font-semibold rounded-2xl shadow-lg shadow-primary/25 pressable"
-          >
-            {saving ? "저장 중..." : <><Check size={20} className="mr-1.5" />설정 저장</>}
-          </Button>
+          {naming ? (
+            <div className="bg-card/95 backdrop-blur rounded-2xl border border-border/60 shadow-lg p-2.5 space-y-2">
+              <p className="text-[11px] text-muted-foreground px-1">
+                {naming === "first" ? "이 단가표를 프리셋으로 저장 (선택)" : "새 프리셋 이름"}
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="예: 표준, 겨울 비수기"
+                  className="h-12 rounded-xl text-sm flex-1"
+                  autoFocus
+                />
+                <Button onClick={confirmPresetName} disabled={saving} className="h-12 rounded-xl text-sm px-4 font-semibold">저장</Button>
+                <Button variant="outline" onClick={() => { setNaming(null); setNameInput(""); }} className="h-12 rounded-xl text-sm px-3">{naming === "first" ? "나중에" : "취소"}</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 h-14 text-base font-semibold rounded-2xl shadow-lg shadow-primary/25 pressable"
+              >
+                {saving ? "저장 중..." : <><Check size={20} className="mr-1.5" />{activeName ? `저장 · '${activeName}' 갱신` : "저장"}</>}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => { setNaming("saveAs"); setNameInput(""); setPickerOpen(false); }}
+                disabled={saving}
+                className="h-14 px-4 text-sm font-semibold rounded-2xl bg-card shadow-lg pressable"
+              >
+                다른 이름으로
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </>

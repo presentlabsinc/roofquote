@@ -356,7 +356,12 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 - **모델**: `PricingPreset { id, userId, name, snapshotJson Json, createdAt, updatedAt }` + `PricingSettings.activePresetId String?` (활성 추적).
 - **불변식 유지**: `PricingSettings` 는 계속 **라이브 행** (견적이 스냅샷하는 그것). 프리셋은 거기에 값을 채워넣는 역할 — **견적 스냅샷 로직 안 건드림.** 프리셋 전환 = 프리셋 값을 PricingSettings 에 복사.
 - **저장 흐름** (사용자 확정): 공장 기본값에서 시작 → 설정 바꿔 **[저장]** → 활성 프리셋 없으면 "이름 정하기" → 프리셋 생성+활성. 이후 [저장] = **활성 프리셋 덮어쓰기**(기본), 별도 **"다른 이름으로 저장"** = 새 프리셋. 드롭다운으로 불러오기(=활성 전환).
-- **공장 기본값 리셋** (별개, 이미 구현): 코드 DEFAULTS 로 폼 복원. 프리셋과 무관한 최후 출발점.
+- **공장 기본값 = 불러오기 목록의 항목** (2026-06-16 통합): 별도 리셋 버튼 없앰. 불러오기 목록에
+  "공장 기본값"(맨 위, **삭제 불가**) + 내 프리셋(삭제 가능). 공장 기본값 선택 = 폼에 DEFAULTS 채움 +
+  activeId=null (비파괴, 저장해야 적용). 프리셋 선택 = 서버 activate + 새로고침.
+- **UI 배치 (앱 표준 패턴)**: 불러오기/전환은 상단 바, 저장은 하단 sticky. **매 저장 팝업은 안 함**(안티패턴) —
+  대신 저장 버튼이 `저장 · '표준' 갱신` 으로 대상 표시. 저장 옆에 [다른 이름으로]. 활성 프리셋 없으면(공장 기본값
+  상태) 저장 시 이름 입력(선택) 노출. 이름 입력은 하단 sticky 에 인라인.
 - **snapshotJson 범위 (불변):** 단가·계수 필드만 (`materialWidths`/`accessoryLengths`/`insulationUnitAreas`/`catalogDefaults` JSON 포함). 제외: 회사정보(`companyName`/`companyPhone`/`companyAddress`/`businessRegistrationNumber`/`sealImageUrl`/`bankAccount`/`noticeText`), `estimateNumberStart`, `baselineData`, `activePresetId`. 헬퍼 `lib/presets.ts` `PRESET_EXCLUDE` + `extractPresetSnapshot`/`applyPresetSnapshot`.
 - 프리셋 전환 × 과거 견적 재수정의 동작은 "Pricing overrides" 섹션의 절대값 assertion 참조.
 
