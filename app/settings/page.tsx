@@ -1,4 +1,5 @@
 import { requireUserAndSettings } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { SettingsForm } from "./SettingsForm";
 import { AppHeader } from "@/components/AppHeader";
 import { LogOut } from "lucide-react";
@@ -7,6 +8,11 @@ export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const { user, settings } = await requireUserAndSettings();
+  const presets = await prisma.pricingPreset.findMany({
+    where: { userId: user.id },
+    select: { id: true, name: true },
+    orderBy: { createdAt: "asc" },
+  });
   return (
     <>
       <AppHeader title="설정" subtitle="회사 정보 · 단가 · 견적서" showBack={false} />
@@ -27,7 +33,11 @@ export default async function SettingsPage() {
             </button>
           </form>
         </div>
-        <SettingsForm defaultValues={settings} />
+        <SettingsForm
+          defaultValues={settings}
+          presets={presets}
+          activePresetId={(settings as unknown as { activePresetId?: string | null }).activePresetId ?? null}
+        />
       </div>
     </>
   );

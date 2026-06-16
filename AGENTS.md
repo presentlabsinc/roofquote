@@ -349,8 +349,15 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 
 **Auto-fill for detailed mode** (per user request, deferred): each catalog item could carry a `perSqm` coefficient so switching to 상세 모드 auto-populates quantities based on construction area. Needs industry-standard data the user said they'd supply.
 
-**내 단가 프리셋 저장/불러오기** (deferred — post-v0): user wants to be able to save their pricing settings as multiple named snapshots and switch between them (e.g. "표준", "겨울 비수기", "프리미엄"). Plus a "기본설정으로 리셋" button that's available immediately. Probably one new model `PricingPreset { id, userId, name, snapshotJson, createdAt }` and a dropdown in settings header. ~~Wait until auth is in place since presets are per-user.~~ (auth ✅ 완료) **지금 미루는 이유: 기본 단가표가 미확정** (절곡 OPEN DECISION 포함) — 단가표 확정 후 착수.
-- **snapshotJson 범위 (2026-06-12 확정):** 단가·계수 필드만. 제외: 회사정보 (`companyName`, `companyPhone`, `companyAddress`, `businessRegistrationNumber`, `sealImageUrl`, `bankAccount`, `noticeText`), `estimateNumberStart`, `baselineData`. 프리셋 전환이 회사 정보·채번·시공 이력을 건드리면 안 된다.
+### 내 단가 프리셋 (2026-06-16 구현) — "활성 프리셋" 모델
+사용자가 단가표를 이름 붙여 여러 개 저장하고 전환 ("표준" / "겨울 비수기" / "프리미엄").
+**핵심 모델: 현재 설정 = 활성 프리셋.** 전환할 데가 없어도 "버전 세이브 포인트"로 가치 있음.
+
+- **모델**: `PricingPreset { id, userId, name, snapshotJson Json, createdAt, updatedAt }` + `PricingSettings.activePresetId String?` (활성 추적).
+- **불변식 유지**: `PricingSettings` 는 계속 **라이브 행** (견적이 스냅샷하는 그것). 프리셋은 거기에 값을 채워넣는 역할 — **견적 스냅샷 로직 안 건드림.** 프리셋 전환 = 프리셋 값을 PricingSettings 에 복사.
+- **저장 흐름** (사용자 확정): 공장 기본값에서 시작 → 설정 바꿔 **[저장]** → 활성 프리셋 없으면 "이름 정하기" → 프리셋 생성+활성. 이후 [저장] = **활성 프리셋 덮어쓰기**(기본), 별도 **"다른 이름으로 저장"** = 새 프리셋. 드롭다운으로 불러오기(=활성 전환).
+- **공장 기본값 리셋** (별개, 이미 구현): 코드 DEFAULTS 로 폼 복원. 프리셋과 무관한 최후 출발점.
+- **snapshotJson 범위 (불변):** 단가·계수 필드만 (`materialWidths`/`accessoryLengths`/`insulationUnitAreas`/`catalogDefaults` JSON 포함). 제외: 회사정보(`companyName`/`companyPhone`/`companyAddress`/`businessRegistrationNumber`/`sealImageUrl`/`bankAccount`/`noticeText`), `estimateNumberStart`, `baselineData`, `activePresetId`. 헬퍼 `lib/presets.ts` `PRESET_EXCLUDE` + `extractPresetSnapshot`/`applyPresetSnapshot`.
 - 프리셋 전환 × 과거 견적 재수정의 동작은 "Pricing overrides" 섹션의 절대값 assertion 참조.
 
 ### Estimate edit API — 10 actions total

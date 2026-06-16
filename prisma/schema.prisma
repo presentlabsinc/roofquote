@@ -178,7 +178,25 @@ model PricingSettings {
   // 기본 1 — 즉 첫 견적은 YYYY-001.
   estimateNumberStart  Int     @default(1)
 
+  // 활성 프리셋 — 현재 설정이 어느 프리셋에서 왔는지 추적. null = 아직 프리셋 없음(공장/초기).
+  // 프리셋은 PricingSettings 에 값을 복사하는 방식이라 FK relation 은 두지 않음 (느슨한 참조).
+  activePresetId String?
+
   updatedAt DateTime @updatedAt
+}
+
+// 단가 프리셋 — 사용자가 이름 붙여 저장한 단가표 스냅샷. "활성 프리셋" 모델:
+// 현재 설정(PricingSettings)이 활성 프리셋이고, 전환 시 snapshotJson 을 PricingSettings 에 복사.
+// snapshotJson 범위 = 단가·계수 필드만 (회사정보·견적번호·이력 제외). lib/presets.ts 참조.
+model PricingPreset {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  snapshotJson Json     @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Site {

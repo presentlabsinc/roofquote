@@ -249,11 +249,22 @@ const TIER_LABELS: Record<Tier, string> = {
 
 interface Props {
   defaultValues: PricingSettings | null;
+  presets?: { id: string; name: string }[];
+  activePresetId?: string | null;
 }
 
-export function SettingsForm({ defaultValues }: Props) {
+export function SettingsForm({ defaultValues, presets = [], activePresetId = null }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
+
+  // ── 프리셋 (활성 프리셋 모델) ──
+  const [presetList, setPresetList] = useState(presets);
+  const [activeId, setActiveId] = useState<string | null>(activePresetId);
+  const activeName = presetList.find((p) => p.id === activeId)?.name ?? null;
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // naming UI: "first" = 활성 프리셋 없을 때 첫 저장, "saveAs" = 다른 이름으로 저장
+  const [naming, setNaming] = useState<null | "first" | "saveAs">(null);
+  const [nameInput, setNameInput] = useState("");
   const [values, setValues] = useState<typeof DEFAULTS>(() => {
     if (!defaultValues) return DEFAULTS;
     return {
@@ -368,6 +379,24 @@ export function SettingsForm({ defaultValues }: Props) {
     setInsulationUnitAreas((m) => ({ ...m, [typeKey]: area }));
   }
 
+  /** 현재 폼 값을 라이브 PricingSettings 에 저장. 성공 시 true. */
+  async function saveLive(): Promise<boolean> {
+    const payload = {
+      ...values,
+      materialWidths,
+      accessoryLengths,
+      insulationUnitAreas,
+      companyPhone: values.companyPhone || null,
+      companyAddress: values.companyAddress || null,
+      businessRegistrationNumber: values.businessRegistrationNumber || null,
+      sealImageUrl: values.sealImageUrl || null,
+      bankAccount: values.bankAccount || null,
+      noticeText: values.noticeText || null,
+    };
+    const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    return res.ok;
+  }
+
   async function handleSave() {
     if (!values.companyName.trim()) {
       toast.error("회사명을 입력해 주세요.");
@@ -375,25 +404,70 @@ export function SettingsForm({ defaultValues }: Props) {
     }
     setSaving(true);
     try {
-      const payload = {
-        ...values,
-        materialWidths,
-        accessoryLengths,
-        insulationUnitAreas,
-        companyPhone: values.companyPhone || null,
-        companyAddress: values.companyAddress || null,
-        businessRegistrationNumber: values.businessRegistrationNumber || null,
-        sealImageUrl: values.sealImageUrl || null,
-        bankAccount: values.bankAccount || null,
-        noticeText: values.noticeText || null,
-      };
-      const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      if (!res.ok) throw new Error("저장 실패");
-      toast.success("저장되었습니다");
-      router.refresh();
+      const ok = await saveLive();
+      if (!ok) throw new Error("저장 실패");
+      if (activeId) {
+        // 활성 프리셋 덮어쓰기 (현재 단가표 갱신)
+        await fetch(`/api/presets/${activeId}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "overwrite" }),
+        });
+        toast.success(activeName ? `저장됨 · '${activeName}' 갱신` : "저장되었습니다");
+        router.refresh();
+      } else {
+        // 활성 프리셋 없음 — 라이브는 저장됐고, 이름 붙여 프리셋으로 만들지 물어봄(선택).
+        toast.success("저장되었습니다");
+        setNaming("first");
+        setNameInput("");
+      }
     } catch {
       toast.error("저장에 실패했습니다");
     } finally {
+      setSaving(false);
+    }
+  }
+
+  /** 이름 확정 — "first"(첫 저장)이면 라이브 이미 저장됨, "saveAs"면 먼저 저장 후 새 프리셋 생성. */
+  async function confirmPresetName() {
+    const name = nameInput.trim();
+    if (!name) { toast.error("이름을 입력해 주세요."); return; }
+    setSaving(true);
+    try {
+      if (naming === "saveAs") {
+        const ok = await saveLive();
+        if (!ok) throw new Error();
+      }
+      const res = await fetch("/api/presets", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error();
+      const preset = await res.json();
+      setPresetList((l) => [...l, { id: preset.id, name: preset.name }]);
+      setActiveId(preset.id);
+      setNaming(null); setNameInput("");
+      toast.success(`'${name}' 프리셋으로 저장되었습니다`);
+      router.refresh();
+    } catch {
+      toast.error("프리셋 저장에 실패했습니다");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  /** 프리셋 활성화(전환) — 서버에서 PricingSettings 에 값 복사 후 새로고침으로 폼 재초기화. */
+  async function activatePreset(id: string) {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/presets/${id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "activate" }),
+      });
+      if (!res.ok) throw new Error();
+      // 새 값으로 폼을 다시 초기화하려면 전체 새로고침이 가장 확실 (useState 초기화는 mount 시 1회).
+      window.location.reload();
+    } catch {
+      toast.error("불러오기에 실패했습니다");
       setSaving(false);
     }
   }
@@ -422,6 +496,86 @@ export function SettingsForm({ defaultValues }: Props) {
 
   return (
     <>
+      {/* ── 단가 프리셋 바 ── */}
+      <div className="bg-card rounded-2xl border border-border/60 p-3 mb-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <p className="text-[11px] text-muted-foreground">현재 단가표</p>
+            <p className="text-sm font-semibold text-foreground truncate">
+              {activeName ?? "미저장 — 저장 시 이름을 정할 수 있어요"}
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {presetList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setPickerOpen((o) => !o)}
+                className="px-3 h-9 rounded-full bg-muted text-foreground text-xs font-semibold pressable"
+              >
+                불러오기
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => { setNaming("saveAs"); setNameInput(""); setPickerOpen(false); }}
+              className="px-3 h-9 rounded-full bg-muted text-foreground text-xs font-semibold pressable"
+            >
+              다른 이름으로
+            </button>
+          </div>
+        </div>
+
+        {/* 프리셋 목록 (불러오기) */}
+        {pickerOpen && presetList.length > 0 && (
+          <div className="mt-2 pt-2 border-t border-border/40 space-y-1">
+            {presetList.map((p) => (
+              <div key={p.id} className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => activatePreset(p.id)}
+                  disabled={saving}
+                  className={`flex-1 text-left px-3 py-2 rounded-xl text-sm pressable ${p.id === activeId ? "bg-primary/10 text-primary font-semibold" : "bg-muted/40 text-foreground"}`}
+                >
+                  {p.name}{p.id === activeId ? " · 현재" : ""}
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!confirm(`'${p.name}' 프리셋을 삭제할까요?`)) return;
+                    await fetch(`/api/presets/${p.id}`, { method: "DELETE" });
+                    setPresetList((l) => l.filter((x) => x.id !== p.id));
+                    if (activeId === p.id) setActiveId(null);
+                  }}
+                  className="w-8 h-8 grid place-items-center rounded-full bg-muted/60 pressable shrink-0"
+                  aria-label="삭제"
+                >
+                  <X size={13} className="text-muted-foreground" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 이름 입력 (첫 저장 / 다른 이름으로) */}
+        {naming && (
+          <div className="mt-2 pt-2 border-t border-border/40">
+            <p className="text-[11px] text-muted-foreground mb-1.5">
+              {naming === "first" ? "이 단가표를 프리셋으로 저장 (선택)" : "새 프리셋 이름"}
+            </p>
+            <div className="flex gap-2">
+              <Input
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
+                placeholder="예: 표준, 겨울 비수기"
+                className="h-10 rounded-xl text-sm flex-1"
+              />
+              <Button onClick={confirmPresetName} disabled={saving} className="h-10 rounded-xl text-sm px-4">저장</Button>
+              <Button variant="outline" onClick={() => { setNaming(null); setNameInput(""); }} className="h-10 rounded-xl text-sm px-3">{naming === "first" ? "나중에" : "취소"}</Button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="space-y-3 pb-4">
         {FIELDS.map(({ section, emoji, tier, items }, idx) => {
           const isTierStart = idx === 0 || FIELDS[idx - 1].tier !== tier;
