@@ -138,6 +138,30 @@ const DEFAULTS = {
   insulationPriceThermalReflect: 6000,
 };
 
+/** 전화번호 자동 포맷 — 010-1234-5678 / 02-123-4567 / 031-123-4567 등.
+ *  02(서울)는 지역번호 2자리, 그 외는 3자리. 입력 중 숫자만 받아 하이픈 자동 삽입. */
+function formatPhone(v: string): string {
+  const d = v.replace(/\D/g, "").slice(0, 11);
+  if (d.startsWith("02")) {
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return `02-${d.slice(2)}`;
+    if (d.length <= 9) return `02-${d.slice(2, d.length - 4)}-${d.slice(d.length - 4)}`;
+    return `02-${d.slice(2, 6)}-${d.slice(6, 10)}`;
+  }
+  if (d.length <= 3) return d;
+  if (d.length <= 7) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  if (d.length <= 10) return `${d.slice(0, 3)}-${d.slice(3, d.length - 4)}-${d.slice(d.length - 4)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7, 11)}`;
+}
+
+/** 사업자등록번호 자동 포맷 — xxx-xx-xxxxx (3-2-5, 총 10자리). */
+function formatBizNo(v: string): string {
+  const d = v.replace(/\D/g, "").slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 5) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 5)}-${d.slice(5, 10)}`;
+}
+
 type FieldDef = { key: keyof typeof DEFAULTS; label: string; unit?: string; step?: number; pct?: boolean };
 
 /**
@@ -608,19 +632,45 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
                   ? String(Math.round((rawVal as number) * 100))
                   : String(rawVal);
 
+                // 문자열 필드(회사명·연락처·주소·사업자번호·계좌)는 값이 길어 잘리므로
+                // 라벨 위 + 전폭 입력으로 스택. 전화·사업자번호는 입력 중 자동 포맷.
+                const onStrChange = (raw: string) => {
+                  if (key === "companyPhone") setField(key, formatPhone(raw));
+                  else if (key === "businessRegistrationNumber") setField(key, formatBizNo(raw));
+                  else setField(key as "companyName", raw);
+                };
+                const strPlaceholder = key === "companyPhone" ? "010-1234-5678"
+                  : key === "businessRegistrationNumber" ? "123-45-67890"
+                  : key === "bankAccount" ? "신한 110-123-456789 (예금주)"
+                  : "";
+
+                if (isStr) {
+                  return (
+                    <div key={key} className="px-5 py-3">
+                      <Label className="text-sm text-muted-foreground mb-1.5 block">{label}</Label>
+                      <Input
+                        type="text"
+                        inputMode={key === "companyPhone" || key === "businessRegistrationNumber" ? "numeric" : "text"}
+                        value={displayVal}
+                        placeholder={strPlaceholder}
+                        onChange={(e) => onStrChange(e.target.value)}
+                        className="h-11 w-full font-medium text-foreground border-border/60 rounded-xl"
+                      />
+                    </div>
+                  );
+                }
+
                 return (
                   <div key={key} className="px-5 py-3 flex items-center gap-3">
                     <Label className="flex-1 text-sm text-muted-foreground">{label}</Label>
                     <div className="relative w-36 shrink-0">
                       <Input
-                        type={isStr ? "text" : "number"}
+                        type="number"
                         step={step}
-                        inputMode={isStr ? "text" : "numeric"}
+                        inputMode="numeric"
                         value={displayVal}
                         onChange={(e) => {
-                          if (isStr) {
-                            setField(key as "companyName", e.target.value);
-                          } else if (pct) {
+                          if (pct) {
                             setField(key as "accessoryRate", parseFloat(e.target.value) / 100 || 0);
                           } else if (step && step < 1) {
                             // Float field (e.g. parapetMultiplier)
