@@ -137,21 +137,41 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
  * 주의: Estimate.catalogModes / PricingSettings.catalogDefaults JSON 키가 그룹 키로 바뀜.
  * 구 8분류 키 중 "finishing"/"gutter" 는 그룹 키와 이름이 같아 자연 호환, 나머지는 무시됨.
  */
-export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = {
-  finishing: { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
-  // 부자재(피스·실링) 자재비 대비 % — 포스코 샘플 체결부속+실리콘이 재료비의 7~10%였음 (3%는 과소).
-  accessory: { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.08 },
-  gutter:    { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
-  // 절곡: 심플=총금액 lump(기본 0), 상세=총 넓이(mm) 입력 → 넓이 × 절곡단가. 넓이는 simpleQty 에 저장.
-  bending:   { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
-};
+/**
+ * 그룹 기본값은 **공사 유형별** (2026-06-16 사용자 확정):
+ * - 지붕/옥상지붕: 마감재(기성품) 체크 + ㎡당 기본가, 절곡 해제 (주요 절곡은 '마감 방식' 자동).
+ * - 바닥형 스틸방수: 절곡 체크 + ㎡당 기본가 (스틸방수 마감은 절곡), 마감재(기성품) 해제.
+ * - 부자재 8%(포스코 샘플 체결부속+실리콘 7~10%/재료비 근사)·물받이 2,000원/m 는 공통.
+ * 심플 기본가는 "이 크기에 들어갈 만한" 근사 — 상세로 바꾸면 입력한 자재대로.
+ */
+export function defaultGroupModes(constructionType?: string | null): Record<CatalogGroup, CategoryMode> {
+  const steel = constructionType === "steelWaterproof";
+  return {
+    finishing: steel
+      ? { enabled: false, mode: "simple", simpleType: "total",  simpleValue: 0 }
+      : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 2000 },
+    bending: steel
+      ? { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 1000 }
+      : { enabled: false, mode: "simple", simpleType: "total",  simpleValue: 0 },
+    accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.08 },
+    gutter:    { enabled: true, mode: "simple", simpleType: "perM",    simpleValue: 2000 },
+  };
+}
 
-/** Merge user-defined group defaults (PricingSettings.catalogDefaults) over built-ins. */
-export function resolveGroupDefaults(savedDefaults: GroupModesMap | null | undefined): Record<CatalogGroup, CategoryMode> {
+/** [LEGACY] 유형 무관 기본값 — defaultGroupModes(roof 기준)로 대체. 호환용으로만 유지. */
+export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = defaultGroupModes(null);
+
+/** Merge user-defined group defaults (PricingSettings.catalogDefaults) over built-ins.
+ *  constructionType 을 주면 유형별 기본값(defaultGroupModes) 위에 병합. */
+export function resolveGroupDefaults(
+  savedDefaults: GroupModesMap | null | undefined,
+  constructionType?: string | null,
+): Record<CatalogGroup, CategoryMode> {
   const saved = savedDefaults ?? {};
+  const base = defaultGroupModes(constructionType);
   const out = {} as Record<CatalogGroup, CategoryMode>;
   for (const g of CATALOG_GROUPS) {
-    out[g.value] = { ...DEFAULT_GROUP_MODES[g.value], ...saved[g.value] };
+    out[g.value] = { ...base[g.value], ...saved[g.value] };
   }
   return out;
 }

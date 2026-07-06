@@ -415,14 +415,24 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   // function can use it transparently.
   const settings: PricingSettings = applyOverrides(rawSettings, pricingOverrides);
 
-  // Resolve effective group modes by layering: defaults → settings → estimate override
+  // Resolve effective group modes by layering: 유형별 defaults → settings → estimate override
   const settingsDefaults = (settings.catalogDefaults as GroupModesMap | null) ?? null;
   const effectiveModes = resolveGroupDefaults({
     ...settingsDefaults,
     ...(catalogModes ?? {}),
-  });
+  }, constructionType);
   const items: LineItemDraft[] = [];
   let order = 0;
+
+  // 스틸방수 + 난간: 사용자 시공면적엔 난간(벽 양면) 면적까지 포함해 측정하는 관행
+  // (2026-06-16 사용자 확인). 벽 안쪽 면(절반)은 파라펫 자재로 시공 → 본 강판 면적에서
+  // 빼고 아래 스틸방수 섹션에서 파라펫 라인으로 분리 발행. 추가가 아니라 분리 — 이중 방지.
+  const parapetHeightM_ = (parapetHeightCm && parapetHeightCm > 0 ? parapetHeightCm : 60) / 100;
+  const parapetFaceArea = (constructionType === "steelWaterproof"
+    && (scope.handrail || scope.cap)
+    && railPerimeterM && railPerimeterM > 0)
+    ? Math.min(Math.round(railPerimeterM * parapetHeightM_ * 10) / 10, areaM2 / 2)
+    : 0;
 
   // Material line — always the main one.
   // 시공면적은 사용자가 입력한 그대로 사용 (난간/두겁/창고/계단실/옥탑방은 시공면적에 포함된 것으로 가정).
@@ -431,7 +441,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     // 자재 타입별 m당 단가 → ㎡당 환산 (두께 배수 포함). 미정가는 LEGACY ㎡ 단가 폴백.
     const unitPrice = getMaterialPriceSqm(settings, materialType, thickness);
     const lossMult = applyLossRate && lossRate > 0 ? 1 + lossRate : 1;
-    const effectiveArea = Math.round(areaM2 * lossMult * 100) / 100;
+    const effectiveArea = Math.round(Math.max(0, areaM2 - parapetFaceArea) * lossMult * 100) / 100;
     const lossNote = applyLossRate && lossRate > 0
       ? ` (로스율 ${Math.round(lossRate * 100)}% 포함)`
       : "";
@@ -662,18 +672,18 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         }
       }
     }
-    // 파라펫 강판 (난간) — 난간 둘레 × 파라펫 높이 × 1.10
-    if ((scope.handrail || scope.cap) && railP > 0 && parapetHeightM > 0) {
-      const parapetArea = Math.round(railP * parapetHeightM * 1.10 * 10) / 10;
-      if (parapetArea > 0) {
-        const unitPrice = getMaterialPriceSqm(settings, materialType, thickness);
-        items.push({
-          category: "material", name: "파라펫 강판 (난간)",
-          quantity: parapetArea, unit: "㎡",
-          unitPrice, total: Math.round(parapetArea * unitPrice),
-          sortOrder: order++,
-        });
-      }
+    // 파라펫 (난간 안쪽 면) — 시공면적에서 분리한 절반 (위 parapetFaceArea, 추가 아님).
+    // 난간 벽은 안쪽=파라펫 자재, 바깥쪽=일반 강판(본 라인에 잔류) — 2026-06-16 사용자 확인.
+    if (parapetFaceArea > 0) {
+      const lossMult = applyLossRate && lossRate > 0 ? 1 + lossRate : 1;
+      const parapetArea = Math.round(parapetFaceArea * lossMult * 10) / 10;
+      const unitPrice = getMaterialPriceSqm(settings, "parapet", thickness);
+      items.push({
+        category: "material", name: "파라펫 (난간 안쪽)",
+        quantity: parapetArea, unit: "㎡",
+        unitPrice, total: Math.round(parapetArea * unitPrice),
+        sortOrder: order++,
+      });
     }
     // 옥탑 외벽 강판 — 옥탑 둘레 × 옥탑 높이 × 1.10 (별도 라인 — 높이가 다르므로)
     if (scope.rooftopStructure && rooftopP > 0 && rooftopHeightM > 0) {

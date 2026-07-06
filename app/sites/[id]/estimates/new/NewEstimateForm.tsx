@@ -1369,6 +1369,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
                 categoryLabels={constructionType === "steelWaterproof" ? { gutter: "배수로 / 물받이 부속" } : undefined}
                 bendingUnitPrice={eff.bendingPricePerMmPer3m ?? 36}
+                constructionType={constructionType}
                 finishingAutoHint={constructionType === "steelWaterproof"
                   ? ((scope.handrail || scope.cap)
                     ? "두겁·미시·프래싱 절곡은 난간/두겁 입력에서 자동 계산 중 — 여기서는 추가 마감재만 선택하세요."

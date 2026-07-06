@@ -283,7 +283,8 @@ geometric auto-fill default the user can override**; small consumables
   - 카탈로그 `gutter` 카테고리 라벨은 steelWaterproof 에서 "배수로 / 물받이 부속" 으로 override (`CatalogPicker categoryLabels` prop).
 - **물받이 라인은 더 이상 type-gated 아님** — `buildLineItems` 가 `gutterLengthM>0 && gutterMode!=none` 이면 유형 무관 emit (스틸방수 gutterMode="full" → 라벨 "차양"). 스테인리스 배수로 라인은 steelWaterproof 전용으로 별도.
 - **엔드캡** — 기와지붕 외엔 거의 안 써서(보통 접어 마감) 별도 UI 제거. 필요 시 카탈로그 finishing 에서 선택.
-- **난간 / 두겁** (steelWaterproof) — `handrail` 토글 시 `SCOPE_FORCES`로 `cap` 자동 ON. 토글 아래 **파라펫 높이 + 난간 둘레** 직접 입력. 두겁/미시/파라펫강판 = 난간(+옥탑) 둘레 기반. (옛 `capLengthM` 직접입력은 deprecated — 둘레로 계산.)
+- **난간 / 두겁** (steelWaterproof) — `handrail` 토글 시 `SCOPE_FORCES`로 `cap` 자동 ON. 토글 아래 **파라펫 높이 + 난간 둘레** 직접 입력. 두겁/미시 = 난간(+옥탑) 둘레 기반. (옛 `capLengthM` 직접입력은 deprecated — 둘레로 계산.)
+  - **파라펫 분리 (2026-06-16 사용자 확인): 시공면적엔 난간(벽 양면) 면적까지 포함해 측정하는 관행.** 벽 안쪽 면(둘레×높이)은 파라펫 자재("parapet" 단가), 바깥 면은 일반 강판. 그래서 `파라펫 (난간 안쪽)` 라인은 **추가가 아니라 본 강판 면적에서 분리** — `buildLineItems` 상단 `parapetFaceArea` 를 본 라인에서 빼고 파라펫 라인으로 발행 (areaM2/2 클램프). 구 "파라펫 강판 (난간) = 둘레×높이×1.1 추가" 모델은 이중 계산이라 폐기.
 - **옥탑 구조물** (steelWaterproof) — `rooftopStructure` 토글 시 아래 **둘레 / 높이(`rooftopStructureHeightCm`) / 출입문 수 / 창문 수** 입력. 옥탑 외벽 강판 + 문/창 트림 절곡 생성.
 - **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). **개수 × 개당단가 모델 (2026-06-15)**: 자재 = `시공면적 × 개/㎡ 계수 × 개당 매입단가`, 개수 올림(발주 단위), 로스율 미적용(계수가 곧 소비 규칙). 목재 30×60 격자 → 1.4개/㎡ × 3,333원, 철재 30×80 → 0.76개/㎡ × 18,000원. 설정 `SubstructurePricingCard`(개당단가 × 개/㎡ → ㎡당 환산). 단가는 매입원가 — 고객 부풀림은 마진 분배. 레거시 `substructureWoodPricePerSqm`/`Steel` 컬럼은 미사용(호환 유지). 목재=붙임, 철재=띄움.
 - **부대비용 (경비) — 2026-06-16:** 운송·식대는 항상, 숙박·팀경비·제경비는 토글 (`Estimate.includeLodging`/`includeTeamExpense`/`includeInsurance`, 폼 노무비 섹션).
@@ -321,13 +322,14 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 
 **심플 모드 (default)** — one auto-calculated line per group:
 - `simpleType`: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
-- Defaults in `DEFAULT_GROUP_MODES`:
-  - finishing → enabled: true, total 0원. 주요 마감(용마루 절곡/기성품)은 폼의 '마감 방식'이 자동
-    계산하고, 카드는 접힘 상태에서 **"마감 방식에서 자동 계산 중"** 상태를 표시 (`autoNote`) —
-    꺼진 모양이면 마감재가 빠진 걸로 오해하고(2026-06-12 피드백), 켜져 있는데 0원이면 버그로
-    오해해서, "켜짐 + 자동 상태 표시 + 입력값은 추가분" 으로 정리. 여기 입력 금액은 자동 계산 외 추가분.
-  - accessory → percent 3%
-  - gutter → perM 2,000원/m (길이 0 이면 라인 없음)
+- Defaults are **공사 유형별** — `defaultGroupModes(constructionType)` (2026-06-16 사용자 확정):
+  - 지붕/옥상지붕: **finishing(기성품) enabled + perSqm 2,000원/㎡** (근사 디폴트), bending 그룹 해제
+    (주요 절곡은 '마감 방식' 자동). 카드 접힘 시 "마감 방식에서 자동 계산 중" `autoNote` 유지.
+  - 바닥형 스틸방수: **bending enabled + perSqm 1,000원/㎡** (근사), finishing(기성품) 해제.
+  - 공통: accessory → percent **8%** (포스코 샘플 체결부속+실리콘 7~10%/재료비 근사),
+    gutter → perM 2,000원/m (길이 0 이면 라인 없음).
+  - `resolveGroupDefaults(saved, constructionType)` — 유형별 built-in 위에 settings/estimate 병합.
+    CatalogPicker 도 `constructionType` prop 받아 동일 기본값 표시.
 - Settings override: `PricingSettings.catalogDefaults` (Json, 그룹 키), merged via `resolveGroupDefaults()`.
 
 **상세 모드** — itemized from `DEFAULT_CATALOG` (~30 천보 실단가 items), 8분류 소제목으로 그룹핑:

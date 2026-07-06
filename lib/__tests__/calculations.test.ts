@@ -276,12 +276,12 @@ describe("buildLineItems — 용마루 마감 방식", () => {
     // 350mm × 36원 × (8m/3) = 33,600원
     expect(ridgeBend?.total).toBe(33_600);
     expect(items.find((i) => i.name === "용마루 마감")).toBeUndefined();
-    expect(items.find((i) => i.name.includes("기성품"))).toBeUndefined();
+    expect(items.find((i) => i.name.startsWith("용마루 (기성품"))).toBeUndefined();
   });
 
   it("일반기와 기본 = 기성품: 3m 규격 개수 환산 (8m → 3개 × 고전 14,300원)", () => {
     const items = buildLineItems(baseInput({ materialType: "generalTile", scope: { ridge: true } }));
-    const ready = items.find((i) => i.name.includes("기성품"));
+    const ready = items.find((i) => i.name.startsWith("용마루 (기성품"));
     expect(ready).toBeDefined();
     expect(ready?.quantity).toBe(3); // ceil(8 / 3)
     expect(ready?.unitPrice).toBe(14_300); // 카탈로그 용마루 (고전)
@@ -296,7 +296,7 @@ describe("buildLineItems — 용마루 마감 방식", () => {
       finishingMethods: { ridge: "bending" },
     }));
     expect(items.find((i) => i.name.startsWith("용마루 절곡"))).toBeDefined();
-    expect(items.find((i) => i.name.includes("기성품"))).toBeUndefined();
+    expect(items.find((i) => i.name.startsWith("용마루 (기성품"))).toBeUndefined();
   });
 
   it("징크250 + 기성품 지정 → 멀티용마루 (혼용 케이스)", () => {
@@ -304,7 +304,7 @@ describe("buildLineItems — 용마루 마감 방식", () => {
       scope: { ridge: true },
       finishingMethods: { ridge: "ready" },
     }));
-    const ready = items.find((i) => i.name.includes("기성품"));
+    const ready = items.find((i) => i.name.startsWith("용마루 (기성품"));
     expect(ready?.name).toContain("멀티용마루");
     expect(ready?.unitPrice).toBe(13_200);
   });
@@ -318,12 +318,38 @@ describe("buildLineItems — 용마루 마감 방식", () => {
         unit: "개", quantity: 2, unitPrice: 13_200,
       }],
     }));
-    expect(items.find((i) => i.name.includes("기성품"))).toBeUndefined();
+    expect(items.find((i) => i.name.startsWith("용마루 (기성품"))).toBeUndefined();
   });
 
   it("scope.ridge 꺼져 있으면 어떤 용마루 라인도 없음", () => {
     const items = buildLineItems(baseInput({ scope: {} }));
     expect(items.find((i) => i.name.includes("용마루"))).toBeUndefined();
+  });
+});
+
+describe("buildLineItems — 파라펫 분리 (스틸방수 난간)", () => {
+  // 사용자 측정 관행: 시공면적에 난간(벽 양면) 면적 포함. 안쪽 절반 = 파라펫 자재로 분리.
+  const steelInput = () => baseInput({
+    constructionType: "steelWaterproof", materialType: "parapet",
+    areaM2: 100, scope: { handrail: true, cap: true },
+    railPerimeterM: 20, parapetHeightCm: 100, // 안쪽 면 = 20 × 1.0 = 20㎡
+  });
+
+  it("본 강판 = 시공면적 − 난간 안쪽 절반, 파라펫 라인 = 그 절반 (합계 = 시공면적, 추가 아님)", () => {
+    const items = buildLineItems(steelInput());
+    const main = items.find((i) => i.name.includes("스틸방수 시공"));
+    const parapet = items.find((i) => i.name === "파라펫 (난간 안쪽)");
+    expect(main?.quantity).toBe(80);       // 100 − 20
+    expect(parapet?.quantity).toBe(20);    // 분리된 안쪽 면
+    expect((main?.quantity ?? 0) + (parapet?.quantity ?? 0)).toBe(100); // 이중 없음
+  });
+
+  it("난간 미선택이면 파라펫 라인 없음 + 본 강판 전체 면적", () => {
+    const items = buildLineItems(baseInput({
+      constructionType: "steelWaterproof", materialType: "parapet", areaM2: 100,
+    }));
+    expect(items.find((i) => i.name === "파라펫 (난간 안쪽)")).toBeUndefined();
+    expect(items.find((i) => i.name.includes("스틸방수 시공"))?.quantity).toBe(100);
   });
 });
 
@@ -350,13 +376,27 @@ describe("buildLineItems — 미시 마감 방식 (스틸방수)", () => {
 });
 
 describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이 부속)", () => {
-  it("기본값: 부자재 심플 8% 라인 생성, 마감재는 켜져 있지만 추가 금액 0 → 라인 없음 (0원 라인 금지)", () => {
+  it("지붕 기본값: 부자재 8% + 마감재(기성품) ㎡당 체크, 절곡 그룹은 해제 (0원 라인 금지)", () => {
     const items = buildLineItems(baseInput());
     const accessory = items.find((i) => i.name.includes("부자재"));
     expect(accessory).toBeDefined();
     expect(accessory?.name).toContain("(심플)");
-    expect(items.find((i) => i.name.includes("마감재"))).toBeUndefined();
+    // 마감재(기성품) 기본 체크 + ㎡당 2,000 — 100㎡ × 2,000 = 200,000
+    const finishing = items.find((i) => i.name.includes("마감재"));
+    expect(finishing?.total).toBe(200_000);
+    // 절곡 그룹은 지붕에서 기본 해제 (주요 절곡은 '마감 방식' 자동)
+    expect(items.find((i) => i.name.includes("절곡 (전개") || i.name === "절곡 (심플)")).toBeUndefined();
     expect(items.find((i) => i.total === 0)).toBeUndefined(); // 0원 라인 금지
+  });
+
+  it("스틸방수 기본값: 절곡 ㎡당 체크, 마감재(기성품) 해제", () => {
+    const items = buildLineItems(baseInput({
+      constructionType: "steelWaterproof", materialType: "parapet",
+    }));
+    // 절곡 그룹 심플 ㎡당 1,000 — 100㎡ × 1,000 = 100,000
+    const bending = items.find((i) => i.name === "절곡 (심플)");
+    expect(bending?.total).toBe(100_000);
+    expect(items.find((i) => i.name.includes("마감재"))).toBeUndefined();
   });
 
   it("마감재 상세 모드: 기성품(용마루) 항목 선택 (절곡은 별도 그룹)", () => {

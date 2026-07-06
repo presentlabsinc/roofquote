@@ -38,6 +38,8 @@ interface Props {
   finishingAutoHint?: string;
   /** 절곡 단가 (원/mm·3m) — 절곡 그룹 상세 "총 넓이 × 단가" 미리보기용. */
   bendingUnitPrice?: number;
+  /** 공사 유형 — 그룹 기본값이 유형별 (지붕/옥상지붕=기성품 체크, 스틸방수=절곡 체크). */
+  constructionType?: string | null;
 }
 
 // 8분류 라벨 — 상세 모드 안의 소제목으로만 사용 (카드는 3그룹).
@@ -55,10 +57,13 @@ const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
 function CatalogPickerBase({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
   areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0, categoryLabels,
-  finishingAutoHint, bendingUnitPrice = 36,
+  finishingAutoHint, bendingUnitPrice = 36, constructionType = null,
 }: Props) {
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
-  const resolved = useMemo(() => resolveGroupDefaults({ ...defaults, ...modes }), [modes, defaults]);
+  const resolved = useMemo(
+    () => resolveGroupDefaults({ ...defaults, ...modes }, constructionType),
+    [modes, defaults, constructionType],
+  );
 
   // Track open/expanded state per group so we can auto-open on mode→detailed
   const [openMap, setOpenMap] = useState<Record<string, boolean>>({});
