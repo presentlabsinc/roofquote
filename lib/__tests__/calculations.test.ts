@@ -376,16 +376,17 @@ describe("buildLineItems — 미시 마감 방식 (스틸방수)", () => {
 });
 
 describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이 부속)", () => {
-  it("지붕 기본값: 부자재 8% + 마감재(기성품) ㎡당 체크, 절곡 그룹은 해제 (0원 라인 금지)", () => {
+  it("지붕 기본값: 부자재 8% + 절곡 > 기성품 (둘 다 체크, 절곡이 더 많이 듦)", () => {
     const items = buildLineItems(baseInput());
     const accessory = items.find((i) => i.name.includes("부자재"));
     expect(accessory).toBeDefined();
     expect(accessory?.name).toContain("(심플)");
-    // 마감재(기성품) 기본 체크 + ㎡당 2,000 — 100㎡ × 2,000 = 200,000
+    // 절곡 2,000/㎡ > 기성품 1,000/㎡ — "기성품보다 절곡이 더 많이 들어" (2026-06-16)
     const finishing = items.find((i) => i.name.includes("마감재"));
-    expect(finishing?.total).toBe(200_000);
-    // 절곡 그룹은 지붕에서 기본 해제 (주요 절곡은 '마감 방식' 자동)
-    expect(items.find((i) => i.name.includes("절곡 (전개") || i.name === "절곡 (심플)")).toBeUndefined();
+    const bending = items.find((i) => i.name === "절곡 (심플)");
+    expect(finishing?.total).toBe(100_000); // 100㎡ × 1,000
+    expect(bending?.total).toBe(200_000);   // 100㎡ × 2,000
+    expect(bending!.total).toBeGreaterThan(finishing!.total);
     expect(items.find((i) => i.total === 0)).toBeUndefined(); // 0원 라인 금지
   });
 

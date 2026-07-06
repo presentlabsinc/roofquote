@@ -323,8 +323,10 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 **심플 모드 (default)** — one auto-calculated line per group:
 - `simpleType`: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
 - Defaults are **공사 유형별** — `defaultGroupModes(constructionType)` (2026-06-16 사용자 확정):
-  - 지붕/옥상지붕: **finishing(기성품) enabled + perSqm 2,000원/㎡** (근사 디폴트), bending 그룹 해제
-    (주요 절곡은 '마감 방식' 자동). 카드 접힘 시 "마감 방식에서 자동 계산 중" `autoNote` 유지.
+  - 지붕/옥상지붕: **절곡 perSqm 2,000 + 기성품 perSqm 1,000, 둘 다 체크 — 절곡 > 기성품**
+    ("기성품보다 절곡이 더 많이 들어" 사용자 확인; 샘플도 후레싱 절곡이 마감 지출 대부분).
+    용마루 절곡은 '마감 방식' 자동이므로 절곡 기본가는 그 외 후레싱(하부·페이샤·하우)분.
+    카드 접힘 시 "마감 방식에서 자동 계산 중" `autoNote` 유지.
   - 바닥형 스틸방수: **bending enabled + perSqm 1,000원/㎡** (근사), finishing(기성품) 해제.
   - 공통: accessory → percent **8%** (포스코 샘플 체결부속+실리콘 7~10%/재료비 근사),
     gutter → perM 2,000원/m (길이 0 이면 라인 없음).

@@ -139,8 +139,10 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
  */
 /**
  * 그룹 기본값은 **공사 유형별** (2026-06-16 사용자 확정):
- * - 지붕/옥상지붕: 마감재(기성품) 체크 + ㎡당 기본가, 절곡 해제 (주요 절곡은 '마감 방식' 자동).
- * - 바닥형 스틸방수: 절곡 체크 + ㎡당 기본가 (스틸방수 마감은 절곡), 마감재(기성품) 해제.
+ * - 지붕/옥상지붕: 절곡·기성품 둘 다 체크하되 **절곡 > 기성품** ("기성품보다 절곡이 더 많이 들어" —
+ *   포스코 샘플도 후레싱 절곡이 마감재 지출의 대부분). 용마루 절곡은 '마감 방식'이 자동 계산하므로
+ *   이 절곡 기본가는 그 외 후레싱(하부·페이샤·하우)분.
+ * - 바닥형 스틸방수: 절곡 체크 (스틸방수 마감은 절곡), 마감재(기성품) 해제 — 기성품 거의 안 씀.
  * - 부자재 8%(포스코 샘플 체결부속+실리콘 7~10%/재료비 근사)·물받이 2,000원/m 는 공통.
  * 심플 기본가는 "이 크기에 들어갈 만한" 근사 — 상세로 바꾸면 입력한 자재대로.
  */
@@ -149,10 +151,10 @@ export function defaultGroupModes(constructionType?: string | null): Record<Cata
   return {
     finishing: steel
       ? { enabled: false, mode: "simple", simpleType: "total",  simpleValue: 0 }
-      : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 2000 },
+      : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 1000 },
     bending: steel
       ? { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 1000 }
-      : { enabled: false, mode: "simple", simpleType: "total",  simpleValue: 0 },
+      : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 2000 },
     accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.08 },
     gutter:    { enabled: true, mode: "simple", simpleType: "perM",    simpleValue: 2000 },
   };
