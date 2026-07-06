@@ -88,7 +88,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       dailyWage: 300000,
       defaultWorkerCount: 3,
       skyliftDailyCost: 500000,
-      ladderTruckDailyCost: 300000,
+      ladderTruckDailyCost: 150000,
       scaffoldDailyCost: 150000,
       scaffoldPricePerSqmDay: 3000,
       substructureMode: "wood",
