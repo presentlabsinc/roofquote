@@ -306,11 +306,15 @@ geometric auto-fill default the user can override**; small consumables
 **UI/심플모드는 3그룹**, 천보 8분류는 상세 모드 안의 소제목으로만 유지. 사용자 피드백:
 "8개 카드는 도매상 단가표 구조지 현장 멘탈 모델이 아니다 — 마감재/부자재/물받이부속 3개면 된다."
 
-`lib/catalog.ts` `CATALOG_GROUPS`:
-- **finishing "마감재 (기성품·절곡)"** = finishing + roofingExtras + bending 분류.
-  상세에서 기성품 용마루와 절곡 항목을 한 화면에서 같이 담음.
+`lib/catalog.ts` `CATALOG_GROUPS` (2026-06-16 절곡 분리 후 4그룹):
+- **finishing "마감재 (기성품)"** = finishing + roofingExtras 분류. 기성품 제품 고르기만.
 - **accessory "부자재 (피스·실링 등)"** = fastener + sealing + substructure + translucent 분류.
 - **gutter "물받이 부속"** = gutter 분류. (스틸방수에선 라벨 "배수로 / 물받이 부속" override.)
+- **bending "절곡"** = bending 분류. **상세 모드가 특수** — 아이템 목록이 아니라 "총 넓이(mm)" 한 칸
+  입력 → `넓이 × bendingPricePerMmPer3m`. 모든 절곡은 3m 본 단위(더 긴 건 이어붙임)라 길이는
+  단가(원/mm·3m)에 이미 포함, 넓이만 입력. 넓이는 `catalogModes.bending.simpleQty` 에 저장.
+  횟수별(1회/2회/3회) 아이템 제거됨. buildLineItems 와 CatalogPicker 에 각각 특수 분기.
+  (용마루/미시/페이샤 절곡은 여전히 '마감 방식'이 자동 계산 — 이 그룹은 그 외 추가 절곡용.)
 
 Each group has **two modes** — the user toggles per group (+ enabled 체크박스):
 

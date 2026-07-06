@@ -97,7 +97,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       drainHolePrice: 200000,
       capBendingPricePerM: 5000,
       endCapPrice: 3500,
-      stainlessDrainPricePerM: 50000,
+      stainlessDrainPricePerM: 32000,
       downspoutUnitPrice: 50000,
       denjoPricePerUnit: 700000,
       parapetMultiplier: 1.4,

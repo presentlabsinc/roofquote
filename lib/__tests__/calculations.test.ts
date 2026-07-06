@@ -359,16 +359,31 @@ describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이
     expect(items.find((i) => i.total === 0)).toBeUndefined(); // 0원 라인 금지
   });
 
-  it("마감재 상세 모드: 기성품(용마루)과 절곡 항목을 같이 담을 수 있음", () => {
+  it("마감재 상세 모드: 기성품(용마루) 항목 선택 (절곡은 별도 그룹)", () => {
     const items = buildLineItems(baseInput({
       catalogModes: { finishing: { enabled: true, mode: "detailed" } },
       catalogSelections: [
         { category: "finishing", key: "multiRidge", label: "멀티용마루", unit: "개", quantity: 2, unitPrice: 13_200 },
-        { category: "bending", key: "custom_bending_1", label: "추가 절곡", unit: "m", quantity: 5, unitPrice: 4_000 },
       ],
     }));
     expect(items.find((i) => i.name === "멀티용마루")?.total).toBe(26_400);
-    expect(items.find((i) => i.name === "추가 절곡")?.total).toBe(20_000);
+  });
+
+  it("절곡 그룹 상세 = 총 넓이(mm) × 절곡단가 (횟수별 아이템 아님)", () => {
+    const items = buildLineItems(baseInput({
+      catalogModes: { bending: { enabled: true, mode: "detailed", simpleQty: 700 } },
+    }));
+    const bend = items.find((i) => i.name.startsWith("절곡"));
+    expect(bend).toBeDefined();
+    expect(bend?.total).toBe(700 * 36); // 넓이 700mm × 36원 = 25,200
+    expect(bend?.unit).toBe("mm");
+  });
+
+  it("절곡 그룹 넓이 0 → 라인 없음", () => {
+    const items = buildLineItems(baseInput({
+      catalogModes: { bending: { enabled: true, mode: "detailed", simpleQty: 0 } },
+    }));
+    expect(items.find((i) => i.name.startsWith("절곡"))).toBeUndefined();
   });
 
   it("그룹 체크 해제 시 상세 선택 항목도 전부 제외", () => {

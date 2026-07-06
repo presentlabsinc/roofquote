@@ -960,6 +960,21 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     const m: CategoryMode = effectiveModes[grp.value];
     // Skip the group entirely when the user disabled it
     if (m.enabled === false) continue;
+    // 절곡 그룹 상세 모드는 특수 — 아이템 목록이 아니라 총 넓이(mm) × 절곡단가.
+    // 모든 절곡은 3m 본 단위라 길이는 단가(원/mm·3m)에 포함, 넓이(simpleQty)만 입력.
+    if (grp.value === "bending" && m.mode === "detailed") {
+      const widthMm = m.simpleQty ?? 0;
+      const total = Math.round(widthMm * settings.bendingPricePerMmPer3m);
+      if (widthMm > 0 && total > 0) {
+        items.push({
+          category: "material", name: "절곡 (전개 넓이 기준)",
+          quantity: widthMm, unit: "mm",
+          unitPrice: settings.bendingPricePerMmPer3m, total,
+          sortOrder: order++,
+        });
+      }
+      continue;
+    }
     if (m.mode === "simple") {
       const sline = simpleModeLineItem(grp.categories[0], grp.label, m, {
         materialTotal: materialTotalForCategoryPercent,

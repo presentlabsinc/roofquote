@@ -112,12 +112,15 @@ export function resolveCategoryDefaults(savedDefaults: CategoryModesMap | null |
 // 2026-06-12 사용자 피드백: 8분류 카드는 도매상 단가표 구조지 현장 멘탈 모델이 아님.
 // UI/심플모드는 3그룹으로 묶고, 8분류는 상세 모드 안의 소제목으로만 유지.
 // 마감재 상세에서 기성품(용마루 등)과 절곡을 한 화면에서 같이 담을 수 있음.
-export type CatalogGroup = "finishing" | "accessory" | "gutter";
+export type CatalogGroup = "finishing" | "accessory" | "gutter" | "bending";
 
 export const CATALOG_GROUPS: { value: CatalogGroup; label: string; icon: string; categories: CatalogCategory[] }[] = [
-  { value: "finishing", label: "마감재 (기성품·절곡)",  icon: "🏠", categories: ["finishing", "roofingExtras", "bending"] },
+  { value: "finishing", label: "마감재 (기성품)",       icon: "🏠", categories: ["finishing", "roofingExtras"] },
   { value: "accessory", label: "부자재 (피스·실링 등)", icon: "🔩", categories: ["fastener", "sealing", "substructure", "translucent"] },
   { value: "gutter",    label: "물받이 부속",           icon: "🌧️", categories: ["gutter"] },
+  // 절곡 = 기성품 제품 고르기가 아니라 치수 계산. 상세 모드는 총 넓이(mm) 입력 → 넓이 × 절곡단가.
+  // 모든 절곡은 3m 본 단위(더 긴 건 이어붙임)라 길이는 단가(원/mm·3m)에 이미 포함, 넓이만 입력.
+  { value: "bending",   label: "절곡",                 icon: "📏", categories: ["bending"] },
 ];
 
 export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
@@ -137,6 +140,8 @@ export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = {
   finishing: { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
   accessory: { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
   gutter:    { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
+  // 절곡: 심플=총금액 lump(기본 0), 상세=총 넓이(mm) 입력 → 넓이 × 절곡단가. 넓이는 simpleQty 에 저장.
+  bending:   { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
 };
 
 /** Merge user-defined group defaults (PricingSettings.catalogDefaults) over built-ins. */
@@ -229,11 +234,8 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
   { key: "st64",               category: "sealing", label: "ST64", unit: "갑", price: 8800, sortOrder: 20 },
 
   // ─── 절곡 (bending) ──────────────────────────────────────────────────
-  // 절곡은 mm × 36원 × (길이/3m) 공식 (settings.bendingPricePerMmPer3m). 아래는 1m 기준 추정 표시값.
-  { key: "bend1",              category: "bending", label: "1회 절곡",    unit: "m", price: 3000,  sortOrder: 10 },
-  { key: "bend2",              category: "bending", label: "2회 절곡",    unit: "m", price: 5000,  sortOrder: 20 },
-  { key: "bend3",              category: "bending", label: "3회 절곡",    unit: "m", price: 7000,  sortOrder: 30 },
-  { key: "customBend",         category: "bending", label: "커스텀 절곡", unit: "m", price: 10000, sortOrder: 40 },
+  // 횟수별(1회/2회/3회) 항목 제거 (2026-06-16) — 절곡은 총 넓이(mm) × 절곡단가로 계산.
+  // 절곡 그룹 상세 모드는 아이템 목록이 아니라 "총 넓이" 입력 (CatalogPicker 특수 처리).
 ];
 
 /** Group a catalog list by category, preserving sortOrder within each. */

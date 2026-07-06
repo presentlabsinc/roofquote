@@ -36,6 +36,8 @@ interface Props {
   categoryLabels?: Partial<Record<CatalogGroup, string>>;
   /** 마감재 그룹 상단에 표시할 안내 — '마감 방식' 자동 계산과의 관계 (싱크 표시). */
   finishingAutoHint?: string;
+  /** 절곡 단가 (원/mm·3m) — 절곡 그룹 상세 "총 넓이 × 단가" 미리보기용. */
+  bendingUnitPrice?: number;
 }
 
 // 8분류 라벨 — 상세 모드 안의 소제목으로만 사용 (카드는 3그룹).
@@ -53,7 +55,7 @@ const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
 function CatalogPickerBase({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
   areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0, categoryLabels,
-  finishingAutoHint,
+  finishingAutoHint, bendingUnitPrice = 36,
 }: Props) {
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
   const resolved = useMemo(() => resolveGroupDefaults({ ...defaults, ...modes }), [modes, defaults]);
@@ -168,6 +170,33 @@ function CatalogPickerBase({
                 gutterLengthM={gutterLengthM}
                 materialTotalEstimate={materialTotalEstimate}
               />
+            ) : grp.value === "bending" ? (
+              // 절곡 상세 — 아이템 목록 대신 "총 넓이(mm)" 입력 → 넓이 × 절곡단가.
+              <div className="mt-3">
+                <p className="text-[11px] text-muted-foreground mb-1.5">
+                  사용할 절곡의 전개 넓이 총합 입력 (3m 본 기준, 더 긴 건 이어붙임)
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number" inputMode="numeric"
+                      value={m.simpleQty ? String(m.simpleQty) : ""}
+                      onChange={(e) => setMode(grp.value, { simpleQty: parseFloat(e.target.value) || 0 })}
+                      placeholder="예: 700"
+                      className="h-12 text-right pr-10 font-semibold tabular-nums rounded-xl"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">mm</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">×</span>
+                  <span className="text-xs text-muted-foreground tabular-nums shrink-0">{bendingUnitPrice.toLocaleString("ko-KR")}원/mm</span>
+                </div>
+                <div className="flex items-center justify-between text-xs pt-2 mt-1 border-t border-border/40">
+                  <span className="text-muted-foreground">예상 비용</span>
+                  <span className="font-bold text-primary tabular-nums text-sm">
+                    {m.simpleQty && m.simpleQty > 0 ? `${Math.round(m.simpleQty * bendingUnitPrice).toLocaleString("ko-KR")}원` : "—"}
+                  </span>
+                </div>
+              </div>
             ) : (
               <div className="space-y-1.5 mt-3">
                 {grp.categories.map((cat) => {
