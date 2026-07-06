@@ -323,13 +323,17 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 **심플 모드 (default)** — one auto-calculated line per group:
 - `simpleType`: `percent` (자재비 %), `perSqm` (㎡당), `perM` (m당 — gutter length), `total` (총금액)
 - Defaults are **공사 유형별** — `defaultGroupModes(constructionType)` (2026-06-16 사용자 확정):
-  - 지붕/옥상지붕: **절곡 perSqm 2,000 + 기성품 perSqm 1,000, 둘 다 체크 — 절곡 > 기성품**
-    ("기성품보다 절곡이 더 많이 들어" 사용자 확인; 샘플도 후레싱 절곡이 마감 지출 대부분).
+  - 지붕/옥상지붕: **절곡 percent 12% + 기성품 perSqm 1,000, 둘 다 체크 — 절곡 > 기성품**
+    ("기성품보다 절곡이 더 많이 들어"). 절곡 12%는 샘플 3건 실측 — 후레싱류 = 재료비의
+    10.3/12.7/20.2% (평균 ~14%, 큰 현장 가중 12%). 기성품은 샘플 전부 0원이라 % 근거 없음(근사).
     용마루 절곡은 '마감 방식' 자동이므로 절곡 기본가는 그 외 후레싱(하부·페이샤·하우)분.
     카드 접힘 시 "마감 방식에서 자동 계산 중" `autoNote` 유지.
-  - 바닥형 스틸방수: **bending enabled + perSqm 1,000원/㎡** (근사), finishing(기성품) 해제.
-  - 공통: accessory → percent **8%** (포스코 샘플 체결부속+실리콘 7~10%/재료비 근사),
+  - 바닥형 스틸방수: **bending enabled + perSqm 1,000원/㎡** (표본 없음 — 근사), finishing(기성품) 해제.
+  - 공통: accessory → percent **8%** (포스코 샘플 체결부속+실리콘 = 재료비의 9.7/7.4/17.6%),
     gutter → perM 2,000원/m (길이 0 이면 라인 없음).
+  - **percent 기준 = 카탈로그 그룹 이전까지의 전체 자재 라인 합** (강판+PE폼+하지+절곡자동+물받이+
+    단열재 등, 2026-06-17 — 구 기준은 강판+PE폼만이라 샘플 %와 안 맞았음). 폼 미리보기
+    `materialTotalEstimate` 도 `getMaterialPriceSqm` 기반 (legacy ㎡가 30,000 아님).
   - `resolveGroupDefaults(saved, constructionType)` — 유형별 built-in 위에 settings/estimate 병합.
     CatalogPicker 도 `constructionType` prop 받아 동일 기본값 표시.
 - Settings override: `PricingSettings.catalogDefaults` (Json, 그룹 키), merged via `resolveGroupDefaults()`.

@@ -465,11 +465,6 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     // "percent" default 0.15). See "Catalog categories — simple/detailed" below.
   }
 
-  // Compute material subtotal once — needed by simple-mode "percent" calculations
-  const materialTotalForCategoryPercent = items
-    .filter((i) => i.category === "material")
-    .reduce((s, i) => s + i.total, 0);
-
   // ── 자재 자동 추정: 베이스라인 우선, 없으면 기하학적 추정 ──
   // buildingShape 가 있으면 새 추정 로직, 없으면 기존 √면적 근사로 fallback.
   const baselineRaw = (settings as unknown as { baselineData?: BaselineData | null }).baselineData ?? null;
@@ -958,6 +953,13 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       sortOrder: order++,
     });
   }
+
+  // % 기준 자재비 — 여기까지 쌓인 **전체 자재 라인 합** (강판+PE폼+하지+절곡자동+물받이+단열재 등,
+  // 카탈로그 그룹 라인 제외). 샘플 견적의 "재료비" 개념과 일치 — 절곡 12%·부자재 8% 근거가 이 기준
+  // (2026-06-17, 구 기준은 강판+PE폼만이라 %가 과소).
+  const materialTotalForCategoryPercent = items
+    .filter((i) => i.category === "material")
+    .reduce((s, i) => s + i.total, 0);
 
   // Catalog groups (마감재(기성품·절곡) / 부자재 / 물받이 부속 — 3그룹)
   // Each group is either:

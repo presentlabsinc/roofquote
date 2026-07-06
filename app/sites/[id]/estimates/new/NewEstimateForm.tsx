@@ -66,7 +66,7 @@ import {
   type FinishingMethods,
   resolveFinishingMethod,
 } from "@/lib/types";
-import { applyOverrides, estimateBasePerimeter, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { applyOverrides, estimateBasePerimeter, getMaterialPriceSqm, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
@@ -1366,7 +1366,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 defaults={(settings.catalogDefaults as GroupModesMap | null) ?? undefined}
                 areaM2={parseFloat(sqmInput) || 0}
                 gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
-                materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * eff.materialPricePerSqm)}
+                materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * getMaterialPriceSqm(eff, materialType, thickness))}
                 categoryLabels={constructionType === "steelWaterproof" ? { gutter: "배수로 / 물받이 부속" } : undefined}
                 bendingUnitPrice={eff.bendingPricePerMmPer3m ?? 36}
                 constructionType={constructionType}
