@@ -292,9 +292,10 @@ geometric auto-fill default the user can override**; small consumables
   - **팀 경비(잡비)**: `includeTeamExpense`(기본 OFF). `teamExpenseAmount`(기본 150,000) lump sum, 인력 직접비. category "other".
   - **제경비(산재·고용보험)**: `includeInsurance`(기본 ON). 노무비(labor category 합)×`insuranceRateOfLabor`(기본 0.05 = 산재3.73+고용1.01≈4.74 반올림). 일용직에도 산재·고용은 적용 → 소규모도 포함. 건강/연금/퇴직(정규직)·안전관리비(대형)는 제외(샘플 견적이 그렇게 함). category "other".
   - **회계 구분**: 운송·식대·숙박·팀경비·제경비 = 모두 "경비(기타경비)", 노무비 아님. 회사 일반관리비(overhead)는 마진에 포함(별도 분리 안 함 — 대형 공사 아닌 소규모 대상이라 단순 유지).
+  - **고객 PDF 노출 (2026-06-16)**: 숙박비(category lodging)·팀경비(name "팀 경비")는 고객 견적서에 별도 라인으로 안 나오고 **시공비/인건비에 녹임** (내부 EstimateDetail 엔 그대로 보임). 제경비(보험)는 정식 항목이라 노출 유지.
 - **폐기물** uses `wasteTruckCount` (defaults 1). Cost = `wasteDisposalCost × wasteTruckCount` (per truck, 기본 ₩1,000,000).
 - **비계** = `area × days × scaffoldPricePerSqmDay`. area 0 이면 legacy `scaffoldDailyCost × days`.
-- **새 배수구 타공 (drainHole)** scope flag + count stepper. Cost = `drainHoleCount × drainHolePrice`.
+- **새 배수구 타공 (drainHole)** scope flag + count stepper. **원가 0(다 마진)이 기본** (2026-06-16 사용자 확인) — `drainHolePrice` 기본 0, 단가 설정 시에만 원가 라인. 청구는 마진/최종가로.
 - **PE폼 (hasPeFoam, 기본 ON)** — 강판 종류 섹션 체크박스. 강판 면적 × `peFoamPricePerSqm`. 견적서 PDF에선 강판 라인에 합산 표시(`mergePeFoamIntoMaterial`), 내부는 별도 라인.
 - **단열재 (insulationTypes, multi-select)** — 스티로폼(EPS)/아이소핑크(XPS)/경질우레탄폼(PIR)/열반사단열재/기타. 기타 선택 시 `insulationNote`. 면적 × `insulationPricePerSqm`.
 

@@ -350,7 +350,7 @@ describe("buildLineItems — 미시 마감 방식 (스틸방수)", () => {
 });
 
 describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이 부속)", () => {
-  it("기본값: 부자재 심플 3% 라인 생성, 마감재는 켜져 있지만 추가 금액 0 → 라인 없음 (0원 라인 금지)", () => {
+  it("기본값: 부자재 심플 8% 라인 생성, 마감재는 켜져 있지만 추가 금액 0 → 라인 없음 (0원 라인 금지)", () => {
     const items = buildLineItems(baseInput());
     const accessory = items.find((i) => i.name.includes("부자재"));
     expect(accessory).toBeDefined();

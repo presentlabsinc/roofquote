@@ -116,11 +116,12 @@ export type CatalogGroup = "finishing" | "accessory" | "gutter" | "bending";
 
 export const CATALOG_GROUPS: { value: CatalogGroup; label: string; icon: string; categories: CatalogCategory[] }[] = [
   { value: "finishing", label: "마감재 (기성품)",       icon: "🏠", categories: ["finishing", "roofingExtras"] },
+  // 절곡 = 기성품 제품 고르기가 아니라 치수 계산. 마감재 바로 아래 배치 (성격상 마감 관련).
+  // 상세 모드는 총 넓이(mm) 입력 → 넓이 × 절곡단가. 모든 절곡 3m 본 단위(더 긴 건 이어붙임)라
+  // 길이는 단가(원/mm·3m)에 이미 포함, 넓이만 입력.
+  { value: "bending",   label: "절곡",                 icon: "📏", categories: ["bending"] },
   { value: "accessory", label: "부자재 (피스·실링 등)", icon: "🔩", categories: ["fastener", "sealing", "substructure", "translucent"] },
   { value: "gutter",    label: "물받이 부속",           icon: "🌧️", categories: ["gutter"] },
-  // 절곡 = 기성품 제품 고르기가 아니라 치수 계산. 상세 모드는 총 넓이(mm) 입력 → 넓이 × 절곡단가.
-  // 모든 절곡은 3m 본 단위(더 긴 건 이어붙임)라 길이는 단가(원/mm·3m)에 이미 포함, 넓이만 입력.
-  { value: "bending",   label: "절곡",                 icon: "📏", categories: ["bending"] },
 ];
 
 export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
@@ -138,7 +139,8 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
  */
 export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = {
   finishing: { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },
-  accessory: { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.03 },
+  // 부자재(피스·실링) 자재비 대비 % — 포스코 샘플 체결부속+실리콘이 재료비의 7~10%였음 (3%는 과소).
+  accessory: { enabled: true,  mode: "simple", simpleType: "percent", simpleValue: 0.08 },
   gutter:    { enabled: true,  mode: "simple", simpleType: "perM",    simpleValue: 2000 },
   // 절곡: 심플=총금액 lump(기본 0), 상세=총 넓이(mm) 입력 → 넓이 × 절곡단가. 넓이는 simpleQty 에 저장.
   bending:   { enabled: true,  mode: "simple", simpleType: "total",   simpleValue: 0 },

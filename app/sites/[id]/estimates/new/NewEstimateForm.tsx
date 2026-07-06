@@ -1459,10 +1459,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 <EquipmentRow
                   active={!!scope.skylift} label="스카이차" onToggle={() => toggleScope("skylift")}
                   days={skyliftDays} onDaysChange={setSkyliftDays}
+                  unitPrice={eff.skyliftDailyCost}
                 />
                 <EquipmentRow
                   active={!!scope.ladderTruck} label="사다리차" onToggle={() => toggleScope("ladderTruck")}
                   days={ladderTruckDays} onDaysChange={setLadderTruckDays}
+                  unitPrice={eff.ladderTruckDailyCost}
                 />
                 <ScaffoldRow
                   active={!!scope.scaffold}
@@ -1838,10 +1840,11 @@ const ScopeRow = memo(function ScopeRow({ active, label, hint, onToggle }: { act
 });
 
 function EquipmentRow({
-  active, label, onToggle, days, onDaysChange,
+  active, label, onToggle, days, onDaysChange, unitPrice,
 }: {
   active: boolean; label: string; onToggle: () => void;
   days: string; onDaysChange: (v: string) => void;
+  unitPrice?: number;
 }) {
   return (
     <div className={`rounded-2xl border ${active ? "border-primary/40 bg-primary/5" : "border-border/60 bg-card"} overflow-hidden`}>
@@ -1852,6 +1855,9 @@ function EquipmentRow({
       >
         <Checkbox checked={active} className="w-5 h-5 pointer-events-none" />
         <span className="text-sm font-medium text-foreground flex-1 text-left">{label}</span>
+        {unitPrice != null && unitPrice > 0 && (
+          <span className="text-[11px] text-muted-foreground tabular-nums">{unitPrice.toLocaleString("ko-KR")}원/일</span>
+        )}
       </button>
       {active && (
         <div className="px-3 pb-3 pt-1">

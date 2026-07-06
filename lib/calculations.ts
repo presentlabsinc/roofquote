@@ -728,8 +728,9 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         sortOrder: order++,
       });
     }
-    // 새 배수구 타공
-    if (scope.drainHole && drainHoleCount > 0) {
+    // 새 배수구 타공 — 원가 0(다 마진)이 기본. 단가 설정 시에만 원가 라인.
+    // (사용자 확인 2026-06-16: 타공은 원가 없고 다 마진 → 최종가/마진으로 청구)
+    if (scope.drainHole && drainHoleCount > 0 && settings.drainHolePrice > 0) {
       items.push({
         category: "other", name: "새 배수구 타공", quantity: drainHoleCount, unit: "개",
         unitPrice: settings.drainHolePrice,

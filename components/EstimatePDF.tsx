@@ -275,6 +275,8 @@ function groupForSimple(items: DisplayLineItem[]): SimpleLine[] {
   };
   for (const i of items) {
     if (i.synthetic && i.name === "이윤") { buckets.construction += i.total; continue; }
+    // 팀 경비(잡비)는 고객에 노출 안 함 — 시공비에 녹임 (숙박비는 category lodging 으로 이미 녹음).
+    if (i.name === "팀 경비") { buckets.construction += i.total; continue; }
     if (i.category === "material") buckets.material += i.total;
     else if (i.category === "labor" || i.category === "meals" || i.category === "lodging") buckets.construction += i.total;
     else if (i.category === "equipment" || i.category === "transport") buckets.equipment += i.total;
@@ -302,7 +304,8 @@ function groupForDetailed(items: DisplayLineItem[]): DetailedLine[] {
   let profitTotal = 0;
   for (const item of items) {
     if (item.synthetic && item.name === "이윤") { profitTotal += item.total; continue; }
-    if (item.category === "labor" || item.category === "meals" || item.category === "lodging") {
+    // 팀 경비(잡비)·숙박은 고객 상세에 별도 노출 안 함 — 인건비에 녹임.
+    if (item.name === "팀 경비" || item.category === "labor" || item.category === "meals" || item.category === "lodging") {
       laborItems.push(item);
       continue;
     }

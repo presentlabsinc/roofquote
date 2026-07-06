@@ -89,7 +89,7 @@ const DEFAULTS = {
   substructureWoodPiecesPerSqm: 1.4,
   substructureSteelPricePerPiece: 18000,
   substructureSteelPiecesPerSqm: 0.76,
-  drainHolePrice: 200000,
+  drainHolePrice: 0,
   capBendingPricePerM: 5000,
   endCapPrice: 3500,
   stainlessDrainPricePerM: 32000,

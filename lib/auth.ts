@@ -94,7 +94,7 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       substructureMode: "wood",
       substructureWoodPricePerSqm: 30000,
       substructureSteelPricePerSqm: 40000,
-      drainHolePrice: 200000,
+      drainHolePrice: 0,
       capBendingPricePerM: 5000,
       endCapPrice: 3500,
       stainlessDrainPricePerM: 32000,
