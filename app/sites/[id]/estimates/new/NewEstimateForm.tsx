@@ -356,6 +356,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       setGutterSides(new Set(GUTTER_SIDES));
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
+      // 옥상엔 난간(파라펫)이 사실상 항상 있음 — 기본 ON (없는 현장만 해제).
+      // 둘레는 면적에서 자동 추정(√면적×4)되므로 면적만 넣어도 두겁/미시/파라펫 비용이 잡힘.
+      defaults.handrail = true;
+      defaults.cap = true;
       setMaterialType("slate");
       setGutterSides(new Set()); // 안함 (스틸방수는 물받이 대신 스테인리스 배수로)
       // 하지작업은 모든 유형에서 목재 기본 — 안 쓰면 사용자가 '없음' 으로 변경
@@ -586,6 +590,23 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     }
   }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput, constructionType]);
 
+  // ── 면적 기반 자동 채움 — "면적만 넣고 계산 눌러도 근사 견적" ──
+  // 사용자가 직접 만진 필드는 절대 덮어쓰지 않음 (touched ref). 수정 모드는 기존값 보존.
+  //   난간 둘레: √면적 × 4 (ㅁ자 근사) · 배수로: √면적 × 2 (두 면 근사)
+  //   작업 일수: max(2, ceil(면적/90)) — 샘플 실측 (215㎡ = 3일, ~100㎡ = 2일)
+  const railTouchedRef = useRef(isEditing);
+  const drainTouchedRef = useRef(isEditing);
+  const workDaysTouchedRef = useRef(isEditing);
+  useEffect(() => {
+    const sqm = parseFloat(sqmInput) || 0;
+    if (sqm <= 0) return;
+    if (constructionType === "steelWaterproof") {
+      if (!railTouchedRef.current) setRailPerimeterInput(String(Math.round(Math.sqrt(sqm) * 4)));
+      if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.round(Math.sqrt(sqm) * 2)));
+    }
+    if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / 90))));
+  }, [sqmInput, constructionType]);
+
   // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
   //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)
   //   - 둘레/처마 돌출만 바뀌면 면이 1개 이상 선택돼 있을 때만 갱신 (수동 입력 보존)
@@ -596,10 +617,17 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const sqm = parseFloat(sqmInput) || 0;
     // 처마 돌출은 지붕공사(roof)만 둘레에 더함. 옥상지붕은 시공면적에 포함.
     const overhangCm = constructionType === "roof" ? (parseInt(eaveOverhangInput) || 0) : 0;
+    // 둘레: 직접/형태 입력값 우선, 없으면 ㅁ자 근사 — 건물형태를 안 골라도 면적만으로 자동 계산.
     const inputPerim = parseFloat(perimeterInput) || 0;
-    if (sqm <= 0 || !buildingShape || inputPerim <= 0) return;
+    const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
+    const basePerim = inputPerim > 0
+      ? inputPerim
+      : (sqm > 0 && constructionType
+          ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape ?? "rectangle", bSqm > 0 ? bSqm : null))
+          : 0);
+    if (sqm <= 0 || basePerim <= 0) return;
     // 처마 외곽 둘레 사용 (물받이는 처마 끝에 달림)
-    const eavePerim = inputPerim + 8 * (overhangCm / 100);
+    const eavePerim = basePerim + 8 * (overhangCm / 100);
     const weight = Array.from(gutterSides).reduce((sum, s) => sum + GUTTER_SIDE_WEIGHTS[s], 0);
     // m 단위 정수 반올림 (둘레와 동일한 정밀도)
     const estLen = Math.round(eavePerim * weight);
@@ -613,7 +641,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (sidesChanged || !gutterLength) {
       setGutterLength(String(estLen));
     }
-  }, [gutterSides, perimeterInput, eaveOverhangInput, sqmInput, buildingShape, constructionType, gutterLength]);
+  }, [gutterSides, perimeterInput, eaveOverhangInput, sqmInput, buildingShape, constructionType, gutterLength, showBuildingArea, buildingSqmInput]);
 
   // Effective prices for inline display — settings with overrides merged on top.
   // useMemo 로 메모이즈 — pricingOverrides 가 안 바뀌면 재계산 안 함 (폼 다른 필드 입력 시).
@@ -899,7 +927,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                             </p>
                             <NumberStepper
                               value={railPerimeterInput}
-                              onChange={setRailPerimeterInput}
+                              onChange={(v) => { railTouchedRef.current = true; setRailPerimeterInput(v); }}
                               min={0} max={999} step={1}
                               unit="m"
                             />
@@ -1080,7 +1108,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                         type="number"
                         inputMode="decimal"
                         value={stainlessDrainLength}
-                        onChange={(e) => setStainlessDrainLength(e.target.value)}
+                        onChange={(e) => { drainTouchedRef.current = true; setStainlessDrainLength(e.target.value); }}
                         placeholder="0"
                         className="h-11 rounded-xl tabular-nums flex-1"
                       />
@@ -1490,7 +1518,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 <NumberStepper
                   label="작업 일수"
                   value={workDays}
-                  onChange={setWorkDays}
+                  onChange={(v) => { workDaysTouchedRef.current = true; setWorkDays(v); }}
                   min={0.5} max={60} step={0.5}
                   unit="일"
                 />

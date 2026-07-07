@@ -200,7 +200,7 @@ Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMm
 - roof / rooftopRoof: 용마루 — **마감 방식에 따라 절곡 라인 또는 기성품 개수 라인 중 하나만** (`finishingMethods`, 아래 RESOLVED 섹션), 처마/덴조 **건당 시공(labor)** (구 "처마 마감 m당" 라인은 6/1 리팩토링에서 제거 — `eavePricePerM` 은 미사용, `bendingWidthEave` 는 옥탑 트림 넓이로만 재사용), 프래싱 절곡(꺾인 건물), 물받이 OR 엔드캡, 하지, 철거(roof만).
 - steelWaterproof: 두겁/미시/프래싱 절곡, 파라펫 강판(난간둘레×높이), 옥탑 외벽 강판(옥탑둘레×옥탑높이),
   옥탑 문/창 트림(개수×평균둘레), 처마/덴조, 스테인리스 배수로, 홈통, 배수구 타공.
-- 공통 소모품 (buildingShape 있을 때만): 스크류 대(면적×2/㎡), 스크류 소(절곡길이×3.3/m), 실리콘(접합부÷6m).
+- 공통 소모품 (**항상 자동 — 건물형태 불필요**, 2026-06-17): 스크류 대(면적×2/㎡), 스크류 소(절곡길이×3.3/m), 실리콘(접합부÷6m). 길이 기반은 절곡 라인 없으면 0 → 라인 생략.
 - 단열재(insulationTypes multi-select), PE폼(hasPeFoam, 기본 ON — 강판/바닥에 ㎡당 추가).
 
 **Loss rate** — `resolveEffectiveLossRate(lossRateMode, roofShape, manualRate)`:
@@ -214,6 +214,13 @@ Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMm
 - 설정 카드에 평당 갯수·평당 금액 표시 (업자가 감으로 검증하는 정보 — 사용자 피드백).
 - **driver 2종**: 면적 기반(시공면적 ㎡ — 항상 입력) vs 길이 기반(부재 길이 — 형태에서 기하 추정 + √면적 폴백).
   길이 기반은 평당으로 우기지 않음(정사각/길쭉 건물이 같은 평수라도 길이 천차). 단가만 설정, 길이는 자동/직접입력.
+
+**면적 → 전체 자동 채움 (2026-06-17 사용자 요구: "면적만 넣고 계산 눌러도 근사 견적"):**
+- 폼이 면적 입력 시 자동 채움 (사용자가 만진 필드는 touched ref 로 보존, 수정 모드는 기존값):
+  난간 둘레 = √면적×4 (ㅁ자 근사), 배수로 = √면적×2 (두 면 근사), 작업일수 = max(2, ceil(면적/90))
+  (샘플 실측: 215㎡=3일, ~100㎡=2일). 물받이 길이는 건물형태 없어도 rectangle 폴백으로 자동.
+- 스틸방수 기본 scope 에 handrail+cap 포함 (옥상엔 파라펫이 사실상 항상 있음 — 없는 현장만 해제).
+- % 심플 라인 표시: 수량 = 12(%), 단가 = 자재비의 1% (구 0.12 표시 버그 수정).
 
 **Measurement-first hybrid** (the practical philosophy): big-money quantities
 (면적/둘레/용마루·처마·물받이·난간 길이/절곡 m) should be **direct input with a

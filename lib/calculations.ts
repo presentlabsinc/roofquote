@@ -881,9 +881,10 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     }
   }
 
-  // ── 소모품 자동 생성 (스크류 / 실리콘 / 단열재) ──
-  // buildingShape 있을 때만 자동 생성. 사용자는 수정 가능.
-  if (buildingShape) {
+  // ── 소모품 자동 생성 (스크류 / 실리콘) ──
+  // 건물형태 없이도 항상 생성 (2026-06-17) — 면적만 넣어도 근사 견적이 나오게.
+  // 스크류 대 = 면적 기반, 스크류 소/실리콘 = 절곡·접합부 길이 기반 (없으면 0 → 라인 생략).
+  {
     // 강판 면적 — 메인 자재 라인 합산 (시공면적 × 로스율 반영 결과). 단순 areaM2 로 근사.
     const sheetArea = areaM2 * (applyLossRate && lossRate > 0 ? 1 + lossRate : 1);
 
@@ -1046,9 +1047,10 @@ function simpleModeLineItem(
 
   switch (m.simpleType) {
     case "percent":
-      qty = Math.round(v * 100) / 100;
+      // 수량 = 사람이 읽는 % 값 (0.12 → 12), 단가 = 자재비의 1% — qty × unitPrice ≈ total 유지.
+      qty = Math.round(v * 10000) / 100;
       unit = "%";
-      unitPrice = ctx.materialTotal;
+      unitPrice = Math.round(ctx.materialTotal / 100);
       break;
     case "perSqm":
       // Prefer user-entered simpleQty; fall back to construction area.

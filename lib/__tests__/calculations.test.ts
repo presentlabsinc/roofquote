@@ -381,13 +381,13 @@ describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이
     const accessory = items.find((i) => i.name.includes("부자재"));
     expect(accessory).toBeDefined();
     expect(accessory?.name).toContain("(심플)");
-    // 자재비 base: 강판만 = 100㎡ × 11,600(8,100/m ÷ 0.7m 폭, 100원 올림) = 1,160,000
+    // 자재비 base: 강판 1,160,000 (100㎡ × 11,600) + 스크류 대 60,000 (200개 × 300) = 1,220,000
     // 절곡 = 12% (샘플 후레싱류 10.3~20.2%/재료비), 기성품 = 1,000/㎡ (샘플 근거 없음 — 근사)
     const finishing = items.find((i) => i.name.includes("마감재"));
     const bending = items.find((i) => i.name === "절곡 (심플)");
     expect(finishing?.total).toBe(100_000); // 100㎡ × 1,000
-    expect(bending?.total).toBe(139_200);   // 1,160,000 × 12%
-    expect(accessory?.total).toBe(92_800);  // 1,160,000 × 8%
+    expect(bending?.total).toBe(146_400);   // 1,220,000 × 12%
+    expect(accessory?.total).toBe(97_600);  // 1,220,000 × 8%
     expect(bending!.total).toBeGreaterThan(finishing!.total);
     expect(items.find((i) => i.total === 0)).toBeUndefined(); // 0원 라인 금지
   });
@@ -397,8 +397,8 @@ describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이
     const withoutSub = buildLineItems(baseInput());
     const bendWith = withSub.find((i) => i.name === "절곡 (심플)")!.total;
     const bendWithout = withoutSub.find((i) => i.name === "절곡 (심플)")!.total;
-    // 하지 목재(140개 × 3,333 = 466,620)가 base 에 포함 → 12% 라인이 그만큼 증가
-    expect(bendWith).toBe(Math.round((1_160_000 + 140 * 3333) * 0.12));
+    // base = 강판 1,160,000 + 스크류 대 60,000 + 하지 목재(140개 × 3,333 = 466,620)
+    expect(bendWith).toBe(Math.round((1_160_000 + 60_000 + 140 * 3333) * 0.12));
     expect(bendWith).toBeGreaterThan(bendWithout);
   });
 
@@ -526,9 +526,11 @@ describe("buildLineItems — 소모품 계수 (설정값에서 읽음)", () => {
     expect(silicone!.quantity).toBeGreaterThan(0);
   });
 
-  it("buildingShape 없으면 소모품 라인 없음 (현행 게이트 유지)", () => {
+  it("buildingShape 없어도 소모품 자동 생성 — 면적만으로 근사 견적 (2026-06-17)", () => {
     const items = buildLineItems(baseInput());
-    expect(items.find((i) => i.name.startsWith("스크류"))).toBeUndefined();
+    // 스크류 대 = 면적 기반: 100㎡ × 2개/㎡ = 200개
+    expect(items.find((i) => i.name === "스크류 (대)")?.quantity).toBe(200);
+    // 접합부 길이 0 (절곡·물받이 없음) → 실리콘 라인 없음 (0개 라인 금지)
     expect(items.find((i) => i.name === "실리콘")).toBeUndefined();
   });
 });
