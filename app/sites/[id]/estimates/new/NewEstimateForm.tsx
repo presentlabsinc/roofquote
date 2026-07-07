@@ -362,6 +362,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       defaults.cap = true;
       setMaterialType("slate");
       setGutterSides(new Set()); // 안함 (스틸방수는 물받이 대신 스테인리스 배수로)
+      // 배수로엔 홈통이 최소 1개는 따라감 (물 내려갈 곳) — 기본 1
+      setDownspoutCount("1");
       // 하지작업은 모든 유형에서 목재 기본 — 안 쓰면 사용자가 '없음' 으로 변경
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     }
@@ -1308,11 +1310,20 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   </button>
                 ))}
               </div>
-              {substructureType !== "none" && (
-                <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
-                  ≈ 시공면적 × {(substructureType === "wood" ? eff.substructureWoodPricePerSqm : eff.substructureSteelPricePerSqm).toLocaleString("ko-KR")}원/㎡
-                </p>
-              )}
+              {substructureType !== "none" && (() => {
+                // 개수 모델 힌트 — 엔진과 동일: 면적 × 개/㎡ 계수 × 개당 매입단가 (구 ㎡당 lump 힌트는 레거시)
+                const wood = substructureType === "wood";
+                const perPiece = wood ? (eff.substructureWoodPricePerPiece ?? 3333) : (eff.substructureSteelPricePerPiece ?? 18000);
+                const perSqm = wood ? (eff.substructureWoodPiecesPerSqm ?? 1.4) : (eff.substructureSteelPiecesPerSqm ?? 0.76);
+                const sqm = parseFloat(sqmInput) || 0;
+                const pieces = sqm > 0 ? Math.ceil(sqm * perSqm) : 0;
+                return (
+                  <p className="text-[11px] text-muted-foreground mt-2 text-center tabular-nums">
+                    {perPiece.toLocaleString("ko-KR")}원/개 × {perSqm}개/㎡
+                    {pieces > 0 && ` → 약 ${pieces}개 · ${(pieces * perPiece).toLocaleString("ko-KR")}원`}
+                  </p>
+                );
+              })()}
             </Section>
 
             {/* Loss rate toggle */}
