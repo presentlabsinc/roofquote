@@ -140,12 +140,12 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
 /**
  * 그룹 기본값은 **공사 유형별** (2026-06-16 사용자 확정):
  * - 지붕/옥상지붕: 절곡·기성품 둘 다 체크하되 **절곡 > 기성품** ("기성품보다 절곡이 더 많이 들어").
- *   절곡은 **자재비 12%** — 포스코 샘플 3건에서 후레싱류 = 재료비의 10.3/12.7/20.2% (평균 ~14%,
- *   큰 현장 가중 12%). %라서 자재 종류·단가가 바뀌어도 같이 스케일. 용마루 절곡은 '마감 방식'이
- *   자동 계산하므로 이 절곡 기본가는 그 외 후레싱(하부·페이샤·하우)분.
- *   기성품은 샘플 3건 전부 0원이라 % 근거 없음 → perSqm 1,000 근사 유지.
- * - 바닥형 스틸방수: 절곡 체크, 지붕과 동일하게 자재비 12% (스틸방수 표본은 없음 — 지붕 실측 준용).
- *   기성품 해제 (스틸방수에서 기성품 마감재 거의 안 씀).
+ *   절곡은 **perSqm 3,000원/㎡** (2026-07-07 % → ㎡당 전환): 샘플 후레싱류 고객가가
+ *   3,200/6,900/9,300원/㎡ (215/72/50㎡ — 작을수록 높음) → 원가 기본 3,000, 마진 30% 후
+ *   고객가 ~4,300원/㎡ = 샘플 중간. %(자재비 기준)는 사용자 멘탈("총액 대비")과 어긋나고
+ *   총액은 라인 생성 단계에서 알 수 없어 폐기. 용마루 절곡은 '마감 방식'이 자동 계산하므로
+ *   이 기본가는 그 외 후레싱(하부·페이샤·하우)분. 기성품은 샘플 근거 없음 → perSqm 1,000 근사.
+ * - 바닥형 스틸방수: 절곡 체크, 지붕과 동일 3,000원/㎡ (표본 없음 — 준용). 기성품 해제.
  * - 부자재 8%(포스코 샘플 체결부속+실리콘 = 재료비의 9.7/7.4/17.6%)는 공통.
  * - 물받이 부속 2,000원/m: 지붕/옥상지붕만 기본 체크 (물받이 사방 기본과 세트).
  *   스틸방수는 해제 — 배수로가 시공 범위에서 별도이고, 이 그룹은 추가 물받이 필요할 때만.
@@ -158,7 +158,7 @@ export function defaultGroupModes(constructionType?: string | null): Record<Cata
     finishing: steel
       ? { enabled: false, mode: "simple", simpleType: "total",  simpleValue: 0 }
       : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 1000 },
-    bending: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.12 },
+    bending: { enabled: true, mode: "simple", simpleType: "perSqm", simpleValue: 3000 },
     accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.08 },
     gutter:    { enabled: !steel, mode: "simple", simpleType: "perM",  simpleValue: 2000 },
   };

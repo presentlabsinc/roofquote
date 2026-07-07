@@ -376,39 +376,38 @@ describe("buildLineItems — 미시 마감 방식 (스틸방수)", () => {
 });
 
 describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이 부속)", () => {
-  it("지붕 기본값: 부자재 8% + 절곡 자재비 12% > 기성품 (둘 다 체크, 절곡이 더 많이 듦)", () => {
+  it("지붕 기본값: 부자재 8% + 절곡 3,000원/㎡ > 기성품 1,000원/㎡ (둘 다 체크, 절곡이 더 많이 듦)", () => {
     const items = buildLineItems(baseInput());
     const accessory = items.find((i) => i.name.includes("부자재"));
     expect(accessory).toBeDefined();
     expect(accessory?.name).toContain("(심플)");
-    // 자재비 base: 강판 1,160,000 (100㎡ × 11,600) + 스크류 대 60,000 (200개 × 300) = 1,220,000
-    // 절곡 = 12% (샘플 후레싱류 10.3~20.2%/재료비), 기성품 = 1,000/㎡ (샘플 근거 없음 — 근사)
+    // 부자재 % base: 강판 1,160,000 (100㎡ × 11,600) + 스크류 대 60,000 (200개 × 300) = 1,220,000
+    // 절곡 ㎡당 3,000 (샘플 후레싱 고객가 3,200~9,300원/㎡ → 원가 근사, 2026-07-07 %→㎡당 전환)
     const finishing = items.find((i) => i.name.includes("마감재"));
     const bending = items.find((i) => i.name === "절곡 (심플)");
     expect(finishing?.total).toBe(100_000); // 100㎡ × 1,000
-    expect(bending?.total).toBe(146_400);   // 1,220,000 × 12%
+    expect(bending?.total).toBe(300_000);   // 100㎡ × 3,000
     expect(accessory?.total).toBe(97_600);  // 1,220,000 × 8%
     expect(bending!.total).toBeGreaterThan(finishing!.total);
     expect(items.find((i) => i.total === 0)).toBeUndefined(); // 0원 라인 금지
   });
 
-  it("% 기준은 전체 자재 라인 합 — 하지 포함 시 절곡·부자재 금액도 커짐", () => {
+  it("% 기준은 전체 자재 라인 합 — 하지 포함 시 부자재(%) 금액도 커짐", () => {
     const withSub = buildLineItems(baseInput({ substructureType: "wood" }));
     const withoutSub = buildLineItems(baseInput());
-    const bendWith = withSub.find((i) => i.name === "절곡 (심플)")!.total;
-    const bendWithout = withoutSub.find((i) => i.name === "절곡 (심플)")!.total;
+    const accWith = withSub.find((i) => i.name.includes("부자재"))!.total;
+    const accWithout = withoutSub.find((i) => i.name.includes("부자재"))!.total;
     // base = 강판 1,160,000 + 스크류 대 60,000 + 하지 목재(140개 × 3,333 = 466,620)
-    expect(bendWith).toBe(Math.round((1_160_000 + 60_000 + 140 * 3333) * 0.12));
-    expect(bendWith).toBeGreaterThan(bendWithout);
+    expect(accWith).toBe(Math.round((1_160_000 + 60_000 + 140 * 3333) * 0.08));
+    expect(accWith).toBeGreaterThan(accWithout);
   });
 
-  it("스틸방수 기본값: 절곡 자재비 12% 체크, 마감재(기성품) 해제", () => {
+  it("스틸방수 기본값: 절곡 3,000원/㎡ 체크, 마감재(기성품) 해제", () => {
     const items = buildLineItems(baseInput({
       constructionType: "steelWaterproof", materialType: "parapet",
     }));
-    // base: 파라펫 강판 1,750,000 (100㎡ × 17,500) + 스크류 대 60,000 = 1,810,000 → 12% = 217,200
     const bending = items.find((i) => i.name === "절곡 (심플)");
-    expect(bending?.total).toBe(217_200);
+    expect(bending?.total).toBe(300_000); // 100㎡ × 3,000
     expect(items.find((i) => i.name.includes("마감재"))).toBeUndefined();
     // 물받이 부속도 스틸방수에선 기본 해제 (배수로는 시공 범위에서 별도)
     expect(items.find((i) => i.name.includes("물받이 부속"))).toBeUndefined();
