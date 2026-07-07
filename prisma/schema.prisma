@@ -68,7 +68,7 @@ model PricingSettings {
   parapetMultiplier         Float @default(1.4)   // (현재 미사용 — 면적은 시공면적에 포함된 것으로 가정)
 
   // 자재 로스율 — 시공 시 자투리/낭비분
-  defaultLossRate      Float   @default(0.15) // 15%
+  defaultLossRate      Float   @default(0.10) // 10%
   useLossRateByDefault Boolean @default(false)
   /**
    * 로스율 적용 모드:

@@ -101,12 +101,12 @@ export async function getOrCreatePricingSettings(userId: string, _email?: string
       downspoutUnitPrice: 50000,
       denjoPricePerUnit: 700000,
       parapetMultiplier: 1.4,
-      defaultLossRate: 0.15,
+      defaultLossRate: 0.10,
       useLossRateByDefault: false,
       baseTransportCost: 250000,
       mealCostPerPersonMeal: 20000,   // 점심 1만 + 음료·간식 1만 (1인 1일)
       lodgingCostPerPersonNight: 35000, // 2인실 7만 ÷ 2 (1인 1박)
-      defaultMarginRate: 0.33,
+      defaultMarginRate: 0.30,
       vatIncludedByDefault: true,
       estimateNumberStart: 1,
       marginMaterialRatio: 0.5,

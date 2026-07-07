@@ -97,7 +97,7 @@ const DEFAULTS = {
   downspoutUnitPrice: 50000,
   denjoPricePerUnit: 700000,
   parapetMultiplier: 1.4,
-  defaultLossRate: 0.15,
+  defaultLossRate: 0.10,
   estimateNumberStart: 1,
   marginMaterialRatio: 0.5,
   marginLaborRatio: 0.25,
@@ -108,7 +108,7 @@ const DEFAULTS = {
   lodgingCostPerPersonNight: 35000,
   teamExpenseAmount: 150000,
   insuranceRateOfLabor: 0.05,
-  defaultMarginRate: 0.33,
+  defaultMarginRate: 0.30,
   vatIncludedByDefault: true,
   // 로스율 적용 모드 — "auto" (지붕형태별 자동) | "manual" (디폴트값 항상)
   lossRateMode: "auto" as "auto" | "manual",
