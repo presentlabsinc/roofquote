@@ -323,7 +323,7 @@ geometric auto-fill default the user can override**; small consumables
 `lib/catalog.ts` `CATALOG_GROUPS` (2026-06-16 절곡 분리 후 4그룹):
 - **finishing "마감재 (기성품)"** = finishing + roofingExtras 분류. 기성품 제품 고르기만.
 - **accessory "부자재 (피스·실링 등)"** = fastener + sealing + substructure + translucent 분류.
-- **gutter "물받이 부속"** = gutter 분류. (스틸방수에선 라벨 "배수로 / 물받이 부속" override.)
+- **gutter "물받이 부속"** = gutter 분류. 라벨은 전 유형 동일 (구 스틸방수 "배수로/물받이 부속" override 제거 — 배수로는 시공 범위 섹션에 별도, 이 그룹은 추가 물받이 부속용. 2026-07-07). 스틸방수는 기본 체크 해제.
 - **bending "절곡"** = bending 분류. **상세 모드가 특수** — 아이템 목록이 아니라 "총 넓이(mm)" 한 칸
   입력 → `넓이 × bendingPricePerMmPer3m`. 모든 절곡은 3m 본 단위(더 긴 건 이어붙임)라 길이는
   단가(원/mm·3m)에 이미 포함, 넓이만 입력. 넓이는 `catalogModes.bending.simpleQty` 에 저장.
@@ -341,8 +341,9 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
     용마루 절곡은 '마감 방식' 자동이므로 절곡 기본가는 그 외 후레싱(하부·페이샤·하우)분.
     카드 접힘 시 "마감 방식에서 자동 계산 중" `autoNote` 유지.
   - 바닥형 스틸방수: **bending enabled + percent 12%** (지붕과 동일 — 스틸방수 표본은 없어 지붕 실측 준용, 2026-06-17), finishing(기성품) 해제.
-  - 공통: accessory → percent **8%** (포스코 샘플 체결부속+실리콘 = 재료비의 9.7/7.4/17.6%),
-    gutter → perM 2,000원/m (길이 0 이면 라인 없음).
+  - accessory → percent **8%** 공통 (포스코 샘플 체결부속+실리콘 = 재료비의 9.7/7.4/17.6%).
+    gutter → perM 2,000원/m, **지붕/옥상지붕만 기본 체크** (물받이 사방 기본과 세트, 길이 0 이면 라인 없음).
+    스틸방수는 해제 — 배수로가 시공 범위에서 별도라 이 그룹은 추가 물받이용.
   - **percent 기준 = 카탈로그 그룹 이전까지의 전체 자재 라인 합** (강판+PE폼+하지+절곡자동+물받이+
     단열재 등, 2026-06-17 — 구 기준은 강판+PE폼만이라 샘플 %와 안 맞았음). 폼 미리보기
     `materialTotalEstimate` 도 `getMaterialPriceSqm` 기반 (legacy ㎡가 30,000 아님).

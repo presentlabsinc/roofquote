@@ -1407,7 +1407,6 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 areaM2={parseFloat(sqmInput) || 0}
                 gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
                 materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * getMaterialPriceSqm(eff, materialType, thickness))}
-                categoryLabels={constructionType === "steelWaterproof" ? { gutter: "배수로 / 물받이 부속" } : undefined}
                 bendingUnitPrice={eff.bendingPricePerMmPer3m ?? 36}
                 constructionType={constructionType}
                 finishingAutoHint={constructionType === "steelWaterproof"

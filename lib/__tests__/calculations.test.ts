@@ -410,6 +410,8 @@ describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이
     const bending = items.find((i) => i.name === "절곡 (심플)");
     expect(bending?.total).toBe(217_200);
     expect(items.find((i) => i.name.includes("마감재"))).toBeUndefined();
+    // 물받이 부속도 스틸방수에선 기본 해제 (배수로는 시공 범위에서 별도)
+    expect(items.find((i) => i.name.includes("물받이 부속"))).toBeUndefined();
   });
 
   it("마감재 상세 모드: 기성품(용마루) 항목 선택 (절곡은 별도 그룹)", () => {

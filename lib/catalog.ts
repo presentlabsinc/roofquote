@@ -146,7 +146,9 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
  *   기성품은 샘플 3건 전부 0원이라 % 근거 없음 → perSqm 1,000 근사 유지.
  * - 바닥형 스틸방수: 절곡 체크, 지붕과 동일하게 자재비 12% (스틸방수 표본은 없음 — 지붕 실측 준용).
  *   기성품 해제 (스틸방수에서 기성품 마감재 거의 안 씀).
- * - 부자재 8%(포스코 샘플 체결부속+실리콘 = 재료비의 9.7/7.4/17.6%)·물받이 2,000원/m 는 공통.
+ * - 부자재 8%(포스코 샘플 체결부속+실리콘 = 재료비의 9.7/7.4/17.6%)는 공통.
+ * - 물받이 부속 2,000원/m: 지붕/옥상지붕만 기본 체크 (물받이 사방 기본과 세트).
+ *   스틸방수는 해제 — 배수로가 시공 범위에서 별도이고, 이 그룹은 추가 물받이 필요할 때만.
  * 심플 기본가는 "이 크기에 들어갈 만한" 근사 — 상세로 바꾸면 입력한 자재대로.
  * % 기준 = 카탈로그 그룹 이전까지의 전체 자재 라인 합 (buildLineItems 참조).
  */
@@ -158,7 +160,7 @@ export function defaultGroupModes(constructionType?: string | null): Record<Cata
       : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 1000 },
     bending: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.12 },
     accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.08 },
-    gutter:    { enabled: true, mode: "simple", simpleType: "perM",    simpleValue: 2000 },
+    gutter:    { enabled: !steel, mode: "simple", simpleType: "perM",  simpleValue: 2000 },
   };
 }
 
