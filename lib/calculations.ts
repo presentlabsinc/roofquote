@@ -961,7 +961,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     .filter((i) => i.category === "material")
     .reduce((s, i) => s + i.total, 0);
 
-  // Catalog groups (마감재(기성품·절곡) / 부자재 / 물받이 부속 — 3그룹)
+  // Catalog groups (마감재(기성품) / 부자재 / 물받이 부속 / 절곡 — 4그룹)
   // Each group is either:
   //   - 심플 (simple) mode: one auto-calculated line based on simpleType + simpleValue
   //   - 상세 (detailed) mode: individual line items from catalogSelections

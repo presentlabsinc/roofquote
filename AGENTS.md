@@ -131,6 +131,9 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | Catalog defaults + helpers | [lib/catalog.ts](lib/catalog.ts) — `DEFAULT_CATALOG`, `CATALOG_CATEGORIES`, `groupCatalog`, `categoryToLineItemCategory` |
 | Prisma client | [lib/prisma.ts](lib/prisma.ts) — singleton, no adapter |
 | Supabase clients | [lib/supabase.ts](lib/supabase.ts) — `supabase` (anon, browser-safe) and `supabaseAdmin()` (service role, server-only) |
+| 프리셋 스냅샷 범위/헬퍼 | [lib/presets.ts](lib/presets.ts) — `PRESET_EXCLUDE`, `extractPresetSnapshot`, `applyPresetSnapshot` |
+| 프리셋 API | `app/api/presets/route.ts` (목록/생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/rename/delete) |
+| 계산 엔진 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` — `npm test` (vitest) |
 | Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
 | Estimate edit API (9 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate-detail line-item actions" below |
 | PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
@@ -304,9 +307,10 @@ geometric auto-fill default the user can override**; small consumables
 - `<NumberStepper>` ([components/ui/number-stepper.tsx](components/ui/number-stepper.tsx)) — round −/+ buttons flanking a typeable input. Use for fields with a small natural range (1-30 ish): 작업 일수, 인원, 장비 사용 일수, 카탈로그 항목 수량.
 - Don't use for wide-range numerics (면적, 가격) — plain inputs are better.
 
-### Catalog system — 3그룹 카드 (2026-06-12 재설계)
-**UI/심플모드는 3그룹**, 천보 8분류는 상세 모드 안의 소제목으로만 유지. 사용자 피드백:
-"8개 카드는 도매상 단가표 구조지 현장 멘탈 모델이 아니다 — 마감재/부자재/물받이부속 3개면 된다."
+### Catalog system — 4그룹 카드 (2026-06-12 재설계 → 2026-06-16 절곡 분리)
+**UI/심플모드는 4그룹** (마감재·부자재·물받이부속·절곡), 천보 8분류는 상세 모드 안의 소제목으로만
+유지. 사용자 피드백: "8개 카드는 도매상 단가표 구조지 현장 멘탈 모델이 아니다."
+절곡은 기성품 고르기가 아니라 치수 계산이라 마감재에서 분리 (2026-06-16).
 
 `lib/catalog.ts` `CATALOG_GROUPS` (2026-06-16 절곡 분리 후 4그룹):
 - **finishing "마감재 (기성품)"** = finishing + roofingExtras 분류. 기성품 제품 고르기만.
@@ -350,7 +354,7 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
   Back-compat: 구 8분류 키 중 "finishing"/"gutter" 는 그룹 키와 동명이라 자연 호환, 나머지 키는 무시.
 
 **Calculation flow** (`buildLineItems`):
-- For each of the 3 groups, look up effective mode (estimate override → settings default → built-in default)
+- For each of the 4 groups, look up effective mode (estimate override → settings default → built-in default)
 - enabled === false → 그룹 전체 스킵 (상세 선택 항목 포함)
 - Simple mode → emit one line via `simpleModeLineItem()` (returns null if value ≤ 0)
 - Detailed mode → emit one item per `catalogSelections[]` row whose item-category ∈ group with quantity > 0
@@ -515,9 +519,9 @@ All four are mutually derived: editing one updates the other three. The hero car
 1. ~~**절곡 포함/별도 확정**~~ ✅ 완료 (2026-06-12) — 절곡 단가 = 자재비+가공비 포함 확정, `finishingMethods` 부재별 시스템 구현. RESOLVED 섹션 참조.
 2. ~~**calculations.ts 핵심 함수 vitest**~~ ✅ 완료 (2026-06-12) — `lib/__tests__/calculations.test.ts` 28케이스 (`npm test`). 계산 엔진 수정 시 반드시 테스트 추가/갱신.
 3. **마진 분배 비율 스냅샷** — "Margin distribution" 섹션의 외부 감사 fix. 컬럼 3개 + live 폴백. 작음 — 2번 직후 또는 2번과 같이.
-4. **현장 즉시성 묶음** (calc 엔진 안 건드림 — 2번과 병행 가능): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체), ③ 견적 복사.
+4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
-6. **단가표 확정 → 프리셋** — 위 "내 단가 프리셋" 노트의 범위 규칙 준수.
+6. ~~**단가표 확정 → 프리셋**~~ ✅ 완료 (2026-06-16) — "내 단가 프리셋" 섹션 참조. **잔여 결정 1개: 실수 덮어쓰기 보호.** 활성 프리셋 상태에서 [저장]이 조용히 덮어쓰므로, 이전 값 복구 수단(추천: 저장 토스트에 '되돌리기' — prevSnapshotJson 1단계 undo)을 논의했으나 사용자 "좀 생각해보자" — 결정 대기.
 7. **이력 기반 자동 계수 (사용자 요구 — "와 대박" 수준)** — 견적 이력의 `자재수량 ÷ 면적`을 자재별로 집계해 소비 계수를 자동 보정/제안. ML 아님 — 사용자 자기 이력 평균(투명·수렴). **사용자 조건 (2026-06-15): ① 2~3개로 섣불리 발동 금지 — 통계적으로 의미 있는 큰 표본이 쌓였을 때만, ② 단순 평균 넘어 진짜 똑똑한 모델(형태·평수 구간·이상치 제외 등) 목표 — "내가 생각한 그대로 나오네" 수준.** 데이터 임계치 도달 전엔 기하 디폴트 유지. override→기본값 승격(5번)과 한 묶음.
 
 ## Documentation hygiene (you reading this)

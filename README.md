@@ -17,11 +17,13 @@
 | 프레임워크 | Next.js 16 (App Router) | RSC + API routes |
 | 언어 | TypeScript | strict |
 | 스타일 | Tailwind CSS v4 + shadcn/ui | Pretendard 폰트 |
+| 인증 | Supabase Auth (@supabase/ssr) | 카카오/구글/이메일. 멀티테넌트 — 데이터는 userId 스코프 |
 | 데이터베이스 | Supabase Postgres (Seoul ap-northeast-2) | Prisma 6 ORM |
 | 스토리지 | Supabase Storage | `site-photos` 버킷 |
 | PDF | @react-pdf/renderer | 서버사이드 렌더 |
 | 공유 | Web Share API | 카톡 공유 → fallback: 클립보드 |
-| 배포 | Vercel 권장 | 미배포 |
+| 테스트 | vitest | `npm test` — 계산 엔진 + 프리셋 스냅샷 |
+| 배포 | Vercel (icn1 Seoul) | main 푸시 = 자동 배포 |
 
 ---
 
@@ -54,6 +56,9 @@ npm run dev
    - service_role 키 → `SUPABASE_SERVICE_ROLE_KEY` (서버 전용, 절대 노출 금지)
 4. **Connect 버튼 (상단) → ORMs → Prisma** 탭에서 `DATABASE_URL` / `DIRECT_URL` 복사
    - `[YOUR-PASSWORD]` 부분에 프로젝트 생성 시 정한 DB 비밀번호 치환
+5. **Authentication** — 로그인 방식: 카카오/구글 OAuth (Providers 에서 설정) + 이메일/비밀번호.
+   베타 동안 회원가입은 닫혀 있음 — 계정은 Supabase 대시보드 (Authentication → Users) 에서 admin 이 직접 생성.
+   모든 페이지·API 는 로그인 필수 (`middleware.ts` 가 미인증 요청을 `/login` 으로 리다이렉트).
 
 ---
 
@@ -63,22 +68,27 @@ npm run dev
 
 ```
 roofquote/
+├── middleware.ts                                    # 세션 갱신 + 미인증 → /login 리다이렉트 (유일한 토큰 검증 지점)
 ├── app/
-│   ├── api/                                         # API routes
+│   ├── login/                                       # 로그인 페이지 (카카오/구글/이메일)
+│   ├── auth/callback/                               # OAuth 리턴 URL → 세션 교환
+│   ├── api/                                         # API routes (전부 로그인 필수, userId 스코프)
+│   │   ├── auth/logout/                             # POST 로그아웃
 │   │   ├── settings/                                # GET/POST 단가 설정
+│   │   ├── presets/                                 # GET/POST 단가 프리셋 + [id]/ (activate/overwrite/rename/delete)
 │   │   ├── sites/                                   # 현장 CRUD
 │   │   │   ├── [id]/                                # 현장 상세/수정/삭제
 │   │   │   └── [id]/estimates/                      # POST 새 견적 생성 (라인아이템 자동 계산)
-│   │   ├── estimates/[eid]/                         # PATCH 견적 수정 (라인 / 마진 / 최종가 / 추가 / 삭제)
+│   │   ├── estimates/[eid]/                         # PATCH 견적 수정 (10 액션 dispatch)
 │   │   ├── estimates/[eid]/pdf/                     # GET PDF (inline 기본, ?download=1 로 다운로드)
 │   │   └── upload/                                  # POST 사진 업로드 → Supabase Storage URL 반환
-│   ├── settings/                                    # 단가 설정 페이지 (㎡당 단가 계산기 포함)
+│   ├── settings/                                    # 단가 설정 (프리셋 바 + 단가표 카드들)
 │   ├── sites/
 │   │   ├── new/                                     # 새 현장 등록 폼
 │   │   └── [id]/
 │   │       ├── page.tsx                             # 현장 상세 (사진, 견적 목록)
 │   │       └── estimates/
-│   │           ├── new/                             # 새 견적 만들기 (12-section flow)
+│   │           ├── new/                             # 새 견적 만들기 (?edit=eid 로 수정 모드 겸용)
 │   │           └── [eid]/
 │   │               ├── page.tsx                     # 견적 상세 (내부/고객 보기 토글)
 │   │               └── preview/                     # 견적서 미리보기 → 저장/카톡
@@ -89,14 +99,17 @@ roofquote/
 │   ├── AppHeader.tsx                                # 글래스 블러 sticky 헤더 + 뒤로가기
 │   ├── BottomNav.tsx                                # 플로팅 pill 하단 네비 (focused flow 에서 숨김)
 │   ├── EstimatePDF.tsx                              # @react-pdf/renderer 문서 컴포넌트 (snapshot only)
-│   ├── CatalogPicker.tsx                            # 마감재/물받이부속/부자재/절곡 4-카테고리 picker
+│   ├── CatalogPicker.tsx                            # 추가 자재 4그룹 카드 (마감재/부자재/물받이부속/절곡)
 │   └── ui/                                          # shadcn/ui (button, input, card, etc.) + number-stepper
 ├── lib/
 │   ├── prisma.ts                                    # PrismaClient 싱글톤
-│   ├── supabase.ts                                  # supabase (anon) + supabaseAdmin (service role)
-│   ├── calculations.ts                              # buildLineItems / calcTotals / calcFromFinalPrice / THICKNESS_MULT
-│   ├── types.ts                                     # ConstructionType, MaterialType, ScopeFlags, GutterMode, SubstructureType 등
-│   ├── catalog.ts                                   # DEFAULT_CATALOG (~30 prepopulated items) + helpers
+│   ├── supabase.ts / supabase-server.ts             # 브라우저 anon / 서버 세션 + supabaseAdmin (service role)
+│   ├── auth.ts                                      # requireUser / requireUserAndSettings / getOrCreatePricingSettings
+│   ├── calculations.ts                              # buildLineItems / calcTotals / calcFromFinalPrice / 자재 자동 추정
+│   ├── types.ts                                     # ConstructionType, ScopeFlags, FinishingMethods, PricingOverrides 등
+│   ├── catalog.ts                                   # 천보 실단가 카탈로그 + 4그룹 정의 + 유형별 기본값
+│   ├── presets.ts                                   # 프리셋 스냅샷 범위 (단가·계수만, 회사정보 제외)
+│   ├── __tests__/                                   # vitest — 계산 엔진 + 프리셋 (npm test)
 │   └── utils.ts                                     # cn() 유틸
 ├── prisma/
 │   ├── schema.prisma                                # 데이터 모델
@@ -112,124 +125,42 @@ roofquote/
 
 ### 데이터 모델
 
-전체 스키마는 [prisma/schema.prisma](prisma/schema.prisma) 참고. 4개 테이블:
+전체 스키마(필드별 주석 포함)는 [prisma/schema.prisma](prisma/schema.prisma) 가 진실 — 여기선 모델 5개의 역할과 관계만 요약합니다.
 
 ```
-PricingSettings (live config — 절대 FK로 연결 안 함, 견적 생성 시점에 값 복사됨)
-  회사 정보 (snapshot 대상)
-    companyName, companyPhone, companyAddress
+PricingSettings  (사용자당 1행, userId @unique — "살아있는 단가표")
+  견적 계산의 모든 노브가 여기 있음. 절대 Estimate 와 FK 로 연결하지 않음 —
+  견적 생성 시점에 값이 복사(snapshot)됨.
+  · 회사 정보 (회사명/연락처/주소/사업자번호/직인/계좌/안내문구 — 견적에 스냅샷됨)
+  · 자재 단가: 강판 자재별 m당 단가(천보 도매가) + 유효폭 → ㎡당 환산
+  · 소비 계수: 하지 개당단가 × 개/㎡ (목재 1.4 / 철재 0.76), 스크류 개/㎡·개/절곡m, 실리콘 커버 m
+  · 절곡: bendingPricePerMmPer3m (자재비+가공비 포함, 3m 본 기준) + 부재별 기본 넓이 mm
+  · 노무·경비: 일당, 식대·간식, 숙박, 팀경비, 제경비(산재·고용 ≈ 노무비 5%)
+  · 장비·운송: 스카이차/사다리차/비계(㎡·일)/운송비/폐기물(트럭당)
+  · 정책: 기본 마진율(매출 대비), VAT 기본, 로스율(수동/지붕형태별 자동), 마진 분배 비율(50/25/25)
+  · catalogDefaults Json (추가 자재 4그룹 기본 모드), activePresetId (활성 프리셋 추적)
 
-  주요 자재 단가
-    materialPricePerSqm          # 칼라강판 ㎡당 (0.45t 기준, 두께별 배수 적용)
-    accessoryRate                # 부자재 비율 (자재비의 %, 자동 계산)
-    ridgePricePerM               # 용마루 m당
-    eavePricePerM                # 처마 마감 m당
-    gutterPricePerM              # 물받이 m당
-    removalPricePerSqm           # 철거 ㎡당
-    wasteDisposalCost            # 폐기물 트럭 1차당 (기본 1,000,000)
+PricingPreset  (userId 스코프 — 이름 붙인 단가표 스냅샷, "표준"/"겨울 비수기" 등)
+  snapshotJson = 단가·계수 필드만 (회사정보/견적번호/이력 제외 — lib/presets.ts PRESET_EXCLUDE).
+  전환(activate) = 값을 PricingSettings 에 복사. 견적 스냅샷 로직과 무관.
 
-  하지 작업 단가
-    substructureMode             # 새 견적 기본값: 'wood' | 'steel'
-    substructureWoodPricePerSqm  # 목재 하지 ㎡당
-    substructureSteelPricePerSqm # 철재 하지 ㎡당
+Site  (userId 스코프)
+  고객명/연락처/주소, photos Json [{url, memo?}], generalMemo. Estimate 는 Site 를 통해 소유권 상속.
 
-  스틸방수 단가
-    drainHolePrice               # 새 배수구 타공 1개당 (기본 200,000)
-    capBendingPricePerM          # 두겁 절곡 m당 (난간 시공 시 필수, 기본 5,000)
+Estimate  (모든 입력값·단가·합계가 생성 시점 snapshot)
+  · 공사: constructionType (roof/steelWaterproof/rooftopRoof), 자재 종류/두께/색상/텍스처, 일정(YYYY-MM)
+  · 면적·형태: areaM2(계산 기준), 건물면적, 건물형태(ㅁ/ㄱ/ㄷ), 지붕형태(박공/모임/…), 둘레, 처마돌출
+  · 범위: scopeFlags Json + 물받이(4면 다중선택)/배수로/타공/폐기물/하지 타입 등 개별 필드
+  · 스틸방수: 난간둘레·파라펫높이(파라펫 분리 계산), 옥탑 둘레/높이/문/창, 홈통
+  · 마감 방식: finishingMethods Json — 부재별 절곡/기성품 (자재 타입이 기본값 결정)
+  · 경비 토글: includeLodging(숙박)/includeTeamExpense(팀경비)/includeInsurance(제경비)
+  · 조정 레이어: pricingOverrides Json (견적별 절대값 단가), catalogModes/catalogSelections (추가 자재)
+  · 합계 snapshot: totalCost, marginMode/Rate/Amount, supplyPrice, vat, finalPrice (매출 대비 마진)
+  · 회사 정보 snapshot 7종 + 견적번호(YYYY-NNN 자동 채번) + pdfSentAt
 
-  인건비/체류비
-    dailyWage                    # 1인 1일
-    defaultWorkerCount           # 기본 작업 인원
-    mealCostPerPersonMeal        # 1인 1식 식비
-    lodgingCostPerPersonNight    # 1인 1박 숙박비
-
-  장비비
-    skyliftDailyCost             # 스카이차 1일
-    ladderTruckDailyCost         # 사다리차 1일
-    scaffoldPricePerSqmDay       # 비계 ㎡·일당 (주 모델)
-    scaffoldDailyCost            # 비계 1일 lump-sum (legacy, fallback)
-
-  로스율 / VAT / 마진 기본값
-    defaultLossRate              # 자재 로스율 (기본 10%)
-    useLossRateByDefault         # 새 견적에 로스율 자동 적용 여부
-    defaultMarginRate            # 기본 마진율 (예: 0.25 = 25%)
-    vatIncludedByDefault         # VAT 포함이 새 견적의 기본값인지
-
-  기타
-    baseTransportCost            # 기본 운송비
-    parapetMultiplier            # (legacy, 현재 미사용)
-
-Site
-  customerName, customerPhone, siteAddress
-  photos        Json     # [{url, memo?}] — Supabase Storage public URL 배열
-  generalMemo   String?
-  estimates     Estimate[]
-
-Estimate (모든 입력값과 합계는 snapshot)
-  공사 메타
-    constructionType    # 'roof' | 'steelWaterproof' | 'rooftopRoof'
-    materialType        # 'slate' | 'v250' | 'zinc250' | 'generalTile' | 'traditionalTile' | 'realZinc' | 'other'
-    materialThickness   # '0.4' | '0.45' | '0.5' | '0.6'
-    materialColor       # 프리셋 9개 + 직접 입력
-
-  면적
-    areaM2              # 시공 면적 (필수, 계산 기준)
-    buildingAreaM2      # 건물 면적 (옵션, 참고용 — 계산에 미사용)
-
-  작업
-    workerCount, workDays
-    substructureType    # null = 안함, 'wood' = 목재, 'steel' = 철재
-
-  공사 범위
-    scopeFlags          Json    # 체크된 항목들 (ScopeFlags 모양, lib/types.ts 참고)
-    gutterMode          # 다중선택 직렬화 — "front,back,left,right" / "" (안함). lib/types.ts 의 parseGutterSides / serializeGutterSides / gutterSidesLabel 사용
-    gutterLengthM       # 물받이 길이 (gutterMode 비어있지 않을 때)
-    endCapCount         # 엔드캡 개수 (지붕/옥상지붕)
-    capLengthM          # 두겁 절곡 길이 (난간 시공 시 필수)
-    drainHoleCount      # 새 배수구 타공 개수 (default 0)
-    wasteTruckCount     # 폐기물 차 수 (기본 1)
-
-  공사 일정 정밀도
-    constructionMonth   # "YYYY-MM-DD" / "YYYY-MM" / null (안 넣음) — PDF 에서 자동 포맷
-
-  per-estimate 단가 override (snapshot rule 유지)
-    pricingOverrides    Json    # Partial<PricingOverrides> — 빈 칸은 단가설정 기본값 사용
-    catalogModes        Json    # 카테고리별 simple/detailed 모드 + 심플 값 override
-    catalogSelections   Json    # 상세 모드 항목 스냅샷
-
-  로스율 snapshot
-    applyLossRate, lossRate
-
-  장비
-    skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2
-    otherEquipment      # 자유 텍스트 메모
-
-  카탈로그 선택 (마감재 / 물받이 부속 / 부자재 / 절곡)
-    catalogSelections   Json    # [{ category, key, label, unit, quantity, unitPrice }] snapshot
-
-  합계 snapshot (lineItems 합과 일치해야 함)
-    totalCost, marginMode, marginRate, marginAmount, supplyPrice, vat, finalPrice, vatIncluded
-
-  견적서 메타
-    paymentTerms, validityDays
-
-  회사 정보 snapshot (생성 시점에 PricingSettings 에서 복사)
-    companyNameSnapshot, companyPhoneSnapshot, companyAddressSnapshot
-
-  발송 기록
-    pdfUrl, pdfSentAt   # 현재 pdfUrl 은 미사용 — PDF 는 매번 snapshot 으로 재생성
-    createdAt, updatedAt
-
-  lineItems EstimateLineItem[]
-
-EstimateLineItem  ← 각 라인이 자기 단가 스냅샷을 보유
-  category    # 'material' | 'labor' | 'equipment' | 'transport' | 'meals' | 'lodging' | 'waste' | 'removal' | 'other'
-  name        # 사람이 읽는 라벨 ("칼라강판 0.45t 지붕 시공", "인건비", 등)
-  quantity, unit
-  unitPrice   # 견적 생성 시점의 단가 복사본 — 절대 재계산 안 함
-  total       # quantity × unitPrice (사용자 직접 수정 가능)
-  isUserEdited # 사용자가 손댄 라인 표시 (UI 에서 "수정됨" 뱃지 + "원래대로" 버튼)
-  sortOrder
+EstimateLineItem  (라인마다 자기 단가 스냅샷)
+  category(material/labor/equipment/transport/meals/lodging/waste/removal/other),
+  name, quantity, unit, unitPrice(생성 시점 복사 — 재계산 금지), total, isUserEdited, sortOrder
 ```
 
 법적/회계적 안전성을 위해 모든 견적 관련 값은 생성 시점에 복사됩니다. 자세한 이유는 아래 "핵심 불변 규칙" 참고.
@@ -262,9 +193,9 @@ PDF (v4 디자인) 에 나가는 항목:
 - 고객명, 공사위치 / 시공·건물 면적, 공사일정 ("YYYY년 MM월 중") 2단 구성
 - 공사 범위: 한 줄 텍스트 (· 로 구분)
 - 사용 자재 pill (제품명 / 두께 / 텍스처 / 색상)
-- **견적 내역** — 두 모드 토글:
-  - **간단**: 5개 그룹 평문 (자재 및 마감 / 시공비 / 장비 및 운송 / 철거 및 폐기 / 기타)
-  - **상세**: 표 (품명/규격/수량/금액), 그룹 헤더 (**자재공사 / 노무비 / 기타경비** — 한국 건설 표준 3-카테고리). 인건비+식비+숙박비는 "인건비 (기공·조공)" 한 줄로 묶임. 맨 아래 "소계 (부가세 별도/포함)"
+- **견적 내역** — 두 모드 토글 (마진은 `distributeMarginForDisplay` 로 라인에 분배되어 표시 — 내부 원가 노출 없음):
+  - **간단** (기본): 그룹 평문 — 자재 및 마감 일체 / 시공비 (현장 관리 포함) / 장비 및 운송 / 철거 및 폐기 / 현장 경비. **이윤은 간단에선 별도 줄 없이 시공비에 녹임** (거부감 방지). 빈 그룹은 생략
+  - **상세**: 표 (품명/규격/수량/금액), 그룹 헤더 **자재공사 / 노무비 / 기타경비 / 이윤** (표준품셈 형식 — 상세에선 이윤 줄 유지). 인건비+식비+숙박비는 "인건비 (기공·조공)" 한 줄로 묶임. 숙박비·팀경비는 고객 PDF 에 별도 라인으로 안 나옴. 맨 아래 "소계 (부가세 별도/포함)"
 - **최종 견적 금액** 카드 (옅은 회색 배경, 한 줄, "(부가세 포함/별도)" subtle)
 - **결제 조건**: 자동 파싱 — "계약금 30% / 잔금 70%" 같은 텍스트를 두 카드로 (% + 금액). 파싱 실패 시 평문
 - 입금 계좌 (단가설정 `bankAccount`)
@@ -330,56 +261,48 @@ PDF (v4 디자인) 에 나가는 항목:
 
 ## 공사 유형별 견적 흐름
 
-새 견적 만들기 화면 (`/sites/[id]/estimates/new`):
+새 견적 만들기 화면 (`/sites/[id]/estimates/new`) — 섹션 순서대로:
 
-1. **면적** — 평 / ㎡ 양방향 자동 변환 (평 왼쪽 우선). 시공 면적 필수. 건물 면적은 옵션 토글.
-2. **공사 유형** — `roof` / `steelWaterproof` / `rooftopRoof` 중 택1
-3. **강판 종류** — 슬레이트골, V250, 징크250, 일반기와형, 전통기와형, 리얼징크, 기타
-   - **공사 유형별 기본값:** `steelWaterproof` → 슬레이트골, `roof` / `rooftopRoof` → 징크250
-4. **강판 두께** — 0.4t / 0.45t (기본) / 0.5t / 0.6t
-5. **색상 / 텍스처** — 9가지 프리셋 (진밤색 기본) + 기타 직접 입력
-   - 진밤색, 밤색, 차콜, 진회색, 은회색, 적갈색, 녹색, 청색, 백색
-   - 텍스처: 유광 / 무광 / 스톤
-6. **하지 작업** — 없음 / 목재 / 철재. 시공면적 × ㎡당 단가 자동 계산
-7. **자재 로스율** — 토글 (기본 ON). 끄면 자재 면적 그대로
-8. **공사 범위** — 공사 유형에 따라 옵션 다름. **기본은 "용마루 마감"만 체크**, 나머지는 사용자가 선택:
-   - `roof`: 덧씌우기 (기본 ON) ↔ 철거 (mutually exclusive), 용마루, 처마, 엔드캡 (+ 개수, 기본 단가 2,000원/개), 폐기물 (+ 트럭 수)
-   - `rooftopRoof`: 용마루, 처마, 엔드캡 (+ 개수), 폐기물 — (창고/계단실/옥탑방 옵션은 제거됨)
-   - `steelWaterproof`: 난간 → 두겁 (forced dependency, 두겁 절곡 m당 비용), 새 배수구 타공 (+ 개수), 배수구 처리, 창고/계단실/옥탑방 포함, 폐기물
-   - **물받이**는 별도 다중선택: 앞·뒤·좌·우 4 버튼 (기본 전부 선택). 모두 선택 시 견적서엔 "전체", 모두 해제 시 "안함" 로 표시. `lib/types.ts` 의 `parseGutterSides` / `serializeGutterSides` / `gutterSidesLabel` 헬퍼 사용
-   - **포함 항목들**(난간, 창고, 계단실, 옥탑방)은 시공면적에 포함된 것으로 가정. **두겁만 예외** — 절곡이라 m당 별도 단가 적용
-9. **추가 자재 / 부속 (카탈로그)** — 4개 카테고리(마감재 / 물받이 부속 / 부자재 / 절곡) 각각 **iOS 스타일 토글로 심플(OFF) ↔ 상세(ON)** 전환
-   - **심플 모드** (기본): 한 줄로 자동 계산. 자재비의 % / m당 / 총금액 중 하나 + 값 입력. ㎡당은 데이터 모델엔 살아있지만 현재 UI에서 숨김 (사용자 피드백: 계산이 어려워서 거의 안 씀)
-   - **상세 모드**: 항목별로 수량 + 인라인 단가. 토글을 켜면 카드가 자동 펼쳐짐
-   - 심플 모드 기본값 (`lib/catalog.ts` `DEFAULT_CATEGORY_MODES`):
-     - 마감재 → 총금액 0원 (사용자가 직접 입력)
-     - 물받이부속 → m당 2,000원
-     - 부자재 → 자재비의 3%
-     - 절곡 → 총금액 0원
-   - 단가설정에 `catalogDefaults` 편집기는 아직 없음 — 현재는 새 견적에서 인라인으로 조정
-10. **장비대** — 스카이차/사다리차 (일수 −/+), **비계** (일수 + 비계 면적 → ㎡·일 단가로 자동 계산) + 기타 장비 메모
-11. **작업 정보** — 작업 일수, 작업 인원 (−/+ 스테퍼)
-12. **기타 비용** — 자유 추가 라인아이템 (이름 + 금액). 크레인, 잡비 등
-13. **공사 일정** — 연월일 / 연월만 / 안 넣음 3 모드 선택. PDF 에 "2026년 6월 15일" / "2026년 6월 중" / 생략 으로 표시
-14. **💰 단가 임시 조정** — 이 견적에만 적용되는 단가 override (collapsed, 4 그룹: 자재 / 하지·스틸방수 / 인건·체류 / 장비·운송). 빈 칸이면 단가 설정 기본값 사용. 변경된 칸이 있으면 헤더에 "N개 변경됨" 뱃지. **단가 설정 자체는 변경되지 않음.**
+1. **공사 유형** — `roof`(지붕공사) / `steelWaterproof`(옥상방수 바닥형) / `rooftopRoof`(옥상지붕) 택1
+2. **면적** — 평 / ㎡ 양방향 자동 변환. 시공 면적 필수 (계산 기준). 건물 면적은 옵션.
+   이어서 **건물 평면 형태 (ㅁ/ㄱ/ㄷ) + 지붕 형태 (박공/모임/팔작/외쪽/멘사드)** — 자재 자동 추정
+   (용마루·처마 길이, 둘레, 형태별 로스율)의 입력. 안 골라도 √면적 근사로 폴백.
+3. **공사 범위** — 유형별 체크리스트 (`SCOPE_BY_TYPE`). 덧씌우기 ↔ 철거는 상호 배제, 난간 → 두겁은
+   강제 동반. 난간/창고/계단실/옥탑방은 "시공면적에 포함" 힌트 (면적 자동 불리기 없음 — 사용자가 실면적 입력).
+   스틸방수는 난간 둘레·파라펫 높이 직접 입력 → 두겁/미시 절곡 + **파라펫 분리** (난간 안쪽 절반을
+   본 강판에서 빼서 파라펫 자재로 — 추가 아님). 물받이는 앞·뒤·좌·우 4면 다중선택 + 길이 자동 추정,
+   스틸방수는 스테인리스 배수로 + 홈통 개수로 대체.
+4. **지붕재 종류 / 두께 / 색상·텍스처** — 강판 자재별 m당 단가(천보 도매가) → ㎡ 환산.
+   두께는 0.45t 기준 배수 (0.4 ×0.92 / 0.5 ×1.08 / 0.6 ×1.22). PE폼 체크(기본 ON).
+5. **하지 작업** — 없음 / 목재 / 철재. **개수 모델**: 면적 × 개/㎡ 계수 × 개당 매입단가 → "목재 N개" 발주 수량으로 산출.
+6. **자재 로스율** — 지붕 형태별 자동(박공 7%~멘사드 18%) 또는 수동 고정. 강판·파라펫에만 적용.
+7. **추가 자재 / 부속** — 맨 위 **용마루 마감 방식 칩 (절곡 제작 ↔ 기성품)**: 자재가 기본값 결정
+   (기와형 → 기성품 개수 환산, 그 외 → 절곡). 아래 4그룹 카드 (각각 체크 + 심플↔상세 토글):
+   - **마감재 (기성품)** — 심플: ㎡당 (지붕 기본 1,000원). 상세: 천보 카탈로그 (용마루/하우막기/대봉 등)
+   - **부자재 (피스·실링 등)** — 심플: 자재비의 8% (샘플 실측 근거)
+   - **물받이 부속** — 심플: m당 2,000원 (물받이 길이 기준)
+   - **절곡** — 심플: 지붕은 자재비의 12% (샘플 실측: 후레싱류 = 재료비의 10~20%), 스틸방수는 ㎡당.
+     상세: **총 전개 넓이(mm) 입력 → 넓이 × 절곡단가** (모든 절곡은 3m 본 단위)
+   - 그룹 기본값은 공사 유형별 (`defaultGroupModes`): 지붕/옥상지붕 = 기성품+절곡 둘 다 체크(절곡 > 기성품),
+     스틸방수 = 절곡만 체크
+8. **장비대** — 스카이차/사다리차 (일수, 단가 표시), 비계 (면적 × 일수 × ㎡·일 단가), 기타 장비 메모
+9. **노무비** — 작업 일수 / 인원 스테퍼 + **부대비용(경비) 토글 3개**: 제경비(산재·고용, 노무비×5%,
+   기본 ON) / 숙박비(원거리만, 기본 OFF) / 팀 경비(잡비, 기본 OFF). 운송·식대는 항상 자동 포함.
+10. **기타 비용** — 자유 추가 라인 (크레인 등)
+11. **공사 일정** — 연월일 / 연월 / 안 넣음
+12. **단가 임시 조정** — 이 견적에만 적용되는 절대값 override (collapsed). 빈 칸 = 설정 기본값.
+    **단가 설정 자체는 변경되지 않음.**
 
-**기존 견적 수정 (edit mode):** 견적 상세 화면의 "입력값 수정" 버튼 → `/sites/[id]/estimates/new?edit={eid}` 로 이동. 폼이 기존 값으로 prefill 되고, 저장 시 PATCH `{ action: "replace", ... }` 호출 → 라인 전부 재계산. 견적번호와 `pdfSentAt` 은 보존되지만 라인 인라인 편집과 마진 override 는 리셋됨.
+**기존 견적 수정 (edit mode):** 견적 상세의 "입력값 수정" → `?edit={eid}` 폼 prefill → PATCH `{ action: "replace" }` 로 전체 재산정. 견적번호·`pdfSentAt` 보존, 라인 인라인 편집·마진 override 는 리셋, **단가는 현재 설정값으로 재스냅샷** (확인 다이얼로그로 고지).
 
-추가로 **추가 자재 / 부속** 섹션 (공사 범위 다음)에 4개 카테고리 카탈로그:
-- **마감재** — 용마루, 처마, 미시, 하우마끼, 엔드캡, 크로샤, 프래싱, 눈방지턱, 회침, 회침커버, 대봉, 소봉
-- **물받이 부속** — 물받이, 걸쇠, 바깥/안코너, 마감캡, 물모음통, 홈통, 엘보
-- **부자재** — 실리콘, 스크류 (대/소), Fastener, 앵커볼트
-- **절곡** — 1회/2회/3회/커스텀 절곡
+### 설정 화면 (단가표)
 
-각 항목은 수량 입력 + 단가 인라인 수정 가능 (스냅샷 저장). 카탈로그에 없는 항목은 "+ 직접 추가" 로. 수량 > 0 인 것만 견적에 포함.
-
-가격 처리:
-- **두께**: 0.45t 기준에 단순 배수 적용 (0.4t ×0.92, 0.5t ×1.08, 0.6t ×1.22 — [lib/calculations.ts](lib/calculations.ts) 의 `THICKNESS_MULT`)
-- **로스율**: 토글 ON 시 자재 면적 × (1 + 로스율). 라인아이템 이름에 "(로스율 X% 포함)" 표시
-- **포함 항목들**: 면적 자동 계산 없음. 견적서 공사범위 설명에만 표시됨
-- **기타 비용**: 입력한 이름과 금액으로 `category: "other"` 라인아이템 생성
-
-설정 화면에 ㎡당 단가 계산기 위젯이 있음 — 강판 너비와 m당 단가를 입력하면 자동으로 ㎡당 단가를 계산해 줌 (모델별 너비가 다른 경우 유용: 슬레이트골 1.0m, 징크250 0.75m, 기와형 0.7m 등).
+- **프리셋 바** (상단): 현재 단가표 이름 + 불러오기 (공장 기본값 — 삭제 불가 — 와 내 프리셋들).
+  하단 저장 버튼은 `저장 · '표준' 갱신` 처럼 덮어쓸 대상을 표시. [다른 이름으로] = 새 프리셋.
+- **단가표 카드들**: 강판 자재별 (유효폭 + m당 → ㎡ 환산), 부자재 규격 환산, **하지 (개당단가 × 개/㎡
+  → 평당 N개·M원 표시)**, 절곡 (부재별 넓이 → 3m당 환산), 소모품 (봉지 → 개당 환산 + 소비 계수),
+  단열재, 스틸방수, 노무·경비, 장비·운송, 마진 분배 비율.
+- 모든 단가·계수가 여기서 조정 가능 — **한 번 세팅하면 이후 모든 견적이 그 값으로** (제품 북극성).
 
 ---
 
@@ -387,7 +310,7 @@ PDF (v4 디자인) 에 나가는 항목:
 
 | 키 | 용도 | 노출 |
 |---|---|---|
-| `DATABASE_URL` | Postgres 쿼리용 (pooler, 6543) | 서버 |
+| `DATABASE_URL` | Postgres 쿼리용 (Supabase pooler) | 서버 |
 | `DIRECT_URL` | `prisma migrate` 전용 (5432) | 서버 |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | 브라우저 OK |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | anon 키 (RLS 적용됨) | 브라우저 OK |
@@ -401,9 +324,10 @@ PDF (v4 디자인) 에 나가는 항목:
 
 ```bash
 npm run dev              # 개발 서버
-npm run build            # 프로덕션 빌드
+npm run build            # 프로덕션 빌드 (prisma migrate deploy 포함)
 npm run start            # 빌드된 앱 실행
 npm run lint             # ESLint
+npm test                 # vitest — 계산 엔진 + 프리셋 스냅샷 (계산 로직 수정 시 필수)
 
 npx prisma migrate dev   # 새 마이그레이션 생성 + 적용
 npx prisma migrate deploy # 프로덕션 마이그레이션 적용
@@ -415,14 +339,14 @@ npx tsc --noEmit         # 타입 체크만
 
 ---
 
-## 배포 (예정)
+## 배포
 
-Vercel 권장. 절차:
+Vercel 에 배포되어 있음 (region: `icn1` Seoul). **`main` 브랜치 푸시 = 자동 배포.**
 
-1. GitHub repo를 Vercel에 연결
-2. Environment Variables 에 위 5개 키 모두 등록
-3. Build command 는 기본값 (`next build` 자동으로 Prisma generate 포함)
-4. `next.config.ts` 의 `images.remotePatterns` 가 사용 중인 Supabase 프로젝트 호스트네임과 일치하는지 확인
+- Environment Variables 에 위 5개 키 등록됨
+- Build command: `prisma migrate deploy && next build` (package.json — 배포 시 마이그레이션 자동 적용)
+- `next.config.ts` 의 `images.remotePatterns` 는 사용 중인 Supabase 프로젝트 호스트네임과 일치해야 함
+- Supabase Auth 의 Redirect URLs 에 배포 도메인의 `/auth/callback` 등록 필요
 
 ---
 
