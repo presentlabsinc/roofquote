@@ -402,13 +402,13 @@ describe("buildLineItems — 카탈로그 3그룹 (마감재/부자재/물받이
     expect(bendWith).toBeGreaterThan(bendWithout);
   });
 
-  it("스틸방수 기본값: 절곡 ㎡당 체크, 마감재(기성품) 해제", () => {
+  it("스틸방수 기본값: 절곡 자재비 12% 체크, 마감재(기성품) 해제", () => {
     const items = buildLineItems(baseInput({
       constructionType: "steelWaterproof", materialType: "parapet",
     }));
-    // 절곡 그룹 심플 ㎡당 1,000 — 100㎡ × 1,000 = 100,000
+    // base: 파라펫 강판 1,750,000 (100㎡ × 17,500) + 스크류 대 60,000 = 1,810,000 → 12% = 217,200
     const bending = items.find((i) => i.name === "절곡 (심플)");
-    expect(bending?.total).toBe(100_000);
+    expect(bending?.total).toBe(217_200);
     expect(items.find((i) => i.name.includes("마감재"))).toBeUndefined();
   });
 

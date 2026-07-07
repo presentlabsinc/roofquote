@@ -592,7 +592,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   // ── 면적 기반 자동 채움 — "면적만 넣고 계산 눌러도 근사 견적" ──
   // 사용자가 직접 만진 필드는 절대 덮어쓰지 않음 (touched ref). 수정 모드는 기존값 보존.
-  //   난간 둘레: √면적 × 4 (ㅁ자 근사) · 배수로: √면적 × 2 (두 면 근사)
+  //   난간 둘레: √면적 × 4 (ㅁ자 근사)
+  //   배수로: 건물 한 면 길이 ≈ √면적, 최소 10m (사용자 룰: 30평 건물 한 면 ≈ 10m)
   //   작업 일수: max(2, ceil(면적/90)) — 샘플 실측 (215㎡ = 3일, ~100㎡ = 2일)
   const railTouchedRef = useRef(isEditing);
   const drainTouchedRef = useRef(isEditing);
@@ -602,7 +603,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (sqm <= 0) return;
     if (constructionType === "steelWaterproof") {
       if (!railTouchedRef.current) setRailPerimeterInput(String(Math.round(Math.sqrt(sqm) * 4)));
-      if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.round(Math.sqrt(sqm) * 2)));
+      if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.max(10, Math.round(Math.sqrt(sqm)))));
     }
     if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / 90))));
   }, [sqmInput, constructionType]);
