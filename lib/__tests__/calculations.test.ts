@@ -61,7 +61,7 @@ const baseSettings = {
   substructureSteelPricePerSqm: 40000,
   substructureWoodPricePerPiece: 3333,
   substructureWoodPiecesPerSqm: 1.4,
-  substructureSteelPricePerPiece: 18000,
+  substructureSteelPricePerPiece: 14000,
   substructureSteelPiecesPerSqm: 0.76,
   drainHolePrice: 200000,
   stainlessDrainPricePerM: 50000,
@@ -472,12 +472,12 @@ describe("buildLineItems — 하지 (개수 × 개당단가 × 계수)", () => {
     expect(sub?.total).toBe(140 * 3333);
   });
 
-  it("철재: 100㎡ × 0.76개/㎡ = 76개 × 18,000원", () => {
+  it("철재: 100㎡ × 0.76개/㎡ = 76개 × 14,000원 (업자용 단가)", () => {
     const items = buildLineItems(baseInput({ substructureType: "steel" }));
     const sub = items.find((i) => i.name === "철재 하지");
     expect(sub?.quantity).toBe(76); // ceil(100 × 0.76)
-    expect(sub?.unitPrice).toBe(18000);
-    expect(sub?.total).toBe(76 * 18000);
+    expect(sub?.unitPrice).toBe(14000);
+    expect(sub?.total).toBe(76 * 14000);
   });
 
   it("개수는 올림 (발주 단위) — 50㎡ × 1.4 = 70개", () => {

@@ -1313,7 +1313,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               {substructureType !== "none" && (() => {
                 // 개수 모델 힌트 — 엔진과 동일: 면적 × 개/㎡ 계수 × 개당 매입단가 (구 ㎡당 lump 힌트는 레거시)
                 const wood = substructureType === "wood";
-                const perPiece = wood ? (eff.substructureWoodPricePerPiece ?? 3333) : (eff.substructureSteelPricePerPiece ?? 18000);
+                const perPiece = wood ? (eff.substructureWoodPricePerPiece ?? 3333) : (eff.substructureSteelPricePerPiece ?? 14000);
                 const perSqm = wood ? (eff.substructureWoodPiecesPerSqm ?? 1.4) : (eff.substructureSteelPiecesPerSqm ?? 0.76);
                 const sqm = parseFloat(sqmInput) || 0;
                 const pieces = sqm > 0 ? Math.ceil(sqm * perSqm) : 0;
