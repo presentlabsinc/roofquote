@@ -617,14 +617,19 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const shapeChanged = prevRailShapeRef.current !== buildingShape;
     prevRailShapeRef.current = buildingShape;
     if (constructionType === "steelWaterproof") {
-      const factor = BUILDING_SHAPE_FACTORS[buildingShape ?? "rectangle"].perimeterFactor;
+      // 시공면적 A = 바닥 + 난간 벽 양면(2Ph) 측정 관행 → 바닥 기준 둘레 P 를 역산.
+      // P = f·√(바닥) 과 바닥 = A − 2Ph 를 연립하면 닫힌 해: P = −f²h + f·√(f²h² + A)
+      // (h=0 이면 P = f√A 로 환원. 벽 면적을 안 빼면 둘레가 ~20% 과대.)
+      const f = BUILDING_SHAPE_FACTORS[buildingShape ?? "rectangle"].perimeterFactor;
+      const h = (parseInt(parapetHeightInput) || 60) / 100;
+      const rail = Math.round(-f * f * h + f * Math.sqrt(f * f * h * h + sqm));
       if (shapeChanged || !railTouchedRef.current) {
-        setRailPerimeterInput(String(Math.round(Math.sqrt(sqm) * factor)));
+        setRailPerimeterInput(String(Math.max(0, rail)));
       }
       if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.max(10, Math.round(Math.sqrt(sqm)))));
     }
     if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / 90))));
-  }, [sqmInput, constructionType, buildingShape]);
+  }, [sqmInput, constructionType, buildingShape, parapetHeightInput]);
 
   // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
   //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)
