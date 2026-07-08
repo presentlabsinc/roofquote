@@ -379,6 +379,8 @@ export interface BuildLineItemsInput {
   hasPeFoam?: boolean;
   /** 숙박비 포함 (원거리 현장). 기본 false. */
   includeLodging?: boolean;
+  /** 숙박 박수 직접 입력 — null/0 = 자동 (작업일수 − 1). */
+  lodgingNights?: number | null;
   /** 팀 경비(잡비) 포함. 기본 false. */
   includeTeamExpense?: boolean;
   /** 제경비(산재·고용보험) 포함. 기본 true. */
@@ -408,6 +410,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     hasInsulation = false, insulationTypes = [],
     hasPeFoam = false,
     includeLodging = false, includeTeamExpense = false, includeInsurance = true,
+    lodgingNights = null,
   } = input;
 
   // Apply per-estimate pricing overrides on top of the live PricingSettings.
@@ -745,15 +748,6 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         sortOrder: order++,
       });
     }
-    // 홈통 (downspout) — 스테인리스 배수로와 함께. 개수 × 단가.
-    if (downspoutCount > 0 && settings.downspoutUnitPrice > 0) {
-      items.push({
-        category: "material", name: "홈통", quantity: downspoutCount, unit: "개",
-        unitPrice: settings.downspoutUnitPrice,
-        total: downspoutCount * settings.downspoutUnitPrice,
-        sortOrder: order++,
-      });
-    }
     if (scope.drainage) {
       const lumpSum = Math.round(settings.wasteDisposalCost * 0.5);
       items.push({
@@ -769,6 +763,17 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         sortOrder: order++,
       });
     }
+  }
+
+  // 선홈통 (downspout) — 모든 유형 (2026-07-07): 지붕 물받이에도 선홈통이 달림.
+  // 스틸방수는 배수로와 함께, 지붕/옥상지붕은 물받이와 함께 (기본 4개). 개수 × 단가.
+  if (downspoutCount > 0 && settings.downspoutUnitPrice > 0) {
+    items.push({
+      category: "material", name: "선홈통", quantity: downspoutCount, unit: "개",
+      unitPrice: settings.downspoutUnitPrice,
+      total: downspoutCount * settings.downspoutUnitPrice,
+      sortOrder: order++,
+    });
   }
 
   // 엔드캡 (지붕공사 / 옥상지붕) — per-piece pricing
@@ -848,14 +853,19 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   });
 
   // Lodging — 원거리 현장만 (includeLodging 토글). 로컬은 숙박 없음.
-  if (includeLodging && workDays > 1) {
-    const nights = Math.floor(workDays - 1);
+  // 박수: 직접 입력(lodgingNights) 우선, 없으면 작업일수 − 1 자동.
+  if (includeLodging) {
+    const nights = lodgingNights && lodgingNights > 0
+      ? lodgingNights
+      : (workDays > 1 ? Math.floor(workDays - 1) : 0);
     const lodgingQty = workerCount * nights;
-    items.push({
-      category: "lodging", name: "숙박비", quantity: lodgingQty, unit: "명·박",
-      unitPrice: settings.lodgingCostPerPersonNight, total: Math.round(lodgingQty * settings.lodgingCostPerPersonNight),
-      sortOrder: order++,
-    });
+    if (lodgingQty > 0) {
+      items.push({
+        category: "lodging", name: "숙박비", quantity: lodgingQty, unit: "명·박",
+        unitPrice: settings.lodgingCostPerPersonNight, total: Math.round(lodgingQty * settings.lodgingCostPerPersonNight),
+        sortOrder: order++,
+      });
+    }
   }
 
   // 팀 경비(잡비) — 옵션. 현장 경비 명목 팀 지급 lump sum.

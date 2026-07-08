@@ -292,7 +292,7 @@ geometric auto-fill default the user can override**; small consumables
   - Calculation: if `sides.size > 0` and `gutterLengthM > 0`, emit one line with the formatted label.
   - **스틸방수 예외:** for `constructionType === "steelWaterproof"` the gutter UI is hidden and replaced with the 스테인리스 배수로 input (see below). `buildLineItems` also skips the gutter line for that type.
 - **물받이 / 배수로는 시공 범위의 일부** — 폼에서 공사 범위 Section 바로 뒤에 배치 (자재 itemize 가 아니라 설치 여부/길이 결정이라서). 물받이 부속 자재(걸쇠/코너/마감캡 등)는 별개로 추가 자재 카탈로그 `gutter` 카테고리에 있음.
-  - 지붕/옥상지붕: 물받이 Section — 4면 칩 + 길이(자동: 처마외곽둘레 × 면가중치 앞30/뒤30/좌20/우20%).
+  - 지붕/옥상지붕: 물받이 Section — 4면 칩(기본 **앞·뒤 2면**, 2026-07-08) + 길이(자동: 처마외곽둘레 × 면가중치 앞30/뒤30/좌20/우20%) + **선홈통 개수(기본 4개, 단가 표시)**. 선홈통 라인은 이제 전 유형 공통 (`downspoutCount × downspoutUnitPrice`).
   - steelWaterproof: "배수로 / 물받이" Section — 스테인리스 배수로 길이 + 홈통 개수(`downspoutCount`) + **차양 물받이(옵션, gutterLength 재사용)**. 배수로 길이 0 이면 confirm.
   - 카탈로그 `gutter` 카테고리 라벨은 steelWaterproof 에서 "배수로 / 물받이 부속" 으로 override (`CatalogPicker categoryLabels` prop).
 - **물받이 라인은 더 이상 type-gated 아님** — `buildLineItems` 가 `gutterLengthM>0 && gutterMode!=none` 이면 유형 무관 emit (스틸방수 gutterMode="full" → 라벨 "차양"). 스테인리스 배수로 라인은 steelWaterproof 전용으로 별도.
@@ -303,7 +303,8 @@ geometric auto-fill default the user can override**; small consumables
 - **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). **개수 × 개당단가 모델 (2026-06-15)**: 자재 = `시공면적 × 개/㎡ 계수 × 개당 매입단가`, 개수 올림(발주 단위), 로스율 미적용(계수가 곧 소비 규칙). 목재 30×60 격자 → 1.4개/㎡ × 3,333원, 철재 30×80 → 0.76개/㎡ × 18,000원. 설정 `SubstructurePricingCard`(개당단가 × 개/㎡ → ㎡당 환산). 단가는 매입원가 — 고객 부풀림은 마진 분배. 레거시 `substructureWoodPricePerSqm`/`Steel` 컬럼은 미사용(호환 유지). 목재=붙임, 철재=띄움.
 - **부대비용 (경비) — 2026-06-16:** 운송·식대는 항상, 숙박·팀경비·제경비는 토글 (`Estimate.includeLodging`/`includeTeamExpense`/`includeInsurance`, 폼 노무비 섹션).
   - **식대·간식**: 인원×일수×`mealCostPerPersonMeal`(기본 20,000 = 점심1만+음료/간식1만). 항상.
-  - **숙박**: `includeLodging`(기본 OFF — 로컬은 숙박 없음). ON+다일이면 인원×박수×`lodgingCostPerPersonNight`(기본 35,000 = 2인실 7만÷2).
+  - **숙박**: `includeLodging`(기본 OFF — 로컬은 숙박 없음). 박수 = `Estimate.lodgingNights` 직접 입력 우선, null 이면 작업일수−1 자동. 인원×박수×`lodgingCostPerPersonNight`(기본 35,000 = 2인실 7만÷2).
+  - **경비 3종 모두 폼에서 인라인 조정 (2026-07-08)**: 제경비 %·팀경비 금액은 `pricingOverrides` 로 (견적별 절대값), 숙박 박수는 `lodgingNights`. 단가 자체는 설정에서.
   - **팀 경비(잡비)**: `includeTeamExpense`(기본 OFF). `teamExpenseAmount`(기본 150,000) lump sum, 인력 직접비. category "other".
   - **제경비(산재·고용보험)**: `includeInsurance`(기본 ON). 노무비(labor category 합)×`insuranceRateOfLabor`(기본 0.05 = 산재3.73+고용1.01≈4.74 반올림). 일용직에도 산재·고용은 적용 → 소규모도 포함. 건강/연금/퇴직(정규직)·안전관리비(대형)는 제외(샘플 견적이 그렇게 함). category "other".
   - **회계 구분**: 운송·식대·숙박·팀경비·제경비 = 모두 "경비(기타경비)", 노무비 아님. 회사 일반관리비(overhead)는 마진에 포함(별도 분리 안 함 — 대형 공사 아닌 소규모 대상이라 단순 유지).

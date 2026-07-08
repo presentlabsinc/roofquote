@@ -286,6 +286,10 @@ export interface PricingOverrides {
   baseTransportCost?: number;
   mealCostPerPersonMeal?: number;
   lodgingCostPerPersonNight?: number;
+  /** 팀 경비(잡비) lump sum — includeTeamExpense 시 라인 금액. */
+  teamExpenseAmount?: number;
+  /** 제경비(산재·고용) 노무비 대비 비율 — includeInsurance 시 적용. */
+  insuranceRateOfLabor?: number;
   /** [LEGACY] ㎡당 하지 — 개당 단가 모델로 대체. 구 견적 JSON 호환용. */
   substructureWoodPricePerSqm?: number;
   substructureSteelPricePerSqm?: number;
@@ -328,8 +332,10 @@ export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { k
     icon: "👷",
     fields: [
       { key: "dailyWage", label: "1인 1일 인건비", unit: "원" },
-      { key: "mealCostPerPersonMeal", label: "1인 1식 식비", unit: "원" },
-      { key: "lodgingCostPerPersonNight", label: "1인 1박 숙박비", unit: "원" },
+      { key: "mealCostPerPersonMeal", label: "식대·간식 (1인 1일)", unit: "원" },
+      { key: "lodgingCostPerPersonNight", label: "숙박 (1인 1박)", unit: "원" },
+      { key: "teamExpenseAmount", label: "팀 경비 (잡비)", unit: "원" },
+      { key: "insuranceRateOfLabor", label: "제경비 (노무비 대비)", unit: "%", pct: true },
     ],
   },
   {

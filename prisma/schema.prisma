@@ -276,6 +276,8 @@ model Estimate {
   // 부대비용(경비) 토글 — 운송·식비는 항상, 숙박·팀경비는 옵션.
   /** 숙박비 포함 — 원거리 현장만. 기본 false (로컬은 숙박 없음). 켜면 작업일수 기반 박수. */
   includeLodging     Boolean @default(false)
+  /** 숙박 박수 직접 입력 — null = 자동 (작업일수 − 1). includeLodging 일 때만 의미. */
+  lodgingNights      Int?
   /** 팀 경비(잡비) 포함 — 현장 경비 명목 팀 지급. 켜면 settings.teamExpenseAmount 라인. */
   includeTeamExpense Boolean @default(false)
   /** 제경비(산재·고용보험) 포함 — 노무비 × insuranceRateOfLabor. 기본 true (일용직에도 적용). */

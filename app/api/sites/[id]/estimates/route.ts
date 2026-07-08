@@ -82,6 +82,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     includeLodging = false,
     includeTeamExpense = false,
     includeInsurance = true,
+    lodgingNights = null,
     marginRate: inputMarginRate,
     vatIncluded,
     paymentTerms,
@@ -148,6 +149,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     includeLodging,
     includeTeamExpense,
     includeInsurance,
+    lodgingNights,
   });
 
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
@@ -202,6 +204,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       includeLodging: !!includeLodging,
       includeTeamExpense: !!includeTeamExpense,
       includeInsurance: includeInsurance !== false,
+      lodgingNights: typeof lodgingNights === "number" && lodgingNights > 0 ? lodgingNights : null,
       catalogSelections: (catalogSelections as CatalogSelection[])
         .filter((s) => s.quantity > 0) as unknown as object,
       catalogModes: catalogModes as object,

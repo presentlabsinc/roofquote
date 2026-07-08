@@ -306,10 +306,14 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [workDays, setWorkDays] = useState(existing ? String(existing.workDays) : "2");
 
   // 부대비용(경비) 토글 — 숙박(원거리만)/팀경비는 기본 OFF, 제경비(보험)는 기본 ON.
-  const ex = existing as unknown as { includeLodging?: boolean; includeTeamExpense?: boolean; includeInsurance?: boolean } | undefined;
+  const ex = existing as unknown as { includeLodging?: boolean; includeTeamExpense?: boolean; includeInsurance?: boolean; lodgingNights?: number | null } | undefined;
   const [includeLodging, setIncludeLodging] = useState(ex?.includeLodging ?? false);
   const [includeTeamExpense, setIncludeTeamExpense] = useState(ex?.includeTeamExpense ?? false);
   const [includeInsurance, setIncludeInsurance] = useState(ex?.includeInsurance ?? true);
+  // 숙박 박수 — 빈 값 = 자동 (작업일수 − 1). 직접 입력하면 그 박수로.
+  const [lodgingNightsInput, setLodgingNightsInput] = useState(
+    ex?.lodgingNights ? String(ex.lodgingNights) : "",
+  );
 
   // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡)
   const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>(
@@ -348,12 +352,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       defaults.ridge = true;
       defaults.overlay = true;
       setMaterialType("zinc250");
-      setGutterSides(new Set(GUTTER_SIDES)); // 전후좌우 모두
+      // 물받이 기본: 앞·뒤 2면 + 선홈통 4개 (2026-07-08 사용자 확정)
+      setGutterSides(new Set<GutterSide>(["front", "back"]));
+      setDownspoutCount("4");
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "rooftopRoof") {
       defaults.ridge = true;
       setMaterialType("zinc250");
-      setGutterSides(new Set(GUTTER_SIDES));
+      setGutterSides(new Set<GutterSide>(["front", "back"]));
+      setDownspoutCount("4");
       setSubstructureType(settings.substructureMode === "steel" ? "steel" : "wood");
     } else if (t === "steelWaterproof") {
       // 옥상엔 난간(파라펫)이 사실상 항상 있음 — 기본 ON (없는 현장만 해제).
@@ -526,9 +533,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       rooftopWindowCount: constructionType === "steelWaterproof" && scope.rooftopStructure
         ? (parseInt(rooftopWindowCount) || 0)
         : 0,
+      // 선홈통 — 모든 유형 (지붕 물받이에도 선홈통 달림). 지붕/옥상지붕은 물받이 있을 때만.
       downspoutCount: constructionType === "steelWaterproof"
         ? (parseInt(downspoutCount) || 0)
-        : 0,
+        : (gutterSides.size > 0 ? (parseInt(downspoutCount) || 0) : 0),
       hasInsulation: insulationTypes.length > 0,
       insulationTypes,
       insulationNote: insulationTypes.includes("other") ? insulationNote : null,
@@ -537,6 +545,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       includeLodging,
       includeTeamExpense,
       includeInsurance,
+      lodgingNights: includeLodging && lodgingNightsInput ? (parseInt(lodgingNightsInput) || null) : null,
     };
 
     setSaving(true);
@@ -1007,7 +1016,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       {key === "drainHole" && scope.drainHole && (
                         <div className="mt-2 ml-3">
                           <Label className="text-[10px] text-muted-foreground mb-1 block">
-                            개수 ({eff.drainHolePrice.toLocaleString("ko-KR")}원/개)
+                            개수 ({eff.drainHolePrice > 0
+                              ? `${eff.drainHolePrice.toLocaleString("ko-KR")}원/개`
+                              : "원가 0원 — 마진으로 청구, 단가는 설정에서"})
                           </Label>
                           <NumberStepper
                             value={drainHoles}
@@ -1092,6 +1103,17 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                         className="h-11 rounded-xl tabular-nums flex-1"
                       />
                       <span className="text-sm text-muted-foreground font-medium w-6">m</span>
+                    </div>
+                    <div className="mt-3">
+                      <Label className="text-[11px] text-muted-foreground mb-1 block">
+                        선홈통 ({eff.downspoutUnitPrice.toLocaleString("ko-KR")}원/개)
+                      </Label>
+                      <NumberStepper
+                        value={downspoutCount}
+                        onChange={setDownspoutCount}
+                        min={0} max={20} step={1}
+                        unit="개"
+                      />
                     </div>
                   </div>
                 )}
@@ -1540,27 +1562,86 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   min={1} max={30} step={1}
                   unit="명"
                 />
-                {/* 부대비용(경비) — 운송·식대는 자동 포함, 숙박·팀경비·제경비는 토글 */}
+                {/* 부대비용(경비) — 운송·식대는 자동 포함, 숙박·팀경비·제경비는 토글 + 인라인 조정 */}
                 <div className="pt-1 space-y-2">
                   <Label className="text-[11px] text-muted-foreground">부대비용 (경비)</Label>
-                  {([
-                    { on: includeInsurance, set: setIncludeInsurance, label: "제경비 (산재·고용보험)", hint: `노무비 × ${Math.round((settings.insuranceRateOfLabor ?? 0.047) * 1000) / 10}%` },
-                    { on: includeLodging, set: setIncludeLodging, label: "숙박비 (원거리 현장)", hint: `1박 ${(settings.lodgingCostPerPersonNight ?? 35000).toLocaleString("ko-KR")}원/인` },
-                    { on: includeTeamExpense, set: setIncludeTeamExpense, label: "팀 경비 (잡비)", hint: `${(settings.teamExpenseAmount ?? 150000).toLocaleString("ko-KR")}원` },
-                  ] as const).map((row) => (
-                    <button
-                      key={row.label}
-                      type="button"
-                      onClick={() => row.set(!row.on)}
-                      className="w-full flex items-center gap-3 pressable text-left"
-                    >
-                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${row.on ? "bg-primary border-primary" : "bg-card border-border"}`}>
-                        {row.on && <span className="text-white text-xs leading-none">✓</span>}
+
+                  {/* 제경비 — 체크 + % 조정 */}
+                  <div>
+                    <button type="button" onClick={() => setIncludeInsurance(!includeInsurance)}
+                      className="w-full flex items-center gap-3 pressable text-left">
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${includeInsurance ? "bg-primary border-primary" : "bg-card border-border"}`}>
+                        {includeInsurance && <span className="text-white text-xs leading-none">✓</span>}
                       </span>
-                      <span className={`flex-1 text-sm ${row.on ? "text-foreground font-medium" : "text-muted-foreground"}`}>{row.label}</span>
-                      <span className="text-[11px] text-muted-foreground tabular-nums">{row.hint}</span>
+                      <span className={`flex-1 text-sm ${includeInsurance ? "text-foreground font-medium" : "text-muted-foreground"}`}>제경비 (산재·고용보험)</span>
                     </button>
-                  ))}
+                    {includeInsurance && (
+                      <div className="ml-8 mt-1.5 flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground">노무비 ×</span>
+                        <div className="relative w-20">
+                          <Input type="number" inputMode="decimal"
+                            value={String(Math.round((eff.insuranceRateOfLabor ?? 0.05) * 1000) / 10)}
+                            onChange={(e) => {
+                              const pct = parseFloat(e.target.value);
+                              setPricingOverrides((po) => ({ ...po, insuranceRateOfLabor: Number.isFinite(pct) ? pct / 100 : undefined }));
+                            }}
+                            className="h-9 text-right pr-6 text-sm tabular-nums rounded-lg" />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 숙박비 — 체크 + 박수 조정 (빈 값 = 작업일수 − 1 자동) */}
+                  <div>
+                    <button type="button" onClick={() => setIncludeLodging(!includeLodging)}
+                      className="w-full flex items-center gap-3 pressable text-left">
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${includeLodging ? "bg-primary border-primary" : "bg-card border-border"}`}>
+                        {includeLodging && <span className="text-white text-xs leading-none">✓</span>}
+                      </span>
+                      <span className={`flex-1 text-sm ${includeLodging ? "text-foreground font-medium" : "text-muted-foreground"}`}>숙박비 (원거리 현장)</span>
+                      <span className="text-[11px] text-muted-foreground tabular-nums">1박 {(eff.lodgingCostPerPersonNight ?? 35000).toLocaleString("ko-KR")}원/인</span>
+                    </button>
+                    {includeLodging && (
+                      <div className="ml-8 mt-1.5 flex items-center gap-2">
+                        <span className="text-[11px] text-muted-foreground">박수</span>
+                        <div className="relative w-24">
+                          <Input type="number" inputMode="numeric"
+                            value={lodgingNightsInput}
+                            onChange={(e) => setLodgingNightsInput(e.target.value)}
+                            placeholder={String(Math.max(0, Math.floor((parseFloat(workDays) || 0) - 1)))}
+                            className="h-9 text-right pr-7 text-sm tabular-nums rounded-lg" />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">박</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">비워두면 작업일수 − 1</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 팀 경비 — 체크 + 금액 조정 */}
+                  <div>
+                    <button type="button" onClick={() => setIncludeTeamExpense(!includeTeamExpense)}
+                      className="w-full flex items-center gap-3 pressable text-left">
+                      <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 ${includeTeamExpense ? "bg-primary border-primary" : "bg-card border-border"}`}>
+                        {includeTeamExpense && <span className="text-white text-xs leading-none">✓</span>}
+                      </span>
+                      <span className={`flex-1 text-sm ${includeTeamExpense ? "text-foreground font-medium" : "text-muted-foreground"}`}>팀 경비 (잡비)</span>
+                    </button>
+                    {includeTeamExpense && (
+                      <div className="ml-8 mt-1.5 flex items-center gap-2">
+                        <div className="relative w-32">
+                          <Input type="number" inputMode="numeric"
+                            value={String(eff.teamExpenseAmount ?? 150000)}
+                            onChange={(e) => {
+                              const amt = parseInt(e.target.value);
+                              setPricingOverrides((po) => ({ ...po, teamExpenseAmount: Number.isFinite(amt) ? amt : undefined }));
+                            }}
+                            className="h-9 text-right pr-6 text-sm tabular-nums rounded-lg" />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">원</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </Section>

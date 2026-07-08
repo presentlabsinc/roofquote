@@ -155,9 +155,9 @@ export type GroupModesMap = Partial<Record<CatalogGroup, CategoryMode>>;
 export function defaultGroupModes(constructionType?: string | null): Record<CatalogGroup, CategoryMode> {
   const steel = constructionType === "steelWaterproof";
   return {
-    finishing: steel
-      ? { enabled: false, mode: "simple", simpleType: "total",  simpleValue: 0 }
-      : { enabled: true,  mode: "simple", simpleType: "perSqm", simpleValue: 1000 },
+    // 기성품: 지붕은 기본 체크, 스틸방수는 해제 — 단 해제 상태에도 perSqm 1,000 을 실어둬서
+    // 체크하는 순간 면적 × 1,000 근사 비용이 바로 뜬다 (2026-07-08 "켜면 비용 미리" 피드백).
+    finishing: { enabled: !steel, mode: "simple", simpleType: "perSqm", simpleValue: 1000 },
     bending: { enabled: true, mode: "simple", simpleType: "perSqm", simpleValue: 3000 },
     accessory: { enabled: true, mode: "simple", simpleType: "percent", simpleValue: 0.08 },
     gutter:    { enabled: !steel, mode: "simple", simpleType: "perM",  simpleValue: 2000 },

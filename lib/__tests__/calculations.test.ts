@@ -593,6 +593,30 @@ describe("buildLineItems — 부대비용 (경비 토글)", () => {
   });
 });
 
+describe("buildLineItems — 선홈통/숙박 박수/그룹 체크 근사값 (2026-07-08)", () => {
+  it("선홈통은 지붕에도 나옴 — 개수 × 단가 (모든 유형)", () => {
+    const items = buildLineItems(baseInput({ downspoutCount: 4 }));
+    const ds = items.find((i) => i.name === "선홈통");
+    expect(ds?.quantity).toBe(4);
+    expect(ds?.total).toBe(4 * 50000);
+  });
+
+  it("숙박 박수 직접 입력이 자동(작업일수−1)을 이김", () => {
+    const auto = buildLineItems(baseInput({ workDays: 3, includeLodging: true }));
+    const manual = buildLineItems(baseInput({ workDays: 3, includeLodging: true, lodgingNights: 5 }));
+    expect(auto.find((i) => i.name === "숙박비")?.quantity).toBe(6);   // 3명 × 2박
+    expect(manual.find((i) => i.name === "숙박비")?.quantity).toBe(15); // 3명 × 5박
+  });
+
+  it("스틸방수 기성품: 기본 해제지만 체크하는 순간 면적 × 1,000 근사가 바로 뜸", () => {
+    const items = buildLineItems(baseInput({
+      constructionType: "steelWaterproof", materialType: "parapet",
+      catalogModes: { finishing: { enabled: true, mode: "simple" } }, // 체크만 켬 — 값은 기본 상속
+    }));
+    expect(items.find((i) => i.name.includes("마감재"))?.total).toBe(100_000); // 100㎡ × 1,000
+  });
+});
+
 describe("buildLineItems — 로스율", () => {
   it("로스율 적용 시 강판 면적 = 면적 × (1 + 로스율)", () => {
     const items = buildLineItems(baseInput({ applyLossRate: true, lossRate: 0.1 }));
