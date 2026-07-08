@@ -66,7 +66,7 @@ import {
   type FinishingMethods,
   resolveFinishingMethod,
 } from "@/lib/types";
-import { applyOverrides, estimateBasePerimeter, getMaterialPriceSqm, pyeongToSqm, sqmToPyeong } from "@/lib/calculations";
+import { applyOverrides, estimateBasePerimeter, getMaterialPriceSqm, pyeongToSqm, sqmToPyeong, BUILDING_SHAPE_FACTORS } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
@@ -603,21 +603,28 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   // ── 면적 기반 자동 채움 — "면적만 넣고 계산 눌러도 근사 견적" ──
   // 사용자가 직접 만진 필드는 절대 덮어쓰지 않음 (touched ref). 수정 모드는 기존값 보존.
-  //   난간 둘레: √면적 × 4 (ㅁ자 근사)
+  //   난간 둘레: √면적 × 형태계수 (ㅁ 4.2 / ㄱ 5.0 / ㄷ 5.5) — 건물형태 바꾸면 항상 갱신
+  //     (둘레 자동 채움과 동일 규칙: 형태 변경 = 명시적 의도라 수동 입력도 덮어씀)
   //   배수로: 건물 한 면 길이 ≈ √면적, 최소 10m (사용자 룰: 30평 건물 한 면 ≈ 10m)
   //   작업 일수: max(2, ceil(면적/90)) — 샘플 실측 (215㎡ = 3일, ~100㎡ = 2일)
   const railTouchedRef = useRef(isEditing);
   const drainTouchedRef = useRef(isEditing);
   const workDaysTouchedRef = useRef(isEditing);
+  const prevRailShapeRef = useRef<BuildingShape | null>(buildingShape);
   useEffect(() => {
     const sqm = parseFloat(sqmInput) || 0;
     if (sqm <= 0) return;
+    const shapeChanged = prevRailShapeRef.current !== buildingShape;
+    prevRailShapeRef.current = buildingShape;
     if (constructionType === "steelWaterproof") {
-      if (!railTouchedRef.current) setRailPerimeterInput(String(Math.round(Math.sqrt(sqm) * 4)));
+      const factor = BUILDING_SHAPE_FACTORS[buildingShape ?? "rectangle"].perimeterFactor;
+      if (shapeChanged || !railTouchedRef.current) {
+        setRailPerimeterInput(String(Math.round(Math.sqrt(sqm) * factor)));
+      }
       if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.max(10, Math.round(Math.sqrt(sqm)))));
     }
     if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / 90))));
-  }, [sqmInput, constructionType]);
+  }, [sqmInput, constructionType, buildingShape]);
 
   // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
   //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)

@@ -67,7 +67,7 @@ export function applyOverrides(settings: PricingSettings, overrides: PricingOver
 //  Layer 2: 기하학적 추정 (건물형태 + 지붕형태 계수) — 항상 fallback 가능.
 // 모든 추정값은 라인아이템으로 표시되며 사용자가 직접 수정 가능.
 
-const BUILDING_SHAPE_FACTORS: Record<BuildingShape, { perimeterFactor: number; cornerCount: number; flashingPoints: number }> = {
+export const BUILDING_SHAPE_FACTORS: Record<BuildingShape, { perimeterFactor: number; cornerCount: number; flashingPoints: number }> = {
   rectangle: { perimeterFactor: 4.2, cornerCount: 4, flashingPoints: 0 },
   lshape:    { perimeterFactor: 5.0, cornerCount: 6, flashingPoints: 2 },
   ushape:    { perimeterFactor: 5.5, cornerCount: 8, flashingPoints: 4 },
