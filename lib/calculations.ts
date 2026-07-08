@@ -466,17 +466,19 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
   }
 
   // ── 자재 자동 추정: 베이스라인 우선, 없으면 기하학적 추정 ──
-  // buildingShape 가 있으면 새 추정 로직, 없으면 기존 √면적 근사로 fallback.
+  // 건물형태 미선택 = ㅁ자(rectangle) 기본 (2026-07-07 사용자 확정) — 형태를 안 골라도
+  // 기하 추정이 항상 돌고, ㄱ/ㄷ 선택 시 둘레·프래싱이 그에 맞게 커진다.
+  const effectiveBuildingShape: BuildingShape = buildingShape ?? "rectangle";
   const baselineRaw = (settings as unknown as { baselineData?: BaselineData | null }).baselineData ?? null;
-  const baseline = buildingShape ? findAndScaleBaseline(baselineRaw, {
-    constructionType, areaM2, building: buildingShape, roof: roofShape,
-  }) : null;
-  const geom = buildingShape ? estimateGeometrically({
+  const baseline = findAndScaleBaseline(baselineRaw, {
+    constructionType, areaM2, building: effectiveBuildingShape, roof: roofShape,
+  });
+  const geom = estimateGeometrically({
     constructionType, areaM2, buildingAreaM2,
-    building: buildingShape, roof: roofShape,
+    building: effectiveBuildingShape, roof: roofShape,
     ridgeCount, parapetHeightCm, perimeterOverride: perimeterM,
     eaveOverhangCm,
-  }) : null;
+  });
 
   /** 추정값 헬퍼 — 베이스라인 우선, geom fallback, 없으면 fallback 콜백. */
   function est(field: keyof BaselineEntry, geomField: keyof GeometricEstimate | null, fallback: () => number): number {
@@ -538,8 +540,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         sortOrder: order++,
       });
     }
-    // 프래싱 (꺾인 건물에만) — 기존 견적에는 없던 자동 생성 라인
-    if (buildingShape && geom && geom.flashingLengthM > 0) {
+    // 프래싱 (꺾인 건물에만 — ㅁ자는 flashingPoints 0 이라 자연히 생략)
+    if (geom.flashingLengthM > 0) {
       const flashLen = est("flashingBendingM", "flashingLengthM", () => 0);
       if (flashLen > 0) {
         const bend = calcBendingCost(settings.bendingWidthFlashing, flashLen, settings.bendingPricePerMmPer3m);
@@ -651,9 +653,9 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         });
       }
     }
-    // 프래싱 — 꺾인 건물 형태일 때만 (코너 수 × 파라펫 높이)
-    if (buildingShape && (scope.handrail || scope.cap)) {
-      const buildingF = BUILDING_SHAPE_FACTORS[buildingShape];
+    // 프래싱 — 꺾인 건물 형태일 때만 (코너 수 × 파라펫 높이). ㅁ자는 flashingPoints 0.
+    if (scope.handrail || scope.cap) {
+      const buildingF = BUILDING_SHAPE_FACTORS[effectiveBuildingShape];
       const flashLen = baseline?.flashingBendingM ?? (buildingF.flashingPoints * parapetHeightM);
       if (flashLen > 0) {
         const bend = calcBendingCost(settings.bendingWidthFlashing, flashLen, settings.bendingPricePerMmPer3m);

@@ -267,26 +267,39 @@ describe("distributeMarginForDisplay", () => {
 // ─── buildLineItems — finishingMethods (절곡/기성품, 2026-06-12 확정) ─
 
 describe("buildLineItems — 용마루 마감 방식", () => {
-  // areaM2 100 → ridgeLength = round(√100 × 0.8) = 8m
+  // areaM2 100, 건물형태 미선택 → ㅁ자 기본 (2026-07-07): 둘레 35.5 + 처마 4 = 39.5m,
+  // 장변 11.9m → 용마루(박공 기본) = 11.9m
 
   it("징크250 기본 = 절곡: 용마루 절곡 라인 하나만 (마감 m당 라인 없음 — 이중 계산 회귀 방지)", () => {
     const items = buildLineItems(baseInput({ scope: { ridge: true } }));
     const ridgeBend = items.find((i) => i.name.startsWith("용마루 절곡"));
     expect(ridgeBend).toBeDefined();
-    // 350mm × 36원 × (8m/3) = 33,600원
-    expect(ridgeBend?.total).toBe(33_600);
+    // 350mm × 36원 × (11.9m/3) = 49,980원
+    expect(ridgeBend?.quantity).toBe(11.9);
+    expect(ridgeBend?.total).toBe(49_980);
     expect(items.find((i) => i.name === "용마루 마감")).toBeUndefined();
     expect(items.find((i) => i.name.startsWith("용마루 (기성품"))).toBeUndefined();
   });
 
-  it("일반기와 기본 = 기성품: 3m 규격 개수 환산 (8m → 3개 × 고전 14,300원)", () => {
+  it("일반기와 기본 = 기성품: 3m 규격 개수 환산 (11.9m → 4개 × 고전 14,300원)", () => {
     const items = buildLineItems(baseInput({ materialType: "generalTile", scope: { ridge: true } }));
     const ready = items.find((i) => i.name.startsWith("용마루 (기성품"));
     expect(ready).toBeDefined();
-    expect(ready?.quantity).toBe(3); // ceil(8 / 3)
+    expect(ready?.quantity).toBe(4); // ceil(11.9 / 3)
     expect(ready?.unitPrice).toBe(14_300); // 카탈로그 용마루 (고전)
-    expect(ready?.total).toBe(42_900);
+    expect(ready?.total).toBe(57_200);
     expect(items.find((i) => i.name.startsWith("용마루 절곡"))).toBeUndefined();
+  });
+
+  it("건물형태 ㄱ자 선택 시 둘레·용마루가 ㅁ자 기본보다 커짐 (형태가 계산에 반영)", () => {
+    const rect = buildLineItems(baseInput({ scope: { ridge: true } }));
+    const lshape = buildLineItems(baseInput({ scope: { ridge: true }, buildingShape: "lshape" }));
+    const rectRidge = rect.find((i) => i.name.startsWith("용마루 절곡"))!;
+    const lRidge = lshape.find((i) => i.name.startsWith("용마루 절곡"))!;
+    expect(lRidge.total).toBeGreaterThan(rectRidge.total); // ㄱ자 둘레계수 5.0 > ㅁ자 4.2
+    // ㄱ자는 프래싱 절곡도 생김 (꺾임 2곳), ㅁ자는 없음
+    expect(lshape.find((i) => i.name.startsWith("프래싱 절곡"))).toBeDefined();
+    expect(rect.find((i) => i.name.startsWith("프래싱 절곡"))).toBeUndefined();
   });
 
   it("명시적 override 가 자재 default 를 이김 (기와 + 절곡 지정)", () => {

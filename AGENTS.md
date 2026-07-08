@@ -185,6 +185,9 @@ system:
 - **Layer 2 — geometric estimation** (`estimateGeometrically()`): always-on fallback.
   building shape (ㅁ/ㄱ/ㄷ) → `BUILDING_SHAPE_FACTORS` (perimeter factor, corner count);
   roof shape (박공/모임/팔작/외쪽/멘사드/기타) → `ROOF_SHAPE_FACTORS` (ridge/eave ratio, loss rate).
+  **건물형태 미선택 = ㅁ자 기본 (2026-07-07)** — `buildLineItems` 가 `buildingShape ?? "rectangle"` 로
+  geom 을 **항상** 계산 (구 √면적×0.8 원시 폴백 제거). ㄱ/ㄷ 선택 시 둘레·프래싱이 커짐.
+  폼도 새 견적에서 ㅁ자 기본 선택. 지붕형태 미선택은 박공(gable) 기본 (기존 동작).
 
 **Perimeter is type-specific** — `estimateBasePerimeter(constructionType, ...)`:
 - `roof`: √(시공면적÷1.4) × shapeFactor **+ 8×처마돌출**(eaveOverhangCm). 기존 지붕 재시공.

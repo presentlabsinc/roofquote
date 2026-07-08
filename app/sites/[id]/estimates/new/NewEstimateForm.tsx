@@ -161,9 +161,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     return settings.substructureMode === "steel" ? "steel" : "wood";
   });
 
-  // 건물 / 지붕 형태 (자재 자동 추정용)
+  // 건물 / 지붕 형태 (자재 자동 추정용) — 미선택 = ㅁ자 기본 (엔진 fallback 과 동일, UI 에도 표시)
   const [buildingShape, setBuildingShape] = useState<BuildingShape | null>(
-    (existing?.buildingShape as BuildingShape | null) ?? null,
+    (existing?.buildingShape as BuildingShape | null) ?? "rectangle",
   );
   const [roofShape, setRoofShape] = useState<RoofShape | null>(
     (existing?.roofShape as RoofShape | null) ?? null,
