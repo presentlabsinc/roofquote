@@ -149,10 +149,22 @@ model PricingSettings {
   // Shape: { roof: { area30: { rectangle: { gable: { bendingTotalM, ... } } } } }
   baselineData            Json?
 
-  // Catalog category defaults (mode + simple-mode preset per category).
-  // Shape: { finishing: {mode, simpleType, simpleValue}, gutter: {...}, ... }
-  // When null/empty, defaults from lib/catalog.ts DEFAULT_CATEGORY_MODES apply.
+  // Catalog group defaults (그룹별 심플 기본값 — simpleValue 등 부분 override).
+  // Shape: { finishing: {simpleValue}, accessory: {...}, ... } — 유형별 built-in 위에 병합.
   catalogDefaults              Json   @default("{}")
+  // 카탈로그 아이템 단가 override — { itemKey: price }. 비면 DEFAULT_CATALOG 천보가.
+  // 기성품 용마루 자동 라인 + 상세 모드 기본 단가 양쪽에 적용.
+  catalogPrices                Json   @default("{}")
+  // 두께 배수 override — { "0.4": 0.92, "0.5": 1.08, "0.6": 1.22 }. 0.45 = 기준(1.0) 고정.
+  thicknessMultipliers         Json   @default("{}")
+  // 지붕형태별 자동 로스율 override — { gable: 0.07, hip: 0.12, ... }. 비면 ROOF_SHAPE_FACTORS.
+  roofShapeLossRates           Json   @default("{}")
+  // 시공면적 ÷ 건물면적 비 (지붕 경사+처마) — 둘레 역산에 사용. 기본 1.4.
+  constructionToBuildingRatio  Float  @default(1.4)
+  // 작업일수 자동 제안 기준 — max(2, ceil(면적 ÷ N)). 기본 90㎡/일.
+  workDaysAreaDivisor          Int    @default(90)
+  // 배수구 처리 (스틸방수, 식) — 구 '폐기물비 × 0.5' 파생 → 독립 단가.
+  drainageWorkCost             Int    @default(500000)
   mealCostPerPersonMeal     Int   // 1인 1일 식대·간식 (점심 1만 + 음료/간식 1만 ≈ 20,000)
   lodgingCostPerPersonNight Int   // 1인 1박 숙박비 (2인실 7만 ÷ 2 ≈ 35,000)
   // 팀 경비(잡비) — 현장 경비 명목 팀 지급 lump sum. includeTeamExpense 토글 시 적용.

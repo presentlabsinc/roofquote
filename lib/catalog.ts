@@ -266,6 +266,21 @@ export const DEFAULT_CATALOG: CatalogItem[] = [
   // 절곡 그룹 상세 모드는 아이템 목록이 아니라 "총 넓이" 입력 (CatalogPicker 특수 처리).
 ];
 
+/**
+ * 카탈로그 아이템 단가 override 적용 — PricingSettings.catalogPrices ({ itemKey: price }).
+ * 비어 있으면 DEFAULT_CATALOG 천보가 그대로. 설정에서 업체별 실거래가로 조정 (북극성).
+ */
+export function applyCatalogPrices(
+  catalog: CatalogItem[],
+  overrides: Record<string, number> | null | undefined,
+): CatalogItem[] {
+  if (!overrides || Object.keys(overrides).length === 0) return catalog;
+  return catalog.map((it) => {
+    const p = overrides[it.key];
+    return p && p > 0 ? { ...it, price: p } : it;
+  });
+}
+
 /** Group a catalog list by category, preserving sortOrder within each. */
 export function groupCatalog(items: CatalogItem[]): Record<CatalogCategory, CatalogItem[]> {
   const result = {} as Record<CatalogCategory, CatalogItem[]>;

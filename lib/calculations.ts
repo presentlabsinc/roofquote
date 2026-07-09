@@ -107,10 +107,14 @@ export function estimatePerimeter(
   areaM2: number,
   shape: BuildingShape,
   buildingAreaM2?: number | null,
+  /** 시공면적 ÷ 건물면적 비 override (settings.constructionToBuildingRatio) — 기본 1.4. */
+  constructionToBuildingRatio?: number | null,
 ): number {
+  const ratio = constructionToBuildingRatio && constructionToBuildingRatio > 0
+    ? constructionToBuildingRatio : CONSTRUCTION_TO_BUILDING_RATIO;
   const effectiveBuildingArea = (buildingAreaM2 && buildingAreaM2 > 0)
     ? buildingAreaM2
-    : (areaM2 > 0 ? areaM2 / CONSTRUCTION_TO_BUILDING_RATIO : 0);
+    : (areaM2 > 0 ? areaM2 / ratio : 0);
   if (effectiveBuildingArea <= 0) return 0;
   return Math.round(
     Math.sqrt(effectiveBuildingArea) * BUILDING_SHAPE_FACTORS[shape].perimeterFactor * 10
@@ -130,12 +134,13 @@ export function estimateBasePerimeter(
   areaM2: number,
   shape: BuildingShape,
   buildingAreaM2?: number | null,
+  constructionToBuildingRatio?: number | null,
 ): number {
   if (constructionType === "rooftopRoof") {
     if (areaM2 <= 0) return 0;
     return Math.round(Math.sqrt(areaM2) * BUILDING_SHAPE_FACTORS[shape].perimeterFactor * 10) / 10;
   }
-  return estimatePerimeter(areaM2, shape, buildingAreaM2);
+  return estimatePerimeter(areaM2, shape, buildingAreaM2, constructionToBuildingRatio);
 }
 
 /** 장변 길이 추정 — 둘레 = 2(L+S), 장단비 1.5 가정. ㄱ/ㄷ자도 주동 길이로 근사. */
@@ -170,11 +175,13 @@ export function estimateGeometrically(args: {
    * 한옥처럼 처마 1m 면 100, 일반 50cm 면 50, 평지붕은 0.
    */
   eaveOverhangCm?: number;
+  /** 시공면적 ÷ 건물면적 비 override — 기본 1.4. */
+  constructionToBuildingRatio?: number | null;
 }): GeometricEstimate {
-  const { constructionType, areaM2, buildingAreaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride, eaveOverhangCm = 0 } = args;
+  const { constructionType, areaM2, buildingAreaM2, building, roof, ridgeCount, parapetHeightCm, perimeterOverride, eaveOverhangCm = 0, constructionToBuildingRatio = null } = args;
   const buildingPerimeter = (perimeterOverride && perimeterOverride > 0)
     ? perimeterOverride
-    : estimateBasePerimeter(constructionType, areaM2, building, buildingAreaM2);
+    : estimateBasePerimeter(constructionType, areaM2, building, buildingAreaM2, constructionToBuildingRatio);
   // 처마 외곽 둘레 = 건물 둘레 + 8d — 지붕공사(roof)만.
   //   옥상지붕은 시공면적에 돌출 포함 (새로 짓는 지붕이라 외곽까지 다 잼) → 보정 X.
   //   스틸방수는 평지붕 → 보정 X.
@@ -278,8 +285,12 @@ export function resolveEffectiveLossRate(
   lossRateMode: string | null | undefined,
   roofShape: RoofShape | null | undefined,
   manualLossRate: number,
+  /** 지붕형태별 로스율 override (settings.roofShapeLossRates JSON) — 없으면 코드 상수. */
+  shapeOverrides?: Record<string, number> | null,
 ): number {
   if (lossRateMode === "auto") {
+    const override = roofShape ? shapeOverrides?.[roofShape] : undefined;
+    if (override && override > 0) return override;
     const auto = lossRateForRoofShape(roofShape);
     if (auto !== null) return auto;
   }
@@ -481,6 +492,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     building: effectiveBuildingShape, roof: roofShape,
     ridgeCount, parapetHeightCm, perimeterOverride: perimeterM,
     eaveOverhangCm,
+    constructionToBuildingRatio: (settings as unknown as { constructionToBuildingRatio?: number }).constructionToBuildingRatio ?? null,
   });
 
   /** 추정값 헬퍼 — 베이스라인 우선, geom fallback, 없으면 fallback 콜백. */
@@ -510,13 +522,17 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
           const itemKey = materialType === "generalTile" || materialType === "traditionalTile"
             ? "ridgeClassic" : "multiRidge";
           const item = DEFAULT_CATALOG.find((c) => c.key === itemKey);
-          if (item && item.price > 0) {
+          // 단가: 설정의 카탈로그 단가 override 우선 (catalogPrices JSON), 없으면 천보 기본가.
+          const priceOverrides = (settings as unknown as { catalogPrices?: Record<string, number> }).catalogPrices ?? null;
+          const price = (priceOverrides?.[itemKey] && priceOverrides[itemKey] > 0)
+            ? priceOverrides[itemKey] : (item?.price ?? 0);
+          if (item && price > 0) {
             const segmentM = (item.lengthMm ?? 3000) / 1000;
             const count = Math.max(1, Math.ceil(ridgeLength / segmentM));
             items.push({
               category: "material", name: `용마루 (기성품 — ${item.label})`,
-              quantity: count, unit: "개", unitPrice: item.price,
-              total: count * item.price, sortOrder: order++,
+              quantity: count, unit: "개", unitPrice: price,
+              total: count * price, sortOrder: order++,
             });
           }
         }
@@ -749,7 +765,9 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
       });
     }
     if (scope.drainage) {
-      const lumpSum = Math.round(settings.wasteDisposalCost * 0.5);
+      // 독립 단가 (2026-07-09) — 구 '폐기물비 × 0.5' 파생 폐기. 설정에서 직접 조정.
+      const lumpSum = (settings as unknown as { drainageWorkCost?: number }).drainageWorkCost
+        ?? Math.round(settings.wasteDisposalCost * 0.5);
       items.push({
         category: "other", name: "배수구 처리", quantity: 1, unit: "식",
         unitPrice: lumpSum, total: lumpSum, sortOrder: order++,
@@ -1215,12 +1233,13 @@ export function getMaterialPriceSqm(
   };
   const mt = materialType ?? "slate";
   const pricePerM = perMByType[mt] ?? s.materialPriceSlatePerM ?? 0;
+  // 두께 배수 — 설정 override (thicknessMultipliers JSON) 우선, 없으면 코드 상수. 0.45 = 기준 1.0.
+  const multOverrides = (settings as unknown as { thicknessMultipliers?: Record<string, number> }).thicknessMultipliers ?? null;
+  const mult = thickness ? (multOverrides?.[thickness] || THICKNESS_MULT[thickness]) : 1;
   // m당 단가 0 (미정) → LEGACY ㎡ 단가로 폴백 (두께 배수만 적용).
   if (!pricePerM || pricePerM <= 0) {
-    const mult = thickness ? THICKNESS_MULT[thickness] : 1;
     return Math.round((settings.materialPricePerSqm ?? 0) * mult);
   }
-  const mult = thickness ? THICKNESS_MULT[thickness] : 1;
   const adjustedPerM = pricePerM * mult;
   const widthOverrides = (settings as unknown as { materialWidths?: Record<string, number> }).materialWidths ?? null;
   return convertMPriceToSqmPrice(adjustedPerM, mt as MaterialType, widthOverrides);

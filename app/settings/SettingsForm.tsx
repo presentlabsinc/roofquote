@@ -9,8 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Upload, X } from "lucide-react";
 import type { PricingSettings } from "@prisma/client";
-import { MATERIAL_TYPES, MATERIAL_EFFECTIVE_WIDTH_MM, type MaterialType } from "@/lib/types";
-import { convertMPriceToSqmPrice } from "@/lib/calculations";
+import { MATERIAL_TYPES, MATERIAL_EFFECTIVE_WIDTH_MM, ROOF_SHAPES, type MaterialType } from "@/lib/types";
+import { convertMPriceToSqmPrice, lossRateForRoofShape } from "@/lib/calculations";
+import { CATALOG_CATEGORIES, CATALOG_GROUPS, DEFAULT_CATALOG, defaultGroupModes, groupCatalog } from "@/lib/catalog";
 
 // 강판 자재별 단가 카드에 표시할 자재 + 해당 m당 단가 키 매핑.
 const STEEL_PRICE_KEYS: { type: MaterialType; label: string; key: string }[] = [
@@ -98,6 +99,9 @@ const DEFAULTS = {
   denjoPricePerUnit: 700000,
   parapetMultiplier: 1.4,
   defaultLossRate: 0.10,
+  constructionToBuildingRatio: 1.4,
+  workDaysAreaDivisor: 90,
+  drainageWorkCost: 500000,
   estimateNumberStart: 1,
   marginMaterialRatio: 0.5,
   marginLaborRatio: 0.25,
@@ -204,6 +208,10 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     items: [
       { key: "defaultLossRate", label: "기본 자재 로스율", unit: "%", step: 0.01, pct: true },
       { key: "defaultWorkerCount", label: "기본 작업 인원", unit: "명" },
+      // 작업일수 자동 제안: max(2, ceil(면적 ÷ N)) — 샘플 실측 90㎡/일 기준.
+      { key: "workDaysAreaDivisor", label: "작업일수 자동 기준 (㎡/일)", unit: "㎡" },
+      // 지붕 둘레 역산용: 시공면적 ÷ 이 비율 = 건물면적 (경사+처마 몫).
+      { key: "constructionToBuildingRatio", label: "시공면적 ÷ 건물면적 비", unit: "", step: 0.1 },
       // 견적 번호 시작값 — 새 견적 번호 = estimateNumberStart + 올해 이미 만든 견적 수.
       { key: "estimateNumberStart", label: "견적 번호 시작값 (YYYY-XXX)", unit: "" },
     ],
@@ -227,8 +235,9 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     tier: "price",
     items: [
       { key: "stainlessDrainPricePerM", label: "스테인리스 배수로 m당", unit: "원" },
-      { key: "downspoutUnitPrice", label: "홈통 (개당)", unit: "원" },
+      { key: "downspoutUnitPrice", label: "선홈통 (개당)", unit: "원" },
       { key: "drainHolePrice", label: "새 배수구 타공 (개당)", unit: "원" },
+      { key: "drainageWorkCost", label: "배수구 처리 (식)", unit: "원" },
       // 두겁 절곡은 절곡 단가 그룹(bendingWidthCap)으로 계산 — capBendingPricePerM 은 레거시라 UI에서 제거.
     ],
   },
@@ -370,6 +379,9 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
       insulationPricePir: (defaultValues as unknown as Record<string, number>).insulationPricePir ?? 16000,
       insulationPriceThermalReflect: (defaultValues as unknown as Record<string, number>).insulationPriceThermalReflect ?? 6000,
       lossRateMode: (((defaultValues as unknown as { lossRateMode?: string }).lossRateMode === "manual") ? "manual" : "auto") as "auto" | "manual",
+      constructionToBuildingRatio: (defaultValues as unknown as Record<string, number>).constructionToBuildingRatio ?? 1.4,
+      workDaysAreaDivisor: (defaultValues as unknown as Record<string, number>).workDaysAreaDivisor ?? 90,
+      drainageWorkCost: (defaultValues as unknown as Record<string, number>).drainageWorkCost ?? 500000,
       downspoutUnitPrice: (defaultValues as unknown as { downspoutUnitPrice?: number }).downspoutUnitPrice ?? 50000,
       denjoPricePerUnit: (defaultValues as unknown as { denjoPricePerUnit?: number }).denjoPricePerUnit ?? 700000,
     };
@@ -403,6 +415,24 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     setInsulationUnitAreas((m) => ({ ...m, [typeKey]: area }));
   }
 
+  // ── 2026-07-09 "모든 노브 개방" — JSON override 4종 (비면 코드 기본값) ──
+  // 추가 자재 그룹 심플 기본값 — { finishing: {simpleValue}, ... }. 유형별 built-in 위에 병합.
+  const [catalogGroupDefaults, setCatalogGroupDefaults] = useState<Record<string, { simpleValue?: number }>>(
+    () => ((defaultValues as unknown as { catalogDefaults?: Record<string, { simpleValue?: number }> } | null)?.catalogDefaults) ?? {},
+  );
+  // 카탈로그 아이템 단가 — { itemKey: price }. 기성품 자동 라인 + 상세 모드에 적용.
+  const [catalogPrices, setCatalogPrices] = useState<Record<string, number>>(
+    () => ((defaultValues as unknown as { catalogPrices?: Record<string, number> } | null)?.catalogPrices) ?? {},
+  );
+  // 두께 배수 — { "0.4": 0.92, "0.5": 1.08, "0.6": 1.22 }. 0.45 = 기준 1.0 고정.
+  const [thicknessMultipliers, setThicknessMultipliers] = useState<Record<string, number>>(
+    () => ((defaultValues as unknown as { thicknessMultipliers?: Record<string, number> } | null)?.thicknessMultipliers) ?? {},
+  );
+  // 지붕형태별 자동 로스율 — { gable: 0.07, ... }.
+  const [roofShapeLossRates, setRoofShapeLossRates] = useState<Record<string, number>>(
+    () => ((defaultValues as unknown as { roofShapeLossRates?: Record<string, number> } | null)?.roofShapeLossRates) ?? {},
+  );
+
   /** 현재 폼 값을 라이브 PricingSettings 에 저장. 성공 시 true. */
   async function saveLive(): Promise<boolean> {
     const payload = {
@@ -410,6 +440,10 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
       materialWidths,
       accessoryLengths,
       insulationUnitAreas,
+      catalogDefaults: catalogGroupDefaults,
+      catalogPrices,
+      thicknessMultipliers,
+      roofShapeLossRates,
       companyPhone: values.companyPhone || null,
       companyAddress: values.companyAddress || null,
       businessRegistrationNumber: values.businessRegistrationNumber || null,
@@ -514,6 +548,10 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     setMaterialWidths({});
     setAccessoryLengths({});
     setInsulationUnitAreas({});
+    setCatalogGroupDefaults({});
+    setCatalogPrices({});
+    setThicknessMultipliers({});
+    setRoofShapeLossRates({});
     setActiveId(null);
     setPickerOpen(false);
     toast.success("공장 기본값을 불러왔어요. 저장하면 적용됩니다.");
@@ -611,9 +649,36 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
             />
           )}
           {section === "하지 작업 단가" && (
+            <ThicknessMultCard
+              overrides={thicknessMultipliers}
+              onChange={(t, mult) => setThicknessMultipliers((prev) => {
+                if (mult === undefined) { const { [t]: _drop, ...rest } = prev; return rest; }
+                return { ...prev, [t]: mult };
+              })}
+            />
+          )}
+          {section === "하지 작업 단가" && (
             <SubstructurePricingCard
               values={values}
               onChange={(key, v) => setField(key as keyof typeof DEFAULTS, v as never)}
+            />
+          )}
+          {section === "하지 작업 단가" && (
+            <GroupDefaultsCard
+              values={catalogGroupDefaults}
+              onChange={(group, simpleValue) => setCatalogGroupDefaults((prev) => {
+                if (simpleValue === undefined) { const { [group]: _drop, ...rest } = prev; return rest; }
+                return { ...prev, [group]: { ...prev[group], simpleValue } };
+              })}
+            />
+          )}
+          {section === "하지 작업 단가" && (
+            <CatalogPricesCard
+              overrides={catalogPrices}
+              onChange={(key, price) => setCatalogPrices((prev) => {
+                if (price === undefined) { const { [key]: _drop, ...rest } = prev; return rest; }
+                return { ...prev, [key]: price };
+              })}
             />
           )}
           {items.length > 0 && (
@@ -811,6 +876,16 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
                 <p className="text-xs text-muted-foreground mt-1.5">새 견적 만들 때 지붕/옥상지붕 공사의 하지 기본값</p>
               </div>
             </div>
+          )}
+          {/* 지붕 형태별 자동 로스율 — 로스율 정책 바로 아래 */}
+          {section === "견적 기본값" && (
+            <RoofLossRatesCard
+              overrides={roofShapeLossRates}
+              onChange={(shape, rate) => setRoofShapeLossRates((prev) => {
+                if (rate === undefined) { const { [shape]: _drop, ...rest } = prev; return rest; }
+                return { ...prev, [shape]: rate };
+              })}
+            />
           )}
           </Fragment>
           );
@@ -1024,6 +1099,224 @@ function AccessoryPricingCard({
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 추가 자재 그룹 기본값 카드 — 견적 폼 5번(추가 자재) 심플 모드의 "내 기본값".
+ * 여기서 바꾸면 이후 모든 새 견적의 자동 라인이 이 값으로 (견적별 조정은 폼에서).
+ */
+function GroupDefaultsCard({
+  values, onChange,
+}: {
+  values: Record<string, { simpleValue?: number }>;
+  onChange: (group: string, simpleValue: number | undefined) => void;
+}) {
+  const builtIn = defaultGroupModes(null); // 지붕 기준 built-in (스틸방수 차이는 체크 기본뿐)
+  const ROWS: { group: string; label: string; unit: string; pct?: boolean }[] = [
+    { group: "bending",   label: "절곡 (㎡당)",            unit: "원/㎡" },
+    { group: "finishing", label: "마감재 기성품 (㎡당)",   unit: "원/㎡" },
+    { group: "accessory", label: "부자재 (자재비 대비)",   unit: "%", pct: true },
+    { group: "gutter",    label: "물받이 부속 (m당)",      unit: "원/m" },
+  ];
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📦</span>
+        <h2 className="font-semibold text-foreground">추가 자재 기본값 (심플 모드)</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        견적의 추가 자재 4그룹이 자동 계산에 쓰는 기본값. 비워두면 공장 기본.
+      </p>
+      <div className="divide-y divide-border/40">
+        {ROWS.map(({ group, label, unit, pct }) => {
+          const saved = values[group]?.simpleValue;
+          const base = builtIn[group as keyof typeof builtIn]?.simpleValue ?? 0;
+          const effective = saved ?? base;
+          const display = pct ? Math.round(effective * 1000) / 10 : effective;
+          const placeholder = pct ? String(Math.round(base * 1000) / 10) : String(base);
+          return (
+            <div key={group} className="px-5 py-3 flex items-center gap-3">
+              <Label className="flex-1 text-sm text-muted-foreground">{label}</Label>
+              <div className="relative w-32 shrink-0">
+                <Input
+                  type="number" inputMode="decimal"
+                  value={saved != null ? String(display) : ""}
+                  placeholder={placeholder}
+                  onChange={(e) => {
+                    const raw = parseFloat(e.target.value);
+                    if (!Number.isFinite(raw)) { onChange(group, undefined); return; }
+                    onChange(group, pct ? raw / 100 : raw);
+                  }}
+                  className="h-11 text-right pr-11 font-semibold tabular-nums rounded-xl"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{unit}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 카탈로그 아이템 단가 카드 — 천보 기본가 위에 업체별 실거래가 override (~40개).
+ * 기본 접힘. 빈 칸 = 천보 기본가(placeholder 표시). 기성품 용마루 자동 라인에도 적용.
+ */
+function CatalogPricesCard({
+  overrides, onChange,
+}: {
+  overrides: Record<string, number>;
+  onChange: (key: string, price: number | undefined) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const grouped = groupCatalog(DEFAULT_CATALOG);
+  const changedCount = Object.keys(overrides).length;
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full px-5 pt-4 pb-3 flex items-center gap-2 pressable text-left"
+      >
+        <span className="text-lg">🏷️</span>
+        <h2 className="font-semibold text-foreground flex-1">
+          카탈로그 단가표{changedCount > 0 && <span className="ml-2 text-xs font-semibold text-primary">{changedCount}개 변경됨</span>}
+        </h2>
+        <span className="text-xs text-muted-foreground">{open ? "접기" : "펼치기"}</span>
+      </button>
+      {open && (
+        <div className="px-5 pb-4">
+          <p className="text-[11px] text-muted-foreground mb-2">
+            빈 칸 = 천보 기본가. 여기 단가는 기성품 자동 라인과 상세 모드 양쪽에 적용.
+          </p>
+          {CATALOG_CATEGORIES.map((cat) => {
+            const items = grouped[cat.value];
+            if (!items || items.length === 0) return null;
+            return (
+              <div key={cat.value} className="mb-3">
+                <div className="text-[10px] font-semibold text-muted-foreground mb-1">{cat.label}</div>
+                <div className="divide-y divide-border/30">
+                  {items.map((item) => (
+                    <div key={item.key} className="py-1.5 flex items-center gap-2">
+                      <span className="flex-1 text-xs text-foreground">{item.label}</span>
+                      <div className="relative w-28 shrink-0">
+                        <Input
+                          type="number" inputMode="numeric"
+                          value={overrides[item.key] != null ? String(overrides[item.key]) : ""}
+                          placeholder={item.price.toLocaleString("ko-KR")}
+                          onChange={(e) => {
+                            const raw = parseInt(e.target.value);
+                            onChange(item.key, Number.isFinite(raw) && raw > 0 ? raw : undefined);
+                          }}
+                          className="h-9 text-right pr-9 text-xs font-semibold tabular-nums rounded-lg"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground pointer-events-none">원/{item.unit}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 두께 배수 카드 — 0.45t 기준가에 곱하는 두께별 배수. 빈 칸 = 공장 기본.
+ */
+function ThicknessMultCard({
+  overrides, onChange,
+}: {
+  overrides: Record<string, number>;
+  onChange: (t: string, mult: number | undefined) => void;
+}) {
+  const ROWS = [
+    { t: "0.4", base: 0.92 },
+    { t: "0.5", base: 1.08 },
+    { t: "0.6", base: 1.22 },
+  ];
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📐</span>
+        <h2 className="font-semibold text-foreground">강판 두께 배수</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        0.45t 단가 × 배수 = 해당 두께 단가. 0.45t = 기준(1.0) 고정.
+      </p>
+      <div className="divide-y divide-border/40">
+        {ROWS.map(({ t, base }) => (
+          <div key={t} className="px-5 py-3 flex items-center gap-3">
+            <Label className="flex-1 text-sm text-muted-foreground">{t}t</Label>
+            <div className="relative w-28 shrink-0">
+              <Input
+                type="number" inputMode="decimal" step={0.01}
+                value={overrides[t] != null ? String(overrides[t]) : ""}
+                placeholder={String(base)}
+                onChange={(e) => {
+                  const raw = parseFloat(e.target.value);
+                  onChange(t, Number.isFinite(raw) && raw > 0 ? raw : undefined);
+                }}
+                className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">배</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * 지붕형태별 자동 로스율 카드 — 로스율 '자동' 모드가 쓰는 형태별 값. 빈 칸 = 공장 기본.
+ */
+function RoofLossRatesCard({
+  overrides, onChange,
+}: {
+  overrides: Record<string, number>;
+  onChange: (shape: string, rate: number | undefined) => void;
+}) {
+  const shapes = ROOF_SHAPES.filter((s) => s.value !== "other");
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 overflow-hidden">
+      <div className="px-5 pt-4 pb-2 flex items-center gap-2">
+        <span className="text-lg">📉</span>
+        <h2 className="font-semibold text-foreground">지붕 형태별 자동 로스율</h2>
+      </div>
+      <p className="px-5 pb-2 text-[11px] text-muted-foreground">
+        로스율 &quot;자동&quot; 모드에서 지붕 형태별로 적용되는 값. 빈 칸 = 공장 기본.
+      </p>
+      <div className="divide-y divide-border/40">
+        {shapes.map((s) => {
+          const base = Math.round((lossRateForRoofShape(s.value) ?? 0) * 100);
+          const saved = overrides[s.value];
+          return (
+            <div key={s.value} className="px-5 py-3 flex items-center gap-3">
+              <Label className="flex-1 text-sm text-muted-foreground">{s.label} <span className="text-[10px]">({s.desc})</span></Label>
+              <div className="relative w-24 shrink-0">
+                <Input
+                  type="number" inputMode="numeric"
+                  value={saved != null ? String(Math.round(saved * 100)) : ""}
+                  placeholder={String(base)}
+                  onChange={(e) => {
+                    const raw = parseFloat(e.target.value);
+                    onChange(s.value, Number.isFinite(raw) && raw > 0 ? raw / 100 : undefined);
+                  }}
+                  className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">%</span>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

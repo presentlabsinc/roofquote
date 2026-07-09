@@ -68,7 +68,7 @@ import {
 } from "@/lib/types";
 import { applyOverrides, estimateBasePerimeter, getMaterialPriceSqm, pyeongToSqm, sqmToPyeong, BUILDING_SHAPE_FACTORS } from "@/lib/calculations";
 import { CatalogPicker } from "@/components/CatalogPicker";
-import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
+import { applyCatalogPrices, DEFAULT_CATALOG, type CatalogSelection, type GroupModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
 import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar, Coins, ChevronDown, ChevronUp, CloudRain, Waves } from "lucide-react";
 
@@ -589,7 +589,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     if (sqm <= 0) return;
     const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
     const est = constructionType
-      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null))
+      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null,
+          (eff as unknown as { constructionToBuildingRatio?: number }).constructionToBuildingRatio))
       : 0;
     if (est <= 0) return;
 
@@ -628,7 +629,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       }
       if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.max(10, Math.round(Math.sqrt(sqm)))));
     }
-    if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / 90))));
+    const daysDiv = (eff as unknown as { workDaysAreaDivisor?: number }).workDaysAreaDivisor || 90;
+    if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / daysDiv))));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sqmInput, constructionType, buildingShape, parapetHeightInput]);
 
   // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
@@ -647,7 +650,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const basePerim = inputPerim > 0
       ? inputPerim
       : (sqm > 0 && constructionType
-          ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape ?? "rectangle", bSqm > 0 ? bSqm : null))
+          ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape ?? "rectangle", bSqm > 0 ? bSqm : null,
+              (eff as unknown as { constructionToBuildingRatio?: number }).constructionToBuildingRatio))
           : 0);
     if (sqm <= 0 || basePerim <= 0) return;
     // 처마 외곽 둘레 사용 (물받이는 처마 끝에 달림)
@@ -672,6 +676,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const eff = useMemo(
     () => applyOverrides(settings, pricingOverrides),
     [settings, pricingOverrides],
+  );
+
+  // 카탈로그 단가 — 설정의 catalogPrices override 적용 (상세 모드 기본 단가에 반영).
+  const catalogWithPrices = useMemo(
+    () => applyCatalogPrices(DEFAULT_CATALOG, (eff as unknown as { catalogPrices?: Record<string, number> }).catalogPrices ?? null),
+    [eff],
   );
 
   return (
@@ -772,7 +782,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       : 0;
                     const isRoof = constructionType === "roof";
                     const estPerim = (sqm > 0 && constructionType)
-                      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null))
+                      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null,
+                          (eff as unknown as { constructionToBuildingRatio?: number }).constructionToBuildingRatio))
                       : 0;
                     // 옥상지붕은 시공면적 자체가 지붕 footprint
                     const source = isRoof
@@ -1437,6 +1448,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 onChange={setCatalogSelections}
                 modes={catalogModes}
                 onModesChange={setCatalogModes}
+                catalog={catalogWithPrices}
                 defaults={(settings.catalogDefaults as GroupModesMap | null) ?? undefined}
                 areaM2={parseFloat(sqmInput) || 0}
                 gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}

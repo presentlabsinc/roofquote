@@ -617,6 +617,54 @@ describe("buildLineItems — 선홈통/숙박 박수/그룹 체크 근사값 (20
   });
 });
 
+describe("설정 노브 개방 (2026-07-09) — 모든 계수가 settings 로 override 가능", () => {
+  it("두께 배수 override — thicknessMultipliers JSON", () => {
+    const s = { ...baseSettings, thicknessMultipliers: { "0.5": 1.2 } } as typeof baseSettings;
+    const items = buildLineItems(baseInput({ settings: s, thickness: "0.5" }));
+    const main = items.find((i) => i.name.includes("시공"))!;
+    // 8,100 × 1.2 = 9,720/m ÷ 0.7 = 13,885.7 → 100원 올림 13,900 × 100㎡
+    expect(main.total).toBe(1_390_000);
+  });
+
+  it("기성품 용마루 단가 override — catalogPrices JSON", () => {
+    const s = { ...baseSettings, catalogPrices: { ridgeClassic: 20_000 } } as typeof baseSettings;
+    const items = buildLineItems(baseInput({
+      settings: s, materialType: "generalTile", scope: { ridge: true },
+    }));
+    const ready = items.find((i) => i.name.startsWith("용마루 (기성품"))!;
+    expect(ready.unitPrice).toBe(20_000); // 천보 14,300 대신 내 단가
+  });
+
+  it("지붕형태별 로스율 override — roofShapeLossRates", () => {
+    expect(resolveEffectiveLossRate("auto", "gable", 0.15, { gable: 0.09 })).toBe(0.09);
+    expect(resolveEffectiveLossRate("auto", "hip", 0.15, { gable: 0.09 })).toBe(0.12); // 없는 형태는 코드 기본
+  });
+
+  it("배수구 처리 독립 단가 — drainageWorkCost (구 폐기물×0.5 폐기)", () => {
+    const s = { ...baseSettings, drainageWorkCost: 300_000 } as typeof baseSettings;
+    const items = buildLineItems(baseInput({
+      settings: s, constructionType: "steelWaterproof", materialType: "parapet",
+      scope: { drainage: true },
+    }));
+    expect(items.find((i) => i.name === "배수구 처리")?.total).toBe(300_000);
+  });
+
+  it("그룹 심플 기본값 override — settings.catalogDefaults 의 simpleValue", () => {
+    const s = { ...baseSettings, catalogDefaults: { bending: { simpleValue: 5000 } } } as typeof baseSettings;
+    const items = buildLineItems(baseInput({ settings: s }));
+    expect(items.find((i) => i.name === "절곡 (심플)")?.total).toBe(500_000); // 100㎡ × 5,000
+  });
+
+  it("시공÷건물 비 override — 비율 낮추면 둘레·용마루 커짐", () => {
+    const s = { ...baseSettings, constructionToBuildingRatio: 1.0 } as typeof baseSettings;
+    const withRatio = buildLineItems(baseInput({ settings: s, scope: { ridge: true } }));
+    const stock = buildLineItems(baseInput({ scope: { ridge: true } }));
+    const a = withRatio.find((i) => i.name.startsWith("용마루 절곡"))!;
+    const b = stock.find((i) => i.name.startsWith("용마루 절곡"))!;
+    expect(a.total).toBeGreaterThan(b.total); // ÷1.0 → 건물면적 = 시공면적 → 둘레 ↑
+  });
+});
+
 describe("buildLineItems — 로스율", () => {
   it("로스율 적용 시 강판 면적 = 면적 × (1 + 로스율)", () => {
     const items = buildLineItems(baseInput({ applyLossRate: true, lossRate: 0.1 }));

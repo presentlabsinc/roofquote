@@ -99,6 +99,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     (settings as unknown as { lossRateMode?: string }).lossRateMode,
     roofShape as RoofShape | null,
     manualLossRate,
+    (settings as unknown as { roofShapeLossRates?: Record<string, number> }).roofShapeLossRates ?? null,
   );
 
   const lineItemDrafts = buildLineItems({

@@ -229,6 +229,17 @@ Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMm
 - 스틸방수 기본 scope 에 handrail+cap 포함 (옥상엔 파라펫이 사실상 항상 있음 — 없는 현장만 해제).
 - % 심플 라인 표시: 수량 = 12(%), 단가 = 자재비의 1% (구 0.12 표시 버그 수정).
 
+**설정 노브 전면 개방 (2026-07-09) — "엔진이 쓰는 돈 숫자는 전부 설정에서":**
+- 신규 컬럼 6종: `catalogPrices`(카탈로그 아이템 단가 override, 기성품 자동 라인+상세 모드 공용),
+  `thicknessMultipliers`(두께 배수), `roofShapeLossRates`(형태별 자동 로스율),
+  `constructionToBuildingRatio`(1.4), `workDaysAreaDivisor`(90), `drainageWorkCost`(배수구 처리 —
+  구 폐기물×0.5 파생 폐기). `catalogDefaults` 는 그룹 심플 기본값 편집기(GroupDefaultsCard)로 노출.
+- 설정 카드: 두께 배수 / 추가 자재 기본값 / 카탈로그 단가표(접힘, N개 변경 뱃지) / 형태별 로스율.
+  JSON override 는 전부 "빈 칸 = 공장 기본(placeholder 표시)" 패턴 — 프리셋에도 자동 포함.
+- **의도적으로 하드코딩 유지 (B급 기하 상수)**: 형태 둘레계수(4.2/5.0/5.5), ridge/eave ratio,
+  장단비 1.5, 옥탑 문 6m/창 4m, 여유율 1.10, 물받이 면 가중치 — 물리 근사라 만질 일이 드물고
+  설정 폭발 방지. 필요해지면 그때 개방.
+
 **Measurement-first hybrid** (the practical philosophy): big-money quantities
 (면적/둘레/용마루·처마·물받이·난간 길이/절곡 m) should be **direct input with a
 geometric auto-fill default the user can override**; small consumables
