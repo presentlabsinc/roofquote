@@ -308,13 +308,13 @@ geometric auto-fill default the user can override**; small consumables
 - **물받이 / 배수로는 시공 범위의 일부** — 폼에서 공사 범위 Section 바로 뒤에 배치 (자재 itemize 가 아니라 설치 여부/길이 결정이라서). 물받이 부속 자재(걸쇠/코너/마감캡 등)는 별개로 추가 자재 카탈로그 `gutter` 카테고리에 있음.
   - 지붕/옥상지붕: 물받이 Section — 4면 칩(기본 **앞·뒤 2면**, 2026-07-08) + 길이(자동: 처마외곽둘레 × 면가중치 앞30/뒤30/좌20/우20%) + **선홈통 개수(기본 4개, 단가 표시)**. 선홈통 라인은 이제 전 유형 공통 (`downspoutCount × downspoutUnitPrice`).
   - steelWaterproof: "배수로 / 물받이" Section — 스테인리스 배수로 길이 + 홈통 개수(`downspoutCount`) + **차양 물받이(옵션, gutterLength 재사용)**. 배수로 길이 0 이면 confirm.
-  - 카탈로그 `gutter` 카테고리 라벨은 steelWaterproof 에서 "배수로 / 물받이 부속" 으로 override (`CatalogPicker categoryLabels` prop).
+  - 카탈로그 `gutter` 그룹 라벨은 전 유형 동일 "물받이 부속" (구 스틸방수 override 는 2026-07-07 제거).
 - **물받이 라인은 더 이상 type-gated 아님** — `buildLineItems` 가 `gutterLengthM>0 && gutterMode!=none` 이면 유형 무관 emit (스틸방수 gutterMode="full" → 라벨 "차양"). 스테인리스 배수로 라인은 steelWaterproof 전용으로 별도.
 - **엔드캡** — 기와지붕 외엔 거의 안 써서(보통 접어 마감) 별도 UI 제거. 필요 시 카탈로그 finishing 에서 선택.
 - **난간 / 두겁** (steelWaterproof) — `handrail` 토글 시 `SCOPE_FORCES`로 `cap` 자동 ON. 토글 아래 **파라펫 높이 + 난간 둘레** 직접 입력. 두겁/미시 = 난간(+옥탑) 둘레 기반. (옛 `capLengthM` 직접입력은 deprecated — 둘레로 계산.)
   - **파라펫 분리 (2026-06-16 사용자 확인): 시공면적엔 난간(벽 양면) 면적까지 포함해 측정하는 관행.** 벽 안쪽 면(둘레×높이)은 파라펫 자재("parapet" 단가), 바깥 면은 일반 강판. 그래서 `파라펫 (난간 안쪽)` 라인은 **추가가 아니라 본 강판 면적에서 분리** — `buildLineItems` 상단 `parapetFaceArea` 를 본 라인에서 빼고 파라펫 라인으로 발행 (areaM2/2 클램프). 구 "파라펫 강판 (난간) = 둘레×높이×1.1 추가" 모델은 이중 계산이라 폐기.
 - **옥탑 구조물** (steelWaterproof) — `rooftopStructure` 토글 시 아래 **둘레 / 높이(`rooftopStructureHeightCm`) / 출입문 수 / 창문 수** 입력. 옥탑 외벽 강판 + 문/창 트림 절곡 생성.
-- **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). **개수 × 개당단가 모델 (2026-06-15)**: 자재 = `시공면적 × 개/㎡ 계수 × 개당 매입단가`, 개수 올림(발주 단위), 로스율 미적용(계수가 곧 소비 규칙). 목재 30×60 격자 → 1.4개/㎡ × 3,333원, 철재 30×80 → 0.76개/㎡ × 18,000원. 설정 `SubstructurePricingCard`(개당단가 × 개/㎡ → ㎡당 환산). 단가는 매입원가 — 고객 부풀림은 마진 분배. 레거시 `substructureWoodPricePerSqm`/`Steel` 컬럼은 미사용(호환 유지). 목재=붙임, 철재=띄움.
+- **하지작업** uses `SubstructureType` (`wood | steel`) plus a "없음" UI option (없음 = 하지 없이 덧방). **개수 × 개당단가 모델 (2026-06-15)**: 자재 = `시공면적 × 개/㎡ 계수 × 개당 매입단가`, 개수 올림(발주 단위), 로스율 미적용(계수가 곧 소비 규칙). 목재 30×60 격자 → 1.4개/㎡ × 3,333원, 철재 30×80 → 0.76개/㎡ × 14,000원(업자용 단가, 2026-07-07). 설정 `SubstructurePricingCard`(개당단가 × 개/㎡ → ㎡당 환산, 평당 표시). 단가는 매입원가 — 고객 부풀림은 마진 분배. 레거시 `substructureWoodPricePerSqm`/`Steel` 컬럼은 미사용(호환 유지). 목재=붙임, 철재=띄움.
 - **부대비용 (경비) — 2026-06-16:** 운송·식대는 항상, 숙박·팀경비·제경비는 토글 (`Estimate.includeLodging`/`includeTeamExpense`/`includeInsurance`, 폼 노무비 섹션).
   - **식대·간식**: 인원×일수×`mealCostPerPersonMeal`(기본 20,000 = 점심1만+음료/간식1만). 항상.
   - **숙박**: `includeLodging`(기본 OFF — 로컬은 숙박 없음). 박수 = `Estimate.lodgingNights` 직접 입력 우선, null 이면 작업일수−1 자동. 인원×박수×`lodgingCostPerPersonNight`(기본 35,000 = 2인실 7만÷2).
@@ -390,7 +390,8 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 
 **Note:** The old auto-added 부자재 line (materialTotal × accessoryRate) has been removed — it's now expressed as the accessory category's simple-mode percent. `PricingSettings.accessoryRate` is left in the DB for back-compat but no longer drives calculations.
 
-**Settings catalog editor** is still TODO. For now, defaults are configured per-estimate inline.
+**Settings catalog editor** ✅ 완료 (2026-07-09 노브 개방): 그룹 심플 기본값은 `GroupDefaultsCard`,
+아이템 단가는 `CatalogPricesCard`(접힘, `catalogPrices` JSON) — 둘 다 설정 화면에.
 
 **Auto-fill for detailed mode** (per user request, deferred): each catalog item could carry a `perSqm` coefficient so switching to 상세 모드 auto-populates quantities based on construction area. Needs industry-standard data the user said they'd supply.
 
