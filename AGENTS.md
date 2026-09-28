@@ -589,7 +589,8 @@ All four are mutually derived: editing one updates the other three. The hero car
 ### Don't
 - PDF 파일 자체는 아직 보관하지 않는다 (`pdfUrl` 미사용). 9/28 스냅샷으로 재생성 결과가 발송본과 같게 됐지만, 스펙은 발송 PDF 보관을 요구 — 공개 버킷에 고객 견적서를 올리면 안 되므로 **비공개 버킷 + 서명 URL** 로 할 것 (백로그).
 - Don't add base64 image storage. Use Supabase Storage via `/api/upload`.
-- Don't run `git push` from this shell with a fresh clone — it'll fail auth. The user has a PAT embedded in the remote URL locally; tell them if creds break.
+- Don't run `git push` from this shell with a fresh clone — it'll fail auth. 푸시 인증은 로컬 저장소 전용 credential helper 가
+  gh 의 presentlabsinc 토큰을 쓴다 (2026-09-28~, 원격 URL 에 토큰을 넣지 말 것). 인증이 깨지면 사용자에게 gh 재로그인을 요청.
 
 ## Known gotchas / paper cuts
 
