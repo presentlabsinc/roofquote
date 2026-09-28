@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Camera, X, User, MapPin } from "lucide-react";
 import type { PhotoItem } from "@/lib/types";
+import { uploadPhotosSequentially } from "@/lib/upload-photo";
 
 export function NewSiteForm() {
   const router = useRouter();
@@ -24,20 +25,12 @@ export function NewSiteForm() {
     e.target.value = "";
     if (files.length === 0) return;
     setUploading((n) => n + files.length);
-    await Promise.all(files.map(async (file) => {
-      const fd = new FormData();
-      fd.append("file", file);
-      try {
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        if (!res.ok) throw new Error();
-        const { url } = await res.json();
-        setPhotos((prev) => [...prev, { url, memo: "" }]);
-      } catch {
-        toast.error(`${file.name} 업로드 실패`);
-      } finally {
-        setUploading((n) => n - 1);
-      }
-    }));
+    // 폰에서 줄여서 한 장씩 업로드 (용량 한도 + 위치 정보 제거 + iOS 메모리 — lib/upload-photo).
+    await uploadPhotosSequentially(files, ({ url, error }) => {
+      if (url) setPhotos((prev) => [...prev, { url, memo: "" }]);
+      if (error) toast.error(error);
+      setUploading((n) => n - 1);
+    });
   }
 
   function updateMemo(idx: number, memo: string) {
@@ -58,13 +51,16 @@ export function NewSiteForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerName, customerPhone: customerPhone || null, siteAddress, photos, generalMemo: generalMemo || null }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || "등록에 실패했습니다");
+      }
       const site = await res.json();
       toast.success("등록되었습니다");
+      // 성공 시 saving 유지 — 화면 전환 전 재클릭으로 현장이 중복 생성되지 않게.
       router.push(`/sites/${site.id}`);
-    } catch {
-      toast.error("등록에 실패했습니다");
-    } finally {
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "등록에 실패했습니다");
       setSaving(false);
     }
   }
@@ -94,7 +90,7 @@ export function NewSiteForm() {
           <label className="flex items-center justify-center gap-2 h-16 border-2 border-dashed border-primary/30 bg-primary/5 rounded-2xl text-primary text-sm font-semibold cursor-pointer pressable">
             <Camera size={20} />
             <span>{uploading > 0 ? `업로드 중... (${uploading})` : "사진 추가 / 촬영"}</span>
-            <input type="file" accept="image/*" multiple capture="environment" className="hidden" onChange={handlePhotoChange} disabled={uploading > 0} />
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoChange} disabled={uploading > 0} />
           </label>
           {photos.length > 0 && (
             <div className="space-y-2.5 mt-3">

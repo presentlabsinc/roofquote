@@ -27,10 +27,11 @@ export default async function EstimateDetailPage({
     prisma.pricingSettings.findUnique({ where: { userId: user.id } }),
   ]);
   if (!e || e.siteId !== id) notFound();
+  // PDF 와 같은 규칙: 견적 시점 스냅샷 우선, 스냅샷 없는 구 견적만 현재 설정.
   const marginRatios = {
-    material: settings?.marginMaterialRatio ?? 0.5,
-    labor: settings?.marginLaborRatio ?? 0.25,
-    profit: settings?.marginProfitRatio ?? 0.25,
+    material: e.marginMaterialRatioSnapshot ?? settings?.marginMaterialRatio ?? 0.5,
+    labor: e.marginLaborRatioSnapshot ?? settings?.marginLaborRatio ?? 0.25,
+    profit: e.marginProfitRatioSnapshot ?? settings?.marginProfitRatio ?? 0.25,
   };
 
   return (

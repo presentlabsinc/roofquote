@@ -13,10 +13,11 @@ import {
   View,
   StyleSheet,
   Font,
+  Image,
 } from "@react-pdf/renderer";
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 import type { ScopeFlags, ConstructionType } from "@/lib/types";
-import { MATERIAL_TYPES, SCOPE_LABELS } from "@/lib/types";
+import { INSULATION_LABEL, MATERIAL_TYPES, SCOPE_LABELS, type InsulationType } from "@/lib/types";
 import { distributeMarginForDisplay, type DisplayLineItem, type MarginDistributionRatios } from "@/lib/calculations";
 
 // ⚠️ Font sourcing — DO NOT use Google Fonts /s/ CSS-chunk URLs here.
@@ -123,6 +124,7 @@ const styles = StyleSheet.create({
   subtotalRow: { flexDirection: "row", marginTop: 5, paddingTop: 5, borderTop: `0.5pt solid ${C.border}` },
   subtotalLabel: { flex: 1, fontSize: 10.5, color: C.muted },
   subtotalAmount: { fontSize: 10.5, color: C.muted, textAlign: "right" },
+  vatRow: { flexDirection: "row", marginTop: 2 },
 
   // — Final total (filled card)
   totalRow: { backgroundColor: C.totalBg, padding: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderBottom: `0.5pt solid ${C.border}` },
@@ -158,12 +160,6 @@ function materialLabel(type: string | null): string {
   return MATERIAL_TYPES.find((m) => m.value === type)?.label ?? "칼라강판";
 }
 
-function constructionTypeLabel(t: string): string {
-  if (t === "steelWaterproof") return "옥상 스틸방수 (바닥형)";
-  if (t === "rooftopRoof") return "옥상지붕 (지붕형)";
-  return "지붕공사";
-}
-
 function buildWorkTitle(estimate: Estimate, scope: ScopeFlags | null | undefined): string {
   const s = (scope ?? {}) as ScopeFlags;
   const mat = materialLabel(estimate.materialType ?? null);
@@ -197,8 +193,21 @@ function scopeOneLine(estimate: Estimate, scope: ScopeFlags | null | undefined):
     if ((estimate.stainlessDrainLengthM ?? 0) > 0) {
       parts.push("스테인리스 배수로 시공");
     }
+    if ((estimate.gutterLengthM ?? 0) > 0 && estimate.gutterMode && estimate.gutterMode !== "none") parts.push("차양 물받이 시공");
+    if ((estimate.downspoutCount ?? 0) > 0) parts.push("선홈통 설치");
   } else if (estimate.gutterMode && estimate.gutterMode !== "none") {
-    parts.push("물받이 교체");
+    // 옥상지붕은 새로 짓는 지붕이라 '교체'가 아니라 '설치'.
+    parts.push(ct === "rooftopRoof" ? "물받이 설치" : "물받이 교체");
+  }
+  // 하지·단열재 — 금액이 큰 공정인데 간단 견적서에 안 보이던 것 (2026-09-28).
+  if (estimate.substructureType === "wood") parts.push("목재 하지 작업");
+  else if (estimate.substructureType === "steel") parts.push("철재 하지 작업");
+  const insulation = Array.isArray(estimate.insulationTypes)
+    ? (estimate.insulationTypes as unknown[]).filter((t): t is InsulationType => typeof t === "string" && t in INSULATION_LABEL)
+    : [];
+  if (insulation.length > 0) {
+    const names = insulation.map((t) => (t === "other" && estimate.insulationNote ? estimate.insulationNote : INSULATION_LABEL[t]));
+    parts.push(`단열재 시공 (${names.join(", ")})`);
   }
   for (const k of keys) {
     if (k === "ridge" || k === "eave") continue; // already handled
@@ -223,6 +232,19 @@ function formatMonth(v: string | null): string | null {
 
 function fmt(n: number): string {
   return n.toLocaleString("ko-KR");
+}
+
+/** 한국 시간 기준 날짜 (서버는 UTC — 00~09시 KST 발행분이 전날로 찍히던 문제). */
+function formatDateKST(d: Date): string {
+  return new Date(d).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\.$/, "");
+}
+
+/** 고객 PDF 용 품명 — 내부 표기('(심플)', '(로스율 N% 포함)')를 뺀다. */
+function customerName(name: string): string {
+  return name
+    .replace(/\s*\(심플\)/g, "")
+    .replace(/\s*\(로스율 \d+(\.\d+)?% 포함\)/g, "")
+    .trim();
 }
 
 // ─── Cost grouping ─────────────────────────────────────────────────────
@@ -250,7 +272,7 @@ function mergePeFoamIntoMaterial<T extends EstimateLineItem>(items: T[]): T[] {
     : main.unitPrice;
   return items
     .filter((_, idx) => idx !== peFoamIdx)
-    .map((i, idx, arr) => {
+    .map((i, idx) => {
       // 인덱스 재매핑 — peFoam 빠진 후 mainIdx 위치 보정
       const adjustedMainIdx = mainIdx > peFoamIdx ? mainIdx - 1 : mainIdx;
       return idx === adjustedMainIdx
@@ -311,18 +333,21 @@ function groupForDetailed(items: DisplayLineItem[]): DetailedLine[] {
     }
     const group = item.category === "material" ? "자재공사" : "기타경비";
     const qty = `${item.quantity}${item.unit ?? ""}`;
-    // Spec column: derive a brief spec from unit or unit price
-    const spec = item.unitPrice > 0 && item.unit && item.unit !== "%" && item.unit !== "식"
+    // Spec column: 단가/단위. 직접 금액을 고친 라인처럼 단가×수량이 금액과 안 맞으면 단가는 숨긴다
+    // (고객이 계산해 보고 안 맞으면 신뢰 문제).
+    const consistent = Math.abs(item.unitPrice * item.quantity - item.total) <= Math.max(1, item.total * 0.01);
+    const spec = consistent && item.unitPrice > 0 && item.unit && item.unit !== "%" && item.unit !== "식"
       ? `${fmt(item.unitPrice)}/${item.unit}`
       : "—";
-    out.push({ group, name: item.name, spec, qty, amount: item.total });
+    out.push({ group, name: customerName(item.name), spec, qty, amount: item.total });
   }
   // Roll up labor into one line under 노무비 (already includes labor's share
   // of margin because distributeMarginForDisplay scaled it before us).
   if (laborItems.length) {
     const laborTotal = laborItems.reduce((s, i) => s + i.total, 0);
+    // 인일 수량만 합산 (처마/덴조 '건' 같은 다른 단위를 섞지 않게).
     const laborQty = laborItems
-      .filter((i) => i.category === "labor")
+      .filter((i) => i.category === "labor" && (i.unit ?? "").includes("일"))
       .reduce((s, i) => s + i.quantity, 0);
     const qty = laborQty > 0 ? `${laborQty}인일` : "1식";
     out.push({ group: "노무비", name: "인건비 (기공·조공)", spec: "—", qty, amount: laborTotal });
@@ -366,6 +391,9 @@ function parsePaymentStages(terms: string, finalPrice: number): PaymentStage[] |
     });
   }
   if (stages.length === 0) return null;
+  // 단계별 반올림 오차는 마지막 단계가 흡수 — 계약금+잔금이 최종 금액과 원 단위까지 일치.
+  const allocated = stages.slice(0, -1).reduce((s, x) => s + x.amount, 0);
+  stages[stages.length - 1].amount = finalPrice - allocated;
   return stages;
 }
 
@@ -378,6 +406,9 @@ interface Props {
    *  Read from PricingSettings by the PDF route. Defaults to 50/25/25 if
    *  not provided (legacy callers). */
   marginRatios?: MarginDistributionRatios;
+  /** 직인 이미지 — PDF 라우트가 미리 받아 검증한 버퍼 (없으면 '(인)' 표시). URL 을 직접 넘기지
+   *  않는 이유: react-pdf 가 렌더 중 원격 fetch 에 실패하면 PDF 전체가 깨졌다. */
+  sealImage?: { data: Buffer; format: "png" | "jpg" } | null;
 }
 
 export function EstimatePDFDoc({
@@ -385,9 +416,14 @@ export function EstimatePDFDoc({
   scopeFlags,
   detailLevel = "simple",
   marginRatios = { material: 0.5, labor: 0.25, profit: 0.25 },
+  sealImage = null,
 }: Props) {
   const vatNote = estimate.vatIncluded ? "부가세 포함" : "부가세 별도";
-  const createdStr = new Date(estimate.createdAt).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit" }).replace(/\.$/, "");
+  // 발행일 = 생성 또는 마지막 재발행(전체 수정) 시점. 구 견적은 생성일.
+  const issuedStr = formatDateKST(estimate.issuedAt ?? estimate.createdAt);
+  // 고객명·주소는 견적 시점 스냅샷 (현장 정보를 나중에 고쳐도 발송한 견적서는 그대로). 구 견적은 라이브 폴백.
+  const customer = estimate.customerNameSnapshot ?? estimate.site.customerName ?? "";
+  const address = estimate.siteAddressSnapshot ?? estimate.site.siteAddress ?? "";
   const constructionMonthStr = formatMonth(estimate.constructionMonth ?? null);
   const pyeong = Math.round(estimate.areaM2 / 3.3058);
 
@@ -414,7 +450,15 @@ export function EstimatePDFDoc({
   );
   const simpleLines = groupForSimple(displayLines);
   const detailedLines = groupForDetailed(displayLines);
-  const detailedSubtotal = detailedLines.reduce((s, l) => s + l.amount, 0);
+  // 공급가액 = 표시 라인 합계(원가 + 마진). 부가세 포함이면 부가세 = 최종가 − 공급가액 으로 맞춰
+  // '공급가액 + 부가세 = 최종 견적 금액'이 원 단위까지 정확히 떨어지게 한다.
+  // (이전엔 '소계 (부가세 포함)' 에 공급가가 찍혀 최종 금액과 10% 어긋났다.)
+  const supplyShown = displayLines.reduce((s, l) => s + l.total, 0);
+  const vatShown = estimate.vatIncluded ? estimate.finalPrice - supplyShown : 0;
+  const sumRows = [
+    { label: "공급가액", amount: supplyShown },
+    ...(estimate.vatIncluded ? [{ label: "부가세 (10%)", amount: vatShown }] : []),
+  ];
 
   // Payment stages
   const paymentStages = parsePaymentStages(estimate.paymentTerms ?? "", estimate.finalPrice);
@@ -426,7 +470,7 @@ export function EstimatePDFDoc({
     .filter(Boolean);
 
   return (
-    <Document title={`견적서 - ${estimate.site.customerName}`}>
+    <Document title={`견적서 - ${customer}`}>
       <Page size="A4" style={styles.page}>
         {/* ─── Header (dark navy) ─── */}
         <View style={styles.header}>
@@ -446,7 +490,7 @@ export function EstimatePDFDoc({
           <View style={styles.headerRight}>
             {[
               estimate.estimateNumber ? `No. ${estimate.estimateNumber}` : null,
-              `${createdStr} 발행`,
+              `${issuedStr} 발행`,
               `${estimate.validityDays}일간 유효`,
             ]
               .filter((s): s is string => Boolean(s))
@@ -460,9 +504,9 @@ export function EstimatePDFDoc({
         <View style={styles.topRow}>
           <View style={styles.topCol}>
             <Text style={styles.labelTiny}>고객명</Text>
-            <Text style={styles.valueLarge}>{`${estimate.site.customerName ?? ""} 님`}</Text>
+            <Text style={styles.valueLarge}>{`${customer} 님`}</Text>
             <Text style={styles.labelTinyTop}>공사위치</Text>
-            <Text style={styles.valueRegular}>{estimate.site.siteAddress ?? ""}</Text>
+            <Text style={styles.valueRegular}>{address}</Text>
           </View>
           <View style={styles.topColRight}>
             {/* Always-on rows + optional rows expressed as flat label/value pairs. */}
@@ -479,6 +523,9 @@ export function EstimatePDFDoc({
               }
               if (constructionMonthStr) {
                 rows.push({ label: "공사일정", value: constructionMonthStr, top: true });
+              }
+              if (estimate.workDays > 0) {
+                rows.push({ label: "예상 공사기간", value: `약 ${Math.ceil(estimate.workDays)}일`, top: true });
               }
               return rows.flatMap((r, i) => [
                 <Text key={`tr-l-${i}`} style={r.top ? styles.labelTinyTop : styles.labelTiny}>{r.label}</Text>,
@@ -513,6 +560,12 @@ export function EstimatePDFDoc({
                 <Text style={styles.simpleValue}>{fmt(line.amount)}</Text>
               </View>
             ))}
+            {sumRows.map((r, i) => (
+              <View key={`sum-${i}`} style={i === 0 ? styles.subtotalRow : styles.vatRow}>
+                <Text style={styles.subtotalLabel}>{r.label}</Text>
+                <Text style={styles.subtotalAmount}>{fmt(r.amount)}</Text>
+              </View>
+            ))}
           </View>
         ) : (
           <View style={styles.detailSection}>
@@ -544,10 +597,12 @@ export function EstimatePDFDoc({
               );
               return els;
             })}
-            <View style={styles.subtotalRow}>
-              <Text style={styles.subtotalLabel}>{`소계 (${vatNote})`}</Text>
-              <Text style={styles.subtotalAmount}>{fmt(detailedSubtotal)}</Text>
-            </View>
+            {sumRows.map((r, i) => (
+              <View key={`dsum-${i}`} style={i === 0 ? styles.subtotalRow : styles.vatRow}>
+                <Text style={styles.subtotalLabel}>{r.label}</Text>
+                <Text style={styles.subtotalAmount}>{fmt(r.amount)}</Text>
+              </View>
+            ))}
           </View>
         )}
 
@@ -581,11 +636,13 @@ export function EstimatePDFDoc({
         </View>
 
         {/* ─── Notice + Signature ─── */}
+        {/* 안내 목록은 페이지를 넘어갈 수 있고, 서명 행만 쪼개지지 않게 + 마지막 안내 줄이 서명과
+            같은 페이지에 오도록(minPresenceAhead) — 서명·직인만 다음 페이지에 고립되지 않게. */}
         <View style={styles.notice}>
           {noticeLines.length > 0 ? (
             <View>
               {noticeLines.map((l, i) => (
-                <Text key={`n-${i}`} style={styles.noticeText}>{`${i + 1}. ${l}`}</Text>
+                <Text key={`n-${i}`} style={styles.noticeText} minPresenceAhead={i === noticeLines.length - 1 ? 60 : 0}>{`${i + 1}. ${l}`}</Text>
               ))}
             </View>
           ) : (
@@ -593,17 +650,19 @@ export function EstimatePDFDoc({
               본 견적은 현장 조건 및 추가 요청 사항에 따라 변경될 수 있습니다.
             </Text>
           )}
-          <View style={styles.signatureRow}>
+          <View style={styles.signatureRow} wrap={false}>
             <Text style={styles.signatureLeft}>위와 같이 견적합니다.</Text>
             <View style={styles.signatureRight}>
               <Text style={styles.companyAbove}>{estimate.companyNameSnapshot || ""}</Text>
               <View style={styles.sealCircle}>
-                {/* Seal Image disabled temporarily — react-pdf throws if the
-                    URL fails to fetch (network / stale / RLS), and that's a
-                    likely cause of the "null props" crash users hit. Always
-                    render the (인) placeholder until we wire up URL validation
-                    or pre-fetch the image into a buffer. */}
-                <Text style={styles.sealPlaceholder}>(인)</Text>
+                {/* 직인: 라우트가 미리 받아 검증한 버퍼만 렌더 (원격 URL 직접 fetch 금지 — 실패 시
+                    PDF 전체가 깨지던 원인). 없거나 실패하면 (인). */}
+                {sealImage ? (
+                  // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image (PDF 요소, HTML img 아님 — alt 속성 없음)
+                  <Image src={sealImage} style={styles.sealImage} />
+                ) : (
+                  <Text style={styles.sealPlaceholder}>(인)</Text>
+                )}
               </View>
             </View>
           </View>

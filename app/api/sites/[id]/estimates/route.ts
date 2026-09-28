@@ -1,14 +1,40 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUserAndSettings } from "@/lib/auth";
-import { buildLineItems, calcTotals, resolveEffectiveLossRate } from "@/lib/calculations";
-import type { BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
-import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
+import { calcTotals } from "@/lib/calculations";
+import { PLACEHOLDER_COMPANY_NAME } from "@/lib/defaults";
+import {
+  InputError, computeEstimate, estimateColumns, parseEstimateBody, snapshotColumns,
+} from "@/lib/estimate-input";
+
+/** 한국 시간 기준 연도 (서버는 UTC — 1/1 00~09시 KST 견적이 전년도 번호를 받던 문제). */
+function kstYear(now: Date): number {
+  return new Date(now.getTime() + 9 * 3600_000).getUTCFullYear();
+}
+
+/**
+ * 견적 번호 "YYYY-NNN" — 올해 이 사용자의 **가장 큰 번호 + 1** (시작값 이상).
+ * 이전엔 '올해 견적 개수 + 시작값' 이라 견적을 삭제하면 번호가 중복됐다.
+ */
+async function nextEstimateNumber(userId: string, start: number, now: Date): Promise<string> {
+  const year = kstYear(now);
+  const prefix = `${year}-`;
+  const existing = await prisma.estimate.findMany({
+    where: { site: { userId }, estimateNumber: { startsWith: prefix } },
+    select: { estimateNumber: true },
+  });
+  let max = 0;
+  for (const e of existing) {
+    const n = parseInt((e.estimateNumber ?? "").slice(prefix.length), 10);
+    if (Number.isFinite(n) && n > max) max = n;
+  }
+  const seq = Math.max(start, max + 1);
+  return `${prefix}${String(seq).padStart(3, "0")}`;
+}
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { user, settings } = await requireUserAndSettings();
   const { id: siteId } = await params;
-  const body = await req.json();
 
   // Ownership check — can't create an estimate for someone else's site.
   const site = await prisma.site.findFirst({ where: { id: siteId, userId: user.id } });
@@ -16,201 +42,30 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // 견적 번호 자동 생성 — "YYYY-NNN" (연도별 카운터, 3자리 패딩).
-  // Scoped to the user so number sequences don't leak between accounts.
-  // estimateNumberStart from settings lets the user shift the starting
-  // number (e.g. start at 100 if migrating from another system).
-  const year = new Date().getFullYear();
-  const yearStart = new Date(year, 0, 1);
-  const yearEnd = new Date(year + 1, 0, 1);
-  const countThisYear = await prisma.estimate.count({
-    where: { createdAt: { gte: yearStart, lt: yearEnd }, site: { userId: user.id } },
-  });
-  const seq = (settings.estimateNumberStart ?? 1) + countThisYear;
-  const estimateNumber = `${year}-${String(seq).padStart(3, "0")}`;
+  // 회사명 자리표시 그대로면 고객 견적서에 "회사명을 설정에서 입력하세요"가 찍힌다.
+  if (!settings.companyName.trim() || settings.companyName === PLACEHOLDER_COMPANY_NAME) {
+    return NextResponse.json({ error: "설정에서 회사명을 먼저 입력해 주세요" }, { status: 400 });
+  }
 
-  const {
-    constructionType = "roof",
-    materialType = null,
-    materialThickness = "0.45",
-    materialTexture = null,
-    materialColor = null,
-    constructionMonth = null,
-    areaM2,
-    buildingAreaM2 = null,
-    workerCount,
-    workDays,
-    gutterMode = null,
-    gutterLengthM = 0,
-    stainlessDrainLengthM = 0,
-    capLengthM = 0,
-    drainHoleCount = 0,
-    endCapCount = 0,
-    denjoCount = 0,
-    skyliftDays = 0,
-    ladderTruckDays = 0,
-    scaffoldDays = 0,
-    scaffoldAreaM2 = 0,
-    wasteTruckCount = 1,
-    substructureType = null,
-    otherEquipment = null,
-    scopeFlags,
-    extraCosts = [],
-    pricingOverrides = {},
-    finishingMethods = {},
-    catalogSelections = [],
-    catalogModes = {},
-    applyLossRate = false,
-    lossRate = null,
-    buildingShape = null,
-    roofShape = null,
-    perimeterM = null,
-    ridgeCount = 1,
-    parapetHeightCm = null,
-    eaveOverhangCm = 50,
-    railPerimeterM = null,
-    rooftopStructurePerimeterM = null,
-    rooftopStructureHeightCm = null,
-    rooftopDoorCount = 0,
-    rooftopWindowCount = 0,
-    downspoutCount = 0,
-    hasInsulation = false,
-    insulationTypes = [],
-    insulationNote = null,
-    roofShapeNote = null,
-    hasPeFoam = false,
-    includeLodging = false,
-    includeTeamExpense = false,
-    includeInsurance = true,
-    lodgingNights = null,
-    marginRate: inputMarginRate,
-    vatIncluded,
-    paymentTerms,
-    validityDays,
-  } = body;
+  let input;
+  try {
+    input = parseEstimateBody(await req.json());
+  } catch (e) {
+    if (e instanceof InputError) return NextResponse.json({ error: e.message }, { status: 400 });
+    return NextResponse.json({ error: "요청 형식이 올바르지 않습니다" }, { status: 400 });
+  }
 
-  const scope: ScopeFlags = scopeFlags ?? {};
-  const marginRate = inputMarginRate ?? settings.defaultMarginRate;
-  const vatIncl = vatIncluded ?? settings.vatIncludedByDefault;
-  // 로스율: 설정의 lossRateMode === "auto" + roofShape 있으면 형태별 자동 적용,
-  // 그 외엔 사용자 입력값 (또는 settings.defaultLossRate) 사용.
-  const manualLossRate = lossRate ?? settings.defaultLossRate;
-  const effectiveLossRate = resolveEffectiveLossRate(
-    (settings as unknown as { lossRateMode?: string }).lossRateMode,
-    roofShape as RoofShape | null,
-    manualLossRate,
-    (settings as unknown as { roofShapeLossRates?: Record<string, number> }).roofShapeLossRates ?? null,
-  );
-
-  const lineItemDrafts = buildLineItems({
-    settings,
-    constructionType: constructionType as ConstructionType,
-    materialType: materialType as MaterialType | null,
-    thickness: materialThickness as Thickness | null,
-    areaM2,
-    scope,
-    workerCount,
-    workDays,
-    gutterMode: gutterMode as GutterMode | null,
-    gutterLengthM,
-    stainlessDrainLengthM,
-    capLengthM,
-    drainHoleCount,
-    endCapCount,
-    denjoCount,
-    skyliftDays,
-    ladderTruckDays,
-    scaffoldDays,
-    scaffoldAreaM2,
-    wasteTruckCount,
-    substructureType: substructureType as SubstructureType | null,
-    extraCosts: extraCosts as ExtraCost[],
-    pricingOverrides: pricingOverrides as PricingOverrides,
-    finishingMethods: finishingMethods as FinishingMethods,
-    catalogSelections: catalogSelections as CatalogSelection[],
-    catalogModes: catalogModes as GroupModesMap,
-    applyLossRate,
-    lossRate: effectiveLossRate,
-    buildingShape: buildingShape as BuildingShape | null,
-    roofShape: roofShape as RoofShape | null,
-    buildingAreaM2: buildingAreaM2 ?? null,
-    perimeterM,
-    ridgeCount,
-    parapetHeightCm,
-    eaveOverhangCm,
-    railPerimeterM,
-    rooftopStructurePerimeterM,
-    rooftopStructureHeightCm,
-    rooftopDoorCount,
-    rooftopWindowCount,
-    downspoutCount,
-    hasInsulation,
-    insulationTypes,
-    hasPeFoam,
-    includeLodging,
-    includeTeamExpense,
-    includeInsurance,
-    lodgingNights,
-  });
-
+  const now = new Date();
+  const estimateNumber = await nextEstimateNumber(user.id, settings.estimateNumberStart ?? 1, now);
+  const marginRate = input.marginRate ?? settings.defaultMarginRate;
+  const vatIncl = input.vatIncluded ?? settings.vatIncludedByDefault;
+  const { lineItemDrafts, effectiveLossRate } = computeEstimate(settings, input);
   const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
 
   const estimate = await prisma.estimate.create({
     data: {
       siteId,
-      constructionType,
-      materialType,
-      materialThickness,
-      materialTexture,
-      materialColor,
-      constructionMonth,
-      areaM2,
-      buildingAreaM2: buildingAreaM2 || null,
-      workerCount,
-      workDays,
-      gutterMode: gutterMode || null,
-      gutterLengthM: gutterLengthM || null,
-      stainlessDrainLengthM: stainlessDrainLengthM || null,
-      capLengthM: capLengthM || null,
-      drainHoleCount: drainHoleCount || 0,
-      endCapCount: endCapCount || 0,
-      denjoCount: denjoCount || 0,
-      substructureType: substructureType || null,
-      wasteTruckCount: wasteTruckCount || 1,
-      scaffoldAreaM2: scaffoldAreaM2 || null,
-      skyliftDays: skyliftDays || null,
-      ladderTruckDays: ladderTruckDays || null,
-      scaffoldDays: scaffoldDays || null,
-      otherEquipment,
-      scopeFlags: scope as object,
-      applyLossRate,
-      lossRate: applyLossRate ? effectiveLossRate : null,
-      buildingShape: buildingShape || null,
-      roofShape: roofShape || null,
-      perimeterM: perimeterM || null,
-      ridgeCount: ridgeCount || 1,
-      parapetHeightCm: parapetHeightCm || null,
-      eaveOverhangCm: typeof eaveOverhangCm === "number" ? eaveOverhangCm : 50,
-      railPerimeterM: railPerimeterM ?? null,
-      rooftopStructurePerimeterM: rooftopStructurePerimeterM ?? null,
-      rooftopStructureHeightCm: rooftopStructureHeightCm ?? null,
-      rooftopDoorCount: typeof rooftopDoorCount === "number" ? rooftopDoorCount : 0,
-      rooftopWindowCount: typeof rooftopWindowCount === "number" ? rooftopWindowCount : 0,
-      downspoutCount: typeof downspoutCount === "number" ? downspoutCount : 0,
-      hasInsulation: !!hasInsulation,
-      insulationTypes: (Array.isArray(insulationTypes) ? insulationTypes : []) as unknown as object,
-      insulationNote: insulationNote || null,
-      roofShapeNote: roofShapeNote || null,
-      hasPeFoam: !!hasPeFoam,
-      includeLodging: !!includeLodging,
-      includeTeamExpense: !!includeTeamExpense,
-      includeInsurance: includeInsurance !== false,
-      lodgingNights: typeof lodgingNights === "number" && lodgingNights > 0 ? lodgingNights : null,
-      catalogSelections: (catalogSelections as CatalogSelection[])
-        .filter((s) => s.quantity > 0) as unknown as object,
-      catalogModes: catalogModes as object,
-      pricingOverrides: pricingOverrides as object,
-      finishingMethods: (finishingMethods ?? {}) as object,
+      ...estimateColumns(input, effectiveLossRate),
       totalCost: totals.totalCost,
       marginMode: "percent",
       marginRate,
@@ -219,16 +74,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       vat: totals.vat,
       finalPrice: totals.finalPrice,
       vatIncluded: vatIncl,
-      paymentTerms: paymentTerms ?? "계약금 10% / 잔금 90%",
-      validityDays: validityDays ?? 30,
+      paymentTerms: input.paymentTerms ?? "계약금 10% / 잔금 90%",
+      validityDays: input.validityDays ?? 30,
       estimateNumber,
-      companyNameSnapshot: settings.companyName,
-      companyPhoneSnapshot: settings.companyPhone ?? null,
-      companyAddressSnapshot: settings.companyAddress ?? null,
-      businessRegistrationNumberSnapshot: settings.businessRegistrationNumber ?? null,
-      sealImageUrlSnapshot: settings.sealImageUrl ?? null,
-      bankAccountSnapshot: settings.bankAccount ?? null,
-      noticeTextSnapshot: settings.noticeText ?? null,
+      ...snapshotColumns(settings, site, now),
       lineItems: {
         create: lineItemDrafts,
       },

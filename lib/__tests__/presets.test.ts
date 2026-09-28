@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { PricingSettings } from "@prisma/client";
 import { extractPresetSnapshot, applyPresetSnapshot, PRESET_EXCLUDE } from "../presets";
+import { FACTORY_DEFAULTS } from "../defaults";
 
 const settings = {
   id: "s1", userId: "u1",
@@ -43,9 +44,16 @@ describe("preset snapshot scope", () => {
     expect(applied.defaultMarginRate).toBe(0.4);
   });
 
-  it("null/비객체 입력은 빈 객체", () => {
-    expect(applyPresetSnapshot(null)).toEqual({});
-    expect(applyPresetSnapshot("x")).toEqual({});
+  it("null/비객체 입력은 공장 기본값", () => {
+    expect(applyPresetSnapshot(null)).toEqual(FACTORY_DEFAULTS);
+    expect(applyPresetSnapshot("x")).toEqual(FACTORY_DEFAULTS);
+  });
+
+  it("옛 프리셋에 없는 필드는 공장 기본값으로 채운다 (부분 복원 회귀)", () => {
+    const out = applyPresetSnapshot({ dailyWage: 350000 });
+    expect(out.dailyWage).toBe(350000);
+    expect(out.workDaysAreaDivisor).toBe(FACTORY_DEFAULTS.workDaysAreaDivisor);
+    expect(out.catalogPrices).toEqual({});
   });
 
   it("PRESET_EXCLUDE 에 회사 정체성 핵심 키가 있다 (회귀 방지)", () => {

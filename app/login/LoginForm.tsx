@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Mail, Loader2 } from "lucide-react";
 import { supabaseBrowser } from "@/lib/supabase";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 /**
  * Login form — three sign-in paths:
@@ -17,10 +18,27 @@ import { supabaseBrowser } from "@/lib/supabase";
  * Signup is intentionally disabled — admin creates accounts in Supabase
  * dashboard during beta. Toggling that requires only enabling signUp() here.
  */
+/** Supabase 영문 오류 → 현장에서 이해할 한국어 (모르는 건 원문 유지). */
+function loginErrorMessage(raw: string): string {
+  const m = raw.toLowerCase();
+  if (m.includes("invalid login credentials")) return "이메일 또는 비밀번호가 맞지 않습니다";
+  if (m.includes("email not confirmed")) return "이메일 인증이 아직 안 된 계정입니다";
+  if (m.includes("signups not allowed") || m.includes("signup")) return "등록되지 않은 계정입니다 — 관리자에게 계정 생성을 요청해 주세요";
+  if (m.includes("network") || m.includes("fetch")) return "네트워크 연결을 확인해 주세요";
+  return raw;
+}
+
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") || "/";
+  // 같은 사이트 내부 경로만 — 외부 URL 로 튕기는 오픈 리다이렉트 차단.
+  const next = safeNextPath(searchParams.get("next"));
+  const callbackError = searchParams.get("error");
+
+  // OAuth 콜백 실패(?error=oauth)를 알려줌 — URL 값은 신호로만 쓰고 문구는 고정 (임의 문구 주입 방지).
+  useEffect(() => {
+    if (callbackError) toast.error("로그인에 실패했습니다. 다시 시도해 주세요.");
+  }, [callbackError]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,7 +57,7 @@ export function LoginForm() {
     });
     if (error) {
       setBusy(null);
-      toast.error(`${provider === "kakao" ? "카카오" : "구글"} 로그인 실패: ${error.message}`);
+      toast.error(`${provider === "kakao" ? "카카오" : "구글"} 로그인 실패: ${loginErrorMessage(error.message)}`);
     }
     // On success, browser is redirected away — no further work here.
   }
@@ -58,7 +76,7 @@ export function LoginForm() {
     });
     setBusy(null);
     if (error) {
-      toast.error(`로그인 실패: ${error.message}`);
+      toast.error(`로그인 실패: ${loginErrorMessage(error.message)}`);
       return;
     }
     router.push(next);

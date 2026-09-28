@@ -322,16 +322,29 @@ describe("buildLineItems — 용마루 마감 방식", () => {
     expect(ready?.unitPrice).toBe(13_200);
   });
 
-  it("카탈로그에서 이미 용마루를 골랐으면 자동 기성품 라인 생략 (중복 방지 가드)", () => {
+  it("카탈로그 상세에서 이미 용마루를 골랐으면 자동 기성품 라인 생략 (중복 방지 가드)", () => {
     const items = buildLineItems(baseInput({
       scope: { ridge: true },
       finishingMethods: { ridge: "ready" },
+      catalogModes: { finishing: { enabled: true, mode: "detailed" } },
       catalogSelections: [{
         category: "finishing", key: "multiRidge", label: "멀티용마루",
         unit: "개", quantity: 2, unitPrice: 13_200,
       }],
     }));
     expect(items.find((i) => i.name.startsWith("용마루 (기성품"))).toBeUndefined();
+    expect(items.find((i) => i.name === "멀티용마루")?.total).toBe(26_400); // 선택 라인은 그대로
+  });
+
+  it("마감재 그룹이 심플/꺼짐이면 남은 용마루 선택은 무시되고 자동 라인이 나온다 (용마루 통째 누락 회귀)", () => {
+    const sel = [{ category: "finishing" as const, key: "multiRidge", label: "멀티용마루", unit: "개", quantity: 2, unitPrice: 13_200 }];
+    for (const finishing of [{ enabled: true, mode: "simple" as const }, { enabled: false, mode: "detailed" as const }]) {
+      const items = buildLineItems(baseInput({
+        scope: { ridge: true }, finishingMethods: { ridge: "ready" },
+        catalogModes: { finishing }, catalogSelections: sel,
+      }));
+      expect(items.find((i) => i.name.startsWith("용마루 (기성품"))).toBeDefined();
+    }
   });
 
   it("scope.ridge 꺼져 있으면 어떤 용마루 라인도 없음", () => {

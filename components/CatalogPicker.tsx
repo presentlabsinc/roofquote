@@ -1,6 +1,7 @@
 "use client";
 import { memo, useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { BufferedNumberInput } from "@/components/ui/buffered-number-input";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/number-stepper";
 import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
@@ -18,6 +19,7 @@ import {
   SIMPLE_TYPE_LABELS,
   groupCatalog,
   resolveGroupDefaults,
+  mergeGroupModes,
 } from "@/lib/catalog";
 
 interface Props {
@@ -54,6 +56,16 @@ const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
  * e.g. 마감재 상세에서 기성품 용마루와 절곡 항목을 한 화면에서 같이 담을 수 있다.
  * Simple mode includes live "예상 X원" preview.
  */
+/** 직접 추가 항목 키 — 컴포넌트 밖에서 생성 (렌더 순수성 규칙). */
+let customSeq = 0;
+function newCustomKey(category: CatalogCategory): string {
+  customSeq += 1;
+  return `custom_${category}_${Date.now()}_${customSeq}`;
+}
+
+/** 계산 방식별 기본 값 — 방식을 바꿀 때 이전 값이 다른 단위로 해석되지 않게 이 값으로 초기화. */
+const GENERIC_TYPE_DEFAULTS: Record<SimpleType, number> = { perSqm: 1000, percent: 0.05, perM: 2000, total: 0 };
+
 function CatalogPickerBase({
   selections, onChange, modes, onModesChange, catalog = DEFAULT_CATALOG, defaults,
   areaM2 = 0, gutterLengthM = 0, materialTotalEstimate = 0, categoryLabels,
@@ -61,7 +73,7 @@ function CatalogPickerBase({
 }: Props) {
   const grouped = useMemo(() => groupCatalog(catalog), [catalog]);
   const resolved = useMemo(
-    () => resolveGroupDefaults({ ...defaults, ...modes }, constructionType),
+    () => resolveGroupDefaults(mergeGroupModes(defaults, modes), constructionType),
     [modes, defaults, constructionType],
   );
 
@@ -72,7 +84,20 @@ function CatalogPickerBase({
   }
 
   function setMode(grp: CatalogGroup, patch: Partial<CategoryMode>) {
-    onModesChange({ ...modes, [grp]: { ...resolved[grp], ...patch } });
+    const cur = resolved[grp];
+    // 절곡 상세 넓이(mm)는 detailWidthMm 에 따로 저장 (심플 수량 ㎡ 와 분리 — 2026-09-28).
+    // 구 견적은 상세 넓이가 simpleQty 에 들어 있으므로, 모드 전환 시 한 번 옮겨 준다.
+    if (grp === "bending" && cur.detailWidthMm === undefined) {
+      if (patch.mode === "simple" && cur.mode === "detailed") {
+        patch = { ...patch, detailWidthMm: cur.simpleQty ?? 0, simpleQty: undefined };
+      } else if (patch.mode === "detailed") {
+        patch = { ...patch, detailWidthMm: 0 };
+      } else if (patch.detailWidthMm !== undefined && cur.mode === "detailed") {
+        // 구 견적 상세에서 넓이를 먼저 고친 경우 — 옛 simpleQty(mm)를 지워 나중에 ㎡로 읽히지 않게.
+        patch = { ...patch, simpleQty: undefined };
+      }
+    }
+    onModesChange({ ...modes, [grp]: { ...cur, ...patch } });
     // Auto-expand the card when user flips to 상세 — they're going to want
     // to see the items. (Doesn't auto-collapse on flip to 심플.)
     if (patch.mode === "detailed") {
@@ -124,7 +149,7 @@ function CatalogPickerBase({
   }
 
   function addCustom(category: CatalogCategory) {
-    const key = `custom_${category}_${Date.now()}`;
+    const key = newCustomKey(category);
     onChange([
       ...selections,
       { category, key, label: "", unit: "개", quantity: 1, unitPrice: 0 },
@@ -171,6 +196,10 @@ function CatalogPickerBase({
               <SimpleModeBlock
                 mode={m}
                 onChange={(patch) => setMode(grp.value, patch)}
+                typeDefault={(t) => {
+                  const base = resolveGroupDefaults(defaults ?? {}, constructionType)[grp.value];
+                  return base.simpleType === t && base.simpleValue !== undefined ? base.simpleValue : GENERIC_TYPE_DEFAULTS[t];
+                }}
                 areaM2={areaM2}
                 gutterLengthM={gutterLengthM}
                 materialTotalEstimate={materialTotalEstimate}
@@ -185,8 +214,8 @@ function CatalogPickerBase({
                   <div className="relative flex-1">
                     <Input
                       type="number" inputMode="numeric"
-                      value={m.simpleQty ? String(m.simpleQty) : ""}
-                      onChange={(e) => setMode(grp.value, { simpleQty: parseFloat(e.target.value) || 0 })}
+                      value={(m.detailWidthMm ?? m.simpleQty) ? String(m.detailWidthMm ?? m.simpleQty) : ""}
+                      onChange={(e) => setMode(grp.value, { detailWidthMm: parseFloat(e.target.value) || 0 })}
                       placeholder="예: 700"
                       className="h-12 text-right pr-10 font-semibold tabular-nums rounded-xl"
                     />
@@ -198,7 +227,7 @@ function CatalogPickerBase({
                 <div className="flex items-center justify-between text-xs pt-2 mt-1 border-t border-border/40">
                   <span className="text-muted-foreground">예상 비용</span>
                   <span className="font-bold text-primary tabular-nums text-sm">
-                    {m.simpleQty && m.simpleQty > 0 ? `${Math.round(m.simpleQty * bendingUnitPrice).toLocaleString("ko-KR")}원` : "—"}
+                    {(m.detailWidthMm ?? m.simpleQty ?? 0) > 0 ? `${Math.round((m.detailWidthMm ?? m.simpleQty ?? 0) * bendingUnitPrice).toLocaleString("ko-KR")}원` : "—"}
                   </span>
                 </div>
               </div>
@@ -344,19 +373,18 @@ function ModeToggleSwitch({ detailed, onChange }: { detailed: boolean; onChange:
 }
 
 function SimpleModeBlock({
-  mode, onChange, areaM2, gutterLengthM, materialTotalEstimate,
+  mode, onChange, typeDefault, areaM2, gutterLengthM, materialTotalEstimate,
 }: {
   mode: CategoryMode;
   onChange: (patch: Partial<CategoryMode>) => void;
+  /** 계산 방식을 바꿀 때 쓸 그 방식의 기본 값. */
+  typeDefault: (t: SimpleType) => number;
   areaM2: number;
   gutterLengthM: number;
   materialTotalEstimate: number;
 }) {
   const simpleType = mode.simpleType ?? "total";
   const simpleValue = mode.simpleValue ?? 0;
-  const displayValue = simpleType === "percent"
-    ? Math.round(simpleValue * 1000) / 10
-    : simpleValue;
 
   // Effective quantity: user-entered simpleQty wins, else fall back to area/gutter
   const fallbackQty = simpleType === "perSqm" ? areaM2
@@ -385,14 +413,14 @@ function SimpleModeBlock({
   return (
     <div className="space-y-2 mt-2">
       <p className="text-[11px] text-muted-foreground">계산 방식 + 값 입력 → 비용 자동 계산</p>
-      <div className="grid grid-cols-3 gap-1">
-        {/* perSqm intentionally hidden — too hard for most users to use
-            correctly. Calculation logic still supports it for existing data. */}
-        {(["percent", "perM", "total"] as SimpleType[]).map((t) => (
+      {/* 4가지 계산 방식 모두 노출 — 절곡·마감재 기본값이 ㎡당이라 숨기면 되돌릴 수 없었다.
+          방식을 바꾸면 값은 그 방식의 기본값으로 (3,000원/㎡ 가 3,000% 로 해석되던 문제). */}
+      <div className="grid grid-cols-4 gap-1">
+        {(["perSqm", "percent", "perM", "total"] as SimpleType[]).map((t) => (
           <button
             key={t}
             type="button"
-            onClick={() => onChange({ simpleType: t })}
+            onClick={() => { if (t !== simpleType) onChange({ simpleType: t, simpleValue: typeDefault(t), simpleQty: undefined }); }}
             className={`pressable rounded-lg py-2 text-[10px] font-semibold border ${
               simpleType === t
                 ? "bg-primary/10 text-primary border-primary/40"
@@ -410,14 +438,13 @@ function SimpleModeBlock({
           {simpleType === "percent" ? "자재비 비율" : simpleType === "total" ? "총금액" : "단가"}
         </label>
         <div className="relative">
-          <Input
-            type="number"
-            inputMode="decimal"
-            value={displayValue || ""}
-            onChange={(e) => {
-              const raw = parseFloat(e.target.value) || 0;
-              onChange({ simpleValue: simpleType === "percent" ? raw / 100 : raw });
-            }}
+          <BufferedNumberInput
+            value={simpleValue}
+            scale={simpleType === "percent" ? 100 : 1}
+            maxDecimals={simpleType === "percent" ? 2 : 0}
+            min={0}
+            emptyValue={0}
+            onValueChange={(n) => onChange({ simpleValue: n ?? 0 })}
             placeholder="0"
             className="h-12 text-right text-lg font-bold pr-16 rounded-xl tabular-nums"
           />

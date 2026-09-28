@@ -25,15 +25,22 @@ export default async function PreviewPage({
   if (!estimate || estimate.siteId !== id) notFound();
 
   const pdfUrl = `/api/estimates/${eid}/pdf?detail=${detailLevel}`;
-  const summaryText = `안녕하세요. 오늘 상담드린 지붕공사 예비 견적서 보내드립니다.
-
-현장 주소: ${estimate.site.siteAddress}
-공사 유형: ${estimate.constructionType === "steelWaterproof" ? "옥상 스틸방수" : estimate.constructionType === "rooftopRoof" ? "옥상지붕" : "지붕공사"}
-예상 면적: ${estimate.areaM2}㎡
-견적 금액: ${estimate.finalPrice.toLocaleString("ko-KR")}원 (${estimate.vatIncluded ? "부가세 포함" : "부가세 별도"})
-
-자세한 내용은 첨부 견적서를 확인해 주세요.
-최종 견적은 현장 조건 확인 후 조정될 수 있습니다.`;
+  const typeLabel = estimate.constructionType === "steelWaterproof" ? "옥상 스틸방수" : estimate.constructionType === "rooftopRoof" ? "옥상지붕" : "지붕공사";
+  const customer = estimate.customerNameSnapshot ?? estimate.site.customerName;
+  const address = estimate.siteAddressSnapshot ?? estimate.site.siteAddress;
+  // 카톡 요약문 — 공사 유형별 문구 + 예상 공사기간 (스펙 §8).
+  const summaryText = [
+    `안녕하세요. 오늘 상담드린 ${typeLabel} 견적서 보내드립니다.`,
+    "",
+    `현장 주소: ${address}`,
+    `공사 유형: ${typeLabel}`,
+    `시공 면적: ${estimate.areaM2}㎡ (약 ${Math.round(estimate.areaM2 / 3.3058)}평)`,
+    estimate.workDays > 0 ? `예상 공사기간: 약 ${Math.ceil(estimate.workDays)}일` : null,
+    `견적 금액: ${estimate.finalPrice.toLocaleString("ko-KR")}원 (${estimate.vatIncluded ? "부가세 포함" : "부가세 별도"})`,
+    "",
+    "자세한 내용은 첨부한 견적서를 확인해 주세요.",
+    "최종 견적은 현장 조건 확인 후 조정될 수 있습니다.",
+  ].filter((l) => l !== null).join("\n");
 
   // 손해 견적 감지 — finalPrice 가 totalCost 보다 낮으면 마진이 음수.
   // 미리보기 진입 시점이 "고객에게 보내기 직전" 의 마지막 안전망이라
@@ -43,7 +50,7 @@ export default async function PreviewPage({
 
   return (
     <>
-      <AppHeader title="견적서 미리보기" subtitle={estimate.site.customerName} />
+      <AppHeader title="견적서 미리보기" subtitle={customer} />
       <div className="max-w-lg mx-auto px-4 pt-4 pb-32">
         {isLoss && (
           <div className="mb-3 bg-red-50 border-2 border-red-300 rounded-2xl p-4">
@@ -63,7 +70,7 @@ export default async function PreviewPage({
         <PreviewActions
           estimateId={eid}
           siteId={id}
-          customerName={estimate.site.customerName}
+          customerName={customer}
           summaryText={summaryText}
           detailLevel={detailLevel}
         />
@@ -84,7 +91,7 @@ export default async function PreviewPage({
           rel="noopener noreferrer"
           className="block text-center text-xs font-semibold text-primary bg-primary/5 rounded-xl py-3 mt-3 pressable"
         >
-          📄 PDF 가 안 보이면 — 새 탭에서 열기
+          📄 미리보기가 안 보이면 (안드로이드 등) — 새 탭에서 열기
         </a>
         <p className="text-[11px] text-muted-foreground text-center mt-2">
           위 미리보기는 고객에게 발송될 견적서입니다. 원가·마진은 포함되지 않습니다.

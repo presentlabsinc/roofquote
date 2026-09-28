@@ -267,8 +267,20 @@ export interface ExtraCost {
  * is not in this shape.
  */
 export interface PricingOverrides {
+  /** [LEGACY] 칼라강판 ㎡당 — 엔진은 m당 단가 미정 자재(템바징크)의 폴백으로만 씀. 구 견적 JSON 호환. */
   materialPricePerSqm?: number;
+  /** [LEGACY] 부자재 비율 — 엔진 미사용 (부자재는 카탈로그 그룹 %). 구 견적 JSON 호환. */
   accessoryRate?: number;
+  /** 강판 자재별 m당 단가 (0.45t 기준) — 견적별 조정. 폼은 선택한 자재의 키 하나만 보여준다. */
+  materialPriceSlatePerM?: number;
+  materialPriceV250PerM?: number;
+  materialPriceZinc250PerM?: number;
+  materialPriceGeneralTilePerM?: number;
+  materialPriceTraditionalTilePerM?: number;
+  materialPriceRealZincPerM?: number;
+  materialPriceParapetPerM?: number;
+  materialPriceOverlayPanelPerM?: number;
+  materialPriceTambourPerM?: number;
   /** [LEGACY] 용마루 마감 m당 — finishingMethods 도입(2026-06-12)으로 엔진 미사용. 구 견적 JSON 호환용. */
   ridgePricePerM?: number;
   /** [LEGACY] 처마 마감 m당 — 처마는 건당 시공(denjo)으로 재정의되어 미사용. */
@@ -303,14 +315,28 @@ export interface PricingOverrides {
   downspoutUnitPrice?: number;
 }
 
+/** 강판 자재 → m당 단가 설정 키 ('기타'는 S골 단가로 계산 — lib/calculations getMaterialPriceSqm). */
+export const MATERIAL_PRICE_PER_M_KEY: Record<MaterialType, keyof PricingOverrides> = {
+  slate: "materialPriceSlatePerM",
+  v250: "materialPriceV250PerM",
+  zinc250: "materialPriceZinc250PerM",
+  generalTile: "materialPriceGeneralTilePerM",
+  traditionalTile: "materialPriceTraditionalTilePerM",
+  realZinc: "materialPriceRealZincPerM",
+  parapet: "materialPriceParapetPerM",
+  overlayPanel: "materialPriceOverlayPanelPerM",
+  tambour: "materialPriceTambourPerM",
+  other: "materialPriceSlatePerM",
+};
+
 /** Field definitions for the override UI — grouped by concern. */
 export const PRICING_OVERRIDE_GROUPS: { group: string; icon: string; fields: { key: keyof PricingOverrides; label: string; unit: string; pct?: boolean }[] }[] = [
   {
     group: "자재 단가",
     icon: "🧱",
+    // 강판 m당 단가는 폼이 선택한 자재 키(MATERIAL_PRICE_PER_M_KEY)로 이 그룹 맨 위에 동적으로 추가.
+    // (구 '칼라강판 ㎡당'·'부자재 비율' 칸은 엔진이 읽지 않는 죽은 칸이라 제거 — 2026-09-28)
     fields: [
-      { key: "materialPricePerSqm", label: "칼라강판 ㎡당 (0.45t 기준)", unit: "원" },
-      { key: "accessoryRate", label: "부자재 비율", unit: "%", pct: true },
       { key: "bendingPricePerMmPer3m", label: "절곡 단가 (mm·3m당, 자재 포함)", unit: "원" },
       { key: "gutterPricePerM", label: "물받이 m당", unit: "원" },
       { key: "removalPricePerSqm", label: "철거 ㎡당", unit: "원" },

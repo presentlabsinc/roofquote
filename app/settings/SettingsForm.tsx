@@ -9,9 +9,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { Check, Upload, X } from "lucide-react";
 import type { PricingSettings } from "@prisma/client";
-import { MATERIAL_TYPES, MATERIAL_EFFECTIVE_WIDTH_MM, ROOF_SHAPES, type MaterialType } from "@/lib/types";
+import { MATERIAL_EFFECTIVE_WIDTH_MM, ROOF_SHAPES, type MaterialType } from "@/lib/types";
 import { convertMPriceToSqmPrice, lossRateForRoofShape } from "@/lib/calculations";
-import { CATALOG_CATEGORIES, CATALOG_GROUPS, DEFAULT_CATALOG, defaultGroupModes, groupCatalog } from "@/lib/catalog";
+import { CATALOG_CATEGORIES, DEFAULT_CATALOG, defaultGroupModes, groupCatalog } from "@/lib/catalog";
+import { DEFAULT_NOTICE_TEXT, FACTORY_DEFAULTS } from "@/lib/defaults";
+import { BufferedNumberInput } from "@/components/ui/buffered-number-input";
+import { uploadSeal } from "@/lib/upload-photo";
 
 // 강판 자재별 단가 카드에 표시할 자재 + 해당 m당 단가 키 매핑.
 const STEEL_PRICE_KEYS: { type: MaterialType; label: string; key: string }[] = [
@@ -51,6 +54,23 @@ const BENDING_PART_KEYS: { key: string; label: string }[] = [
   { key: "bendingWidthSnowGuard", label: "눈방지턱" },
 ];
 
+// 공장 기본값 — lib/defaults.ts FACTORY_DEFAULTS 가 유일한 출처 (신규 계정 생성·프리셋 복원과 공유).
+// JSON override 맵들은 values 가 아니라 별도 state 로 관리하므로 여기선 뺀다.
+/** 객체에서 키 하나를 뺀 사본 (빈 칸 = 공장 기본으로 되돌릴 때). */
+function omitKey<T extends Record<string, unknown>>(obj: T, key: string): T {
+  const next = { ...obj };
+  delete next[key];
+  return next;
+}
+
+const JSON_OVERRIDE_KEYS = [
+  "materialWidths", "accessoryLengths", "insulationUnitAreas",
+  "catalogDefaults", "catalogPrices", "thicknessMultipliers", "roofShapeLossRates",
+] as const;
+const SCALAR_FACTORY_DEFAULTS = Object.fromEntries(
+  Object.entries(FACTORY_DEFAULTS).filter(([k]) => !(JSON_OVERRIDE_KEYS as readonly string[]).includes(k)),
+) as Omit<typeof FACTORY_DEFAULTS, (typeof JSON_OVERRIDE_KEYS)[number]>;
+
 const DEFAULTS = {
   companyName: "",
   companyPhone: "",
@@ -58,89 +78,22 @@ const DEFAULTS = {
   businessRegistrationNumber: "",
   sealImageUrl: "",
   bankAccount: "",
-  noticeText: "1. 견적 외 공사 발생 시 추가 정산합니다.\n2. 공사 하자 A/S 기간은 3년입니다.",
-  materialPricePerSqm: 30000,
-  // 자재 타입별 m당 단가 (천보 도매가, VAT포함)
-  materialPriceSlatePerM: 8100,
-  materialPriceV250PerM: 8100,
-  materialPriceZinc250PerM: 8100,
-  materialPriceGeneralTilePerM: 8600,
-  materialPriceTraditionalTilePerM: 8600,
-  materialPriceRealZincPerM: 12000,
-  materialPriceParapetPerM: 12200,
-  materialPriceOverlayPanelPerM: 13300,
-  materialPriceTambourPerM: 0,
-  accessoryRate: 0.15,
-  // materialPricePerSqm 은 DEFAULTS 에 이미 있음 (구버전 폴백). FIELDS 에선 숨김.
-  ridgePricePerM: 25000,
-  eavePricePerM: 20000,
-  gutterPricePerM: 5000,
-  removalPricePerSqm: 8000,
-  wasteDisposalCost: 300000,
-  dailyWage: 300000,
-  defaultWorkerCount: 3,
-  skyliftDailyCost: 500000,
-  ladderTruckDailyCost: 150000,
-  scaffoldDailyCost: 150000,
-  scaffoldPricePerSqmDay: 3000,
-  substructureMode: "wood",
-  substructureWoodPricePerSqm: 30000,
-  substructureSteelPricePerSqm: 40000,
-  substructureWoodPricePerPiece: 3333,
-  substructureWoodPiecesPerSqm: 1.4,
-  substructureSteelPricePerPiece: 14000,
-  substructureSteelPiecesPerSqm: 0.76,
-  drainHolePrice: 0,
-  capBendingPricePerM: 5000,
-  endCapPrice: 3500,
-  stainlessDrainPricePerM: 32000,
-  peFoamPricePerSqm: 1000,
-  downspoutUnitPrice: 50000,
-  denjoPricePerUnit: 700000,
-  parapetMultiplier: 1.4,
-  defaultLossRate: 0.10,
-  constructionToBuildingRatio: 1.4,
-  workDaysAreaDivisor: 90,
-  drainageWorkCost: 500000,
+  noticeText: DEFAULT_NOTICE_TEXT,
   estimateNumberStart: 1,
-  marginMaterialRatio: 0.5,
-  marginLaborRatio: 0.25,
-  marginProfitRatio: 0.25,
-  useLossRateByDefault: false,
-  baseTransportCost: 250000,
-  mealCostPerPersonMeal: 20000,
-  lodgingCostPerPersonNight: 35000,
-  teamExpenseAmount: 150000,
-  insuranceRateOfLabor: 0.05,
-  defaultMarginRate: 0.30,
-  vatIncludedByDefault: true,
+  ...SCALAR_FACTORY_DEFAULTS,
   // 로스율 적용 모드 — "auto" (지붕형태별 자동) | "manual" (디폴트값 항상)
   lossRateMode: "auto" as "auto" | "manual",
-  // ── 절곡 단가 및 기본 넓이 ──
-  bendingPricePerMmPer3m: 36,
-  bendingWidthRidge: 350,
-  bendingWidthEave: 250,
-  bendingWidthCap: 200,
-  bendingWidthMishi: 150,
-  bendingWidthFlashing: 200,
-  bendingWidthValley: 300,
-  bendingWidthSnowGuard: 180,
-  bendingWidthFascia: 200,
-  // ── 소모품 ──
-  screwLargePrice: 300,
-  screwSmallPrice: 100,
-  screwLargePerBag: 100,
-  screwSmallPerBag: 100,
-  siliconePrice: 5000,
-  screwLargePerSqm: 2,
-  screwSmallPerBendM: 3.3,
-  siliconeCoverageM: 6,
-  insulationPricePerSqm: 15000,
-  insulationPriceEps: 4000,
-  insulationPriceXps: 11000,
-  insulationPricePir: 16000,
-  insulationPriceThermalReflect: 6000,
 };
+
+/** 단가표(프리셋)에 속하지 않는 값 — 회사 정보·안내 문구·견적번호. */
+const NON_PRICING_KEYS = new Set([
+  "companyName", "companyPhone", "companyAddress", "businessRegistrationNumber",
+  "sealImageUrl", "bankAccount", "noticeText", "estimateNumberStart",
+]);
+function sameValue(a: unknown, b: unknown): boolean {
+  if (typeof a === "number" && typeof b === "number") return Math.abs(a - b) < 1e-9;
+  return a === b;
+}
 
 /** 전화번호 자동 포맷 — 010-1234-5678 / 02-123-4567 / 031-123-4567 등.
  *  02(서울)는 지역번호 2자리, 그 외는 3자리. 입력 중 숫자만 받아 하이픈 자동 삽입. */
@@ -212,7 +165,7 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "workDaysAreaDivisor", label: "작업일수 자동 기준 (㎡/일)", unit: "㎡" },
       // 지붕 둘레 역산용: 시공면적 ÷ 이 비율 = 건물면적 (경사+처마 몫).
       { key: "constructionToBuildingRatio", label: "시공면적 ÷ 건물면적 비", unit: "", step: 0.1 },
-      // 견적 번호 시작값 — 새 견적 번호 = estimateNumberStart + 올해 이미 만든 견적 수.
+      // 견적 번호 시작값 — 새 견적 번호 = max(시작값, 올해 가장 큰 번호 + 1). 삭제해도 번호 재사용 안 함.
       { key: "estimateNumberStart", label: "견적 번호 시작값 (YYYY-XXX)", unit: "" },
     ],
   },
@@ -242,6 +195,16 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
     ],
   },
   {
+    // 엔진이 폴백으로 쓰는 단가 — 화면에 없어서 바꿀 수 없던 것 (2026-09-28).
+    section: "기타 자재 단가",
+    emoji: "🧱",
+    tier: "price",
+    items: [
+      { key: "materialPricePerSqm", label: "템바징크 등 m당 단가 미정 자재 (㎡당)", unit: "원" },
+      { key: "insulationPricePerSqm", label: "기타 단열재 (㎡당)", unit: "원" },
+    ],
+  },
+  {
     section: "노무비",
     emoji: "👷",
     tier: "price",
@@ -266,6 +229,8 @@ const FIELDS: { section: string; emoji: string; tier: Tier; items: FieldDef[] }[
       { key: "skyliftDailyCost", label: "스카이차 1일", unit: "원" },
       { key: "ladderTruckDailyCost", label: "사다리차 1일", unit: "원" },
       { key: "scaffoldPricePerSqmDay", label: "비계 ㎡·일당", unit: "원" },
+      // 비계 면적을 비워 두면 일당 고정가로 계산 (엔진 폴백).
+      { key: "scaffoldDailyCost", label: "비계 1일 (면적 미입력 시)", unit: "원" },
       { key: "baseTransportCost", label: "기본 운송비", unit: "원" },
       // 폐기물은 트럭 운반비라 장비·운송.
       { key: "wasteDisposalCost", label: "폐기물 처리비 (트럭 1차당)", unit: "원" },
@@ -300,92 +265,21 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
   const [nameInput, setNameInput] = useState("");
   const [values, setValues] = useState<typeof DEFAULTS>(() => {
     if (!defaultValues) return DEFAULTS;
-    return {
-      companyName: defaultValues.companyName,
-      companyPhone: defaultValues.companyPhone ?? "",
-      companyAddress: defaultValues.companyAddress ?? "",
-      businessRegistrationNumber: defaultValues.businessRegistrationNumber ?? "",
-      sealImageUrl: defaultValues.sealImageUrl ?? "",
-      bankAccount: defaultValues.bankAccount ?? "",
-      noticeText: defaultValues.noticeText ?? "1. 견적 외 공사 발생 시 추가 정산합니다.\n2. 공사 하자 A/S 기간은 3년입니다.",
-      materialPricePerSqm: defaultValues.materialPricePerSqm,
-      materialPriceSlatePerM: (defaultValues as unknown as Record<string, number>).materialPriceSlatePerM ?? 8100,
-      materialPriceV250PerM: (defaultValues as unknown as Record<string, number>).materialPriceV250PerM ?? 8100,
-      materialPriceZinc250PerM: (defaultValues as unknown as Record<string, number>).materialPriceZinc250PerM ?? 8100,
-      materialPriceGeneralTilePerM: (defaultValues as unknown as Record<string, number>).materialPriceGeneralTilePerM ?? 8600,
-      materialPriceTraditionalTilePerM: (defaultValues as unknown as Record<string, number>).materialPriceTraditionalTilePerM ?? 8600,
-      materialPriceRealZincPerM: (defaultValues as unknown as Record<string, number>).materialPriceRealZincPerM ?? 12000,
-      materialPriceParapetPerM: (defaultValues as unknown as Record<string, number>).materialPriceParapetPerM ?? 12200,
-      materialPriceOverlayPanelPerM: (defaultValues as unknown as Record<string, number>).materialPriceOverlayPanelPerM ?? 13300,
-      materialPriceTambourPerM: (defaultValues as unknown as Record<string, number>).materialPriceTambourPerM ?? 0,
-      accessoryRate: defaultValues.accessoryRate,
-      ridgePricePerM: defaultValues.ridgePricePerM,
-      eavePricePerM: defaultValues.eavePricePerM,
-      gutterPricePerM: defaultValues.gutterPricePerM,
-      removalPricePerSqm: defaultValues.removalPricePerSqm,
-      wasteDisposalCost: defaultValues.wasteDisposalCost,
-      dailyWage: defaultValues.dailyWage,
-      defaultWorkerCount: defaultValues.defaultWorkerCount,
-      skyliftDailyCost: defaultValues.skyliftDailyCost,
-      ladderTruckDailyCost: defaultValues.ladderTruckDailyCost,
-      scaffoldDailyCost: defaultValues.scaffoldDailyCost,
-      scaffoldPricePerSqmDay: defaultValues.scaffoldPricePerSqmDay,
-      substructureMode: defaultValues.substructureMode,
-      substructureWoodPricePerSqm: defaultValues.substructureWoodPricePerSqm,
-      substructureSteelPricePerSqm: defaultValues.substructureSteelPricePerSqm,
-      substructureWoodPricePerPiece: (defaultValues as unknown as Record<string, number>).substructureWoodPricePerPiece ?? 3333,
-      substructureWoodPiecesPerSqm: (defaultValues as unknown as Record<string, number>).substructureWoodPiecesPerSqm ?? 1.4,
-      substructureSteelPricePerPiece: (defaultValues as unknown as Record<string, number>).substructureSteelPricePerPiece ?? 14000,
-      substructureSteelPiecesPerSqm: (defaultValues as unknown as Record<string, number>).substructureSteelPiecesPerSqm ?? 0.76,
-      drainHolePrice: defaultValues.drainHolePrice,
-      capBendingPricePerM: defaultValues.capBendingPricePerM,
-      endCapPrice: defaultValues.endCapPrice,
-      stainlessDrainPricePerM: defaultValues.stainlessDrainPricePerM,
-      peFoamPricePerSqm: defaultValues.peFoamPricePerSqm ?? 1000,
-      parapetMultiplier: defaultValues.parapetMultiplier,
-      defaultLossRate: defaultValues.defaultLossRate,
-      useLossRateByDefault: defaultValues.useLossRateByDefault,
-      baseTransportCost: defaultValues.baseTransportCost,
-      mealCostPerPersonMeal: defaultValues.mealCostPerPersonMeal,
-      lodgingCostPerPersonNight: defaultValues.lodgingCostPerPersonNight,
-      teamExpenseAmount: (defaultValues as unknown as Record<string, number>).teamExpenseAmount ?? 150000,
-      insuranceRateOfLabor: (defaultValues as unknown as Record<string, number>).insuranceRateOfLabor ?? 0.05,
-      defaultMarginRate: defaultValues.defaultMarginRate,
-      vatIncludedByDefault: defaultValues.vatIncludedByDefault,
-      estimateNumberStart: defaultValues.estimateNumberStart ?? 1,
-      marginMaterialRatio: defaultValues.marginMaterialRatio ?? 0.5,
-      marginLaborRatio: defaultValues.marginLaborRatio ?? 0.25,
-      marginProfitRatio: defaultValues.marginProfitRatio ?? 0.25,
-      bendingPricePerMmPer3m: defaultValues.bendingPricePerMmPer3m ?? 36,
-      bendingWidthRidge: defaultValues.bendingWidthRidge ?? 350,
-      bendingWidthEave: defaultValues.bendingWidthEave ?? 250,
-      bendingWidthCap: defaultValues.bendingWidthCap ?? 200,
-      bendingWidthMishi: defaultValues.bendingWidthMishi ?? 150,
-      bendingWidthFlashing: defaultValues.bendingWidthFlashing ?? 200,
-      bendingWidthValley: defaultValues.bendingWidthValley ?? 300,
-      bendingWidthSnowGuard: defaultValues.bendingWidthSnowGuard ?? 180,
-      bendingWidthFascia: (defaultValues as unknown as Record<string, number>).bendingWidthFascia ?? 200,
-      screwLargePrice: defaultValues.screwLargePrice ?? 300,
-      screwSmallPrice: defaultValues.screwSmallPrice ?? 100,
-      screwLargePerBag: (defaultValues as unknown as Record<string, number>).screwLargePerBag ?? 100,
-      screwSmallPerBag: (defaultValues as unknown as Record<string, number>).screwSmallPerBag ?? 100,
-      siliconePrice: defaultValues.siliconePrice ?? 5000,
-      screwLargePerSqm: (defaultValues as unknown as Record<string, number>).screwLargePerSqm ?? 2,
-      screwSmallPerBendM: (defaultValues as unknown as Record<string, number>).screwSmallPerBendM ?? 3.3,
-      siliconeCoverageM: (defaultValues as unknown as Record<string, number>).siliconeCoverageM ?? 6,
-      insulationPricePerSqm: defaultValues.insulationPricePerSqm ?? 15000,
-      insulationPriceEps: (defaultValues as unknown as Record<string, number>).insulationPriceEps ?? 4000,
-      insulationPriceXps: (defaultValues as unknown as Record<string, number>).insulationPriceXps ?? 11000,
-      insulationPricePir: (defaultValues as unknown as Record<string, number>).insulationPricePir ?? 16000,
-      insulationPriceThermalReflect: (defaultValues as unknown as Record<string, number>).insulationPriceThermalReflect ?? 6000,
-      lossRateMode: (((defaultValues as unknown as { lossRateMode?: string }).lossRateMode === "manual") ? "manual" : "auto") as "auto" | "manual",
-      constructionToBuildingRatio: (defaultValues as unknown as Record<string, number>).constructionToBuildingRatio ?? 1.4,
-      workDaysAreaDivisor: (defaultValues as unknown as Record<string, number>).workDaysAreaDivisor ?? 90,
-      drainageWorkCost: (defaultValues as unknown as Record<string, number>).drainageWorkCost ?? 500000,
-      downspoutUnitPrice: (defaultValues as unknown as { downspoutUnitPrice?: number }).downspoutUnitPrice ?? 50000,
-      denjoPricePerUnit: (defaultValues as unknown as { denjoPricePerUnit?: number }).denjoPricePerUnit ?? 700000,
-    };
+    // 저장된 값 우선, 없는 필드(새로 생긴 컬럼)는 공장 기본값.
+    const dv = defaultValues as unknown as Record<string, unknown>;
+    const out = { ...DEFAULTS } as Record<string, unknown>;
+    for (const k of Object.keys(DEFAULTS)) {
+      if (dv[k] !== null && dv[k] !== undefined) out[k] = dv[k];
+    }
+    // 선택 입력 문자열은 빈 칸으로. 안내 문구도 비운 상태를 존중 — 기본 문구로 되살리지 않는다
+    // (이전엔 지운 A/S 문구가 다음 저장 때 조용히 부활했다).
+    for (const k of ["companyPhone", "companyAddress", "businessRegistrationNumber", "sealImageUrl", "bankAccount", "noticeText"]) {
+      out[k] = (dv[k] as string | null | undefined) ?? "";
+    }
+    out.lossRateMode = dv.lossRateMode === "manual" ? "manual" : "auto";
+    return out as typeof DEFAULTS;
   });
+
 
   function setField<K extends keyof typeof DEFAULTS>(key: K, val: (typeof DEFAULTS)[K]) {
     setValues((v) => ({ ...v, [key]: val }));
@@ -433,8 +327,60 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     () => ((defaultValues as unknown as { roofShapeLossRates?: Record<string, number> } | null)?.roofShapeLossRates) ?? {},
   );
 
-  /** 현재 폼 값을 라이브 PricingSettings 에 저장. 성공 시 true. */
-  async function saveLive(): Promise<boolean> {
+  // ── 저장 안 한 변경 추적 — 프리셋 전환·페이지 이탈 시 경고 ──
+  const currentSerialized = JSON.stringify({
+    values,
+    json: { materialWidths, accessoryLengths, insulationUnitAreas, catalogDefaults: catalogGroupDefaults, catalogPrices, thicknessMultipliers, roofShapeLossRates },
+  });
+  const [savedSerialized, setSavedSerialized] = useState(currentSerialized);
+  const dirty = currentSerialized !== savedSerialized;
+  // 의도한 새로고침(프리셋 전환·되돌리기) 직전에 켠다 — setState 는 새로고침 전에 반영되지 않아
+  // 경고가 그대로 떴다.
+  const leavingRef = useRef(false);
+  useEffect(() => {
+    if (!dirty) return;
+    // 새로고침·탭 닫기
+    const warn = (e: BeforeUnloadEvent) => {
+      if (leavingRef.current) return;
+      e.preventDefault();
+      e.returnValue = ""; // 구형 Safari·Chrome 은 이게 있어야 경고를 띄운다
+    };
+    // 앱 안 이동 (하단 탭·뒤로 링크) — beforeunload 가 안 뜨는 클라이언트 라우팅이라 따로 막는다.
+    const guardLinks = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!a || a.target === "_blank" || a.hasAttribute("download")) return;
+      const url = new URL(a.href, window.location.href);
+      if (url.origin !== window.location.origin || url.pathname === window.location.pathname) return;
+      if (!confirm("저장하지 않은 변경이 있습니다. 이 화면을 나가면 사라집니다. 나갈까요?")) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("beforeunload", warn);
+    document.addEventListener("click", guardLinks, true);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+      document.removeEventListener("click", guardLinks, true);
+    };
+  }, [dirty]);
+
+  // 활성 프리셋 없이 저장된 단가가 공장 기본값과 다른지 — "공장 기본값"이라고 잘못 표시하지 않고,
+  // 프리셋을 불러오면 이 값이 덮어써진다는 걸 알리기 위해.
+  const savedIsFactory = (() => {
+    try {
+      const s = JSON.parse(savedSerialized) as { values: Record<string, unknown>; json: Record<string, Record<string, unknown>> };
+      if (Object.values(s.json).some((m) => m && Object.keys(m).length > 0)) return false;
+      const d = DEFAULTS as unknown as Record<string, unknown>;
+      return Object.keys(d).every((k) => NON_PRICING_KEYS.has(k) || sameValue(s.values[k], d[k]));
+    } catch {
+      return false;
+    }
+  })();
+  const unnamedLabel = savedIsFactory ? "공장 기본값" : "저장된 단가 (이름 없음)";
+
+  /** 현재 폼 값을 라이브 PricingSettings 에 저장. 실패 시 서버 메시지를 담아 throw. */
+  async function saveLive(): Promise<void> {
     const payload = {
       ...values,
       materialWidths,
@@ -450,9 +396,32 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
       sealImageUrl: values.sealImageUrl || null,
       bankAccount: values.bankAccount || null,
       noticeText: values.noticeText || null,
+      // 활성 프리셋이 없는 상태(공장 기본값을 불러온 경우 포함)로 저장하면 서버의 활성 프리셋도
+      // 해제한다 — 안 그러면 다음 [저장]이 예전 활성 프리셋을 공장값으로 조용히 덮어썼다.
+      ...(activeId === null ? { activePresetId: null } : {}),
     };
     const res = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    return res.ok;
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      throw new Error(j?.error || "저장에 실패했습니다");
+    }
+    setSavedSerialized(currentSerialized);
+  }
+
+  /** 직전 덮어쓰기 되돌리기 — 프리셋과 현재 설정 모두 이전 값으로, 새로고침으로 폼 재초기화. */
+  async function undoOverwrite(presetId: string, name: string | null) {
+    const res = await fetch(`/api/presets/${presetId}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "undo" }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      toast.error(j?.error || "되돌리기에 실패했습니다");
+      return;
+    }
+    toast.success(name ? `'${name}' 저장 전 값으로 되돌렸습니다` : "저장 전 값으로 되돌렸습니다");
+    leavingRef.current = true;
+    window.location.reload();
   }
 
   async function handleSave() {
@@ -462,15 +431,20 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     }
     setSaving(true);
     try {
-      const ok = await saveLive();
-      if (!ok) throw new Error("저장 실패");
+      await saveLive();
       if (activeId) {
-        // 활성 프리셋 덮어쓰기 (현재 단가표 갱신)
-        await fetch(`/api/presets/${activeId}`, {
+        // 활성 프리셋 덮어쓰기 (현재 단가표 갱신). 실수로 눌렀을 때를 위해 '되돌리기' 제공.
+        const res = await fetch(`/api/presets/${activeId}`, {
           method: "PATCH", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "overwrite" }),
         });
-        toast.success(activeName ? `저장됨 · '${activeName}' 갱신` : "저장되었습니다");
+        if (!res.ok) throw new Error(`설정은 저장됐지만 '${activeName ?? "프리셋"}' 갱신에 실패했습니다`);
+        const presetId = activeId;
+        const name = activeName;
+        toast.success(name ? `저장됨 · '${name}' 갱신` : "저장되었습니다", {
+          duration: 10000,
+          action: { label: "되돌리기", onClick: () => { void undoOverwrite(presetId, name); } },
+        });
         router.refresh();
       } else {
         // 활성 프리셋 없음 — 라이브는 저장됐고, 이름 붙여 프리셋으로 만들지 물어봄(선택).
@@ -478,8 +452,8 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
         setNaming("first");
         setNameInput("");
       }
-    } catch {
-      toast.error("저장에 실패했습니다");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "저장에 실패했습니다");
     } finally {
       setSaving(false);
     }
@@ -491,23 +465,23 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     if (!name) { toast.error("이름을 입력해 주세요."); return; }
     setSaving(true);
     try {
-      if (naming === "saveAs") {
-        const ok = await saveLive();
-        if (!ok) throw new Error();
-      }
+      if (naming === "saveAs") await saveLive();
       const res = await fetch("/api/presets", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name }),
       });
-      if (!res.ok) throw new Error();
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || "프리셋 저장에 실패했습니다");
+      }
       const preset = await res.json();
       setPresetList((l) => [...l, { id: preset.id, name: preset.name }]);
       setActiveId(preset.id);
       setNaming(null); setNameInput("");
       toast.success(`'${name}' 프리셋으로 저장되었습니다`);
       router.refresh();
-    } catch {
-      toast.error("프리셋 저장에 실패했습니다");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "프리셋 저장에 실패했습니다");
     } finally {
       setSaving(false);
     }
@@ -515,6 +489,9 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
 
   /** 프리셋 활성화(전환) — 서버에서 PricingSettings 에 값 복사 후 새로고침으로 폼 재초기화. */
   async function activatePreset(id: string) {
+    if (dirty && !confirm("저장하지 않은 변경이 있습니다. 다른 단가표를 불러오면 사라집니다. 계속할까요?")) return;
+    if (!dirty && activeId === null && !savedIsFactory &&
+        !confirm("지금 단가는 이름 없이 저장돼 있어 불러오면 덮어써집니다. 보관하려면 먼저 '다른 이름으로' 저장하세요. 계속할까요?")) return;
     setSaving(true);
     try {
       const res = await fetch(`/api/presets/${id}`, {
@@ -523,6 +500,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
       });
       if (!res.ok) throw new Error();
       // 새 값으로 폼을 다시 초기화하려면 전체 새로고침이 가장 확실 (useState 초기화는 mount 시 1회).
+      leavingRef.current = true; // 새로고침 직전 이탈 경고 방지
       window.location.reload();
     } catch {
       toast.error("불러오기에 실패했습니다");
@@ -530,9 +508,18 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
     }
   }
 
+  async function deletePreset(id: string, name: string) {
+    if (!confirm(`'${name}' 프리셋을 삭제할까요?`)) return;
+    const res = await fetch(`/api/presets/${id}`, { method: "DELETE" });
+    if (!res.ok) { toast.error("삭제에 실패했습니다"); return; }
+    setPresetList((l) => l.filter((x) => x.id !== id));
+    if (activeId === id) setActiveId(null);
+    toast.success(`'${name}' 프리셋을 삭제했습니다`);
+  }
+
   // 공장 기본값 불러오기 — 불러오기 목록의 "공장 기본값" 항목에서 호출.
-  // 단가·계수만 DEFAULTS 로, 회사정보·견적번호는 유지. 화면(state)만 바꾸고
-  // 저장해야 적용 (비파괴). 활성 프리셋 해제 (activeId=null = 공장 기본값 상태).
+  // 단가·계수만 DEFAULTS 로, 회사정보·안내문구·견적번호는 유지. 화면(state)만 바꾸고
+  // 저장해야 적용 (비파괴). 활성 프리셋 해제 (activeId=null = 공장 기본값 상태 — 저장 시 서버도 해제).
   function loadFactoryDefaults() {
     setValues((v) => ({
       ...DEFAULTS,
@@ -565,7 +552,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
           <div className="min-w-0">
             <p className="text-[11px] text-muted-foreground">현재 단가표</p>
             <p className="text-sm font-semibold text-foreground truncate">
-              {activeName ?? "공장 기본값"}
+              {activeName ?? unnamedLabel}
             </p>
           </div>
           <button
@@ -584,9 +571,9 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
               type="button"
               onClick={loadFactoryDefaults}
               disabled={saving}
-              className={`w-full text-left px-3 py-2 rounded-xl text-sm pressable ${activeId === null ? "bg-primary/10 text-primary font-semibold" : "bg-muted/40 text-foreground"}`}
+              className={`w-full text-left px-3 py-2 rounded-xl text-sm pressable ${activeId === null && savedIsFactory ? "bg-primary/10 text-primary font-semibold" : "bg-muted/40 text-foreground"}`}
             >
-              공장 기본값{activeId === null ? " · 현재" : ""}
+              공장 기본값{activeId === null && savedIsFactory ? " · 현재" : ""}
             </button>
             {presetList.map((p) => (
               <div key={p.id} className="flex items-center gap-2">
@@ -600,12 +587,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!confirm(`'${p.name}' 프리셋을 삭제할까요?`)) return;
-                    await fetch(`/api/presets/${p.id}`, { method: "DELETE" });
-                    setPresetList((l) => l.filter((x) => x.id !== p.id));
-                    if (activeId === p.id) setActiveId(null);
-                  }}
+                  onClick={() => { void deletePreset(p.id, p.name); }}
                   className="w-8 h-8 grid place-items-center rounded-full bg-muted/60 pressable shrink-0"
                   aria-label="삭제"
                 >
@@ -652,7 +634,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
             <ThicknessMultCard
               overrides={thicknessMultipliers}
               onChange={(t, mult) => setThicknessMultipliers((prev) => {
-                if (mult === undefined) { const { [t]: _drop, ...rest } = prev; return rest; }
+                if (mult === undefined) return omitKey(prev, t);
                 return { ...prev, [t]: mult };
               })}
             />
@@ -667,7 +649,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
             <GroupDefaultsCard
               values={catalogGroupDefaults}
               onChange={(group, simpleValue) => setCatalogGroupDefaults((prev) => {
-                if (simpleValue === undefined) { const { [group]: _drop, ...rest } = prev; return rest; }
+                if (simpleValue === undefined) return omitKey(prev, group);
                 return { ...prev, [group]: { ...prev[group], simpleValue } };
               })}
             />
@@ -676,7 +658,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
             <CatalogPricesCard
               overrides={catalogPrices}
               onChange={(key, price) => setCatalogPrices((prev) => {
-                if (price === undefined) { const { [key]: _drop, ...rest } = prev; return rest; }
+                if (price === undefined) return omitKey(prev, key);
                 return { ...prev, [key]: price };
               })}
             />
@@ -729,21 +711,15 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
                   <div key={key} className="px-5 py-3 flex items-center gap-3">
                     <Label className="flex-1 text-sm text-muted-foreground">{label}</Label>
                     <div className="relative w-36 shrink-0">
-                      <Input
-                        type="number"
-                        step={step}
-                        inputMode="numeric"
-                        value={displayVal}
-                        onChange={(e) => {
-                          if (pct) {
-                            setField(key as "accessoryRate", parseFloat(e.target.value) / 100 || 0);
-                          } else if (step && step < 1) {
-                            // Float field (e.g. parapetMultiplier)
-                            setField(key as "parapetMultiplier", parseFloat(e.target.value) || 0);
-                          } else {
-                            setField(key as "materialPricePerSqm", parseInt(e.target.value) || 0);
-                          }
-                        }}
+                      {/* 입력 중엔 친 글자 그대로 (소수점 % 가능, 지워도 기본값이 끼어들지 않음) */}
+                      <BufferedNumberInput
+                        value={rawVal as number}
+                        scale={pct ? 100 : 1}
+                        maxDecimals={pct ? 2 : 4}
+                        integer={!pct && !(step && step < 1)}
+                        min={key === "defaultMarginRate" ? -1 : 0}
+                        max={key === "defaultMarginRate" ? 0.99 : undefined}
+                        onValueChange={(n) => { if (n !== undefined) setField(key as "materialPricePerSqm", n); }}
                         className="h-11 text-right pr-8 font-semibold text-foreground tabular-nums border-border/60 rounded-xl"
                       />
                       {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">{unit}</span>}
@@ -882,7 +858,7 @@ export function SettingsForm({ defaultValues, presets = [], activePresetId = nul
             <RoofLossRatesCard
               overrides={roofShapeLossRates}
               onChange={(shape, rate) => setRoofShapeLossRates((prev) => {
-                if (rate === undefined) { const { [shape]: _drop, ...rest } = prev; return rest; }
+                if (rate === undefined) return omitKey(prev, shape);
                 return { ...prev, [shape]: rate };
               })}
             />
@@ -1060,22 +1036,19 @@ function AccessoryPricingCard({
               </div>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                  <Input
-                    type="number" inputMode="numeric"
-                    value={String(lenMm)}
-                    onChange={(e) => onLenChange(lenKey, parseInt(e.target.value) || 0)}
+                  <BufferedNumberInput
+                    value={lenMm}
+                    integer min={0} emptyValue={0}
+                    onValueChange={(mm) => onLenChange(lenKey, mm ?? 0)}
                     className="h-11 text-right pr-9 tabular-nums rounded-xl"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">mm</span>
                 </div>
                 <div className="relative flex-1">
-                  <Input
-                    type="number" inputMode="numeric"
-                    value={String(pricePerSpec)}
-                    onChange={(e) => {
-                      const spec = parseInt(e.target.value) || 0;
-                      onPriceChange(priceKey, lenM > 0 ? Math.round(spec / lenM) : 0);
-                    }}
+                  <BufferedNumberInput
+                    value={pricePerSpec}
+                    integer min={0} emptyValue={0}
+                    onValueChange={(spec) => onPriceChange(priceKey, lenM > 0 ? Math.round((spec ?? 0) / lenM) : 0)}
                     className="h-11 text-right pr-9 font-semibold tabular-nums rounded-xl"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">원/개</span>
@@ -1134,22 +1107,19 @@ function GroupDefaultsCard({
         {ROWS.map(({ group, label, unit, pct }) => {
           const saved = values[group]?.simpleValue;
           const base = builtIn[group as keyof typeof builtIn]?.simpleValue ?? 0;
-          const effective = saved ?? base;
-          const display = pct ? Math.round(effective * 1000) / 10 : effective;
           const placeholder = pct ? String(Math.round(base * 1000) / 10) : String(base);
           return (
             <div key={group} className="px-5 py-3 flex items-center gap-3">
               <Label className="flex-1 text-sm text-muted-foreground">{label}</Label>
               <div className="relative w-32 shrink-0">
-                <Input
-                  type="number" inputMode="decimal"
-                  value={saved != null ? String(display) : ""}
+                <BufferedNumberInput
+                  value={saved}
+                  scale={pct ? 100 : 1}
+                  maxDecimals={pct ? 1 : 0}
+                  min={0}
+                  emptyValue="unset"
                   placeholder={placeholder}
-                  onChange={(e) => {
-                    const raw = parseFloat(e.target.value);
-                    if (!Number.isFinite(raw)) { onChange(group, undefined); return; }
-                    onChange(group, pct ? raw / 100 : raw);
-                  }}
+                  onValueChange={(v) => onChange(group, v)}
                   className="h-11 text-right pr-11 font-semibold tabular-nums rounded-xl"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">{unit}</span>
@@ -1296,20 +1266,21 @@ function RoofLossRatesCard({
       </p>
       <div className="divide-y divide-border/40">
         {shapes.map((s) => {
-          const base = Math.round((lossRateForRoofShape(s.value) ?? 0) * 100);
+          const base = Math.round((lossRateForRoofShape(s.value) ?? 0) * 1000) / 10;
           const saved = overrides[s.value];
           return (
             <div key={s.value} className="px-5 py-3 flex items-center gap-3">
               <Label className="flex-1 text-sm text-muted-foreground">{s.label} <span className="text-[10px]">({s.desc})</span></Label>
               <div className="relative w-24 shrink-0">
-                <Input
-                  type="number" inputMode="numeric"
-                  value={saved != null ? String(Math.round(saved * 100)) : ""}
+                <BufferedNumberInput
+                  value={saved}
+                  scale={100}
+                  maxDecimals={1}
+                  min={0}
+                  max={0.99}
+                  emptyValue="unset"
                   placeholder={String(base)}
-                  onChange={(e) => {
-                    const raw = parseFloat(e.target.value);
-                    onChange(s.value, Number.isFinite(raw) && raw > 0 ? raw / 100 : undefined);
-                  }}
+                  onValueChange={(v) => onChange(s.value, v !== undefined && v > 0 ? v : undefined)}
                   className="h-11 text-right pr-8 font-semibold tabular-nums rounded-xl"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">%</span>
@@ -1694,14 +1665,15 @@ function InsulationRow({
   function commitPrice(raw: string) {
     setPriceBuf(raw);
     const v = parseInt(raw) || 0;
-    onPerSqmChange(area > 0 ? Math.round(v / area) : v);
+    const next = area > 0 ? Math.round(v / area) : v;
+    syncRef.current = { area, perSqm: next }; // 자기 입력이 반올림돼 되돌아오지 않게
+    onPerSqmChange(next);
   }
-  function commitArea(raw: string) {
-    const a = parseFloat(raw) || 0;
+  // 면적(규격)만 바꾸면 저장된 ㎡당 단가는 그대로 두고 롤가격 표시만 다시 계산한다.
+  // (이전엔 입력 중인 롤가격 기준으로 ㎡가를 재계산해서, "2.5" 를 치는 동안 "2" → ㎡가가 튀고
+  //  면적을 0 으로 지우면 롤가격이 그대로 ㎡가로 저장됐다.)
+  function commitArea(a: number) {
     onAreaChange(a);
-    // 면적 바뀌면 현재 가격 버퍼(롤가격) 기준으로 ㎡당 재계산.
-    const v = parseInt(priceBuf) || 0;
-    onPerSqmChange(a > 0 ? Math.round(v / a) : v);
   }
 
   return (
@@ -1715,10 +1687,11 @@ function InsulationRow({
       <div className="flex items-center gap-2">
         {/* 단위 면적 ㎡ (롤/판 1개) */}
         <div className="relative flex-1">
-          <Input
-            type="number" inputMode="decimal" step={0.01}
-            value={String(area)}
-            onChange={(e) => commitArea(e.target.value)}
+          <BufferedNumberInput
+            value={area}
+            min={0}
+            emptyValue={0}
+            onValueChange={(a) => commitArea(a ?? 0)}
             className="h-11 text-right pr-10 tabular-nums rounded-xl"
           />
           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground pointer-events-none">㎡/{unitLabel}</span>
@@ -1759,15 +1732,11 @@ function SealAndNoticeCard({
     if (!file) return;
     setUploading(true);
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error();
-      const { url } = await res.json();
-      onSealChange(url);
-      toast.success("직인 이미지가 업로드되었습니다");
-    } catch {
-      toast.error("업로드에 실패했습니다");
+      // PNG(긴 변 512px)로 줄여 올린다 — PDF 는 1MB 이하 PNG/JPEG 직인만 그린다 (lib/upload-photo).
+      onSealChange(await uploadSeal(file));
+      toast.success("직인 이미지가 업로드되었습니다. 저장해야 견적서에 반영됩니다");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "업로드에 실패했습니다");
     } finally {
       setUploading(false);
     }
@@ -1808,7 +1777,7 @@ function SealAndNoticeCard({
                 {uploading ? "업로드 중..." : sealImageUrl ? "다시 업로드" : "직인 이미지 업로드"}
                 <input type="file" accept="image/*" className="hidden" onChange={handleUpload} disabled={uploading} />
               </label>
-              <p className="text-[10px] text-muted-foreground mt-1.5">PNG 권장. 배경 투명하면 더 깔끔하게 보임</p>
+              <p className="text-[10px] text-muted-foreground mt-1.5">PNG로 자동 변환. 배경이 투명하면 더 깔끔하게 보임</p>
             </div>
           </div>
         </div>
@@ -1869,7 +1838,7 @@ function MarginDistributionCard({
       </div>
       <p className="text-[11px] text-muted-foreground px-5 -mt-1 leading-relaxed">
         견적서 PDF 에서 마진을 어떻게 흩뿌릴지. 자재·인건비는 해당 항목에
-        비례 분배되고, "이윤" 은 별도 라인으로 표시됩니다. 합이 100% 가
+        비례 분배되고, &quot;이윤&quot; 은 별도 라인으로 표시됩니다. 합이 100% 가
         되도록 조정해 주세요.
         <span className="block mt-1 text-muted-foreground/80">
           ※ 이윤은 상세 견적서에만 별도 표시되고, 간단 견적서에선 시공비에 포함됩니다.

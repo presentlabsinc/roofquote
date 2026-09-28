@@ -6,6 +6,7 @@ import { FileText, Plus, ChevronRight, Send } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SitePhotos } from "@/components/SitePhotos";
 import { EditableSiteCard } from "@/components/EditableSiteCard";
+import { DeleteSiteButton } from "@/components/DeleteSiteButton";
 import type { PhotoItem } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
   if (!site) notFound();
 
   const photos = (site.photos as unknown as PhotoItem[]) ?? [];
+  const typeLabel = (t: string) => (t === "steelWaterproof" ? "옥상 스틸방수" : t === "rooftopRoof" ? "옥상지붕" : "지붕공사");
 
   return (
     <>
@@ -70,8 +72,9 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
                   <p className="font-bold text-foreground tabular-nums text-[15px]">
                     {est.finalPrice.toLocaleString("ko-KR")}<span className="text-xs ml-0.5 font-medium">원</span>
                   </p>
+                  {/* 어떤 안(案)인지 구분되게 — 번호·공사 유형·날짜 */}
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    {new Date(est.createdAt).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })} · 마진 {Math.round(est.marginRate * 100)}% · {est.areaM2}㎡
+                    {est.estimateNumber ? `No. ${est.estimateNumber} · ` : ""}{typeLabel(est.constructionType)} · {new Date(est.createdAt).toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul", month: "short", day: "numeric" })} · 마진 {Math.round(est.marginRate * 100)}% · {est.areaM2}㎡
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -86,6 +89,14 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
             ))}
           </div>
         )}
+
+        <div className="pt-4">
+          <DeleteSiteButton
+            siteId={id}
+            estimateCount={site.estimates.length}
+            sentCount={site.estimates.filter((e) => e.pdfSentAt).length}
+          />
+        </div>
       </div>
     </>
   );

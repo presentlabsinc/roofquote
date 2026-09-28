@@ -70,6 +70,10 @@ export interface CategoryMode {
   /** Used when mode === "simple" with perSqm/perM — the quantity (m or ㎡).
    *  When unset, falls back to the estimate's areaM2 (perSqm) or gutterLengthM (perM). */
   simpleQty?: number;
+  /** 절곡 그룹 상세 모드 전용 — 총 전개 넓이(mm). 심플 수량(simpleQty, ㎡/m)과 분리
+   *  (2026-09-28: 둘이 한 필드를 공유해 모드를 되돌리면 700mm 가 700㎡ 로 계산되던 버그).
+   *  구 견적은 simpleQty 에 mm 가 들어 있을 수 있어 엔진이 폴백으로 읽는다. */
+  detailWidthMm?: number;
 }
 
 export type CategoryModesMap = Partial<Record<CatalogCategory, CategoryMode>>;
@@ -169,6 +173,22 @@ export const DEFAULT_GROUP_MODES: Record<CatalogGroup, CategoryMode> = defaultGr
 
 /** Merge user-defined group defaults (PricingSettings.catalogDefaults) over built-ins.
  *  constructionType 을 주면 유형별 기본값(defaultGroupModes) 위에 병합. */
+/**
+ * 그룹 모드 레이어를 **그룹 단위로 깊게** 병합 (뒤 레이어 우선).
+ * 얕은 병합({...settings, ...estimate})은 견적에 { bending: { enabled: true } } 처럼 일부 키만 있어도
+ * 설정의 bending 기본값(simpleValue 등)을 통째로 가렸다 (2026-09-28).
+ */
+export function mergeGroupModes(...layers: (GroupModesMap | null | undefined)[]): GroupModesMap {
+  const out: GroupModesMap = {};
+  for (const layer of layers) {
+    if (!layer) continue;
+    for (const [g, m] of Object.entries(layer) as [CatalogGroup, CategoryMode | undefined][]) {
+      if (m) out[g] = { ...out[g], ...m } as CategoryMode;
+    }
+  }
+  return out;
+}
+
 export function resolveGroupDefaults(
   savedDefaults: GroupModesMap | null | undefined,
   constructionType?: string | null,

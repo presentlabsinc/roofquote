@@ -10,7 +10,7 @@ export default async function HomePage() {
   const user = await requireUser();
   // 설정과 현장 목록은 서로 독립 — 병렬로 (직렬이면 왕복 2번 비용).
   const [settings, sites] = await Promise.all([
-    getOrCreatePricingSettings(user.id, user.email),
+    getOrCreatePricingSettings(user.id),
     prisma.site.findMany({
       where: { userId: user.id },
       include: {

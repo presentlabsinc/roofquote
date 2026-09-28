@@ -1,334 +1,295 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserAndSettings } from "@/lib/auth";
-import { buildLineItems, calcTotals, calcFromFinalPrice, resolveEffectiveLossRate } from "@/lib/calculations";
-import type { CatalogSelection, GroupModesMap } from "@/lib/catalog";
-import type { BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "@/lib/types";
+import { calcTotals, calcFromFinalPrice } from "@/lib/calculations";
+import {
+  InputError, computeEstimate, estimateColumns, parseEstimateBody, parseMarginRate, snapshotColumns,
+} from "@/lib/estimate-input";
 import type { Estimate } from "@prisma/client";
 
+const LINE_CATEGORIES = ["material", "labor", "equipment", "transport", "meals", "lodging", "waste", "removal", "other"];
+const MAX_WON = 100_000_000_000; // 1,000억 — 오타 방지 상한
+
+function bad(message: string) {
+  return NextResponse.json({ error: message }, { status: 400 });
+}
+
+/** 원 단위 정수 금액 검증. */
+function won(v: unknown, label: string, min = -MAX_WON): number {
+  const n = typeof v === "number" ? v : typeof v === "string" && v.trim() !== "" ? Number(v) : NaN;
+  if (!Number.isFinite(n)) throw new InputError(`${label} 값이 올바르지 않습니다`);
+  const r = Math.round(n);
+  if (r < min || r > MAX_WON) throw new InputError(`${label} 값이 범위를 벗어났습니다`);
+  return r;
+}
+
 /**
- * Recompute totals from current line items and return the full estimate.
- * Used after any line-item-level mutation (edit / undo / delete / add).
+ * 라인 변경 후 합계 재계산. 사용자가 고정한 기준을 유지한다:
+ *   finalPrice 모드 → 최종가 고정, 마진 역산 ("850만원 약속")
+ *   amount 모드     → 마진 금액 고정 (평당가·마진 금액 입력 후 라인을 고쳐도 유지 — 2026-09-28)
+ *   percent 모드    → 마진율 고정
  */
 async function recalcAndReturn(eid: string, estimate: Estimate) {
   const items = await prisma.estimateLineItem.findMany({ where: { estimateId: eid } });
+  const totalCost = items.reduce((s, i) => s + i.total, 0);
   let totals;
   if (estimate.marginMode === "finalPrice") {
-    // Keep the user's finalPrice fixed; re-derive marginRate/Amount from new totalCost
-    const totalCost = items.reduce((s, i) => s + i.total, 0);
     const derived = calcFromFinalPrice(totalCost, estimate.finalPrice, estimate.vatIncluded);
     totals = { totalCost, ...derived, finalPrice: estimate.finalPrice };
+  } else if (estimate.marginMode === "amount" && totalCost + estimate.marginAmount > 0) {
+    // (공급가가 0 이하가 되면 — 손해 견적에서 라인을 줄인 경우 — 아래 마진율 기준으로 떨어뜨린다)
+    const supplyPrice = totalCost + estimate.marginAmount;
+    const vat = Math.round(supplyPrice * 0.1);
+    totals = {
+      totalCost,
+      marginAmount: estimate.marginAmount,
+      marginRate: supplyPrice > 0 ? estimate.marginAmount / supplyPrice : 0,
+      supplyPrice,
+      vat,
+      finalPrice: estimate.vatIncluded ? supplyPrice + vat : supplyPrice,
+    };
   } else {
     totals = calcTotals(items, estimate.marginRate, estimate.vatIncluded);
   }
   const updated = await prisma.estimate.update({
     where: { id: eid },
-    data: { ...totals, marginMode: estimate.marginMode, updatedAt: new Date() },
+    data: { ...totals, marginMode: estimate.marginMode, vatIncluded: estimate.vatIncluded, updatedAt: new Date() },
     include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
   });
   return NextResponse.json(updated);
 }
 
-export async function GET(_: Request, { params }: { params: Promise<{ eid: string }> }) {
-  const user = await requireUser();
-  const { eid } = await params;
-  const estimate = await prisma.estimate.findFirst({
-    where: { id: eid, site: { userId: user.id } },
-    include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-  });
-  if (!estimate) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(estimate);
-}
-
 export async function PATCH(req: Request, { params }: { params: Promise<{ eid: string }> }) {
   const user = await requireUser();
   const { eid } = await params;
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    const raw = await req.json();
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return bad("요청 형식이 올바르지 않습니다");
+    body = raw as Record<string, unknown>;
+  } catch {
+    return bad("요청 형식이 올바르지 않습니다");
+  }
 
   const estimate = await prisma.estimate.findFirst({
     where: { id: eid, site: { userId: user.id } },
-    include: { lineItems: true },
+    include: { lineItems: true, site: true },
   });
   if (!estimate) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // ─── Line item actions ─────────────────────────────────────────────
-  // 1. Update line item total (manual edit)
-  if (body.lineItemId && body.total !== undefined) {
-    await prisma.estimateLineItem.update({
-      where: { id: body.lineItemId },
-      data: { total: body.total, isUserEdited: true },
-    });
-    return recalcAndReturn(eid, estimate);
-  }
+  try {
+    // ─── Line item actions ─────────────────────────────────────────────
+    // 라인 ID 는 반드시 이 견적 소속이어야 한다 (2026-09-28 보안 수정 — 이전엔 URL 의 견적만
+    // 소유권 확인하고 본문의 lineItemId 는 확인하지 않아 다른 사용자의 라인을 고칠 수 있었다).
+    const lineId = typeof body.lineItemId === "string" ? body.lineItemId : null;
+    const line = lineId ? estimate.lineItems.find((l) => l.id === lineId) : undefined;
+    if (lineId && !line) return NextResponse.json({ error: "Line not found" }, { status: 404 });
 
-  // 2. Undo line item edit → restore total = quantity × unitPrice
-  if (body.lineItemId && body.action === "undo") {
-    const line = estimate.lineItems.find((l) => l.id === body.lineItemId);
-    if (!line) return NextResponse.json({ error: "Line not found" }, { status: 404 });
-    await prisma.estimateLineItem.update({
-      where: { id: body.lineItemId },
-      data: { total: Math.round(line.quantity * line.unitPrice), isUserEdited: false },
-    });
-    return recalcAndReturn(eid, estimate);
-  }
+    // 1. Update line item total (manual edit)
+    if (line && body.total !== undefined) {
+      const total = won(body.total, "금액");
+      await prisma.estimateLineItem.updateMany({
+        where: { id: line.id, estimateId: eid },
+        data: { total, isUserEdited: true },
+      });
+      return recalcAndReturn(eid, estimate);
+    }
 
-  // 3. Delete a line item
-  if (body.lineItemId && body.action === "delete") {
-    await prisma.estimateLineItem.delete({ where: { id: body.lineItemId } });
-    return recalcAndReturn(eid, estimate);
-  }
+    // 2. Undo line item edit → restore total = quantity × unitPrice
+    if (line && body.action === "undo") {
+      await prisma.estimateLineItem.updateMany({
+        where: { id: line.id, estimateId: eid },
+        data: { total: Math.round(line.quantity * line.unitPrice), isUserEdited: false },
+      });
+      return recalcAndReturn(eid, estimate);
+    }
 
-  // 4. Add a new line item (free-form, isUserEdited=true)
-  if (body.action === "add" && body.newLineItem) {
-    const { name, quantity, unit, unitPrice, category } = body.newLineItem;
-    const total = Math.round((quantity ?? 1) * (unitPrice ?? 0));
-    const maxOrder = Math.max(0, ...estimate.lineItems.map((l) => l.sortOrder));
-    await prisma.estimateLineItem.create({
-      data: {
-        estimateId: eid,
-        category: category ?? "other",
-        name: name || "기타 항목",
-        quantity: quantity ?? 1,
-        unit: unit ?? "식",
-        unitPrice: unitPrice ?? 0,
-        total,
-        isUserEdited: true,
-        sortOrder: maxOrder + 1,
-      },
-    });
-    return recalcAndReturn(eid, estimate);
-  }
+    // 3. Delete a line item
+    if (line && body.action === "delete") {
+      await prisma.estimateLineItem.deleteMany({ where: { id: line.id, estimateId: eid } });
+      return recalcAndReturn(eid, estimate);
+    }
 
-  // ─── 5. Full edit (replace) ──────────────────────────────────────────
-  // Used when the user reopens the new-estimate form via ?edit=eid and
-  // saves. Wipes existing line items, re-runs buildLineItems with the
-  // submitted inputs, re-snapshots company info from CURRENT settings,
-  // and resets margin to "percent" mode. pdfSentAt is preserved so the
-  // "last sent" timestamp stays accurate (user can resend if needed).
-  if (body.action === "replace") {
-    // Settings come from the same user — getOrCreate guarantees existence.
-    const { settings } = await requireUserAndSettings();
-    const {
-      constructionType = "roof", materialType = null,
-      materialThickness = "0.45", materialTexture = null, materialColor = null,
-      constructionMonth = null,
-      areaM2, buildingAreaM2 = null,
-      workerCount, workDays,
-      gutterMode = null, gutterLengthM = 0,
-      stainlessDrainLengthM = 0,
-      capLengthM = 0, drainHoleCount = 0, endCapCount = 0, denjoCount = 0,
-      warehouseAreaM2 = null, stairwellAreaM2 = null,
-      skyliftDays = 0, ladderTruckDays = 0, scaffoldDays = 0, scaffoldAreaM2 = 0,
-      wasteTruckCount = 1, substructureType = null,
-      otherEquipment = null,
-      scopeFlags, extraCosts = [], pricingOverrides = {}, finishingMethods = {},
-      catalogSelections = [], catalogModes = {},
-      applyLossRate = false, lossRate = null,
-      buildingShape = null, roofShape = null,
-      perimeterM = null, ridgeCount = 1, parapetHeightCm = null,
-      eaveOverhangCm = 50,
-      railPerimeterM = null, rooftopStructurePerimeterM = null,
-      rooftopStructureHeightCm = null,
-      rooftopDoorCount = 0, rooftopWindowCount = 0,
-      downspoutCount = 0,
-      hasInsulation = false, insulationTypes = [],
-      insulationNote = null, roofShapeNote = null,
-      hasPeFoam = false,
-      includeLodging = false, includeTeamExpense = false, includeInsurance = true,
-      lodgingNights = null,
-      marginRate: inputMarginRate, vatIncluded,
-      paymentTerms, validityDays,
-    } = body;
-
-    const scope: ScopeFlags = scopeFlags ?? {};
-    const marginRate = inputMarginRate ?? settings.defaultMarginRate;
-    const vatIncl = vatIncluded ?? estimate.vatIncluded;
-    const manualLossRate = lossRate ?? settings.defaultLossRate;
-    const effectiveLossRate = resolveEffectiveLossRate(
-      (settings as unknown as { lossRateMode?: string }).lossRateMode,
-      roofShape as RoofShape | null,
-      manualLossRate,
-      (settings as unknown as { roofShapeLossRates?: Record<string, number> }).roofShapeLossRates ?? null,
-    );
-
-    const lineItemDrafts = buildLineItems({
-      settings,
-      constructionType: constructionType as ConstructionType,
-      materialType: materialType as MaterialType | null,
-      thickness: materialThickness as Thickness | null,
-      areaM2, scope, workerCount, workDays,
-      gutterMode: gutterMode as GutterMode | null, gutterLengthM,
-      stainlessDrainLengthM,
-      capLengthM, drainHoleCount, endCapCount, denjoCount,
-      skyliftDays, ladderTruckDays, scaffoldDays, scaffoldAreaM2,
-      wasteTruckCount,
-      substructureType: substructureType as SubstructureType | null,
-      extraCosts: extraCosts as ExtraCost[],
-      pricingOverrides: pricingOverrides as PricingOverrides,
-      finishingMethods: finishingMethods as FinishingMethods,
-      catalogSelections: catalogSelections as CatalogSelection[],
-      catalogModes: catalogModes as GroupModesMap,
-      applyLossRate, lossRate: effectiveLossRate,
-      buildingShape: buildingShape as BuildingShape | null,
-      roofShape: roofShape as RoofShape | null,
-      buildingAreaM2: buildingAreaM2 ?? null,
-      perimeterM, ridgeCount, parapetHeightCm, eaveOverhangCm,
-      railPerimeterM, rooftopStructurePerimeterM,
-      rooftopStructureHeightCm, rooftopDoorCount, rooftopWindowCount,
-      downspoutCount,
-      hasInsulation, insulationTypes, hasPeFoam,
-      includeLodging, includeTeamExpense, includeInsurance, lodgingNights,
-    });
-    const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
-
-    // Wipe + rebuild line items in a transaction so we don't leave the
-    // estimate in a half-state if the create fails
-    await prisma.$transaction(async (tx) => {
-      await tx.estimateLineItem.deleteMany({ where: { estimateId: eid } });
-      await tx.estimate.update({
-        where: { id: eid },
+    // 4. Add a new line item (free-form, isUserEdited=true)
+    if (body.action === "add" && typeof body.newLineItem === "object" && body.newLineItem !== null) {
+      const n = body.newLineItem as Record<string, unknown>;
+      const name = typeof n.name === "string" ? n.name.trim().slice(0, 100) : "";
+      const quantity = n.quantity === undefined || n.quantity === null || n.quantity === "" ? 1 : Number(n.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0 || quantity > 1_000_000) return bad("수량이 올바르지 않습니다");
+      const unitPrice = won(n.unitPrice ?? 0, "단가", 0);
+      const category = typeof n.category === "string" && LINE_CATEGORIES.includes(n.category) ? n.category : "other";
+      const unit = typeof n.unit === "string" && n.unit.trim() ? n.unit.trim().slice(0, 20) : "식";
+      const maxOrder = Math.max(0, ...estimate.lineItems.map((l) => l.sortOrder));
+      await prisma.estimateLineItem.create({
         data: {
-          constructionType, materialType, materialThickness, materialTexture,
-          materialColor, constructionMonth,
-          areaM2, buildingAreaM2: buildingAreaM2 || null,
-          workerCount, workDays,
-          gutterMode: gutterMode || null, gutterLengthM: gutterLengthM || null,
-          stainlessDrainLengthM: stainlessDrainLengthM || null,
-          capLengthM: capLengthM || null, drainHoleCount: drainHoleCount || 0,
-          endCapCount: endCapCount || 0,
-          denjoCount: denjoCount || 0,
-          warehouseAreaM2: warehouseAreaM2 || null,
-          stairwellAreaM2: stairwellAreaM2 || null,
-          skyliftDays: skyliftDays || null, ladderTruckDays: ladderTruckDays || null,
-          scaffoldDays: scaffoldDays || null, scaffoldAreaM2: scaffoldAreaM2 || null,
-          wasteTruckCount: wasteTruckCount || 1,
-          substructureType: substructureType || null,
-          otherEquipment, scopeFlags: scope as object,
-          applyLossRate,
-          lossRate: applyLossRate ? effectiveLossRate : null,
-          buildingShape: buildingShape || null,
-          roofShape: roofShape || null,
-          perimeterM: perimeterM || null,
-          ridgeCount: ridgeCount || 1,
-          parapetHeightCm: parapetHeightCm || null,
-          eaveOverhangCm: typeof eaveOverhangCm === "number" ? eaveOverhangCm : 50,
-          railPerimeterM: railPerimeterM ?? null,
-          rooftopStructurePerimeterM: rooftopStructurePerimeterM ?? null,
-          rooftopStructureHeightCm: rooftopStructureHeightCm ?? null,
-          rooftopDoorCount: typeof rooftopDoorCount === "number" ? rooftopDoorCount : 0,
-          rooftopWindowCount: typeof rooftopWindowCount === "number" ? rooftopWindowCount : 0,
-          downspoutCount: typeof downspoutCount === "number" ? downspoutCount : 0,
-          hasInsulation: !!hasInsulation,
-          insulationTypes: (Array.isArray(insulationTypes) ? insulationTypes : []) as unknown as object,
-          insulationNote: insulationNote || null,
-          roofShapeNote: roofShapeNote || null,
-          hasPeFoam: !!hasPeFoam,
-          includeLodging: !!includeLodging,
-          includeTeamExpense: !!includeTeamExpense,
-          includeInsurance: includeInsurance !== false,
-          lodgingNights: typeof lodgingNights === "number" && lodgingNights > 0 ? lodgingNights : null,
-          catalogSelections: (catalogSelections as CatalogSelection[])
-            .filter((s) => s.quantity > 0) as unknown as object,
-          catalogModes: catalogModes as object,
-          pricingOverrides: pricingOverrides as object,
-          finishingMethods: (finishingMethods ?? {}) as object,
-          ...totals,
-          marginMode: "percent",
-          marginRate,
-          vatIncluded: vatIncl,
-          paymentTerms: paymentTerms ?? estimate.paymentTerms,
-          validityDays: validityDays ?? estimate.validityDays,
-          // Re-snapshot company info from current settings — user might have
-          // updated company name/phone/address since the original creation
-          companyNameSnapshot: settings.companyName,
-          companyPhoneSnapshot: settings.companyPhone ?? null,
-          companyAddressSnapshot: settings.companyAddress ?? null,
-          businessRegistrationNumberSnapshot: settings.businessRegistrationNumber ?? null,
-          sealImageUrlSnapshot: settings.sealImageUrl ?? null,
-          bankAccountSnapshot: settings.bankAccount ?? null,
-          noticeTextSnapshot: settings.noticeText ?? null,
-          // pdfSentAt + estimateNumber preserved (don't regenerate)
-          updatedAt: new Date(),
+          estimateId: eid,
+          category,
+          name: name || "기타 항목",
+          quantity,
+          unit,
+          unitPrice,
+          total: Math.round(quantity * unitPrice),
+          isUserEdited: true,
+          sortOrder: maxOrder + 1,
         },
       });
-      await tx.estimateLineItem.createMany({
-        data: lineItemDrafts.map((d) => ({ ...d, estimateId: eid })),
+      return recalcAndReturn(eid, estimate);
+    }
+
+    // ─── 5. Full edit (replace) = 재발행 ─────────────────────────────────
+    // 라인 전체를 현재 설정(+견적별 override)으로 다시 만들고, 회사·고객·마진 분배 비율·발행일을
+    // 다시 스냅샷한다. 마진은 percent 모드로 초기화 (확인 다이얼로그에 고지됨).
+    // estimateNumber · pdfSentAt 은 유지.
+    if (body.action === "replace") {
+      const { settings } = await requireUserAndSettings();
+      const input = parseEstimateBody(body);
+      const marginRate = input.marginRate ?? settings.defaultMarginRate;
+      const vatIncl = input.vatIncluded ?? estimate.vatIncluded;
+      const { lineItemDrafts, effectiveLossRate } = computeEstimate(settings, input);
+      const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
+      const now = new Date();
+
+      await prisma.$transaction(async (tx) => {
+        await tx.estimateLineItem.deleteMany({ where: { estimateId: eid } });
+        await tx.estimate.update({
+          where: { id: eid },
+          data: {
+            ...estimateColumns(input, effectiveLossRate),
+            ...totals,
+            marginMode: "percent",
+            marginRate,
+            vatIncluded: vatIncl,
+            paymentTerms: input.paymentTerms ?? estimate.paymentTerms,
+            validityDays: input.validityDays ?? estimate.validityDays,
+            ...snapshotColumns(settings, estimate.site, now),
+            updatedAt: now,
+          },
+        });
+        await tx.estimateLineItem.createMany({
+          data: lineItemDrafts.map((d) => ({ ...d, estimateId: eid })),
+        });
       });
-    });
 
-    const updated = await prisma.estimate.findUnique({
-      where: { id: eid },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
-    return NextResponse.json(updated);
-  }
+      const updated = await prisma.estimate.findFirst({
+        where: { id: eid, site: { userId: user.id } },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
 
-  // Update margin rate
-  if (body.marginRate !== undefined) {
-    const items = await prisma.estimateLineItem.findMany({ where: { estimateId: eid } });
-    const totals = calcTotals(items, body.marginRate, estimate.vatIncluded);
-    const updated = await prisma.estimate.update({
-      where: { id: eid },
-      data: { ...totals, marginRate: body.marginRate, marginMode: "percent", updatedAt: new Date() },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
-    return NextResponse.json(updated);
-  }
+    // 6. Update margin rate (매출 대비, -100% ~ 99%)
+    if (body.marginRate !== undefined) {
+      const marginRate = parseMarginRate(body.marginRate);
+      const items = await prisma.estimateLineItem.findMany({ where: { estimateId: eid } });
+      const totals = calcTotals(items, marginRate, estimate.vatIncluded);
+      const updated = await prisma.estimate.update({
+        where: { id: eid },
+        data: { ...totals, marginRate, marginMode: "percent", updatedAt: new Date() },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
 
-  // Update margin amount directly — marginRate 는 매출(공급가) 대비로 역산.
-  if (body.marginAmount !== undefined) {
-    const supplyPrice = estimate.totalCost + body.marginAmount;
-    const vat = Math.round(supplyPrice * 0.1);
-    const finalPrice = estimate.vatIncluded ? supplyPrice + vat : supplyPrice;
-    // 매출 대비: marginRate = marginAmount / supplyPrice (calcTotals 와 일관)
-    const marginRate = supplyPrice > 0 ? body.marginAmount / supplyPrice : 0;
-    const updated = await prisma.estimate.update({
-      where: { id: eid },
-      data: { marginAmount: body.marginAmount, marginRate, supplyPrice, vat, finalPrice, marginMode: "amount", updatedAt: new Date() },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
-    return NextResponse.json(updated);
-  }
+    // 7. Update margin amount directly — marginRate 는 매출(공급가) 대비로 역산.
+    if (body.marginAmount !== undefined) {
+      const marginAmount = won(body.marginAmount, "마진 금액");
+      const supplyPrice = estimate.totalCost + marginAmount;
+      if (supplyPrice <= 0) return bad("마진 금액이 너무 작습니다 (공급가가 0 이하)");
+      const vat = Math.round(supplyPrice * 0.1);
+      const finalPrice = estimate.vatIncluded ? supplyPrice + vat : supplyPrice;
+      const marginRate = marginAmount / supplyPrice;
+      const updated = await prisma.estimate.update({
+        where: { id: eid },
+        data: { marginAmount, marginRate, supplyPrice, vat, finalPrice, marginMode: "amount", updatedAt: new Date() },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
 
-  // Update final price (back-calculate)
-  if (body.finalPrice !== undefined) {
-    const derived = calcFromFinalPrice(estimate.totalCost, body.finalPrice, estimate.vatIncluded);
-    const updated = await prisma.estimate.update({
-      where: { id: eid },
-      data: { finalPrice: body.finalPrice, ...derived, marginMode: "finalPrice", updatedAt: new Date() },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
-    return NextResponse.json(updated);
-  }
+    // 7b. 평당가 입력 → 공급가 지정. 마진은 **서버의 현재 원가** 기준으로 역산 (mode 'amount').
+    //     클라이언트가 계산한 마진 차액을 보내면, 화면이 오래된 상태일 때 입력한 평당가와 다른
+    //     공급가가 저장됐다 (2026-09-28).
+    if (body.supplyPrice !== undefined) {
+      const supplyPrice = won(body.supplyPrice, "공급가", 1);
+      const marginAmount = supplyPrice - estimate.totalCost;
+      const vat = Math.round(supplyPrice * 0.1);
+      const updated = await prisma.estimate.update({
+        where: { id: eid },
+        data: {
+          marginAmount, marginRate: marginAmount / supplyPrice, supplyPrice, vat,
+          finalPrice: estimate.vatIncluded ? supplyPrice + vat : supplyPrice,
+          marginMode: "amount", updatedAt: new Date(),
+        },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
 
-  // Update VAT toggle
-  if (body.vatIncluded !== undefined) {
-    const items = await prisma.estimateLineItem.findMany({ where: { estimateId: eid } });
-    const totals = calcTotals(items, estimate.marginRate, body.vatIncluded);
-    const updated = await prisma.estimate.update({
-      where: { id: eid },
-      data: { ...totals, vatIncluded: body.vatIncluded, marginMode: estimate.marginMode, updatedAt: new Date() },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
-    return NextResponse.json(updated);
-  }
+    // 8. Update final price (back-calculate)
+    if (body.finalPrice !== undefined) {
+      const finalPrice = won(body.finalPrice, "최종 견적가", 1);
+      const derived = calcFromFinalPrice(estimate.totalCost, finalPrice, estimate.vatIncluded);
+      const updated = await prisma.estimate.update({
+        where: { id: eid },
+        data: { finalPrice, ...derived, marginMode: "finalPrice", updatedAt: new Date() },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
 
-  // Generic field update (paymentTerms, validityDays, pdfUrl, pdfSentAt)
-  const allowedFields = ["paymentTerms", "validityDays", "pdfUrl", "pdfSentAt"];
-  const updateData: Record<string, unknown> = {};
-  for (const f of allowedFields) {
-    if (body[f] !== undefined) updateData[f] = body[f];
-  }
-  if (Object.keys(updateData).length > 0) {
-    const updated = await prisma.estimate.update({
-      where: { id: eid },
-      data: { ...updateData, updatedAt: new Date() },
-      include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
-    });
-    return NextResponse.json(updated);
-  }
+    // 9. VAT toggle — 공급가(원가+마진)는 그대로, 부가세를 더할지만 바꾼다. 최종가 고정 모드에서도
+    //    최종가를 고정하면 마진이 10% 만큼 조용히 바뀌므로 공급가를 유지하고 최종가를 다시 계산
+    //    (2026-09-28 리뷰). 모드는 그대로 두어 이후 라인 수정은 새 최종가를 기준으로 유지.
+    if (body.vatIncluded !== undefined) {
+      if (typeof body.vatIncluded !== "boolean") return bad("부가세 값이 올바르지 않습니다");
+      const vat = Math.round(estimate.supplyPrice * 0.1);
+      const updated = await prisma.estimate.update({
+        where: { id: eid },
+        data: {
+          vatIncluded: body.vatIncluded,
+          vat,
+          finalPrice: body.vatIncluded ? estimate.supplyPrice + vat : estimate.supplyPrice,
+          updatedAt: new Date(),
+        },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
 
-  return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+    // 10. Meta update (paymentTerms, validityDays, pdfUrl, pdfSentAt) — 타입 검증 후 반영.
+    const updateData: Record<string, unknown> = {};
+    if (body.paymentTerms !== undefined) {
+      if (typeof body.paymentTerms !== "string" || body.paymentTerms.length > 500) return bad("결제 조건 값이 올바르지 않습니다");
+      updateData.paymentTerms = body.paymentTerms;
+    }
+    if (body.validityDays !== undefined) {
+      const d = Number(body.validityDays);
+      if (!Number.isInteger(d) || d < 1 || d > 365) return bad("유효기간은 1~365일이어야 합니다");
+      updateData.validityDays = d;
+    }
+    if (body.pdfUrl !== undefined) {
+      if (body.pdfUrl !== null && (typeof body.pdfUrl !== "string" || body.pdfUrl.length > 1000)) return bad("pdfUrl 값이 올바르지 않습니다");
+      updateData.pdfUrl = body.pdfUrl;
+    }
+    if (body.pdfSentAt !== undefined) {
+      const t = body.pdfSentAt === null ? null : new Date(String(body.pdfSentAt));
+      if (t !== null && Number.isNaN(t.getTime())) return bad("pdfSentAt 값이 올바르지 않습니다");
+      updateData.pdfSentAt = t;
+    }
+    if (Object.keys(updateData).length > 0) {
+      const updated = await prisma.estimate.update({
+        where: { id: eid },
+        data: { ...updateData, updatedAt: new Date() },
+        include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
+      });
+      return NextResponse.json(updated);
+    }
+
+    return bad("Nothing to update");
+  } catch (e) {
+    if (e instanceof InputError) return bad(e.message);
+    throw e;
+  }
 }
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ eid: string }> }) {

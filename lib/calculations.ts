@@ -1,6 +1,6 @@
 import type { BaselineData, BaselineEntry, BuildingShape, ConstructionType, ExtraCost, FinishingMethods, GutterMode, InsulationType, MaterialType, PricingOverrides, RoofShape, ScopeFlags, SubstructureType, Thickness } from "./types";
 import { BASELINE_AREAS, INSULATION_LABEL, INSULATION_PRICE_KEY, MATERIAL_EFFECTIVE_WIDTH_MM, MATERIAL_TYPES, parseGutterSides, gutterSidesLabel, resolveFinishingMethod } from "./types";
-import { categoryToLineItemCategory, resolveGroupDefaults, CATALOG_GROUPS, DEFAULT_CATALOG, type CatalogCategory, type CatalogSelection, type CategoryMode, type GroupModesMap } from "./catalog";
+import { categoryToLineItemCategory, mergeGroupModes, resolveGroupDefaults, CATALOG_GROUPS, DEFAULT_CATALOG, type CatalogCategory, type CatalogSelection, type CategoryMode, type GroupModesMap } from "./catalog";
 import type { PricingSettings } from "@prisma/client";
 
 export interface LineItemDraft {
@@ -431,10 +431,7 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
 
   // Resolve effective group modes by layering: 유형별 defaults → settings → estimate override
   const settingsDefaults = (settings.catalogDefaults as GroupModesMap | null) ?? null;
-  const effectiveModes = resolveGroupDefaults({
-    ...settingsDefaults,
-    ...(catalogModes ?? {}),
-  }, constructionType);
+  const effectiveModes = resolveGroupDefaults(mergeGroupModes(settingsDefaults, catalogModes), constructionType);
   const items: LineItemDraft[] = [];
   let order = 0;
 
@@ -515,9 +512,11 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
         // 기성품 용마루 — 규격(3m) 개수 환산 × 카탈로그 천보가.
         // 기와형은 고전 용마루, 그 외(코루게이티드 + 기성품 혼용)는 멀티용마루 기본.
         // 카탈로그 상세 모드에서 이미 용마루 제품을 골랐으면 자동 라인 생략 (중복 방지).
-        const pickedRidgeFromCatalog = catalogSelections.some(
-          (s) => READY_RIDGE_KEYS.has(s.key) && s.quantity > 0,
-        );
+        // 단, 마감재 그룹이 켜져 있고 상세 모드일 때만 — 꺼져 있거나 심플이면 그 선택은 계산에
+        // 안 들어가므로, 가드가 걸리면 용마루가 통째로 빠졌다 (2026-09-28).
+        const finishingGroup = effectiveModes.finishing;
+        const pickedRidgeFromCatalog = finishingGroup.enabled !== false && finishingGroup.mode === "detailed" &&
+          catalogSelections.some((s) => READY_RIDGE_KEYS.has(s.key) && s.quantity > 0);
         if (!pickedRidgeFromCatalog && ridgeLength > 0) {
           const itemKey = materialType === "generalTile" || materialType === "traditionalTile"
             ? "ridgeClassic" : "multiRidge";
@@ -1007,7 +1006,8 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     // 절곡 그룹 상세 모드는 특수 — 아이템 목록이 아니라 총 넓이(mm) × 절곡단가.
     // 모든 절곡은 3m 본 단위라 길이는 단가(원/mm·3m)에 포함, 넓이(simpleQty)만 입력.
     if (grp.value === "bending" && m.mode === "detailed") {
-      const widthMm = m.simpleQty ?? 0;
+      // 상세 넓이는 detailWidthMm (2026-09-28~). 구 견적은 simpleQty 에 mm 가 들어 있어 폴백.
+      const widthMm = m.detailWidthMm ?? m.simpleQty ?? 0;
       const total = Math.round(widthMm * settings.bendingPricePerMmPer3m);
       if (widthMm > 0 && total > 0) {
         items.push({
@@ -1054,7 +1054,13 @@ export function buildLineItems(input: BuildLineItemsInput): LineItemDraft[] {
     });
   }
 
-  return items;
+  // 안전망: unitPrice·total 은 DB 정수(원) 컬럼 — 소수 단가 override(예: 300000.5)나 계수 곱이
+  // 소수를 만들면 저장이 500 으로 실패했다 (2026-09-28). 원 단위로 반올림해 내보낸다.
+  return items.map((i) => (
+    Number.isInteger(i.unitPrice) && Number.isInteger(i.total)
+      ? i
+      : { ...i, unitPrice: Math.round(i.unitPrice), total: Math.round(i.total) }
+  ));
 }
 
 /**
@@ -1298,6 +1304,22 @@ export function distributeMarginForDisplay<T extends { category: string; name: s
     ? { material: ratiosInput.material / sum, labor: ratiosInput.labor / sum, profit: ratiosInput.profit / sum }
     : { material: 0.5, labor: 0.25, profit: 0.25 };
 
+  // 손해 견적(마진 < 0): 모든 라인을 같은 비율로 줄이고 이윤 줄은 만들지 않는다 (2026-09-28).
+  // 이전엔 음수 마진이 버킷 규칙대로 흩어지다 마지막 라인에서 빠져 고객 PDF 에 음수 라인이 떴다.
+  if (marginAmount < 0) {
+    const cost = items.reduce((s, i) => s + i.total, 0);
+    const factor = cost > 0 ? Math.max(0, 1 + marginAmount / cost) : 1;
+    const scaledAll: DisplayLineItem[] = items.map((it) => ({
+      category: it.category,
+      name: it.name,
+      quantity: it.quantity,
+      unit: it.unit,
+      unitPrice: Math.round(it.unitPrice * factor),
+      total: Math.round(it.total * factor),
+    }));
+    return sweepRounding(scaledAll, Math.max(0, cost + marginAmount));
+  }
+
   // Bucket items by role.
   const materialItems: T[] = [];
   const laborItems: T[] = [];
@@ -1384,14 +1406,22 @@ export function distributeMarginForDisplay<T extends { category: string; name: s
   }
 
   // Rounding sweep — ensure exact target sum (cost + marginAmount).
-  const target = items.reduce((s, i) => s + i.total, 0) + marginAmount;
+  return sweepRounding(out, items.reduce((s, i) => s + i.total, 0) + marginAmount);
+}
+
+/**
+ * 반올림 오차를 **가장 큰 라인**에 흡수시켜 합계를 target 에 정확히 맞춘다.
+ * (이전엔 마지막 라인에 몰아서, 마지막이 작은 라인이면 음수가 될 수 있었다.)
+ */
+function sweepRounding(out: DisplayLineItem[], target: number): DisplayLineItem[] {
   const actual = out.reduce((s, i) => s + i.total, 0);
   const drift = target - actual;
   if (drift !== 0 && out.length > 0) {
-    const last = out[out.length - 1];
-    out[out.length - 1] = { ...last, total: last.total + drift };
+    let big = 0;
+    for (let i = 1; i < out.length; i++) if (out[i].total > out[big].total) big = i;
+    // 가장 큰 라인이 오차를 흡수하되 음수는 만들지 않는다.
+    out[big] = { ...out[big], total: Math.max(0, out[big].total + drift) };
   }
-
   return out;
 }
 

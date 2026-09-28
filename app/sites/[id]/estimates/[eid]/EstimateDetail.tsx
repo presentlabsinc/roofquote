@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText, Edit3 } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText, Edit3, Plus, X } from "lucide-react";
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 import { distributeMarginForDisplay, type MarginDistributionRatios } from "@/lib/calculations";
 
@@ -46,35 +46,59 @@ export function EstimateDetail({
   const [editingMargin, setEditingMargin] = useState<"rate" | "amount" | "final" | "pyeong" | null>(null);
   const [marginInput, setMarginInput] = useState("");
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
+  // 요청 중에는 다른 변경을 막는다 — 연타·동시 요청이 서로 덮어써 'VAT 포함' 표시와 VAT 없는
+  // 최종가가 함께 저장되던 문제 (2026-09-28).
+  const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
 
   const patch = useCallback(async (body: Record<string, unknown>) => {
-    const res = await fetch(`/api/estimates/${est.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) throw new Error("업데이트 실패");
-    const updated = await res.json();
-    setEst(updated);
-  }, [est.id]);
+    if (busy) throw new Error("이전 변경을 저장하는 중입니다");
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/estimates/${est.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.error || "수정에 실패했습니다");
+      }
+      const updated = await res.json();
+      setEst(updated);
+      // 라우터 캐시 갱신 — 뒤로가기·미리보기(카톡 요약문)가 수정 전 금액을 보여주던 문제.
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }, [est.id, busy, router]);
+
+  /** 숫자 입력 파싱 — 빈 값은 null (= 편집 취소), 숫자가 아니면 NaN. */
+  function parseNum(v: string): number | null {
+    const t = v.replace(/,/g, "").trim();
+    if (t === "") return null;
+    return Number(t);
+  }
 
   async function saveLineItem(lineId: string) {
-    const total = parseInt(lineEditVal.replace(/,/g, "")) || 0;
+    const total = parseNum(lineEditVal);
+    if (total === null) { setEditingLineId(null); return; } // 빈 값 = 취소 (0원 저장 방지)
+    if (!Number.isFinite(total)) { toast.error("금액을 숫자로 입력해 주세요"); return; }
     try {
-      await patch({ lineItemId: lineId, total });
+      await patch({ lineItemId: lineId, total: Math.round(total) });
       toast.success("금액이 수정되었습니다");
-    } catch {
-      toast.error("수정에 실패했습니다");
+      setEditingLineId(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "수정에 실패했습니다");
     }
-    setEditingLineId(null);
   }
 
   async function undoLineItem(lineId: string) {
     try {
       await patch({ lineItemId: lineId, action: "undo" });
       toast.success("원래 값으로 되돌렸습니다");
-    } catch {
-      toast.error("실패했습니다");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "실패했습니다");
     }
   }
 
@@ -82,56 +106,68 @@ export function EstimateDetail({
     try {
       await patch({ lineItemId: lineId, action: "delete" });
       toast.success("항목이 삭제되었습니다");
-    } catch {
-      toast.error("삭제에 실패했습니다");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "삭제에 실패했습니다");
     }
     setPendingDelete(null);
   }
 
   async function saveMargin() {
     if (!editingMargin) return;
+    const n = parseNum(marginInput);
+    if (n === null) { setEditingMargin(null); return; } // 빈 값 = 취소
+    if (!Number.isFinite(n)) { toast.error("숫자로 입력해 주세요"); return; }
     try {
       if (editingMargin === "rate") {
-        const rate = parseFloat(marginInput) / 100;
-        await patch({ marginRate: rate });
+        // 매출 대비 마진율은 100% 이상이 불가능 — 99% 초과 입력은 오타로 보고 막는다.
+        if (n >= 99.5 || n <= -100) { toast.error("마진율은 -100% ~ 99% 사이로 입력해 주세요"); return; }
+        await patch({ marginRate: n / 100 });
       } else if (editingMargin === "amount") {
-        const amount = parseInt(marginInput.replace(/,/g, "")) || 0;
-        await patch({ marginAmount: amount });
+        await patch({ marginAmount: Math.round(n) });
       } else if (editingMargin === "pyeong") {
-        // 평당가 → 공급가 → marginAmount 로 변환해서 전송.
-        // marginAmount 액션 (mode='amount') 으로 들어가면 VAT 토글이 finalPrice
-        // 만 흔들고 평당가/마진율은 그대로 유지됨.
+        // 평당가 × 평수 = 공급가(VAT 전). 서버가 자기 원가 기준으로 마진을 역산 (mode 'amount'
+        // — VAT 를 토글해도 평당가 유지).
         if (pyeong <= 0) {
           toast.error("면적이 0이라 평당가를 적용할 수 없습니다");
           setEditingMargin(null);
           return;
         }
-        const perPyeong = parseInt(marginInput.replace(/,/g, "")) || 0;
-        const newSupplyPrice = Math.round(perPyeong * pyeong);
-        const newMarginAmount = newSupplyPrice - est.totalCost;
-        await patch({ marginAmount: newMarginAmount });
+        if (n <= 0) { toast.error("평당가를 입력해 주세요"); return; }
+        await patch({ supplyPrice: Math.round(n * pyeong) });
       } else {
-        const fp = parseInt(marginInput.replace(/,/g, "")) || 0;
-        await patch({ finalPrice: fp });
+        if (n <= 0) { toast.error("최종 견적가를 입력해 주세요"); return; }
+        await patch({ finalPrice: Math.round(n) });
       }
       toast.success("업데이트되었습니다");
-    } catch {
-      toast.error("수정에 실패했습니다");
+      setEditingMargin(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "수정에 실패했습니다");
     }
-    setEditingMargin(null);
   }
 
   async function setVat(included: boolean) {
     if (included === est.vatIncluded) return;
     try { await patch({ vatIncluded: included }); }
-    catch { toast.error("수정에 실패했습니다"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "수정에 실패했습니다"); }
+  }
+
+  async function addLineItem(item: { name: string; quantity: number; unit: string; unitPrice: number; category: string }) {
+    try {
+      await patch({ action: "add", newLineItem: item });
+      toast.success("항목을 추가했습니다");
+      setAdding(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "추가에 실패했습니다");
+    }
   }
 
   const marginRatePct = Math.round(est.marginRate * 1000) / 10;
   // 평당 단가 — VAT 전 공급가 기준 (한국 시공업 관례).
   // VAT 토글해도 평당가는 안 흔들림 — finalPrice 만 변동.
   // 1평 = 3.3058㎡. areaM2 이 0이면 표시·편집 모두 비활성.
-  const pyeong = est.areaM2 > 0 ? est.areaM2 / 3.3058 : 0;
+  // 평수는 소수 2자리로 — 30평으로 입력한 면적(99.17㎡)이 29.9988평이 되어 평당가×평수가
+  // 딱 떨어지지 않던 문제 (30평 × 30만 → 8,999,637원).
+  const pyeong = est.areaM2 > 0 ? Math.round((est.areaM2 / 3.3058) * 100) / 100 : 0;
   const pricePerPyeong = pyeong > 0 ? Math.round(est.supplyPrice / pyeong) : 0;
   const vatLabel = est.vatIncluded ? "VAT 포함" : "VAT 별도";
   // 손해 견적 감지 — 사장님이 평당가·최종가를 원가보다 낮게 잡으면 음수 마진.
@@ -196,13 +232,15 @@ export function EstimateDetail({
       {/* Hero: Final price */}
       <div className="bg-gradient-to-br from-primary to-blue-700 rounded-3xl p-5 text-white shadow-xl shadow-primary/20">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-white/70 text-xs font-medium uppercase tracking-wider">최종 견적가</span>
+          <span className="text-white/70 text-xs font-medium uppercase tracking-wider">
+            최종 견적가{est.estimateNumber ? <span className="ml-1.5 normal-case tracking-normal text-white/50 tabular-nums">No. {est.estimateNumber}</span> : null}
+          </span>
           {/* VAT 라벨은 스위치 밖, 세그먼트 토글은 포함/별도만 */}
           <div className="flex items-center gap-2">
             <span className="text-[11px] font-bold text-white/60 tracking-wide">VAT</span>
             <div className="flex items-center gap-0.5 bg-white/15 rounded-full p-0.5">
               <button
-                onClick={() => setVat(true)}
+                onClick={() => setVat(true)} disabled={busy}
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-full pressable transition-colors ${
                   est.vatIncluded ? "bg-white text-primary shadow-sm" : "text-white/70"
                 }`}
@@ -210,7 +248,7 @@ export function EstimateDetail({
                 포함
               </button>
               <button
-                onClick={() => setVat(false)}
+                onClick={() => setVat(false)} disabled={busy}
                 className={`text-[11px] font-bold px-2.5 py-1 rounded-full pressable transition-colors ${
                   !est.vatIncluded ? "bg-white text-primary shadow-sm" : "text-white/70"
                 }`}
@@ -283,7 +321,7 @@ export function EstimateDetail({
                   setEditingMargin("pyeong");
                   setMarginInput(String(pricePerPyeong));
                 }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin} onCancel={() => setEditingMargin(null)} disabled={busy}
                 unit="원/평" highlight
               />
               <EditableRow
@@ -291,7 +329,7 @@ export function EstimateDetail({
                 display={`${marginRatePct}%`}
                 editing={editingMargin === "rate"}
                 onEdit={() => { setEditingMargin("rate"); setMarginInput(String(marginRatePct)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin} onCancel={() => setEditingMargin(null)} disabled={busy}
                 unit="%" danger={isLoss}
               />
               <EditableRow
@@ -299,7 +337,7 @@ export function EstimateDetail({
                 display={fmtKrw(est.marginAmount)}
                 editing={editingMargin === "amount"}
                 onEdit={() => { setEditingMargin("amount"); setMarginInput(String(est.marginAmount)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin} onCancel={() => setEditingMargin(null)} disabled={busy}
                 unit="원" danger={isLoss}
               />
               <EditableRow
@@ -308,7 +346,7 @@ export function EstimateDetail({
                 placeholder
                 editing={editingMargin === "final"}
                 onEdit={() => { setEditingMargin("final"); setMarginInput(String(est.finalPrice)); }}
-                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin}
+                value={marginInput} onValueChange={setMarginInput} onSave={saveMargin} onCancel={() => setEditingMargin(null)} disabled={busy}
                 unit="원"
               />
             </div>
@@ -366,13 +404,19 @@ export function EstimateDetail({
                         {editingLineId === item.id ? (
                           <div className="flex items-center gap-1">
                             <Input
-                              autoFocus type="number" value={lineEditVal}
+                              autoFocus type="text" inputMode="numeric" value={lineEditVal}
                               onChange={(e) => setLineEditVal(e.target.value)}
-                              onKeyDown={(e) => e.key === "Enter" && saveLineItem(item.id)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveLineItem(item.id);
+                                if (e.key === "Escape") setEditingLineId(null);
+                              }}
                               className="w-28 h-9 text-sm text-right tabular-nums rounded-lg"
                             />
-                            <Button size="sm" className="h-9 w-9 p-0 rounded-lg" onClick={() => saveLineItem(item.id)}>
+                            <Button size="sm" className="h-9 w-9 p-0 rounded-lg" disabled={busy} onClick={() => saveLineItem(item.id)} aria-label="저장">
                               <Check size={15} />
+                            </Button>
+                            <Button size="sm" variant="outline" className="h-9 w-9 p-0 rounded-lg" onClick={() => setEditingLineId(null)} aria-label="취소">
+                              <X size={15} />
                             </Button>
                           </div>
                         ) : (
@@ -445,10 +489,18 @@ export function EstimateDetail({
             )}
           </div>
 
-          {/* Edit-flow hint */}
-          <p className="text-[11px] text-muted-foreground text-center px-2">
-            항목을 추가하려면 새로 견적을 만들거나 위 "기타 비용" 으로 추가하세요
-          </p>
+          {/* 항목 직접 추가 — 자동 계산에 없는 비용을 이 견적에만 추가 */}
+          {adding ? (
+            <AddLineForm busy={busy} onCancel={() => setAdding(false)} onAdd={addLineItem} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="w-full flex items-center justify-center gap-1.5 text-sm font-medium text-primary bg-card rounded-2xl border border-dashed border-primary/40 py-3 pressable"
+            >
+              <Plus size={15} /> 항목 직접 추가
+            </button>
+          )}
         </>
       )}
 
@@ -494,10 +546,13 @@ export function EstimateDetail({
 }
 
 function EditableRow({
-  label, display, editing, onEdit, value, onValueChange, onSave, unit, highlight, placeholder, danger,
+  label, display, editing, onEdit, value, onValueChange, onSave, onCancel, disabled, unit, highlight, placeholder, danger,
 }: {
   label: string; display: string; editing: boolean; onEdit: () => void;
   value: string; onValueChange: (v: string) => void; onSave: () => void;
+  /** 편집 취소 (Esc · X) — 실수로 탭해도 값이 바뀌지 않게. */
+  onCancel: () => void;
+  disabled?: boolean;
   unit: string; highlight?: boolean; placeholder?: boolean;
   /** Show value in red — used to flag negative margin (손해 견적). */
   danger?: boolean;
@@ -510,19 +565,25 @@ function EditableRow({
           <div className="relative w-36">
             <Input
               autoFocus
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={value}
               onChange={(e) => onValueChange(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && onSave()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") onSave();
+                if (e.key === "Escape") onCancel();
+              }}
               className="h-10 pr-7 text-right text-sm tabular-nums rounded-lg"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">{unit}</span>
           </div>
-          <Button size="sm" onClick={onSave} className="h-10 w-10 p-0 rounded-lg"><Check size={16} /></Button>
+          <Button size="sm" onClick={onSave} disabled={disabled} className="h-10 w-10 p-0 rounded-lg" aria-label="저장"><Check size={16} /></Button>
+          <Button size="sm" variant="outline" onClick={onCancel} className="h-10 w-10 p-0 rounded-lg" aria-label="취소"><X size={16} /></Button>
         </div>
       ) : (
         <button
           onClick={onEdit}
+          disabled={disabled}
           className="flex items-center gap-1.5 pressable rounded-lg px-2 py-1 -mr-2"
         >
           <span className={`text-sm tabular-nums ${
@@ -566,11 +627,12 @@ function EditEstimateButton({ estimateId, siteId }: { estimateId: string; siteId
           </p>
           <ul className="text-[11px] text-muted-foreground space-y-0.5 pl-4 list-disc">
             <li>인라인으로 수정한 라인아이템 금액</li>
-            <li>마진율 / 최종가 직접 입력</li>
-            <li>견적 상세에서 추가/삭제한 라인</li>
+            <li>마진율 / 평당가 / 최종가 직접 입력 (기본 마진율로 돌아감)</li>
+            <li>견적 상세에서 직접 추가/삭제한 라인</li>
           </ul>
           <p className="text-[11px] text-muted-foreground">
-            견적 번호와 발송 기록은 유지됩니다. 회사 정보와 단가는 현재 단가 설정값으로 다시 snapshot 됩니다.
+            입력 폼의 &apos;기타 비용&apos;은 유지됩니다 (2026-09-28 이전 견적은 다시 입력 필요).
+            견적 번호와 발송 기록은 유지되고, 단가·회사 정보·고객 정보·발행일은 지금 기준으로 다시 저장됩니다 (재발행).
           </p>
           <div className="flex gap-2">
             <Button
@@ -734,6 +796,65 @@ function TermsCard({
             </button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const ADD_CATEGORIES: { value: string; label: string }[] = [
+  { value: "material", label: "자재" },
+  { value: "labor", label: "인건" },
+  { value: "equipment", label: "장비" },
+  { value: "other", label: "기타" },
+];
+
+/** 견적 상세에서 항목 직접 추가 — 이름·수량·단위·단가·분류. */
+function AddLineForm({
+  busy, onCancel, onAdd,
+}: {
+  busy: boolean;
+  onCancel: () => void;
+  onAdd: (item: { name: string; quantity: number; unit: string; unitPrice: number; category: string }) => void;
+}) {
+  const [name, setName] = useState("");
+  const [qty, setQty] = useState("1");
+  const [unit, setUnit] = useState("식");
+  const [price, setPrice] = useState("");
+  const [category, setCategory] = useState("other");
+
+  function submit() {
+    const quantity = Number(qty.replace(/,/g, ""));
+    const unitPrice = Number(price.replace(/,/g, ""));
+    if (!name.trim()) { toast.error("항목 이름을 입력해 주세요"); return; }
+    if (!Number.isFinite(quantity) || quantity <= 0) { toast.error("수량을 확인해 주세요"); return; }
+    if (!Number.isFinite(unitPrice) || unitPrice < 0 || price.trim() === "") { toast.error("단가를 입력해 주세요"); return; }
+    onAdd({ name: name.trim(), quantity, unit: unit.trim() || "식", unitPrice: Math.round(unitPrice), category });
+  }
+
+  return (
+    <div className="bg-card rounded-2xl border border-primary/30 p-4 space-y-2.5">
+      <p className="text-sm font-semibold text-foreground">항목 직접 추가</p>
+      <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="항목 이름 (예: 추가 철거)" className="h-11 rounded-xl" />
+      <div className="grid grid-cols-3 gap-2">
+        <Input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal" placeholder="수량" className="h-11 rounded-xl text-right tabular-nums" />
+        <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="단위" className="h-11 rounded-xl" />
+        <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" placeholder="단가(원)" className="h-11 rounded-xl text-right tabular-nums" />
+      </div>
+      <div className="flex gap-1.5">
+        {ADD_CATEGORIES.map((c) => (
+          <button
+            key={c.value}
+            type="button"
+            onClick={() => setCategory(c.value)}
+            className={`flex-1 h-10 rounded-xl text-xs font-semibold border pressable ${category === c.value ? "bg-primary/10 text-primary border-primary/40" : "bg-card text-muted-foreground border-border/60"}`}
+          >
+            {c.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2 pt-1">
+        <Button variant="outline" onClick={onCancel} className="flex-1 h-11 rounded-xl text-sm">취소</Button>
+        <Button onClick={submit} disabled={busy} className="flex-1 h-11 rounded-xl text-sm font-semibold">추가</Button>
       </div>
     </div>
   );

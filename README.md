@@ -21,7 +21,7 @@
 | 데이터베이스 | Supabase Postgres (Seoul ap-northeast-2) | Prisma 6 ORM |
 | 스토리지 | Supabase Storage | `site-photos` 버킷 |
 | PDF | @react-pdf/renderer | 서버사이드 렌더 |
-| 공유 | Web Share API | 카톡 공유 → fallback: 클립보드 |
+| 공유 | Web Share API (Level 2, 파일 첨부) | 카톡 보내기 = PDF 파일 + 요약문 → 파일 공유 불가 브라우저는 PDF 저장 + 요약문 복사 |
 | 테스트 | vitest | `npm test` — 계산 엔진 + 프리셋 스냅샷 |
 | 배포 | Vercel (icn1 Seoul) | main 푸시 = 자동 배포 |
 
@@ -37,8 +37,8 @@ npm install
 cp .env.example .env
 # .env 안의 5개 Supabase 값을 채워 넣기
 
-# 3) DB 마이그레이션 적용 (Supabase에 테이블 생성)
-npx prisma migrate dev
+# 3) Prisma 클라이언트 생성 (DB 스키마 적용은 Vercel production 배포가 함)
+npx prisma generate   # (새 DB 를 처음 만들 때만: npx prisma migrate deploy — 운영 DB 에 대고 migrate dev 금지)
 
 # 4) 개발 서버 시작
 npm run dev
@@ -58,7 +58,7 @@ npm run dev
    - `[YOUR-PASSWORD]` 부분에 프로젝트 생성 시 정한 DB 비밀번호 치환
 5. **Authentication** — 로그인 방식: 카카오/구글 OAuth (Providers 에서 설정) + 이메일/비밀번호.
    베타 동안 회원가입은 닫혀 있음 — 계정은 Supabase 대시보드 (Authentication → Users) 에서 admin 이 직접 생성.
-   모든 페이지·API 는 로그인 필수 (`middleware.ts` 가 미인증 요청을 `/login` 으로 리다이렉트).
+   모든 페이지·API 는 로그인 필수 (`proxy.ts` 가 미인증 페이지는 `/login`, `/api` 는 401). 각 페이지·라우트도 `requireUser()`(getClaims 서명 검증)로 스스로 확인.
 
 ---
 
@@ -68,7 +68,7 @@ npm run dev
 
 ```
 roofquote/
-├── middleware.ts                                    # 세션 갱신 + 미인증 → /login 리다이렉트 (유일한 토큰 검증 지점)
+├── proxy.ts                                         # (Next 16 — 구 middleware) 세션 갱신 + 미인증 → /login·401
 ├── app/
 │   ├── login/                                       # 로그인 페이지 (카카오/구글/이메일)
 │   ├── auth/callback/                               # OAuth 리턴 URL → 세션 교환
@@ -113,9 +113,10 @@ roofquote/
 │   └── utils.ts                                     # cn() 유틸
 ├── prisma/
 │   ├── schema.prisma                                # 데이터 모델
-│   └── migrations/                                  # Postgres 마이그레이션 이력 (변경 금지 — prisma migrate dev 로만)
+│   └── migrations/                                  # Postgres 마이그레이션 이력 (오프라인 diff 로 생성 — AGENTS.md '로컬 .env = 운영 DB')
 ├── public/
-│   └── icon.svg                                     # PWA 앱 아이콘
+│   ├── icon.svg · icon-192.png · icon-512.png       # PWA 앱 아이콘 (안드로이드 설치 요건 PNG)
+│   └── apple-touch-icon.png                         # iOS 홈 화면 아이콘
 ├── .env.example                                     # 환경변수 템플릿 (5개 키)
 ├── roofing_app_spec.md                              # 한국어 원본 제품 기획서 (변경 금지 — 진실 공급원)
 ├── README.md                                        # 이 파일 (사람 대상 가이드)
@@ -198,12 +199,13 @@ PDF (v4 디자인) 에 나가는 항목:
 - 사용 자재 pill (제품명 / 두께 / 텍스처 / 색상)
 - **견적 내역** — 두 모드 토글 (마진은 `distributeMarginForDisplay` 로 라인에 분배되어 표시 — 내부 원가 노출 없음):
   - **간단** (기본): 그룹 평문 — 자재 및 마감 일체 / 시공비 (현장 관리 포함) / 장비 및 운송 / 철거 및 폐기 / 현장 경비. **이윤은 간단에선 별도 줄 없이 시공비에 녹임** (거부감 방지). 빈 그룹은 생략
-  - **상세**: 표 (품명/규격/수량/금액), 그룹 헤더 **자재공사 / 노무비 / 기타경비 / 이윤** (표준품셈 형식 — 상세에선 이윤 줄 유지). 인건비+식비+숙박비는 "인건비 (기공·조공)" 한 줄로 묶임. 숙박비·팀경비는 고객 PDF 에 별도 라인으로 안 나옴. 맨 아래 "소계 (부가세 별도/포함)"
+  - **상세**: 표 (품명/규격/수량/금액), 그룹 헤더 **자재공사 / 노무비 / 기타경비 / 이윤** (표준품셈 형식 — 상세에선 이윤 줄 유지). 인건비+식비+숙박비는 "인건비 (기공·조공)" 한 줄로 묶임. 숙박비·팀경비는 고객 PDF 에 별도 라인으로 안 나옴. 맨 아래 공급가액 (+ 부가세 포함이면 부가세 10%) 행 — 최종 금액과 원 단위까지 일치
 - **최종 견적 금액** 카드 (옅은 회색 배경, 한 줄, "(부가세 포함/별도)" subtle)
 - **결제 조건**: 자동 파싱 — "계약금 30% / 잔금 70%" 같은 텍스트를 두 카드로 (% + 금액). 파싱 실패 시 평문
 - 입금 계좌 (단가설정 `bankAccount`)
 - 안내 문구 (단가설정 `noticeText`, 자동 번호 매김 1, 2, ...)
-- 맨 아래 "위와 같이 견적합니다." + 회사명 + 직인 (업로드된 이미지 또는 "(인)" placeholder)
+- 맨 아래 "위와 같이 견적합니다." + 회사명 + 직인 (라우트가 미리 받은 PNG/JPEG 이미지, 없거나 실패하면 "(인)")
+- 고객명·주소·마진 분배 비율·발행일은 **견적 시점 스냅샷** — 현장 정보나 설정을 나중에 바꿔도 보낸 견적서는 그대로 (전체 수정 = 재발행 때만 갱신)
 
 ---
 
@@ -220,7 +222,7 @@ PDF (v4 디자인) 에 나가는 항목:
 
 ### 수정 (PATCH `/api/estimates/[eid]`)
 
-요청 body 의 모양에 따라 10가지 액션 중 하나로 dispatch. 모든 액션은 `recalcAndReturn` 헬퍼를 통과해 합계가 자동 재계산됨:
+요청 body 의 모양에 따라 11가지 액션 중 하나로 dispatch. 라인 변경 액션은 `recalcAndReturn` 헬퍼를 통과해 합계가 자동 재계산됨:
 
 | Body 모양 | 액션 |
 |---|---|
@@ -232,10 +234,11 @@ PDF (v4 디자인) 에 나가는 항목:
 | `{ marginRate }` | 마진율 변경 → 마진금액/공급가/최종가 재계산 (라인 그대로) |
 | `{ marginAmount }` | 마진금액 직접 입력 → 마진율 역산, 모드 = 'amount' |
 | `{ finalPrice }` | 최종가 직접 입력 → 마진금액 역산, 모드 = 'finalPrice' |
-| `{ vatIncluded }` | VAT 토글 → 최종가 재계산 |
-| `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` | 메타 필드 업데이트 (whitelist) |
+| `{ vatIncluded }` | VAT 토글 → 공급가 유지, VAT·최종가만 재계산 (마진 모드 불변) |
+| `{ supplyPrice }` | 평당가 입력 → 공급가 지정, 마진은 서버 원가 기준 역산 (mode 'amount') |
+| `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` | 메타 필드 업데이트 (타입 검증) |
 
-**중요:** `recalcAndReturn` 은 `marginMode === "finalPrice"` 일 때는 사용자가 고정한 `finalPrice` 를 유지하고 `marginRate / marginAmount` 만 재계산합니다 (라인 수정 후에도 "850만원에 맞춰줄게" 가 안 깨지도록).
+**중요:** `recalcAndReturn` 은 `marginMode === "finalPrice"` 일 때는 사용자가 고정한 `finalPrice` 를 유지하고 `marginRate / marginAmount` 만 재계산합니다 (라인 수정 후에도 "850만원에 맞춰줄게" 가 안 깨지도록). `amount` 모드는 마진 금액, `percent` 모드는 마진율을 고정합니다.
 
 ### 단가 설정 변경
 
@@ -258,7 +261,8 @@ PDF (v4 디자인) 에 나가는 항목:
   - 라인 삭제: 두 번 탭 확인 ("정말 삭제? → 삭제/취소")
 - **하단 sticky 버튼**: "견적서 미리보기" → `/preview` 페이지로
 - **미리보기 페이지**: PDF 를 iframe inline 표시 → 검토 후 "PDF 저장" 또는 "카톡 보내기"
-  - 카톡 공유 성공 시에만 `pdfSentAt` 기록 (단순 미리보기는 발송으로 안 침)
+  - 진입 시 PDF 를 미리 받아 두고(iOS 는 탭 직후에만 공유창 허용), '카톡 보내기' = PDF **파일** + 요약문을 공유창으로
+  - 파일을 실제로 공유했을 때만 `pdfSentAt` 기록. 파일 공유가 안 되는 곳(카톡 인앱 브라우저·PC)은 PDF 저장 + 요약문 복사 안내
 
 ---
 
@@ -332,13 +336,13 @@ PDF (v4 디자인) 에 나가는 항목:
 
 ```bash
 npm run dev              # 개발 서버
-npm run build            # 프로덕션 빌드 (prisma migrate deploy 포함)
+npm run build            # 프로덕션 빌드 (DB 안 건드림 — 로컬에서 안전)
 npm run start            # 빌드된 앱 실행
 npm run lint             # ESLint
 npm test                 # vitest — 계산 엔진 + 프리셋 스냅샷 (계산 로직 수정 시 필수)
 
-npx prisma migrate dev   # 새 마이그레이션 생성 + 적용
-npx prisma migrate deploy # 프로덕션 마이그레이션 적용
+# ⚠️ 로컬 .env = 운영 DB. migrate dev / db push 금지 — 마이그레이션은 AGENTS.md 의 오프라인 diff 절차로 만들고,
+#    운영 적용은 Vercel production 배포의 npm run build(scripts/build.mjs)가 한다.
 npx prisma studio        # DB GUI (table editor)
 npx prisma generate      # 클라이언트 재생성
 
@@ -352,8 +356,10 @@ npx tsc --noEmit         # 타입 체크만
 Vercel 에 배포되어 있음 (region: `icn1` Seoul). **`main` 브랜치 푸시 = 자동 배포.**
 
 - Environment Variables 에 위 5개 키 등록됨
-- Build command: `prisma migrate deploy && next build` (package.json — 배포 시 마이그레이션 자동 적용)
-- `next.config.ts` 의 `images.remotePatterns` 는 사용 중인 Supabase 프로젝트 호스트네임과 일치해야 함
+- Build: `npm run build` = [scripts/build.mjs](scripts/build.mjs) — `VERCEL_ENV=production` 일 때만 `prisma migrate deploy` 후 `next build` (프리뷰 배포·로컬·CI 빌드는 운영 DB 스키마를 안 건드림). migrate 가 실패하면 배포도 실패. Vercel 대시보드의 Build Command 는 비워 둘 것 (지정하면 이 분기가 우회됨).
+- `images.remotePatterns` 는 일부러 비워 둠 (next/image 미사용 — 공개 버킷을 이미지 최적화 입구로 열지 않기 위해)
+- DB: 모든 public 테이블 RLS 켜짐(정책 없음). 앱은 Prisma(소유자)로만 접근. 새 테이블 마이그레이션엔 RLS 활성화를 같이 넣을 것
+- CI: `.github/workflows/ci.yml` — push/PR 마다 tsc·vitest·eslint (DB 접속 없음)
 - Supabase Auth 의 Redirect URLs 에 배포 도메인의 `/auth/callback` 등록 필요
 
 ---

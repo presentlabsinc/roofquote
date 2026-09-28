@@ -18,7 +18,7 @@
  * 색상: 본문 = text-foreground, 보조/회색 = text-muted-foreground, 강조 = text-primary.
  * ─────────────────────────────────────────────────────────────────────
  */
-import { memo, useEffect, useRef, useState, useMemo } from "react";
+import { memo, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -33,7 +33,6 @@ import {
   type ScopeFlags,
   type Thickness,
   type ExtraCost,
-  type GutterMode,
   type SubstructureType,
   type PricingOverrides,
   type BuildingShape,
@@ -65,12 +64,14 @@ import {
   type FinishingMethod,
   type FinishingMethods,
   resolveFinishingMethod,
+  MATERIAL_PRICE_PER_M_KEY,
 } from "@/lib/types";
-import { applyOverrides, estimateBasePerimeter, getMaterialPriceSqm, pyeongToSqm, sqmToPyeong, BUILDING_SHAPE_FACTORS } from "@/lib/calculations";
+import { applyOverrides, estimateBasePerimeter, getMaterialPriceSqm, lossRateForRoofShape, pyeongToSqm, sqmToPyeong, BUILDING_SHAPE_FACTORS } from "@/lib/calculations";
+import { BufferedNumberInput } from "@/components/ui/buffered-number-input";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import { applyCatalogPrices, DEFAULT_CATALOG, type CatalogSelection, type GroupModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
-import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Trash2, Calendar, Coins, ChevronDown, ChevronUp, CloudRain, Waves } from "lucide-react";
+import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Calendar, Coins, ChevronDown, ChevronUp, CloudRain, Waves } from "lucide-react";
 
 interface Props {
   siteId: string;
@@ -83,6 +84,57 @@ const GUTTER_SIDE_WEIGHTS: Record<GutterSide, number> = {
   front: 0.30, back: 0.30, left: 0.20, right: 0.20,
 };
 
+// ─── 면적 기반 자동값 (2026-09-28 재설계) ────────────────────────────────
+// 둘레·난간 둘레·배수로·작업일수·물받이 길이·로스율은 "사용자가 만진 칸은 그 값, 안 만진 칸은
+// 자동값"으로 **렌더 시 계산**한다 (effect 로 상태에 복사하지 않음). 이전 effect 방식은
+//   - 면적 첫 글자('1')에서 둘레가 굳음 (값이 비어 있을 때만 채워서)
+//   - 수정 화면 진입 즉시 저장된 물받이 길이를 자동값으로 덮어씀
+//   - 수정 모드에서 면적을 바꿔도 연관값이 옛 면적 기준으로 고정
+// 같은 문제를 냈다. 수정 모드는 저장값이 자동값과 다른 칸만 '사용자가 바꾼 칸'으로 본다.
+type AutoField = "perimeter" | "rail" | "drain" | "workDays" | "gutter" | "loss";
+const NO_TOUCH: Record<AutoField, boolean> = { perimeter: false, rail: false, drain: false, workDays: false, gutter: false, loss: false };
+
+function near(a: number | null | undefined, b: number, tol = 0.5): boolean {
+  return a !== null && a !== undefined && Math.abs(a - b) <= tol;
+}
+function autoBasePerimeter(ct: ConstructionType | null, sqm: number, shape: BuildingShape | null, bSqm: number, ratio: number | null | undefined): number {
+  if (!ct || sqm <= 0) return 0;
+  return Math.round(estimateBasePerimeter(ct, sqm, shape ?? "rectangle", bSqm > 0 ? bSqm : null, ratio));
+}
+/** 스틸방수 난간 둘레 — 시공면적 A 에 난간 벽 양면(2Ph)이 포함되는 측정 관행이라 바닥 기준으로 역산:
+ *  P = −f²h + f·√(f²h² + A)  (f = 형태계수, h = 파라펫 높이 m). */
+function autoRailPerimeter(sqm: number, shape: BuildingShape | null, parapetCm: number): number {
+  if (sqm <= 0) return 0;
+  const f = BUILDING_SHAPE_FACTORS[shape ?? "rectangle"].perimeterFactor;
+  const h = (parapetCm > 0 ? parapetCm : 60) / 100;
+  return Math.max(0, Math.round(-f * f * h + f * Math.sqrt(f * f * h * h + sqm)));
+}
+/** 스테인리스 배수로 — 건물 한 면 길이 ≈ √면적, 최소 10m (30평 ≈ 10m). */
+function autoDrainLength(sqm: number): number {
+  return sqm > 0 ? Math.max(10, Math.round(Math.sqrt(sqm))) : 0;
+}
+/** 작업일수 — max(2, ceil(면적 ÷ 기준)) (샘플 실측 90㎡/일). */
+function autoWorkDays(sqm: number, divisor: number | null | undefined): number {
+  return Math.max(2, Math.ceil(sqm / (divisor && divisor > 0 ? divisor : 90)));
+}
+/** 물받이 길이 — 처마 외곽 둘레 × 선택한 면 가중치 (앞/뒤 30%, 좌/우 20%). */
+function autoGutterLength(basePerim: number, overhangCm: number, sides: Set<GutterSide>): number {
+  if (basePerim <= 0 || sides.size === 0) return 0;
+  const eavePerim = basePerim + 8 * (overhangCm / 100);
+  const weight = Array.from(sides).reduce((sum, x) => sum + GUTTER_SIDE_WEIGHTS[x], 0);
+  return Math.round(eavePerim * weight);
+}
+/** 로스율 정책값 — 자동 모드 + 지붕형태면 형태별(설정 override 우선), 아니면 설정 기본 로스율. */
+function autoLossRate(s: PricingSettings, roofShape: RoofShape | null): number {
+  if (s.lossRateMode === "auto" && roofShape) {
+    const o = (s.roofShapeLossRates as Record<string, number> | null)?.[roofShape];
+    if (o && o > 0) return o;
+    const a = lossRateForRoofShape(roofShape);
+    if (a !== null) return a;
+  }
+  return s.defaultLossRate;
+}
+
 export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const router = useRouter();
   const isEditing = !!existing;
@@ -90,6 +142,32 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   // When editing, the scope is stored as a JSON object on the estimate
   const existingScope = (existing?.scopeFlags ?? {}) as unknown as ScopeFlags;
+
+  // 자동 채움 칸 중 사용자가 직접 바꾼 칸 (위 AutoField 설명 참고).
+  const [touched, setTouched] = useState<Record<AutoField, boolean>>(() => {
+    if (!existing) return NO_TOUCH;
+    const e0 = applyOverrides(settings, (existing.pricingOverrides as unknown as PricingOverrides) ?? {});
+    const ct0 = existing.constructionType as ConstructionType;
+    const sqm0 = existing.areaM2;
+    const shape0 = (existing.buildingShape as BuildingShape | null) ?? "rectangle";
+    const perim0 = autoBasePerimeter(ct0, sqm0, shape0, existing.buildingAreaM2 ?? 0, e0.constructionToBuildingRatio);
+    const overhang0 = ct0 === "roof" ? existing.eaveOverhangCm : 0;
+    const gutter0 = autoGutterLength(existing.perimeterM ?? perim0, overhang0, parseGutterSides(existing.gutterMode));
+    return {
+      perimeter: existing.perimeterM != null && !near(existing.perimeterM, perim0),
+      rail: existing.railPerimeterM != null && !near(existing.railPerimeterM, autoRailPerimeter(sqm0, shape0, existing.parapetHeightCm ?? 60)),
+      drain: existing.stainlessDrainLengthM != null && !near(existing.stainlessDrainLengthM, autoDrainLength(sqm0)),
+      workDays: !near(existing.workDays, autoWorkDays(sqm0, e0.workDaysAreaDivisor), 0.01),
+      gutter: ct0 !== "steelWaterproof" && existing.gutterLengthM != null && !near(existing.gutterLengthM, gutter0),
+      loss: existing.lossRate != null && !near(existing.lossRate, autoLossRate(e0, existing.roofShape as RoofShape | null), 0.0005),
+    };
+  });
+  const touch = (f: AutoField) => setTouched((t) => (t[f] ? t : { ...t, [f]: true }));
+  const untouch = (...fs: AutoField[]) => setTouched((t) => {
+    const n = { ...t };
+    for (const f of fs) n[f] = false;
+    return n;
+  });
 
   // ─── Initial values: from `existing` when editing, otherwise sensible defaults ─
 
@@ -110,7 +188,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [thickness, setThickness] = useState<Thickness>((existing?.materialThickness as Thickness | undefined) ?? "0.45");
   const [textureChoice, setTextureChoice] = useState<string>(() => {
     const t = existing?.materialTexture;
-    if (!t) return "스톤";
+    // 수정 모드에서 텍스처가 비어 있던 견적은 그대로 비워 둠 (저장 시 '스톤'으로 바뀌던 문제).
+    if (!t) return existing ? "" : "스톤";
     return (TEXTURE_PRESETS as readonly string[]).includes(t) ? t : "기타";
   });
   const [textureCustom, setTextureCustom] = useState<string>(() => {
@@ -136,23 +215,26 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   });
   const [constructionMonth, setConstructionMonth] = useState(() => {
     if (existing?.constructionMonth) return existing.constructionMonth;
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
+    // 다음 달 — 1일 기준으로 계산 (31일에 setMonth(+1) 하면 두 달 뒤로 넘어가던 문제).
+    const now = new Date();
+    const d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [constructionDate, setConstructionDate] = useState(() => {
     if (existing?.constructionMonth && existing.constructionMonth.length === 10) {
       return existing.constructionMonth;
     }
+    // 2주 뒤 — 로컬(한국) 날짜로 (toISOString 은 UTC 라 새벽엔 하루 어긋남).
     const d = new Date();
     d.setDate(d.getDate() + 14);
-    return d.toISOString().slice(0, 10);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   });
 
-  // Loss rate (per-estimate override) — default ON for new estimates per user request
-  const [applyLossRate, setApplyLossRate] = useState(existing?.applyLossRate ?? true);
+  // Loss rate — 새 견적의 켜짐/꺼짐은 설정 '로스율 기본 적용'을 따른다 (이전엔 설정을 무시하고 항상 켬).
+  const [applyLossRate, setApplyLossRate] = useState(existing?.applyLossRate ?? settings.useLossRateByDefault);
   const [lossRatePct, setLossRatePct] = useState(
-    String(Math.round((existing?.lossRate ?? settings.defaultLossRate) * 100)),
+    // 0.01% 정밀도 (4.5% 같은 소수 로스율이 수정 모드에서 5% 로 바뀌지 않게)
+    String(Math.round((existing?.lossRate ?? settings.defaultLossRate) * 10000) / 100),
   );
 
   // 하지작업
@@ -171,7 +253,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const [perimeterInput, setPerimeterInput] = useState(
     existing?.perimeterM ? String(existing.perimeterM) : "",
   );
-  const [ridgeCount, setRidgeCount] = useState(String(existing?.ridgeCount ?? 1));
+  const [ridgeCount] = useState(String(existing?.ridgeCount ?? 1));
   const [parapetHeightInput, setParapetHeightInput] = useState(
     existing?.parapetHeightCm ? String(existing.parapetHeightCm) : "60",
   );
@@ -254,9 +336,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
 
-  // 물받이 multi-select sides — default all 4 selected
+  // 물받이 multi-select sides — 새 견적은 앞·뒤 기본 (공사 유형 선택 시 다시 세팅).
+  // 수정 모드는 저장값 그대로 — '안함'(null)으로 저장한 견적이 4면 물받이로 바뀌던 문제 수정.
   const [gutterSides, setGutterSides] = useState<Set<GutterSide>>(() =>
-    existing?.gutterMode ? parseGutterSides(existing.gutterMode) : new Set(GUTTER_SIDES),
+    existing ? parseGutterSides(existing.gutterMode) : new Set<GutterSide>(["front", "back"]),
   );
   const [gutterLength, setGutterLength] = useState(existing?.gutterLengthM ? String(existing.gutterLengthM) : "");
 
@@ -270,6 +353,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   );
 
   function toggleGutterSide(side: GutterSide) {
+    untouch("gutter"); // 면 선택이 바뀌면 길이는 자동값으로 다시 (명시적 의도)
     setGutterSides((s) => {
       const next = new Set(s);
       if (next.has(side)) next.delete(side);
@@ -279,7 +363,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   }
 
   // 두겁 절곡 길이 (난간 시공 시 필수)
-  const [capLength, setCapLength] = useState(existing?.capLengthM ? String(existing.capLengthM) : "");
+  const [capLength] = useState(existing?.capLengthM ? String(existing.capLengthM) : "");
 
   // 새 배수구 타공 개수
   const [drainHoles, setDrainHoles] = useState(existing?.drainHoleCount ? String(existing.drainHoleCount) : "1");
@@ -323,9 +407,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     (existing?.catalogModes as unknown as GroupModesMap) ?? {},
   );
 
-  // Step 9: 기타 비용 — not stored separately on Estimate; only relevant for new creation.
-  // On edit, we don't preserve these (they were already turned into line items at create time).
-  const [extraCosts, setExtraCosts] = useState<ExtraCost[]>([]);
+  // Step 9: 기타 비용 — 2026-09-28 부터 Estimate.extraCosts 에 원본 저장 → 수정 폼이 복원.
+  // (그 전 견적은 원본이 없어 빈 목록 — 수정 확인창에 안내)
+  const [extraCosts, setExtraCosts] = useState<ExtraCost[]>(() =>
+    Array.isArray(existing?.extraCosts) ? (existing.extraCosts as unknown as ExtraCost[]) : [],
+  );
 
   // Pricing overrides — per-estimate price replacements (settings stay unchanged)
   const [pricingOverrides, setPricingOverrides] = useState<PricingOverrides>(
@@ -341,8 +427,53 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     setFinishingMethods((prev) => ({ ...prev, [member]: method }));
   }
 
+  // Effective prices for inline display — settings with overrides merged on top.
+  const eff = useMemo(
+    () => applyOverrides(settings, pricingOverrides),
+    [settings, pricingOverrides],
+  );
+  // 카탈로그 단가 — 설정의 catalogPrices override 적용 (상세 모드 기본 단가에 반영).
+  const catalogWithPrices = useMemo(
+    () => applyCatalogPrices(DEFAULT_CATALOG, (eff.catalogPrices as Record<string, number> | null) ?? null),
+    [eff],
+  );
+
+  // ── 자동 채움 값 (렌더 시 계산 — 위 AutoField 설명) ──
+  const sqmNum = parseFloat(sqmInput) || 0;
+  const bSqmNum = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
+  const autoPerimeter = autoBasePerimeter(constructionType, sqmNum, buildingShape, bSqmNum, eff.constructionToBuildingRatio);
+  const perimeterValue = touched.perimeter ? perimeterInput : (autoPerimeter > 0 ? String(autoPerimeter) : "");
+  const autoRail = autoRailPerimeter(sqmNum, buildingShape, parseInt(parapetHeightInput) || 60);
+  const railValue = touched.rail ? railPerimeterInput : String(autoRail);
+  const autoDrain = autoDrainLength(sqmNum);
+  const drainValue = touched.drain ? stainlessDrainLength : (autoDrain > 0 ? String(autoDrain) : "");
+  const autoDays = sqmNum > 0 ? autoWorkDays(sqmNum, eff.workDaysAreaDivisor) : 2;
+  const workDaysValue = touched.workDays ? workDays : String(autoDays);
+  const gutterOverhangCm = constructionType === "roof" ? (parseInt(eaveOverhangInput) || 0) : 0;
+  const autoGutter = autoGutterLength(parseFloat(perimeterValue) || autoPerimeter, gutterOverhangCm, gutterSides);
+  // 스틸방수의 차양 물받이는 자동값 없음 (직접 입력).
+  const gutterValue = constructionType === "steelWaterproof" || touched.gutter ? gutterLength : (autoGutter > 0 ? String(autoGutter) : "");
+  const autoLoss = autoLossRate(eff, constructionType === "steelWaterproof" ? null : roofShape);
+  const lossValue = touched.loss ? lossRatePct : String(Math.round(autoLoss * 10000) / 100);
+
+  // 추가 자재 '자재비 %' 미리보기 기준 — 엔진처럼 강판(로스 포함)·PE폼·하지·물받이까지 합산
+  // (이전엔 면적×강판가만 써서 미리보기가 20~30% 작았다). 소모품·절곡 자동분은 작아서 생략.
+  const lossMult = applyLossRate ? 1 + (parseFloat(lossValue) || 0) / 100 : 1;
+  const effectiveGutterM = constructionType === "steelWaterproof"
+    ? (showAwningGutter ? parseFloat(gutterValue) || 0 : 0)
+    : (gutterSides.size > 0 ? parseFloat(gutterValue) || 0 : 0);
+  const materialTotalPreview = Math.round(
+    sqmNum * lossMult * (getMaterialPriceSqm(eff, materialType, thickness) + (hasPeFoam ? eff.peFoamPricePerSqm : 0))
+    + (substructureType === "wood" ? Math.ceil(sqmNum * eff.substructureWoodPiecesPerSqm) * eff.substructureWoodPricePerPiece : 0)
+    + (substructureType === "steel" ? Math.ceil(sqmNum * eff.substructureSteelPiecesPerSqm) * eff.substructureSteelPricePerPiece : 0)
+    + effectiveGutterM * eff.gutterPricePerM,
+  );
+
   function pickConstructionType(t: ConstructionType) {
+    // 이미 선택된 유형을 다시 누르면 아무것도 안 함 (범위·자재·물받이·하지가 기본값으로 초기화되던 문제).
+    if (t === constructionType) return;
     setConstructionType(t);
+    untouch("gutter", "rail", "loss");
     // Defaults per construction type:
     // - 용마루(ridge) basic for roof + rooftopRoof
     // - 기존 지붕 덧씌우기(overlay) basic for roof
@@ -389,6 +520,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       const forcedKey = SCOPE_FORCES[key];
       if (forcedKey && next[key]) {
         next[forcedKey] = true;
+      }
+      // 끌 때: 강제로 켜졌던 짝이 화면에 없는 항목이면 같이 끈다 — 스틸방수에서 '난간'을 해제해도
+      // 숨은 '두겁'이 남아 두겁·미시·파라펫 라인이 계속 나오던 문제 (두겁은 스틸방수 목록에 없음).
+      if (forcedKey && !next[key] && constructionType && !SCOPE_BY_TYPE[constructionType].includes(forcedKey)) {
+        next[forcedKey] = false;
       }
       return next;
     });
@@ -441,15 +577,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     const areaM2 = parseFloat(sqmInput) || 0;
     if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
     if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
-    if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && !gutterLength) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && !gutterValue) { toast.error("물받이 길이를 입력해 주세요"); return; }
     // 스틸방수 + 난간/두겁 활성: 난간 둘레 필수 (예전 capLength 가 아니라 railPerimeter)
     if (constructionType === "steelWaterproof" && (scope.handrail || scope.cap)) {
-      const rail = parseFloat(railPerimeterInput) || 0;
+      const rail = parseFloat(railValue) || 0;
       if (rail <= 0) { toast.error("난간 둘레를 입력해 주세요"); return; }
     }
     // 스틸방수 + 스테인리스 배수로 0: 확인 다이얼로그로 넘어가게 (실수 방지)
     if (constructionType === "steelWaterproof") {
-      const drainLen = parseFloat(stainlessDrainLength) || 0;
+      const drainLen = parseFloat(drainValue) || 0;
       if (drainLen <= 0) {
         const ok = window.confirm("스테인리스 배수로 길이가 0입니다.\n정말 시공 안 하시나요? (예 = 계속 진행)");
         if (!ok) return;
@@ -458,7 +594,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
     const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
-    const lossRate = applyLossRate ? (parseFloat(lossRatePct) || 0) / 100 : null;
+    const lossRate = applyLossRate ? (parseFloat(lossValue) || 0) / 100 : null;
 
     // Pick the right schedule value based on precision
     const scheduleValue = schedulePrecision === "none" ? null
@@ -475,16 +611,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       areaM2,
       buildingAreaM2: showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) : null,
       workerCount: parseInt(workerCount) || settings.defaultWorkerCount,
-      workDays: parseFloat(workDays) || 2,
+      workDays: parseFloat(workDaysValue) || autoDays, // 칸을 비우면 자동값
       // 물받이 — 지붕/옥상지붕은 면 선택 기반, 스틸방수는 차양 물받이(접힘 옵션, gutterLength 재사용).
       gutterMode: constructionType === "steelWaterproof"
-        ? (showAwningGutter && (parseFloat(gutterLength) || 0) > 0 ? "full" : null)
+        ? (showAwningGutter && (parseFloat(gutterValue) || 0) > 0 ? "full" : null)
         : (gutterSides.size === 0 ? null : serializeGutterSides(gutterSides)),
       gutterLengthM: constructionType === "steelWaterproof"
-        ? (showAwningGutter ? (parseFloat(gutterLength) || 0) : 0)
-        : (gutterSides.size === 0 ? 0 : parseFloat(gutterLength) || 0),
+        ? (showAwningGutter ? (parseFloat(gutterValue) || 0) : 0)
+        : (gutterSides.size === 0 ? 0 : parseFloat(gutterValue) || 0),
       stainlessDrainLengthM: constructionType === "steelWaterproof"
-        ? parseFloat(stainlessDrainLength) || 0
+        ? parseFloat(drainValue) || 0
         : 0,
       capLengthM: (scope.cap || scope.handrail) ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
@@ -505,10 +641,12 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       finishingMethods,
       applyLossRate,
       lossRate,
+      // 사용자가 로스율을 직접 고쳤으면 서버도 그 값을 쓴다 (자동 모드의 형태별 값이 덮어쓰지 않게).
+      lossRateManual: touched.loss,
       // 건물/지붕 형태 + 단열재 (자재 자동 추정)
       buildingShape,
       roofShape: constructionType === "steelWaterproof" ? null : roofShape,
-      perimeterM: perimeterInput ? parseFloat(perimeterInput) || null : null,
+      perimeterM: perimeterValue ? parseFloat(perimeterValue) || null : null,
       ridgeCount: Math.max(1, parseInt(ridgeCount) || 1),
       parapetHeightCm: constructionType === "steelWaterproof"
         ? (parapetHeightInput ? parseInt(parapetHeightInput) || 60 : 60)
@@ -519,7 +657,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
         : 0,
       // 스틸방수 전용 — 난간/옥탑 둘레 직접 입력 + 홈통 개수
       railPerimeterM: constructionType === "steelWaterproof"
-        ? (parseFloat(railPerimeterInput) || 0)
+        ? (parseFloat(railValue) || 0)
         : null,
       rooftopStructurePerimeterM: constructionType === "steelWaterproof" && scope.rooftopStructure
         ? (parseFloat(rooftopPerimeterInput) || 0)
@@ -570,119 +708,15 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       }
       const est = await res.json();
       toast.success(isEditing ? "견적이 수정되었습니다" : "견적이 생성되었습니다");
+      // 성공 시 saving 을 풀지 않는다 — 화면 전환 전 재클릭으로 견적이 중복 생성되던 문제.
       router.push(`/sites/${siteId}/estimates/${est.id}`);
       router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : isEditing ? "수정에 실패했습니다" : "견적 생성에 실패했습니다");
-    } finally {
       setSaving(false);
     }
   }
 
-  // 건물 둘레 자동 채움:
-  //   - 건물형태(ㅁ/ㄱ/ㄷ)가 바뀌면 → 추정 둘레로 항상 덮어씀 (사용자가 적어 넣었어도 OK)
-  //   - 면적만 바뀌고 형태 그대로면 → 둘레가 비어 있을 때만 채움 (수동 입력 보존)
-  const prevShapeRef = useRef<BuildingShape | null>(buildingShape);
-  useEffect(() => {
-    if (!buildingShape) return;
-    const sqm = parseFloat(sqmInput) || 0;
-    if (sqm <= 0) return;
-    const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
-    const est = constructionType
-      ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape, bSqm > 0 ? bSqm : null,
-          (eff as unknown as { constructionToBuildingRatio?: number }).constructionToBuildingRatio))
-      : 0;
-    if (est <= 0) return;
-
-    const shapeChanged = prevShapeRef.current !== buildingShape;
-    prevShapeRef.current = buildingShape;
-
-    if (shapeChanged || !perimeterInput) {
-      setPerimeterInput(String(est));
-    }
-  }, [buildingShape, sqmInput, buildingSqmInput, showBuildingArea, perimeterInput, constructionType]);
-
-  // ── 면적 기반 자동 채움 — "면적만 넣고 계산 눌러도 근사 견적" ──
-  // 사용자가 직접 만진 필드는 절대 덮어쓰지 않음 (touched ref). 수정 모드는 기존값 보존.
-  //   난간 둘레: √면적 × 형태계수 (ㅁ 4.2 / ㄱ 5.0 / ㄷ 5.5) — 건물형태 바꾸면 항상 갱신
-  //     (둘레 자동 채움과 동일 규칙: 형태 변경 = 명시적 의도라 수동 입력도 덮어씀)
-  //   배수로: 건물 한 면 길이 ≈ √면적, 최소 10m (사용자 룰: 30평 건물 한 면 ≈ 10m)
-  //   작업 일수: max(2, ceil(면적/90)) — 샘플 실측 (215㎡ = 3일, ~100㎡ = 2일)
-  const railTouchedRef = useRef(isEditing);
-  const drainTouchedRef = useRef(isEditing);
-  const workDaysTouchedRef = useRef(isEditing);
-  const prevRailShapeRef = useRef<BuildingShape | null>(buildingShape);
-  useEffect(() => {
-    const sqm = parseFloat(sqmInput) || 0;
-    if (sqm <= 0) return;
-    const shapeChanged = prevRailShapeRef.current !== buildingShape;
-    prevRailShapeRef.current = buildingShape;
-    if (constructionType === "steelWaterproof") {
-      // 시공면적 A = 바닥 + 난간 벽 양면(2Ph) 측정 관행 → 바닥 기준 둘레 P 를 역산.
-      // P = f·√(바닥) 과 바닥 = A − 2Ph 를 연립하면 닫힌 해: P = −f²h + f·√(f²h² + A)
-      // (h=0 이면 P = f√A 로 환원. 벽 면적을 안 빼면 둘레가 ~20% 과대.)
-      const f = BUILDING_SHAPE_FACTORS[buildingShape ?? "rectangle"].perimeterFactor;
-      const h = (parseInt(parapetHeightInput) || 60) / 100;
-      const rail = Math.round(-f * f * h + f * Math.sqrt(f * f * h * h + sqm));
-      if (shapeChanged || !railTouchedRef.current) {
-        setRailPerimeterInput(String(Math.max(0, rail)));
-      }
-      if (!drainTouchedRef.current) setStainlessDrainLength(String(Math.max(10, Math.round(Math.sqrt(sqm)))));
-    }
-    const daysDiv = (eff as unknown as { workDaysAreaDivisor?: number }).workDaysAreaDivisor || 90;
-    if (!workDaysTouchedRef.current) setWorkDays(String(Math.max(2, Math.ceil(sqm / daysDiv))));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sqmInput, constructionType, buildingShape, parapetHeightInput]);
-
-  // 물받이 총 길이 자동 계산 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%):
-  //   - 면 선택 (gutterSides) 이 바뀔 때마다 다시 계산 (사용자가 직접 입력했어도 덮어씀)
-  //   - 둘레/처마 돌출만 바뀌면 면이 1개 이상 선택돼 있을 때만 갱신 (수동 입력 보존)
-  //   - 스틸방수는 물받이 없음 → 적용 안 함
-  const prevGutterSerializedRef = useRef<string>("");
-  useEffect(() => {
-    if (constructionType === "steelWaterproof") return;
-    const sqm = parseFloat(sqmInput) || 0;
-    // 처마 돌출은 지붕공사(roof)만 둘레에 더함. 옥상지붕은 시공면적에 포함.
-    const overhangCm = constructionType === "roof" ? (parseInt(eaveOverhangInput) || 0) : 0;
-    // 둘레: 직접/형태 입력값 우선, 없으면 ㅁ자 근사 — 건물형태를 안 골라도 면적만으로 자동 계산.
-    const inputPerim = parseFloat(perimeterInput) || 0;
-    const bSqm = showBuildingArea && buildingSqmInput ? parseFloat(buildingSqmInput) || 0 : 0;
-    const basePerim = inputPerim > 0
-      ? inputPerim
-      : (sqm > 0 && constructionType
-          ? Math.round(estimateBasePerimeter(constructionType, sqm, buildingShape ?? "rectangle", bSqm > 0 ? bSqm : null,
-              (eff as unknown as { constructionToBuildingRatio?: number }).constructionToBuildingRatio))
-          : 0);
-    if (sqm <= 0 || basePerim <= 0) return;
-    // 처마 외곽 둘레 사용 (물받이는 처마 끝에 달림)
-    const eavePerim = basePerim + 8 * (overhangCm / 100);
-    const weight = Array.from(gutterSides).reduce((sum, s) => sum + GUTTER_SIDE_WEIGHTS[s], 0);
-    // m 단위 정수 반올림 (둘레와 동일한 정밀도)
-    const estLen = Math.round(eavePerim * weight);
-
-    const serialized = Array.from(gutterSides).sort().join(",");
-    const sidesChanged = prevGutterSerializedRef.current !== serialized;
-    prevGutterSerializedRef.current = serialized;
-
-    // 면이 0개면 아무 값도 세팅 안 함 (gutterLength 그대로 둠 — UI 가 어차피 안 보임)
-    if (gutterSides.size === 0) return;
-    if (sidesChanged || !gutterLength) {
-      setGutterLength(String(estLen));
-    }
-  }, [gutterSides, perimeterInput, eaveOverhangInput, sqmInput, buildingShape, constructionType, gutterLength, showBuildingArea, buildingSqmInput]);
-
-  // Effective prices for inline display — settings with overrides merged on top.
-  // useMemo 로 메모이즈 — pricingOverrides 가 안 바뀌면 재계산 안 함 (폼 다른 필드 입력 시).
-  const eff = useMemo(
-    () => applyOverrides(settings, pricingOverrides),
-    [settings, pricingOverrides],
-  );
-
-  // 카탈로그 단가 — 설정의 catalogPrices override 적용 (상세 모드 기본 단가에 반영).
-  const catalogWithPrices = useMemo(
-    () => applyCatalogPrices(DEFAULT_CATALOG, (eff as unknown as { catalogPrices?: Record<string, number> }).catalogPrices ?? null),
-    [eff],
-  );
 
   return (
     <>
@@ -760,7 +794,11 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   <button
                     key={s.value}
                     type="button"
-                    onClick={() => setBuildingShape(s.value)}
+                    onClick={() => {
+                      if (s.value === buildingShape) return; // 같은 칩 재클릭은 무시 — 직접 잰 둘레가 자동값으로 바뀌지 않게
+                      setBuildingShape(s.value);
+                      untouch("perimeter", "rail");
+                    }}
                     className={`pressable rounded-2xl py-3 px-2 border-2 flex flex-col items-center gap-0.5 ${
                       buildingShape === s.value
                         ? "border-primary bg-primary/5 text-primary"
@@ -790,7 +828,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       ? (bSqm > 0 ? "건물면적" : "시공면적÷1.4")
                       : "시공면적 기준";
                     const overhangCm = isRoof ? (parseInt(eaveOverhangInput) || 0) : 0;
-                    const currentPerim = parseFloat(perimeterInput) || estPerim;
+                    const currentPerim = parseFloat(perimeterValue) || estPerim;
                     const eavePerim = currentPerim > 0
                       ? Math.round(currentPerim + 8 * (overhangCm / 100))
                       : currentPerim;
@@ -806,11 +844,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                             </p>
                           )}
                           <NumberStepper
-                            value={perimeterInput}
-                            onChange={setPerimeterInput}
+                            value={perimeterValue}
+                            onChange={(v) => { setPerimeterInput(v); touch("perimeter"); }}
                             min={5} max={999} step={1}
                             unit="m"
                           />
+                          {touched.perimeter && estPerim > 0 && (
+                            <button type="button" onClick={() => untouch("perimeter")} className="text-[11px] text-primary mt-1.5 pressable">
+                              자동값({estPerim}m)으로 되돌리기
+                            </button>
+                          )}
                         </div>
                         {/* 처마 돌출 — 지붕공사(roof)만. 옥상지붕은 시공면적에 이미 돌출 포함. */}
                         {isRoof && (
@@ -961,11 +1004,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                               외벽 + 계단 등 실제 난간 길이 (줄자로 측정)
                             </p>
                             <NumberStepper
-                              value={railPerimeterInput}
-                              onChange={(v) => { railTouchedRef.current = true; setRailPerimeterInput(v); }}
+                              value={railValue}
+                              onChange={(v) => { setRailPerimeterInput(v); touch("rail"); }}
                               min={0} max={999} step={1}
                               unit="m"
                             />
+                            {touched.rail && autoRail > 0 && (
+                              <button type="button" onClick={() => untouch("rail")} className="text-[11px] text-primary mt-1.5 pressable">
+                                자동값({autoRail}m)으로 되돌리기
+                              </button>
+                            )}
                           </div>
                           {/* 미시 마감 방식 칩은 안 둠 — 스틸방수에서 기성품 미시는 거의 안 씀
                               (사용자 확인 2026-06-12). 엔진은 finishingMethods.mishi 를 지원하므로
@@ -1120,9 +1168,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       <Input
                         type="number"
                         inputMode="decimal"
-                        value={gutterLength}
-                        onChange={(e) => setGutterLength(e.target.value)}
-                        placeholder="총 길이"
+                        value={gutterValue}
+                        onChange={(e) => { setGutterLength(e.target.value); touch("gutter"); }}
+                        onBlur={(e) => { if (!e.target.value) untouch("gutter"); }}
+                        placeholder={autoGutter > 0 ? String(autoGutter) : "총 길이"}
                         className="h-11 rounded-xl tabular-nums flex-1"
                       />
                       <span className="text-sm text-muted-foreground font-medium w-6">m</span>
@@ -1155,9 +1204,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       <Input
                         type="number"
                         inputMode="decimal"
-                        value={stainlessDrainLength}
-                        onChange={(e) => { drainTouchedRef.current = true; setStainlessDrainLength(e.target.value); }}
-                        placeholder="0"
+                        value={drainValue}
+                        onChange={(e) => { setStainlessDrainLength(e.target.value); touch("drain"); }}
+                        onBlur={(e) => { if (!e.target.value) untouch("drain"); }}
+                        placeholder={autoDrain > 0 ? String(autoDrain) : "0"}
                         className="h-11 rounded-xl tabular-nums flex-1"
                       />
                       <span className="text-sm text-muted-foreground font-medium w-6">m</span>
@@ -1374,7 +1424,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
             {/* Loss rate toggle */}
             <Section icon={<Percent size={18} />} title="자재 로스율">
               <p className="text-[11px] text-muted-foreground -mt-1 mb-3">
-                강판 + 하지 자재에 적용 (자투리/낭비분). 부자재·소모품은 미포함 — 보통 10~15%
+                강판·파라펫·PE폼·스크류(대)에 적용 (자투리/낭비분). 하지·절곡·부자재는 미포함.
+                {!touched.loss && eff.lossRateMode === "auto" && roofShape && constructionType !== "steelWaterproof" ? " · 지붕 형태별 자동값" : ""}
               </p>
               <div className="flex items-center gap-3">
                 <button
@@ -1394,8 +1445,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     <Input
                       type="number"
                       inputMode="decimal"
-                      value={lossRatePct}
-                      onChange={(e) => setLossRatePct(e.target.value)}
+                      value={lossValue}
+                      onChange={(e) => { setLossRatePct(e.target.value); touch("loss"); }}
+                      onBlur={(e) => { if (!e.target.value) untouch("loss"); }}
                       className="h-10 pr-7 text-right tabular-nums rounded-xl"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
@@ -1451,8 +1503,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                 catalog={catalogWithPrices}
                 defaults={(settings.catalogDefaults as GroupModesMap | null) ?? undefined}
                 areaM2={parseFloat(sqmInput) || 0}
-                gutterLengthM={gutterSides.size > 0 ? (parseFloat(gutterLength) || 0) : 0}
-                materialTotalEstimate={Math.round((parseFloat(sqmInput) || 0) * getMaterialPriceSqm(eff, materialType, thickness))}
+                gutterLengthM={effectiveGutterM}
+                materialTotalEstimate={materialTotalPreview}
                 bendingUnitPrice={eff.bendingPricePerMmPer3m ?? 36}
                 constructionType={constructionType}
                 finishingAutoHint={constructionType === "steelWaterproof"
@@ -1560,7 +1612,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                   pricePerSqmDay={eff.scaffoldPricePerSqmDay}
                 />
                 <div className="pt-2">
-                  <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 "기타 비용" 에)</Label>
+                  <Label className="text-xs text-muted-foreground mb-1.5 block font-medium">기타 장비 메모 (가격은 아래 &apos;기타 비용&apos;에)</Label>
                   <Input
                     value={otherEquipment} onChange={(e) => setOtherEquipment(e.target.value)}
                     placeholder="예: 크레인 1일, 지게차 2일" className="h-11 rounded-xl text-sm"
@@ -1574,11 +1626,16 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               <div className="space-y-3">
                 <NumberStepper
                   label="작업 일수"
-                  value={workDays}
-                  onChange={(v) => { workDaysTouchedRef.current = true; setWorkDays(v); }}
+                  value={workDaysValue}
+                  onChange={(v) => { setWorkDays(v); touch("workDays"); }}
                   min={0.5} max={60} step={0.5}
                   unit="일"
                 />
+                {touched.workDays && (
+                  <button type="button" onClick={() => untouch("workDays")} className="text-[11px] text-primary -mt-1 pressable">
+                    자동값({autoDays}일)으로 되돌리기
+                  </button>
+                )}
                 <NumberStepper
                   label="작업 인원"
                   value={workerCount}
@@ -1603,12 +1660,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                       <div className="ml-8 mt-1.5 flex items-center gap-2">
                         <span className="text-[11px] text-muted-foreground">노무비 ×</span>
                         <div className="relative w-20">
-                          <Input type="number" inputMode="decimal"
-                            value={String(Math.round((eff.insuranceRateOfLabor ?? 0.05) * 1000) / 10)}
-                            onChange={(e) => {
-                              const pct = parseFloat(e.target.value);
-                              setPricingOverrides((po) => ({ ...po, insuranceRateOfLabor: Number.isFinite(pct) ? pct / 100 : undefined }));
-                            }}
+                          <BufferedNumberInput
+                            value={eff.insuranceRateOfLabor ?? 0.05}
+                            scale={100} maxDecimals={2} min={0} max={1} emptyValue="unset"
+                            onValueChange={(n) => setPricingOverrides((po) => ({ ...po, insuranceRateOfLabor: n }))}
                             className="h-9 text-right pr-6 text-sm tabular-nums rounded-lg" />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
                         </div>
@@ -1633,7 +1688,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                           <Input type="number" inputMode="numeric"
                             value={lodgingNightsInput}
                             onChange={(e) => setLodgingNightsInput(e.target.value)}
-                            placeholder={String(Math.max(0, Math.floor((parseFloat(workDays) || 0) - 1)))}
+                            placeholder={String(Math.max(0, Math.floor((parseFloat(workDaysValue) || 0) - 1)))}
                             className="h-9 text-right pr-7 text-sm tabular-nums rounded-lg" />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">박</span>
                         </div>
@@ -1654,12 +1709,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
                     {includeTeamExpense && (
                       <div className="ml-8 mt-1.5 flex items-center gap-2">
                         <div className="relative w-32">
-                          <Input type="number" inputMode="numeric"
-                            value={String(eff.teamExpenseAmount ?? 150000)}
-                            onChange={(e) => {
-                              const amt = parseInt(e.target.value);
-                              setPricingOverrides((po) => ({ ...po, teamExpenseAmount: Number.isFinite(amt) ? amt : undefined }));
-                            }}
+                          <BufferedNumberInput
+                            value={eff.teamExpenseAmount ?? 150000}
+                            integer min={0} emptyValue="unset"
+                            onValueChange={(n) => setPricingOverrides((po) => ({ ...po, teamExpenseAmount: n }))}
                             className="h-9 text-right pr-6 text-sm tabular-nums rounded-lg" />
                           <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">원</span>
                         </div>
@@ -1762,6 +1815,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
               overrides={pricingOverrides}
               onChange={setPricingOverrides}
               settings={settings}
+              materialType={materialType}
             />
           </>
         )}
@@ -1815,26 +1869,29 @@ function Section({ icon, title, step, headerRight, children }: {
  * pricingOverrides 안 바뀌면 폼 다른 입력 시 재렌더링 스킵 (가격 필드 多 → 효과 큼).
  */
 const PricingOverridesSection = memo(function PricingOverridesSection({
-  overrides, onChange, settings,
+  overrides, onChange, settings, materialType,
 }: {
   overrides: PricingOverrides;
   onChange: (o: PricingOverrides) => void;
   settings: PricingSettings;
+  /** 선택한 강판 — 그 자재의 m당 단가 칸을 '자재 단가' 맨 위에 보여준다. */
+  materialType: MaterialType;
 }) {
   const [open, setOpen] = useState(false);
   const overrideCount = Object.values(overrides).filter((v) => v !== undefined && v !== null && !Number.isNaN(v)).length;
 
-  function setField<K extends keyof PricingOverrides>(key: K, raw: string, pct?: boolean) {
+  function setField<K extends keyof PricingOverrides>(key: K, value: number | undefined) {
     const next = { ...overrides };
-    if (raw === "") {
-      delete next[key];
-    } else {
-      const num = pct ? parseFloat(raw) / 100 : parseFloat(raw);
-      if (Number.isFinite(num)) next[key] = num;
-      else delete next[key];
-    }
+    if (value === undefined) delete next[key];
+    else next[key] = value as PricingOverrides[K];
     onChange(next);
   }
+
+  // 선택한 강판의 m당 단가 칸을 첫 그룹 맨 위에 추가 (강판 단가를 견적별로 바꿀 수 있게).
+  const materialLabel = MATERIAL_TYPES.find((m) => m.value === materialType)?.label ?? "강판";
+  const groups = PRICING_OVERRIDE_GROUPS.map((g, i) => i === 0
+    ? { ...g, fields: [{ key: MATERIAL_PRICE_PER_M_KEY[materialType], label: `${materialLabel} m당 (0.45t 기준)`, unit: "원" }, ...g.fields] }
+    : g);
 
   function clearAll() {
     onChange({});
@@ -1871,7 +1928,7 @@ const PricingOverridesSection = memo(function PricingOverridesSection({
               모두 초기화 (단가 설정 기본값 사용)
             </button>
           )}
-          {PRICING_OVERRIDE_GROUPS.map((g) => (
+          {groups.map((g) => (
             <div key={g.group}>
               <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-base">{g.icon}</span>
@@ -1882,21 +1939,21 @@ const PricingOverridesSection = memo(function PricingOverridesSection({
                   const overrideVal = overrides[f.key];
                   const settingsVal = settings[f.key as keyof PricingSettings] as number;
                   const displayDefault = f.pct
-                    ? `${Math.round(settingsVal * 100)}`
-                    : settingsVal.toLocaleString("ko-KR");
-                  const displayValue = overrideVal !== undefined && overrideVal !== null
-                    ? (f.pct ? String(Math.round(overrideVal * 100)) : String(overrideVal))
-                    : "";
-                  const isOverridden = displayValue !== "";
+                    ? `${Math.round(settingsVal * 1000) / 10}`
+                    : (settingsVal ?? 0).toLocaleString("ko-KR");
+                  const isOverridden = overrideVal !== undefined && overrideVal !== null;
                   return (
                     <div key={f.key} className="flex items-center gap-2">
                       <Label className="flex-1 text-xs text-muted-foreground">{f.label}</Label>
                       <div className="relative w-32 shrink-0">
-                        <Input
-                          type="number"
-                          inputMode="decimal"
-                          value={displayValue}
-                          onChange={(e) => setField(f.key, e.target.value, f.pct)}
+                        <BufferedNumberInput
+                          value={isOverridden ? overrideVal : null}
+                          scale={f.pct ? 100 : 1}
+                          maxDecimals={f.pct ? 2 : 0}
+                          integer={!f.pct}
+                          min={0}
+                          emptyValue="unset"
+                          onValueChange={(n) => setField(f.key, n)}
                           placeholder={`기본 ${displayDefault}`}
                           className={`h-10 pr-9 text-right text-sm tabular-nums rounded-lg ${
                             isOverridden ? "border-amber-300 bg-amber-50/40" : ""

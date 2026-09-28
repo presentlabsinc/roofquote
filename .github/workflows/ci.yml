@@ -1,0 +1,31 @@
+# 품질 게이트 (2026-09-28) — main 푸시가 곧 Vercel 운영 배포라, 최소한 타입·테스트·lint 는 자동 확인.
+# DB·Supabase 에 접속하지 않는다 (가짜 DATABASE_URL 은 prisma generate 용 자리표시).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      DIRECT_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm test
+      - name: Lint
+        run: npx eslint .

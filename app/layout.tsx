@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: "/icon.svg",
-    apple: "/icon.svg",
+    apple: "/apple-touch-icon.png", // iOS 는 SVG apple-touch-icon 을 못 씀
   },
 };
 

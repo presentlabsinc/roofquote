@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { safeNextPath } from "@/lib/safe-redirect";
 
 /**
  * OAuth + magic-link callback.
@@ -22,11 +23,14 @@ export async function GET(req: Request) {
     if (error) {
       // Don't expose detail to the URL; just send back to /login with a flag.
       const fail = new URL("/login", url.origin);
-      fail.searchParams.set("error", error.message);
+      // 고정 코드만 넘긴다 — URL 의 임의 문구를 로그인 화면에 띄우면 피싱 문구 주입에 쓰인다.
+      console.error("[auth/callback] exchange failed", error.message);
+      fail.searchParams.set("error", "oauth");
       return NextResponse.redirect(fail);
     }
   }
 
-  const dest = new URL(next.startsWith("/") ? next : "/", url.origin);
+  // 외부 URL 로 튕기는 오픈 리다이렉트 차단 (//evil.com, /\evil.com 등).
+  const dest = new URL(safeNextPath(next), url.origin);
   return NextResponse.redirect(dest);
 }

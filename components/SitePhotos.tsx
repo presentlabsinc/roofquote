@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
+import { uploadPhotosSequentially } from "@/lib/upload-photo";
 import { useRouter } from "next/navigation";
 import { Camera, X, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,10 +22,13 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
   const [confirmDeleteIdx, setConfirmDeleteIdx] = useState<number | null>(null);
   const [, startTransition] = useTransition();
 
-  // Keep local state in sync if the server page refreshes with new data.
-  useEffect(() => {
+  // 서버 페이지가 새 목록으로 다시 그려지면 로컬 상태도 맞춘다 — effect 대신 렌더 중 이전 prop 비교
+  // (React 권장 패턴: effect 안 setState 는 연쇄 렌더를 일으킴).
+  const [prevInitial, setPrevInitial] = useState(initialPhotos);
+  if (initialPhotos !== prevInitial) {
+    setPrevInitial(initialPhotos);
     setPhotos(initialPhotos);
-  }, [initialPhotos]);
+  }
 
   // Lightbox keyboard nav (desktop convenience).
   useEffect(() => {
@@ -54,22 +58,13 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
     if (files.length === 0) return;
     setUploading((n) => n + files.length);
     const uploaded: PhotoItem[] = [];
-    await Promise.all(
-      files.map(async (file) => {
-        const fd = new FormData();
-        fd.append("file", file);
-        try {
-          const res = await fetch("/api/upload", { method: "POST", body: fd });
-          if (!res.ok) throw new Error();
-          const { url } = await res.json();
-          uploaded.push({ url, memo: "" });
-        } catch {
-          toast.error(`${file.name} 업로드 실패`);
-        } finally {
-          setUploading((n) => n - 1);
-        }
-      }),
-    );
+    // 폰에서 줄여서 한 장씩 업로드 (용량 한도 + 위치 정보 제거 + iOS 메모리 — lib/upload-photo).
+    // 순서대로라 선택한 순서가 그대로 유지된다.
+    await uploadPhotosSequentially(files, ({ url, error }) => {
+      if (url) uploaded.push({ url, memo: "" });
+      if (error) toast.error(error);
+      setUploading((n) => n - 1);
+    });
     if (uploaded.length === 0) return;
     const next = [...photos, ...uploaded];
     setPhotos(next); // optimistic
@@ -83,6 +78,9 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
   }
 
   async function handleDelete(idx: number) {
+    // 업로드 중에는 삭제를 막는다 — 업로드 완료 시 목록이 업로드 시작 시점 기준으로 저장되어
+    // 그 사이 지운 사진이 되살아났다.
+    if (uploading > 0) { toast.info("업로드가 끝난 뒤 삭제해 주세요"); return; }
     const prev = photos;
     const next = photos.filter((_, i) => i !== idx);
     setPhotos(next); // optimistic
@@ -118,7 +116,6 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
               type="file"
               accept="image/*"
               multiple
-              capture="environment"
               className="hidden"
               onChange={handleAdd}
               disabled={uploading > 0}
@@ -134,7 +131,6 @@ export function SitePhotos({ siteId, initialPhotos }: { siteId: string; initialP
               type="file"
               accept="image/*"
               multiple
-              capture="environment"
               className="hidden"
               onChange={handleAdd}
               disabled={uploading > 0}

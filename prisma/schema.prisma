@@ -57,7 +57,7 @@ model PricingSettings {
   eavePricePerM             Int   // 처마 마감 m당
   gutterPricePerM           Int   // 물받이 m당
   removalPricePerSqm        Int   // 철거 ㎡당
-  wasteDisposalCost         Int   // 폐기물 처리비 (fixed)
+  wasteDisposalCost         Int   // 폐기물 처리비 — 트럭 1대당
   dailyWage                 Int   // 1인 1일 인건비
   defaultWorkerCount        Int   // 기본 작업 인원
   skyliftDailyCost          Int   // 스카이차 1일
@@ -69,7 +69,7 @@ model PricingSettings {
 
   // 자재 로스율 — 시공 시 자투리/낭비분
   defaultLossRate      Float   @default(0.10) // 10%
-  useLossRateByDefault Boolean @default(false)
+  useLossRateByDefault Boolean @default(true) // 새 견적 로스율 토글 기본값 (폼이 실제로 읽음 — 2026-09-28)
   /**
    * 로스율 적용 모드:
    *   "manual" — 항상 사용자가 정한 defaultLossRate (또는 견적별 입력값) 사용
@@ -92,8 +92,8 @@ model PricingSettings {
   substructureSteelPiecesPerSqm  Float @default(0.76)
 
   // 스틸방수 전용
-  drainHolePrice               Int    @default(200000)  // 새 배수구 타공 1개당
-  stainlessDrainPricePerM      Int    @default(50000)   // 스테인리스 배수로 m당 (스틸방수에서 물받이 대체)
+  drainHolePrice               Int    @default(0)       // 새 배수구 타공 1개당 — 원가 0(다 마진)이 기본
+  stainlessDrainPricePerM      Int    @default(32000)   // 스테인리스 배수로 m당 (스틸방수에서 물받이 대체)
 
   // 두겁 — 절곡 작업 m당 단가 (난간 시공 시 두겁 필수) [LEGACY — 절곡 그룹으로 대체]
   capBendingPricePerM          Int    @default(5000)
@@ -205,6 +205,8 @@ model PricingPreset {
   userId       String
   name         String
   snapshotJson Json     @default("{}")
+  // 덮어쓰기 직전 값 — [저장]이 활성 프리셋을 덮어쓴 뒤 '되돌리기' 1단계 복구용 (2026-09-28).
+  prevSnapshotJson Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -229,7 +231,8 @@ model Site {
 model Estimate {
   id     String @id @default(cuid())
   siteId String
-  site   Site   @relation(fields: [siteId], references: [id])
+  // 현장 삭제 시 견적도 함께 삭제 (2026-09-28 — 이전엔 RESTRICT 라 견적 있는 현장은 삭제 불가).
+  site   Site   @relation(fields: [siteId], references: [id], onDelete: Cascade)
 
   // Construction details (snapshotted)
   constructionType  String  @default("roof") // 'roof' | 'steelWaterproof' | 'rooftopRoof'
@@ -366,7 +369,7 @@ model Estimate {
   paymentTerms String @default("계약금 10% / 잔금 90%")
   validityDays Int    @default(30)
 
-  // Company info snapshot — frozen at estimate creation, never updated after
+  // Company info snapshot — frozen at creation; re-snapshotted only by full edit (replace = 재발행)
   companyNameSnapshot                String
   companyPhoneSnapshot               String?
   companyAddressSnapshot             String?
@@ -374,6 +377,19 @@ model Estimate {
   sealImageUrlSnapshot               String?
   bankAccountSnapshot                String?
   noticeTextSnapshot                 String?
+
+  // 발송본 고정 스냅샷 (2026-09-28) — PDF 는 이 값만 읽는다. null = 구 견적 → 라이브 폴백.
+  // 현장 정보를 고치거나 마진 분배 비율·프리셋을 바꿔도 이미 만든 견적서는 그대로.
+  customerNameSnapshot        String?
+  siteAddressSnapshot         String?
+  marginMaterialRatioSnapshot Float?
+  marginLaborRatioSnapshot    Float?
+  marginProfitRatioSnapshot   Float?
+  // 발행일 — 생성 시, 그리고 전체 수정(replace = 새 단가로 재발행) 시 갱신. null = createdAt.
+  issuedAt                    DateTime?
+
+  // 기타 비용 원본 [{name, amount, note?}] — 수정 폼 복원용 (이전엔 저장 안 돼 수정 시 소실).
+  extraCosts Json @default("[]")
 
   // 견적 번호 — "YYYY-NNN" 형식, 연도별 자동 채번 (created at the API)
   estimateNumber  String?

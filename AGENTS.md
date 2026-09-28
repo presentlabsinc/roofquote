@@ -65,7 +65,7 @@ If the user asks for any of these, push back gently and confirm — they may hav
 - Supabase Storage for photos (`site-photos` bucket, uploaded via service-role key)
 - `@react-pdf/renderer` for customer PDFs
 - Pretendard font (Korean app standard), loaded via `<link>` in `app/layout.tsx`
-- PWA manifest at `app/manifest.ts`, icon at `public/icon.svg`
+- PWA manifest at `app/manifest.ts` (proxy matcher 에서 제외 — 쿠키 없이 받아야 설치 가능), icons `public/icon.svg` + `icon-192/512.png` + `apple-touch-icon.png`
 
 ## Authentication (Supabase Auth)
 
@@ -74,19 +74,24 @@ Multi-tenant. Every page + API route requires a signed-in user; data is scoped b
 - **Provider**: `@supabase/ssr` for cookie-based session in App Router.
 - **Login methods**: Kakao OAuth, Google OAuth, email/password. Signup is closed during beta — admin creates accounts in the Supabase dashboard.
 - **Files**:
-  - `lib/supabase.ts` — `supabaseBrowser()`, `supabaseServer()` (async), `supabaseAdmin()` (service role).
+  - `lib/supabase.ts` — `supabaseBrowser()` + `PHOTO_BUCKET` (browser-safe). `lib/supabase-server.ts` — `supabaseServer()` (async, cookies) + `supabaseAdmin()` (service role, server-only).
   - `lib/auth.ts` — `requireUser()`, `requireUserAndSettings()`, `getOrCreatePricingSettings()`.
-  - `middleware.ts` — session refresh + redirect unauthed users to `/login`.
+  - `proxy.ts` (Next 16 — 구 `middleware.ts`) — session refresh + redirect unauthed pages to `/login`, 401 JSON for `/api`.
+  - `lib/safe-redirect.ts` — `safeNextPath()`: 로그인 후 `next` 는 같은 사이트 내부 경로만 (오픈 리다이렉트 차단).
   - `app/login/` — sign-in page + form.
   - `app/auth/callback/route.ts` — OAuth return URL → exchange code for session → forward to `next`.
   - `app/api/auth/logout/route.ts` — POSTs sign out, redirects to /login.
 
-### ⚡ Auth 성능 패턴 (2026-06-12) — 검증은 미들웨어에서 1번만
-- `middleware.ts` 의 `getUser()` 가 **유일한 실제 토큰 검증 + 갱신 지점** (Supabase Auth 서버 왕복).
-- `requireUser()` / `getUser()` (lib/auth.ts) 는 `getSession()` 사용 — 쿠키 파싱만, 네트워크 0.
-  미들웨어가 같은 요청에서 이미 검증했으므로 안전 (위조 쿠키는 미들웨어에서 /login 리다이렉트).
-- **⚠️ 이 패턴의 전제: 미들웨어의 `getUser()` 호출과 matcher 범위(/api 포함)를 절대 약화시키지 말 것.**
-  미들웨어 검증을 빼면 페이지/라우트가 서명 미검증 쿠키를 신뢰하게 된다.
+### 🔐 인증 검증 패턴 (2026-09-28 보안 수정) — 신원은 검증된 토큰의 `sub` 에서만
+- `requireUser()` / `getUser()` (lib/auth.ts) 는 `supabase.auth.getClaims()` — access token **서명 검증** 후
+  `claims.sub` 로 신원 결정 (비대칭 키면 JWKS 로컬 검증 = 네트워크 0, 대칭 키면 Auth 서버 확인).
+- **⚠️ `getSession().session.user` 로 신원을 정하지 말 것.** 그 객체는 쿠키 JSON 을 서명 검증 없이 돌려준다 —
+  2026-06-12 성능 패스에서 그렇게 바꿨다가, 정상 계정 보유자가 쿠키의 user.id 만 남의 UUID 로 바꾸면 다른
+  테넌트로 행세할 수 있는 구멍이 됐다 (9/27 점검 #57). proxy 는 토큰만 검증하고 신원을 하류로 넘기지 않는다.
+- `proxy.ts` 도 `getClaims()` — 만료 토큰 갱신(setAll 로 쿠키 기록) + 미인증 리다이렉트/401. **이중 방어:**
+  proxy matcher 를 잘못 고쳐도 라우트가 스스로 검증한다. matcher 는 `/api/:path*` 를 확장자와 무관하게 항상 포함
+  (구 matcher 는 `/api/x.png` 같은 경로를 건너뛰었다).
+- 리다이렉트/401 응답에도 갱신된 세션 쿠키를 실어 보낸다 (`withCookies`).
 - 페이지 내 독립 쿼리는 `Promise.all` 병렬 (home: 설정+현장목록, 견적상세/PDF: 견적+설정).
 - `next.config.ts` `experimental.staleTimes.dynamic: 30` — 클라이언트 라우터 캐시 30초.
   탭 이동/뒤로가기가 30초 내 재방문이면 서버 왕복 없음. 변경 직후 화면은 폼들이
@@ -97,6 +102,17 @@ Multi-tenant. Every page + API route requires a signed-in user; data is scoped b
 - `Site.userId` is indexed; `Estimate` ownership flows through `Site` (no own column).
 - All queries use either `findFirst({ where: { id, userId } })` or `findFirst({ where: { id, site: { userId } } })`. Never plain `findUnique({ id })` — that leaks across users.
 - Mutations use `updateMany`/`deleteMany` with the ownership filter so the check is atomic with the write (avoids find-then-update race).
+- **본문으로 들어온 하위 ID 도 소속 확인** — 예: 견적 PATCH 의 `lineItemId` 는 그 견적의 라인인지 확인하고
+  `updateMany/deleteMany({ id, estimateId })` 로 쓴다 (2026-09-28 — URL 의 견적만 확인하고 라인 ID 는 안 봐서
+  다른 사용자의 라인을 고칠 수 있었다).
+- **입력 검증:** 견적 생성·전체 수정은 `lib/estimate-input.ts` `parseEstimateBody()` (타입·범위 → 400 한국어 메시지),
+  설정 저장·프리셋 적용은 `lib/settings-input.ts` `sanitizeSettingsData()` (Prisma DMMF 기준 화이트리스트).
+- **RLS:** 모든 public 테이블에 Row Level Security 켜짐 (정책 없음 — migration `20260928030100_enable_rls`).
+  앱은 Prisma(테이블 소유자)로만 접근해서 영향 없고, 브라우저에 공개된 anon 키의 Data API 접근은 차단.
+  **새 테이블을 만드는 마이그레이션은 반드시 `ENABLE ROW LEVEL SECURITY` 를 같이 넣을 것.** FORCE 는 쓰지 말 것 (Prisma 도 막힘).
+- **스토리지:** 업로드 경로는 `<userId>/<uuid>.<ext>` (`/api/upload` — 라우트 인증 + 매직 바이트로 형식 판별).
+  사진 삭제·현장 삭제 시 `lib/storage.ts` `removeOwnedObjects()` 가 **본인 폴더 파일만** 지운다. 직인 이전 파일은
+  과거 견적 스냅샷이 가리키므로 지우지 않는다.
 
 ### Adding a new model
 Any new model that holds user-owned data must:
@@ -113,12 +129,18 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 - Changing today's `PricingSettings.materialPricePerSqm` must NOT change yesterday's quote.
 - Verification: `prisma/schema.prisma` has no `@relation` between these two models. If you ever add one, you've broken the rule.
 
-### 2. Estimate snapshots company info
-- `Estimate.companyNameSnapshot` / `companyPhoneSnapshot` / `companyAddressSnapshot` are populated at creation from `PricingSettings`. Never re-fetch from `PricingSettings` when displaying or re-rendering a PDF.
+### 2. Estimate snapshots company **and customer** info
+- `Estimate.company*Snapshot` (회사명·연락처·주소·사업자번호·직인·계좌·안내문) are populated at creation from `PricingSettings`.
+- 2026-09-28~: `customerNameSnapshot` / `siteAddressSnapshot` / `margin{Material,Labor,Profit}RatioSnapshot` / `issuedAt`
+  도 생성 시 박제 (`lib/estimate-input.ts` `snapshotColumns()`). 전체 수정(replace = 재발행)만 다시 스냅샷한다.
+  기존 견적은 마이그레이션 백필로 그날 값을 박제. Never re-fetch from `PricingSettings`/`Site` when re-rendering a PDF
+  (스냅샷 null 인 경우만 라이브 폴백).
 
 ### 3. Customer PDF shows snapshot data only
-- [components/EstimatePDF.tsx](components/EstimatePDF.tsx) renders only from `Estimate` + `EstimateLineItem` fields.
-- No internal cost breakdown, no margin, no per-line unit prices, no labor/meal/lodging itemization in the customer PDF. The customer sees the work scope, the area, the total price, payment terms.
+- [components/EstimatePDF.tsx](components/EstimatePDF.tsx) renders only from `Estimate` + `EstimateLineItem` fields (+ 라우트가 미리 받은 직인 버퍼).
+- No internal cost, no margin, no labor/meal/lodging itemization. 간단 PDF 는 5버킷 + 공급가액/부가세.
+  상세 PDF 는 표준품셈 형식이라 품목별 **마진 분배 후** 단가·이윤 줄을 보여준다 (원가가 아님 — 2026-06-16 사용자 결정).
+  직접 고친 라인처럼 단가×수량 ≠ 금액이면 단가 칸은 '—'.
 - Internal-only data (margin, line costs, etc.) is shown only in the in-app `EstimateDetail` UI for the salesperson.
 
 ## Where to find what
@@ -130,18 +152,23 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | Type defs (ConstructionType, MaterialType, ScopeFlags, GutterMode, SubstructureType, ExtraCost, color presets, scope maps) | [lib/types.ts](lib/types.ts) |
 | Catalog defaults + helpers | [lib/catalog.ts](lib/catalog.ts) — `DEFAULT_CATALOG`, `CATALOG_CATEGORIES`, `groupCatalog`, `categoryToLineItemCategory` |
 | Prisma client | [lib/prisma.ts](lib/prisma.ts) — singleton, no adapter |
-| Supabase clients | [lib/supabase.ts](lib/supabase.ts) — `supabase` (anon, browser-safe) and `supabaseAdmin()` (service role, server-only) |
+| Supabase clients | [lib/supabase.ts](lib/supabase.ts) (browser) · [lib/supabase-server.ts](lib/supabase-server.ts) (`supabaseServer`, `supabaseAdmin`) |
+| 공장 기본값 (유일한 출처) | [lib/defaults.ts](lib/defaults.ts) — `FACTORY_DEFAULTS` (신규 계정·설정 '공장 기본값'·옛 프리셋 채우기 공용, 스키마 @default 와 테스트로 일치 검사) |
+| 견적 입력 검증·계산·스냅샷 | [lib/estimate-input.ts](lib/estimate-input.ts) — POST·replace 공용 |
+| 설정 저장 검증 | [lib/settings-input.ts](lib/settings-input.ts) |
+| 스토리지 경로·정리 | [lib/storage.ts](lib/storage.ts) (서버) · [lib/upload-photo.ts](lib/upload-photo.ts) (폰에서 줄여 업로드, EXIF 제거) |
 | 프리셋 스냅샷 범위/헬퍼 | [lib/presets.ts](lib/presets.ts) — `PRESET_EXCLUDE`, `extractPresetSnapshot`, `applyPresetSnapshot` |
-| 프리셋 API | `app/api/presets/route.ts` (목록/생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/rename/delete) |
-| 계산 엔진 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` — `npm test` (vitest) |
+| 프리셋 API | `app/api/presets/route.ts` (생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/undo/rename/delete) |
+| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) — `npm test` (vitest, 97케이스). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
 | Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
-| Estimate edit API (9 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate-detail line-item actions" below |
+| Estimate edit API (11 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate edit API" below |
 | PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
-| Photo upload | [app/api/upload/route.ts](app/api/upload/route.ts) — uses `supabaseAdmin()` to bypass RLS |
+| Photo upload | [app/api/upload/route.ts](app/api/upload/route.ts) — requireUser + 매직 바이트 판별(JPEG·PNG·WebP·GIF·HEIC) + 4MB, `supabaseAdmin()` |
+| 오류 화면 | `app/error.tsx` (Next 16.3: `retry` prop), `app/global-error.tsx`, `app/not-found.tsx` |
 | Main mobile UI screens | `app/{page,settings,sites/...}/*.tsx` |
 | Shared chrome | `components/AppHeader.tsx`, `components/BottomNav.tsx` |
 | Reusable widgets | `components/CatalogPicker.tsx`, `components/ui/number-stepper.tsx` |
-| PDF document component | [components/EstimatePDF.tsx](components/EstimatePDF.tsx) — `EstimatePDFDoc`, helpers: `buildWorkTitle`, `scopeLabel`, `constructionTypeLabel`, `materialLabel` |
+| PDF document component | [components/EstimatePDF.tsx](components/EstimatePDF.tsx) — `EstimatePDFDoc`, helpers: `buildWorkTitle`, `scopeOneLine`, `materialLabel`, `customerName`(내부 표기 제거), `formatDateKST` |
 | PWA shell | `app/layout.tsx`, `app/manifest.ts`, `app/globals.css` |
 
 ## Convention notes
@@ -152,21 +179,33 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 - All input fields have `font-size: 16px` minimum to prevent iOS Safari from auto-zooming on focus.
 - Korean numerals: prefer `tabular-nums` Tailwind class wherever money or counts are displayed so digits align.
 - **UI 도움말 문구 원칙 (2026-06-12 사용자 피드백): 도메인 지식을 설명하지 말 것.** 사용자는 지붕 전문가다 — "절곡 단가에 자재비 포함" 같은 업계 상식 설명은 노이즈(그건 개발자 자신을 위한 메모). 도움말은 **앱이 무엇을 하는지**(예: "길이 ÷ 3m 규격 → 개수로 자동 환산", "여기서 고르면 자동 라인 대신 적용")만 안내한다.
-- Photo URLs in `Site.photos` are Supabase Storage public URLs. The hostname must be present in `next.config.ts` `images.remotePatterns` if you ever use `<Image>` (we currently use `<img>`).
+- Photo URLs in `Site.photos` are Supabase Storage public URLs rendered with `<img>`. `images.remotePatterns` 는 **일부러 비워 둠** (2026-09-28) — 공개 버킷을 허용하면 `/_next/image` 가 인증 없이 우리 파일을 sharp 로 처리하는 입구가 된다. next/image 도입 시에만 추가.
+- **숫자 입력칸은 `components/ui/buffered-number-input.tsx`** — 입력 중엔 친 글자 그대로(소수점 %·빈 칸 가능), 값만 부모에 올림. 매 키 입력마다 반올림해 다시 그리는 입력칸을 새로 만들지 말 것.
 
 ## Working on this repo
 
+### ⚠️ 로컬 `.env` = 운영 DB — 마이그레이션 절차 (2026-09-28)
+로컬 `.env` 의 DATABASE_URL/DIRECT_URL 은 **운영 Supabase** 다. `npx prisma migrate dev` / `db push` 를 로컬에서
+돌리면 운영 스키마가 즉시 바뀐다 (개발용 DB 분리 전까지 금지). 대신 **오프라인 diff** 로 마이그레이션을 만든다:
+1. `git show HEAD:prisma/schema.prisma > <temp>/schema_head.prisma`
+2. `npx prisma migrate diff --from-schema-datamodel <temp>/schema_head.prisma --to-schema-datamodel prisma/schema.prisma --script`
+   → 출력(Prisma 가 생성한 SQL)을 `prisma/migrations/<YYYYMMDDHHMMSS>_<name>/migration.sql` 로 저장. 백필·RLS 같은
+   스키마로 표현 못 하는 SQL 은 그 아래에 주석과 함께 덧붙인다 (Prisma 문서의 custom migration 방식).
+3. `npx prisma generate` (오프라인). 운영 적용은 `npm run build` → [scripts/build.mjs](scripts/build.mjs) 가 한다:
+   `VERCEL_ENV=production` 일 때만 `prisma migrate deploy` 후 `next build` (migrate 실패 = 빌드 실패).
+   프리뷰 배포·로컬·CI 빌드는 migrate 하지 않는다. Vercel 대시보드 Build Command 를 따로 지정하면 이 분기가
+   우회되니 비워 둘 것.
+
 ### Adding a new field to Estimate
 1. Update [prisma/schema.prisma](prisma/schema.prisma) — make new fields nullable or add a default for backward compat
-2. `npx prisma migrate dev --name short_description`
-3. `npx prisma generate` (usually auto-runs; if the dev server is up it'll hold the DLL — stop node first)
-4. Update the API route that creates/updates Estimate
-5. Update the form + the EstimateDetail UI
-6. Update [components/EstimatePDF.tsx](components/EstimatePDF.tsx) if it should appear on the PDF
-7. Type check: `npx tsc --noEmit`. Test: `npm test` (vitest — 계산 로직 건드렸으면 케이스 추가). Build: `npm run build`
+2. 위 오프라인 diff 로 마이그레이션 생성 + `npx prisma generate` (dev server 가 떠 있으면 DLL 잠김 — node 먼저 종료)
+3. `lib/estimate-input.ts` 의 `parseEstimateBody`(검증) + `estimateColumns`(저장) — POST·replace 가 같이 씀
+4. Update the form + the EstimateDetail UI
+5. Update [components/EstimatePDF.tsx](components/EstimatePDF.tsx) if it should appear on the PDF (스냅샷 필드만!)
+6. Type check: `npx tsc --noEmit`. Test: `npm test`. Lint: `npx eslint .`. Build: `npm run build` (DB 안 건드림)
 
 ### Adding a new construction type / scope item
-- Construction types: extend `ConstructionType` and `CONSTRUCTION_TYPES` in [lib/types.ts](lib/types.ts), then handle in `buildLineItems` ([lib/calculations.ts](lib/calculations.ts)), `SCOPE_BY_TYPE`, the form, and the PDF helpers (`buildWorkTitle`, `scopeLabel`, `constructionTypeLabel`).
+- Construction types: extend `ConstructionType` and `CONSTRUCTION_TYPES` in [lib/types.ts](lib/types.ts), then handle in `buildLineItems` ([lib/calculations.ts](lib/calculations.ts)), `SCOPE_BY_TYPE`, the form, and the PDF helpers (`buildWorkTitle`, `scopeOneLine`).
 - Scope items: extend `ScopeFlags`, add to `SCOPE_LABELS`, add to `SCOPE_BY_TYPE` under the right construction type, and add the calculation branch in `buildLineItems`.
   - If the item is an "이미 시공면적에 포함됨" annotation (like 난간/두겁, 창고, 계단실, 옥탑방), add a hint to `SCOPE_HINTS` instead — the form shows the hint below the label so the user knows it doesn't add to the calculation.
   - If two scope items are mutually exclusive (like 덧씌우기 ↔ 철거), add an entry to `SCOPE_MUTEX` mapping each to the other — `toggleScope` auto-unchecks the partner.
@@ -193,8 +232,8 @@ system:
 - `roof`: √(시공면적÷1.4) × shapeFactor **+ 8×처마돌출**(eaveOverhangCm). 기존 지붕 재시공.
 - `rooftopRoof`: √(시공면적) × shapeFactor — **no ÷1.4, no overhang** (새로 짓는 지붕이라
   시공면적 자체가 외곽 footprint). 처마 돌출 입력 폼에서 숨김.
-- `steelWaterproof`: **no auto-estimate** — user directly inputs 난간 둘레(`railPerimeterM`)
-  + 옥탑 둘레(`rooftopStructurePerimeterM`). 옥탑 변수가 커서 면적 추정이 신뢰 불가.
+- `steelWaterproof`: 난간 둘레(`railPerimeterM`)는 폼이 **바닥 기준 역산 자동값**을 채우고 사용자가 고칠 수 있음
+  (아래 '면적 → 전체 자동 채움'), 옥탑 둘레(`rooftopStructurePerimeterM`)는 직접 입력.
 
 **Bending cost** = `calcBendingCost(widthMm, lengthM, pricePerMmPer3m)` = `width × unit × (length/3)`.
 Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMmPer3m` (기본 36).
@@ -208,7 +247,9 @@ Widths per 부재 in settings (`bendingWidthRidge` 등), unit `bendingPricePerMm
 
 **Loss rate** — `resolveEffectiveLossRate(lossRateMode, roofShape, manualRate)`:
 `PricingSettings.lossRateMode` = `"auto"` (지붕형태별 ROOF_SHAPE_FACTORS lossRate) | `"manual"`
-(항상 defaultLossRate). 강판 + 하지 자재에만 적용 (소모품 제외). 토글 off면 0.
+(항상 defaultLossRate). **적용 대상: 본 강판·파라펫·PE폼·스크류(대)** — 하지·절곡·부자재 미적용. 토글 off면 0.
+**사용자가 폼에서 로스율을 직접 고치면(`lossRateManual`) 그 값이 자동 모드보다 우선** (2026-09-28 — 이전엔 자동 모드가
+입력값을 조용히 덮어씀). 새 견적의 토글 초기값은 설정 `useLossRateByDefault` (공장값 true — 9/28 전엔 폼이 설정을 무시하고 항상 켰음).
 
 **소비 계수는 설정에서 조정 가능 (2026-06-15) — 자재마다 자연 단위:**
 - 하지: 개/㎡ (목재 1.4, 철재 0.76) + 개당단가. 면적 기반.
@@ -284,7 +325,7 @@ geometric auto-fill default the user can override**; small consumables
   설정 카드·override UI 에서 행 제거 (DB 컬럼은 구버전 호환으로 유지). override 그룹에
   `bendingPricePerMmPer3m`(절곡 단가) 추가 — 이제 이게 마감 부재들의 실질 단가 노브.
 - 테스트: `lib/__tests__/calculations.test.ts` (vitest, `npm test`) — 마감 방식 분기 + 이중 계산
-  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 28케이스.
+  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-09-28 기준 전체 97케이스).
 
 **✅ RESOLVED (2026-06-12 사용자 확인):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)는
 **자재비 + 절곡 가공비 모두 포함.** 함의:
@@ -370,7 +411,7 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
     CatalogPicker 도 `constructionType` prop 받아 동일 기본값 표시.
 - Settings override: `PricingSettings.catalogDefaults` (Json, 그룹 키), merged via `resolveGroupDefaults()`.
 
-**상세 모드** — itemized from `DEFAULT_CATALOG` (~30 천보 실단가 items), 8분류 소제목으로 그룹핑:
+**상세 모드** — itemized from `DEFAULT_CATALOG` (56 천보 실단가 items, 단가는 설정 `catalogPrices` override), 8분류 소제목으로 그룹핑:
 - Each row in [components/CatalogPicker.tsx](components/CatalogPicker.tsx) has a quantity stepper + inline-editable unit price snapshot.
 - "+ 직접 추가" per group creates a custom row (key starts with `custom_`, category = 그룹 첫 분류).
 - **마감 방식과의 싱크**: scope.ridge 켜진 지붕 견적에선 마감재 카드 상단에 `finishingAutoHint` 안내
@@ -408,26 +449,39 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 - **UI 배치 (앱 표준 패턴)**: 불러오기/전환은 상단 바, 저장은 하단 sticky. **매 저장 팝업은 안 함**(안티패턴) —
   대신 저장 버튼이 `저장 · '표준' 갱신` 으로 대상 표시. 저장 옆에 [다른 이름으로]. 활성 프리셋 없으면(공장 기본값
   상태) 저장 시 이름 입력(선택) 노출. 이름 입력은 하단 sticky 에 인라인.
+- **실수 덮어쓰기 보호 (2026-09-28 사용자 결정: '되돌리기 토스트'):** [저장]이 활성 프리셋을 덮어쓰면 직전 값을
+  `PricingPreset.prevSnapshotJson` 에 보관하고, 10초 토스트의 [되돌리기] → PATCH `{ action: "undo" }` 가 프리셋과
+  현재 설정을 모두 이전 값으로 (1단계). 저장 안 한 변경이 있으면 프리셋 전환·페이지 이탈 시 확인.
+- **공장 기본값 불러와 저장 = 서버 `activePresetId` 도 해제** (`activePresetId: null` 전송). 이전엔 서버에 활성 프리셋이 남아
+  다음 [저장]이 예전 프리셋을 공장값으로 조용히 덮어썼다.
+- **옛 프리셋 활성화:** 스냅샷에 없는 필드(프리셋 이후 추가된 컬럼)는 공장 기본값으로 채우고, 없어진 컬럼·잘못된
+  값은 `sanitizeSettingsData({ lenient: true })` 가 조용히 버린다 — 옛 프리셋도 항상 불러올 수 있게.
 - **snapshotJson 범위 (불변):** 단가·계수 필드만 (`materialWidths`/`accessoryLengths`/`insulationUnitAreas`/`catalogDefaults` JSON 포함). 제외: 회사정보(`companyName`/`companyPhone`/`companyAddress`/`businessRegistrationNumber`/`sealImageUrl`/`bankAccount`/`noticeText`), `estimateNumberStart`, `baselineData`, `activePresetId`. 헬퍼 `lib/presets.ts` `PRESET_EXCLUDE` + `extractPresetSnapshot`/`applyPresetSnapshot`.
 - 프리셋 전환 × 과거 견적 재수정의 동작은 "Pricing overrides" 섹션의 절대값 assertion 참조.
 
-### Estimate edit API — 10 actions total
+### Estimate edit API — 11 actions total
 `PATCH /api/estimates/[eid]` dispatches on the request body shape. Order in the route handler matters (first match wins):
+
+모든 라인 액션은 `lineItemId` 가 **이 견적의 라인인지 확인**한 뒤 `updateMany/deleteMany({ id, estimateId })` 로 쓴다.
 
 1. `{ lineItemId, total }` — manual edit on a line (`isUserEdited = true`)
 2. `{ lineItemId, action: "undo" }` — restore `total = quantity × unitPrice`, clear `isUserEdited`
 3. `{ lineItemId, action: "delete" }` — remove the line
 4. `{ action: "add", newLineItem: { name, quantity, unit, unitPrice, category } }` — append a free-form line (`isUserEdited = true`)
-5. `{ action: "replace", ...allEstimateFields }` — **full edit** — wipes existing line items, re-runs `buildLineItems` with submitted inputs, re-snapshots company info from current `PricingSettings`. Used by edit mode (`?edit=eid` on new-estimate form). Preserves `estimateNumber` and `pdfSentAt`. Resets `marginMode` to "percent".
-6. `{ marginRate }` — set rate, recompute margin amount / supply / final
+5. `{ action: "replace", ...allEstimateFields }` — **full edit = 재발행** — `parseEstimateBody` 로 검증, 라인 전체 재생성, 회사·고객·마진 분배 비율·발행일 재스냅샷. Preserves `estimateNumber` and `pdfSentAt`. Resets `marginMode` to "percent".
+6. `{ marginRate }` — set rate (-100% ~ 99%, 범위 밖 400), recompute margin amount / supply / final
 7. `{ marginAmount }` — set amount, back-derive rate, mode → `'amount'`
-8. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
-9. `{ vatIncluded }` — toggle, recompute totals
-10. `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` — whitelist meta update
+8. `{ supplyPrice }` — **평당가 입력용**: 공급가 지정, 마진은 서버의 현재 원가 기준 역산, mode → `'amount'` (클라이언트가 마진 차액을 계산해 보내면 화면이 오래됐을 때 틀렸다)
+9. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
+10. `{ vatIncluded }` — toggle: **공급가 유지**, VAT·최종가만 다시 (vat = round(공급가×0.1)). marginMode 는 안 바꾼다
+   (finalPrice 모드에서 최종가를 고정하면 토글할 때마다 공급가·마진이 10%씩 흔들렸다).
+11. `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` — 타입 검증 후 meta update
 
-Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estimate)`:
-- If `estimate.marginMode === "finalPrice"`, the user's `finalPrice` is held fixed and `marginRate / marginAmount` are re-derived from the new `totalCost`. This preserves "I promised the customer 850만원" through subsequent edits.
-- Otherwise margin stays fixed and `finalPrice` is recomputed.
+Actions 1-4 (line changes) call `recalcAndReturn(eid, estimate)` — 사용자가 고정한 기준 유지:
+- `finalPrice` 모드 → 최종가 고정, 마진 역산 ("850만원 약속").
+- `amount` 모드 → **마진 금액 고정** (2026-09-28 — 이전엔 마진율 기준으로 재계산돼 평당가·마진 금액이 풀렸다).
+- `percent` 모드 → 마진율 고정.
+- 견적 상세 UI 는 요청 중 다른 변경을 막고(`busy`), 성공 후 `router.refresh()` (라우터 캐시 갱신 — 뒤로가기·미리보기 stale 방지).
 
 ### Client-safe view
 - The estimate detail UI has a "고객 보기" toggle that hides line items, margin controls, and the cost breakdown. Used when the salesperson hands the phone to the customer. Toggle lives in `EstimateDetail.tsx` (`clientView` state).
@@ -441,11 +495,12 @@ Actions 1-4 (line item changes) and 8 (VAT) all call `recalcAndReturn(eid, estim
   - `marginProfitRatio` (default 0.25) — emitted as a separate "이윤" line (표준품셈 형식, customer doesn't find it strange)
 - **Empty-bucket fallback:** no material lines → material's share spills into labor → labor full → spills into the profit line. Math never breaks.
 - **Normalization:** ratios are renormalized inside `distributeMarginForDisplay` so the saved settings can be e.g. 60/30/30 without over-distributing.
-- **Rounding sweep** at the end adjusts the last item by ±1원 so the displayed sum is exactly `cost + marginAmount` (no visible drift).
+- **Rounding sweep** adjusts the **largest** item by ±1원 so the displayed sum is exactly `cost + marginAmount` (2026-09-28 — 마지막 라인이 작으면 음수가 될 수 있었다).
+- **손해 견적(마진 < 0):** 버킷 규칙 대신 모든 라인을 같은 비율로 줄이고 이윤 줄은 만들지 않는다 (고객 PDF 에 음수 라인 금지).
 - **Internal data is never modified.** `EstimateLineItem` rows stay cost-only (snapshot rule). This is purely a presentation transform applied at PDF render time. In-app `EstimateDetail` still shows the true cost breakdown + margin separately for the salesperson.
-- **Wiring:** `app/api/estimates/[eid]/pdf/route.ts` reads the current user's ratios from PricingSettings and passes them to `EstimatePDFDoc` as `marginRatios`. Settings UI: `MarginDistributionCard` at the bottom of `SettingsForm.tsx` with three % inputs + live sum check + "기본값 (50/25/25)" reset button.
-- **Ratios are read live**, not snapshotted — changing the split re-renders existing estimates' PDFs with the new distribution. Line item totals don't change, only the presentation does.
-- **⚠️ 외부 감사 (2026-06-12) — live read 는 분쟁 시나리오에서 결함:** 사용자가 분배 비율을 바꾼 뒤 과거 견적 PDF를 재다운로드하면, 고객이 원래 받은 PDF와 라인별 단가가 다른 사본이 나온다 (총액은 동일). 고객이 두 사본을 비교하면 신뢰 문제. live read 는 유연성을 위한 의도적 결정이었지만 invariant #2 의 정신("PDF 재렌더 시 PricingSettings 재조회 금지")과 모순. **Fix (백로그):** 비율 3개를 견적 생성 시 `Estimate` 에 스냅샷 (replace 시 재스냅샷 — replace 의미론과 일치), 마이그레이션 이전 행은 live 폴백. 컬럼 3개 + 폴백.
+- **Wiring:** PDF 라우트와 견적 상세 page 가 `Estimate.margin*RatioSnapshot` 을 읽어 `marginRatios` 로 넘긴다 (스냅샷 null 인 구 견적만 현재 설정 폴백). Settings UI: `MarginDistributionCard` (설정 화면의 마진 섹션).
+- **✅ 비율 스냅샷 완료 (2026-09-28, 백로그 3번):** 생성·재발행 시 박제, 기존 견적은 마이그레이션 백필. 분배 비율이나 프리셋을 바꿔도 이미 보낸 견적서의 라인별 금액은 그대로.
+- **공급가액·부가세 행:** 간단·상세 모두 라인 아래 '공급가액'(= 표시 라인 합) + 부가세 포함이면 '부가세 (10%)' = 최종가 − 공급가액 → 최종 금액과 원 단위까지 일치 (이전 '소계 (부가세 포함)' 에 공급가가 찍혀 10% 어긋났다).
 
 ### Margin is revenue-based (매출 대비), not cost-based
 `calcTotals`: **`supplyPrice = totalCost / (1 - marginRate)`**, `marginAmount = supplyPrice - totalCost`.
@@ -456,10 +511,11 @@ Clamped at 99% (denominator). Negative rate (손해) allowed. EstimateDetail lab
 
 ### Margin adjustment — 4 editable inputs in `EstimateDetail`
 Order in the margin card (most-used → least-used):
-1. **평당가** (highlighted) — 평당가 × 평수 → finalPrice. Most natural for Korean contractors. 1평 = 3.3058㎡. Disabled when `areaM2 === 0`. Patches via existing `{ finalPrice }` action — backend doesn't know "평당" exists.
-2. **최종 견적가 직접** — sets finalPrice, marginMode → `'finalPrice'`, marginRate auto-derived.
-3. **마진율** — sets marginRate, recomputes everything.
-4. **마진 금액** — sets marginAmount, back-derives marginRate.
+1. **평당가** (highlighted) — 평당가 × 평수(소수 2자리) = 공급가 → `{ supplyPrice }` 액션 (mode 'amount', VAT 토글해도 평당가 유지). 1평 = 3.3058㎡. Disabled when `areaM2 === 0`.
+2. **마진율** — sets marginRate (99% 초과 입력은 막음), recomputes everything.
+3. **마진 금액** — sets marginAmount, back-derives marginRate.
+4. **최종 견적가 직접** — sets finalPrice, marginMode → `'finalPrice'`, marginRate auto-derived.
+편집 중 Esc/✕ = 취소, 빈 값 = 취소 (0원 저장 방지). 라인 추가는 '항목 직접 추가' 폼 (action 4).
 All four are mutually derived: editing one updates the other three. The hero card chip row also displays 평당가 in both internal and client-view modes (it's customer-friendly information).
 
 ### Pricing overrides (per-estimate price changes)
@@ -481,9 +537,12 @@ All four are mutually derived: editing one updates the other three. The hero car
   - Submit button shows "수정 저장"
   - PATCH `{ action: "replace", ... }` instead of POST
 - **What's reset:** line item inline edits, margin/finalPrice overrides, manually added line items (the rebuild starts fresh from `buildLineItems`).
-- **What's preserved:** `estimateNumber`, `pdfSentAt`.
-- **What's re-snapshotted:** all company info from current PricingSettings (so if user updated company phone after the original create, the edited estimate picks up the new phone).
-- **What's NOT preserved:** the `extraCosts` array — those became line items at create time and are wiped + must be re-entered if needed. (We don't store the original extraCosts on the Estimate.)
+- **What's preserved:** `estimateNumber`, `pdfSentAt`, **기타 비용** (`Estimate.extraCosts` 원본 저장 — 2026-09-28~, 그 전 견적은 원본이 없어 다시 입력).
+- **What's re-snapshotted (재발행):** 회사 정보·고객명/주소·마진 분배 비율·발행일(`issuedAt`) — 현재 값 기준.
+- **자동 채움 (2026-09-28 재설계):** 둘레·난간 둘레·배수로·작업일수·물받이 길이·로스율은 effect 로 상태에 복사하지 않고
+  **렌더 시 계산**한다 — "사용자가 만진 칸(`touched`)은 그 값, 아니면 자동값". 수정 모드는 저장값이 자동값과 다른 칸만
+  touched 로 시작 (그래서 진입 즉시 저장값이 바뀌지 않고, 면적을 바꾸면 안 만진 칸은 새 면적 기준으로 따라감).
+  건물형태를 바꾸면 둘레·난간은, 물받이 면을 바꾸면 길이는 다시 자동값으로. 칸을 비우고 나가면 자동값 복귀.
 - **Invariant — replace = 전체 재산정 (intended, 2026-06-12 외부 감사로 확정):** replace 는 단가를 **현재** PricingSettings(+제출된 overrides) 기준으로 다시 스냅샷한다. 그 사이 설정 단가가 바뀌었으면 수정 저장 시 새 단가를 흡수한다 — 이것이 정의된 동작. UI 도 고지함 (EstimateDetail `EditEstimateButton` 확인 다이얼로그: "회사 정보와 단가는 현재 단가 설정값으로 다시 snapshot 됩니다"). 이 문구를 약화시키지 말 것. 결제조건/유효기간 같은 메타만 고칠 땐 replace 가 아니라 action 10 (whitelist meta update) 경로를 쓴다 — 재산정 없음.
 
 ### PDF preview flow
@@ -493,31 +552,32 @@ All four are mutually derived: editing one updates the other three. The hero car
 - The preview page has its own sticky action bar with PDF 저장 + 카톡 보내기. Save respects the current detail level (filename suffix 간단/상세). Only the share action marks `pdfSentAt`.
 
 ### Customer PDF layout (components/EstimatePDF.tsx) — v4
-- **Header (dark navy `#1e2530`)**: company name + 사업자등록번호 + phone + address on left; 견적 번호 (`No. YYYY-NNN` auto-generated) + 발행일 + "X일간 유효" on right.
-- **Customer + Site row** (two columns): 고객명 / 공사위치 on left; 시공면적 / 건물면적 / 공사일정 on right.
+- **Header (dark navy `#1e2530`)**: company name + 사업자등록번호 + phone + address on left; 견적 번호 + 발행일(`issuedAt`, KST) + "X일간 유효" on right.
+- **Customer + Site row** (two columns): 고객명 / 공사위치 (스냅샷) on left; 시공면적 / 건물면적 / 공사일정 / 예상 공사기간 on right.
 - **공사 범위**: single line of text joined by " · " (e.g. "칼라강판 지붕공사 (기존 지붕 덧씌우기) · 용마루 및 처마 마감 · 물받이 교체 · 폐기물 처리"). Built by `scopeOneLine()` which combines title + ridge/eave merge + gutter mode + scope flags + equipment blurb.
 - **자재 spec pills**: pill row under scope — 제품명 / 두께 / 텍스처 / 색상.
 - **견적 내역**: two modes (toggle via `?detail=` on the PDF route):
   - **simple** (`groupForSimple()`) — flat list of buckets (자재 및 마감 일체 / 시공비 (현장 관리 포함) / 장비 및 운송 / 철거 및 폐기 / 현장 경비). **이윤은 심플에선 별도 표시 안 하고 시공비에 녹임** (2026-06-16 — 5줄 요약에서 이윤 줄이 튀면 거부감). 상세는 이윤 줄 유지. 빈 버킷은 자동 생략.
-  - **detailed** (`groupForDetailed()`) — table with group subheaders: **자재공사 → 노무비 → 기타경비** (Korean industry-standard 3-category structure). Material items shown individually with 품명 / 규격 / 수량 / 금액 columns. Labor + meals + lodging rolled into one "인건비 (기공·조공)" line under 노무비. Subtotal row at bottom: "소계 (부가세 별도/포함)".
+  - **detailed** (`groupForDetailed()`) — table with group subheaders: **자재공사 → 노무비 → 기타경비** (Korean industry-standard 3-category structure). Material items shown individually with 품명 / 규격 / 수량 / 금액 columns. Labor + meals + lodging rolled into one "인건비 (기공·조공)" line under 노무비. 아래 공급가액 (+ 부가세) 행.
 - **최종 견적 금액** card (`#f5f7fa` background): single line "최종 견적 금액 · 부가세 포함/별도" + amount on right.
 - **결제 조건**: `parsePaymentStages()` parses the free-text paymentTerms into structured stages (e.g. "계약금 30% · 계약 시 / 잔금 70% · 완공 시"). When 2+ stages parsed, renders as side-by-side cards with derived amount + percent. Otherwise plain text fallback. Bank account (`bankAccountSnapshot`) appears below.
-- **안내 + 서명**: numbered list of `noticeTextSnapshot` lines (auto-numbered 1, 2, …). Bottom-right: company name above + dashed 48px seal circle. If `sealImageUrlSnapshot` set, image renders inside; otherwise "(인)" placeholder text.
+- **안내 + 서명**: numbered list of `noticeTextSnapshot` lines. Bottom-right: company name + 42px seal circle. 안내·서명 블록은 `wrap={false}` (페이지 경계에서 도장만 떨어지지 않게).
 
 ### Seal image upload
-- Settings page → `SealAndNoticeCard` component → file picker → POSTs to `/api/upload` (same as photo upload, uses `supabaseAdmin()` to bypass RLS) → returned URL stored in `PricingSettings.sealImageUrl`.
-- PDF embeds via `@react-pdf/renderer`'s `<Image src={url}>`. Must be a publicly accessible URL (Supabase Storage public bucket OK).
+- Settings page → `SealAndNoticeCard` → `uploadSeal()` ([lib/upload-photo.ts](lib/upload-photo.ts)) 가 폰에서 **PNG·긴 변 512px** 로 변환 후 `/api/upload` → URL 을 `PricingSettings.sealImageUrl` 에 (저장해야 반영). PDF 가 1MB 이하 PNG/JPEG 만 그리므로 업로드 단계에서 맞춘다 (HEIC·WebP 직인이 '(인)'으로 조용히 빠지던 문제).
+- 직인 교체 시 이전 파일은 **지우지 않는다** — 과거 견적의 `sealImageUrlSnapshot` 이 그 URL 을 가리킨다.
+- PDF: 라우트가 `sealImageUrlSnapshot` 을 **미리 받아 버퍼로** 넘긴다 (우리 버킷 URL 만, 1MB·3초, PNG/JPEG 매직 바이트) → `<Image src={{ data, format }}>`. 실패하면 '(인)'. URL 을 react-pdf 에 직접 주지 말 것 (렌더 중 fetch 실패가 PDF 전체를 깨뜨렸고, 임의 URL 이면 서버가 아무 주소나 가져옴).
 - User can clear the seal by clicking the X overlay (sets URL to empty string, server stores null).
 
 ### Estimate number auto-generation
-- API: `POST /api/sites/[id]/estimates` counts the **current user's** estimates this year and assigns `YYYY-NNN` (3-digit pad). Count scoped via `site: { userId }` so number sequences don't leak between accounts.
-- Formula: `seq = PricingSettings.estimateNumberStart + countThisYearForUser`. Default start = 1 → first estimate is `YYYY-001`. User can shift the start in 설정 → 견적서 (e.g. set to 100 when migrating from another system → first new estimate becomes `YYYY-100`).
+- API: `POST /api/sites/[id]/estimates` assigns `YYYY-NNN` (3-digit pad, **KST 연도**). Scoped via `site: { userId }`.
+- Formula (2026-09-28): `seq = max(estimateNumberStart, 올해 이 사용자의 최대 번호 + 1)` — 이전 '개수 + 시작값'은 견적을 지우면 번호가 중복됐다.
 - **Not reset on Jan 1** — user must manually set `estimateNumberStart` back to 1 if they want to restart numbering each year. (Auto-reset is a possible v0.1 add if anyone asks.)
 - Low race-condition risk for v0 single-user-per-account app. Could add a unique constraint + retry later if it becomes an issue.
 - Stored in `Estimate.estimateNumber` (snapshot — does not regenerate on edit).
 
 ### 공사 일정 field
-- `Estimate.constructionMonth` is a `YYYY-MM` string snapshot (e.g. "2026-06"). PDF renders as "2026년 6월 중" via `formatMonth()`. No precise start/end dates — roofing is too weather-dependent.
+- `Estimate.constructionMonth` is `YYYY-MM` ("2026년 6월 중") or `YYYY-MM-DD` (날짜 지정) string snapshot via `formatMonth()`. 폼 기본값은 로컬 날짜(다음 달 / 2주 뒤).
 
 ### Visual polish
 - Default font is Pretendard. Don't reintroduce Geist for body text.
@@ -527,7 +587,7 @@ All four are mutually derived: editing one updates the other three. The hero car
   - **BottomNav visible** (e.g. estimate detail, settings): position at `bottom-24` (or `bottom-28` for settings) so the button clears the nav pill. Bump the page's `pb-` accordingly (`pb-48` on estimate detail, `pb-32` elsewhere).
 
 ### Don't
-- Don't add `pdfUrl` permanence yet — we record `pdfSentAt` but the PDF is regenerated on demand from snapshot data, not stored. (The spec says we *should* store it long-term; that's a future task.)
+- PDF 파일 자체는 아직 보관하지 않는다 (`pdfUrl` 미사용). 9/28 스냅샷으로 재생성 결과가 발송본과 같게 됐지만, 스펙은 발송 PDF 보관을 요구 — 공개 버킷에 고객 견적서를 올리면 안 되므로 **비공개 버킷 + 서명 URL** 로 할 것 (백로그).
 - Don't add base64 image storage. Use Supabase Storage via `/api/upload`.
 - Don't run `git push` from this shell with a fresh clone — it'll fail auth. The user has a PAT embedded in the remote URL locally; tell them if creds break.
 
@@ -539,6 +599,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 - **`.env` is gitignored** — when env keys rotate, you have to ask the user for new values; nothing in the repo has them.
 - **react-pdf fonts must be full-coverage TTF/OTF, not Google Fonts chunks.** A URL like `fonts.gstatic.com/s/notosanskr/v36/...woff2` is a *subset* covering ~100 codepoints — render any Hangul outside the subset and react-pdf v4 will misbehave. Use a self-contained font. We use **Pretendard OTF** from `cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-{Regular,Bold}.otf`. Note the **`.otf`** extension — the same repo does NOT serve `.ttf` files (a 404 on the font URL surfaces as `Failed to fetch font from ...: 404 Not Found` and 500s the whole PDF route). Always wrap `Font.register` in try/catch and call `Font.registerHyphenationCallback((w) => [w])` to disable hyphenation (its default also returns null for unknown chars and contributes to the same crash class).
 - **Never put `"use client"` on a component that's only imported by a server route.** `components/EstimatePDF.tsx` is rendered by the server-side PDF route through react-pdf's reconciler. With `"use client"`, Next.js replaces the export with a client-reference proxy when imported in a server module — the proxy doesn't execute the function during reconciliation, so the `<Document>` host node never appears, `container.document` stays null, and react-pdf throws `Cannot read properties of null (reading 'props')` at `react-pdf.js:139`. Same applies to any component that's only ever called from a route handler / server action / RSC.
+- **PDF 폰트는 매 콜드스타트에 jsdelivr 에서 받는다** — CDN 장애 시 PDF 500 (백로그: 폰트를 레포에 포함 + outputFileTracingIncludes).
 - **react-pdf and `: null` JSX conditionals.** Patterns like `{cond ? <X/> : null}` inside a `<View>` can occasionally cause the same "null props" crash because react-pdf's children flattener doesn't strip `null` as cleanly as React DOM does. Prefer building child arrays via `.filter(Boolean).map(...)` or `.flatMap(...)` when conditionally including elements. `{cond && <X/>}` (without the `: null`) is also OK because react-pdf strips `false`.
 
 ## 우선순위 백로그 (2026-06-12 — 외부 감사 반영, 순서 고정)
@@ -547,10 +608,12 @@ All four are mutually derived: editing one updates the other three. The hero car
 
 1. ~~**절곡 포함/별도 확정**~~ ✅ 완료 (2026-06-12) — 절곡 단가 = 자재비+가공비 포함 확정, `finishingMethods` 부재별 시스템 구현. RESOLVED 섹션 참조.
 2. ~~**calculations.ts 핵심 함수 vitest**~~ ✅ 완료 (2026-06-12) — `lib/__tests__/calculations.test.ts` 28케이스 (`npm test`). 계산 엔진 수정 시 반드시 테스트 추가/갱신.
-3. **마진 분배 비율 스냅샷** — "Margin distribution" 섹션의 외부 감사 fix. 컬럼 3개 + live 폴백. 작음 — 2번 직후 또는 2번과 같이.
+3. ~~**마진 분배 비율 스냅샷**~~ ✅ 완료 (2026-09-28) — 고객명·주소·발행일 스냅샷과 함께. 기존 견적 백필.
 4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
-6. ~~**단가표 확정 → 프리셋**~~ ✅ 완료 (2026-06-16) — "내 단가 프리셋" 섹션 참조. **잔여 결정 1개: 실수 덮어쓰기 보호.** 활성 프리셋 상태에서 [저장]이 조용히 덮어쓰므로, 이전 값 복구 수단(추천: 저장 토스트에 '되돌리기' — prevSnapshotJson 1단계 undo)을 논의했으나 사용자 "좀 생각해보자" — 결정 대기.
+6. ~~**단가표 확정 → 프리셋**~~ ✅ 완료 (2026-06-16). 실수 덮어쓰기 보호 = 저장 후 '되돌리기' 토스트로 결정·구현 (2026-09-28).
+8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** 발송 PDF 보관(비공개 버킷), PDF 폰트 레포 포함, 폼 초안 자동 저장(4①과 같음),
+   에러 추적(Sentry 등 — 계정 필요), 개발용 Supabase 프로젝트 분리(사용자 작업), 실기기 카톡 파일 공유 확인.
 7. **이력 기반 자동 계수 (사용자 요구 — "와 대박" 수준)** — 견적 이력의 `자재수량 ÷ 면적`을 자재별로 집계해 소비 계수를 자동 보정/제안. ML 아님 — 사용자 자기 이력 평균(투명·수렴). **사용자 조건 (2026-06-15): ① 2~3개로 섣불리 발동 금지 — 통계적으로 의미 있는 큰 표본이 쌓였을 때만, ② 단순 평균 넘어 진짜 똑똑한 모델(형태·평수 구간·이상치 제외 등) 목표 — "내가 생각한 그대로 나오네" 수준.** 데이터 임계치 도달 전엔 기하 디폴트 유지. override→기본값 승격(5번)과 한 묶음.
 
 ## Documentation hygiene (you reading this)
@@ -560,7 +623,17 @@ When you make changes that affect setup, architecture, or invariants:
 - Update **README.md** when: a new env var is needed, a new directory is added, the data model changes, a new top-level concept is introduced, deployment instructions change.
 - Update **this file (AGENTS.md)** when: a new file becomes important enough to know where to find, a new convention is established, a new gotcha is discovered, a new "don't do this" rule emerges.
 - Update **.env.example** any time `.env` gains a new key.
-- Update **prisma migrations** by running `npx prisma migrate dev --name <description>` — never edit migration SQL by hand.
+- Update **prisma migrations** with the offline diff procedure above ("로컬 `.env` = 운영 DB") — never hand-edit Prisma-generated SQL; custom SQL (백필·RLS) goes below it with comments.
 - Do **not** update **roofing_app_spec.md** — that's the user's living spec.
 
 Add a short note to the commit message when you've touched docs. Future sessions trust docs over guessing.
+
+## Development calendar and work journal
+
+- Use the `Present Labs` Google Calendar (`presentlabsinc@gmail.com`) for RoofQuote development, not the roofing-company calendars.
+- Start titles with the project label: `[예정] RoofQuote: <work>` for agreed dated development and `[일지] RoofQuote: <verified outcome>` for completed work.
+- Record every `[예정]` item as a true all-day calendar event, never a timed block. A midnight-to-midnight timed event is not an all-day event; if the connector cannot create one, use the calendar UI or report the limitation.
+- Follow the existing project journals: one concise factual entry per actual work date, with bullet points for changes, checks, and remaining gates. Use Asia/Seoul dates; do not invent deadlines or claim unverified work as complete.
+- Backfill completed work from dated repository documents and Git history after checking for existing entries. Then record substantial new work at the end of each session; update a same-day event instead of creating duplicates.
+- Do not invite the connected personal account: use `self_attendance: omit` on shared-calendar events and verify no copy appears on the personal calendar.
+- Do not include credentials, customer/site information, quotes, or other private business data in calendar entries.
