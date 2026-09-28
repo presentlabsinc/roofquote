@@ -159,7 +159,7 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | 스토리지 경로·정리 | [lib/storage.ts](lib/storage.ts) (서버) · [lib/upload-photo.ts](lib/upload-photo.ts) (폰에서 줄여 업로드, EXIF 제거) |
 | 프리셋 스냅샷 범위/헬퍼 | [lib/presets.ts](lib/presets.ts) — `PRESET_EXCLUDE`, `extractPresetSnapshot`, `applyPresetSnapshot` |
 | 프리셋 API | `app/api/presets/route.ts` (생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/undo/rename/delete) |
-| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) — `npm test` (vitest, 97케이스). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
+| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) — `npm test` (vitest, 101케이스). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
 | Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
 | Estimate edit API (11 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate edit API" below |
 | PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
@@ -325,7 +325,7 @@ geometric auto-fill default the user can override**; small consumables
   설정 카드·override UI 에서 행 제거 (DB 컬럼은 구버전 호환으로 유지). override 그룹에
   `bendingPricePerMmPer3m`(절곡 단가) 추가 — 이제 이게 마감 부재들의 실질 단가 노브.
 - 테스트: `lib/__tests__/calculations.test.ts` (vitest, `npm test`) — 마감 방식 분기 + 이중 계산
-  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-09-28 기준 전체 97케이스).
+  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-09-28 기준 전체 101케이스).
 
 **✅ RESOLVED (2026-06-12 사용자 확인):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)는
 **자재비 + 절곡 가공비 모두 포함.** 함의:
