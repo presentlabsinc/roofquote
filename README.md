@@ -88,7 +88,7 @@ roofquote/
 │   │   └── [id]/
 │   │       ├── page.tsx                             # 현장 상세 (사진, 견적 목록)
 │   │       └── estimates/
-│   │           ├── new/                             # 새 견적 만들기 (?edit=eid 로 수정 모드 겸용)
+│   │           ├── new/                             # 새 견적 만들기 (?edit=eid 로 수정 모드 겸용, 입력 초안 자동 저장·복원)
 │   │           └── [eid]/
 │   │               ├── page.tsx                     # 견적 상세 (내부/고객 보기 토글)
 │   │               └── preview/                     # 견적서 미리보기 → 저장/카톡
@@ -109,11 +109,14 @@ roofquote/
 │   ├── types.ts                                     # ConstructionType, ScopeFlags, FinishingMethods, PricingOverrides 등
 │   ├── catalog.ts                                   # 천보 실단가 카탈로그 + 4그룹 정의 + 유형별 기본값
 │   ├── presets.ts                                   # 프리셋 스냅샷 범위 (단가·계수만, 회사정보 제외)
-│   ├── __tests__/                                   # vitest — 계산 엔진 + 프리셋 (npm test)
+│   ├── estimate-draft.ts                            # 견적 폼 초안 자동 저장 (브라우저 localStorage, 14일)
+│   ├── __tests__/                                   # vitest — 계산 엔진 + 프리셋 + 초안 등 (npm test)
 │   └── utils.ts                                     # cn() 유틸
 ├── prisma/
 │   ├── schema.prisma                                # 데이터 모델
 │   └── migrations/                                  # Postgres 마이그레이션 이력 (오프라인 diff 로 생성 — AGENTS.md '로컬 .env = 운영 DB')
+├── assets/fonts/                                    # 견적서 PDF 용 Pretendard OTF + LICENSE (SIL OFL) — 서버가 파일로 읽음
+├── scripts/build.mjs                                # 빌드 진입점 (production 배포에서만 prisma migrate deploy)
 ├── public/
 │   ├── icon.svg · icon-192.png · icon-512.png       # PWA 앱 아이콘 (안드로이드 설치 요건 PNG)
 │   └── apple-touch-icon.png                         # iOS 홈 화면 아이콘
@@ -239,6 +242,12 @@ PDF (v4 디자인) 에 나가는 항목:
 | `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` | 메타 필드 업데이트 (타입 검증) |
 
 **중요:** `recalcAndReturn` 은 `marginMode === "finalPrice"` 일 때는 사용자가 고정한 `finalPrice` 를 유지하고 `marginRate / marginAmount` 만 재계산합니다 (라인 수정 후에도 "850만원에 맞춰줄게" 가 안 깨지도록). `amount` 모드는 마진 금액, `percent` 모드는 마진율을 고정합니다.
+
+### 폼 초안 자동 저장
+
+견적 폼(새 견적·수정)은 입력 중인 내용을 폰 브라우저(localStorage)에 자동 저장한다 — 서버·DB 는 안 건드림.
+새로고침·앱 종료·화면 이동 후 다시 열면 "작성 중이던 견적이 있어요" 배너에서 이어서 작성하거나 버릴 수 있다.
+제출에 성공하면 초안은 지워지고, 14일 지난 초안은 버린다. 세부 규칙은 AGENTS.md 'Edit mode' 섹션.
 
 ### 단가 설정 변경
 

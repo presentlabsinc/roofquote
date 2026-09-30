@@ -71,12 +71,19 @@ import { BufferedNumberInput } from "@/components/ui/buffered-number-input";
 import { CatalogPicker } from "@/components/CatalogPicker";
 import { applyCatalogPrices, DEFAULT_CATALOG, type CatalogSelection, type GroupModesMap } from "@/lib/catalog";
 import { StickySubmit } from "@/app/sites/new/NewSiteForm";
+import type { EstimateFormInitial } from "@/lib/estimate-draft";
+import { useDraftAutosave, type DraftTarget } from "./use-draft-autosave";
 import { Ruler, ListChecks, Users, Hammer, Palette, Layers, Wrench, Building2, Plus, X, Receipt, Percent, Package, Pickaxe, Calendar, Coins, ChevronDown, ChevronUp, CloudRain, Waves } from "lucide-react";
 
 interface Props {
   siteId: string;
   settings: PricingSettings;
+  /** 수정할 견적 — 있으면 수정 모드 (헤더·버튼 문구, PATCH replace). */
   existing?: Estimate;
+  /** 초기값 출처 — 초안 복원 시. 없으면 existing, 그것도 없으면 기본값. 수정 모드 여부와는 무관. */
+  initial?: EstimateFormInitial;
+  /** 초안 자동 저장 위치 (없으면 저장 안 함). */
+  draft?: DraftTarget;
 }
 
 // 물받이 면별 길이 가중치 (장단비 1.5 가정 → 앞/뒤 30%, 좌/우 20%). 모듈 스코프 = 재렌더링마다 재생성 안 함.
@@ -135,31 +142,35 @@ function autoLossRate(s: PricingSettings, roofShape: RoofShape | null): number {
   return s.defaultLossRate;
 }
 
-export function NewEstimateForm({ siteId, settings, existing }: Props) {
+export function NewEstimateForm({ siteId, settings, existing, initial, draft }: Props) {
   const router = useRouter();
   const isEditing = !!existing;
   const [saving, setSaving] = useState(false);
 
+  // 초기값 출처 — 복원한 초안 > 수정할 견적 > 기본값. 수정 모드 여부(isEditing)는 existing 만 본다.
+  const src: EstimateFormInitial | Estimate | undefined = initial ?? existing;
+
   // When editing, the scope is stored as a JSON object on the estimate
-  const existingScope = (existing?.scopeFlags ?? {}) as unknown as ScopeFlags;
+  const existingScope = (src?.scopeFlags ?? {}) as unknown as ScopeFlags;
 
   // 자동 채움 칸 중 사용자가 직접 바꾼 칸 (위 AutoField 설명 참고).
+  // 초기값이 있으면(수정·초안 복원) 저장값이 자동값과 다른 칸만 '바꾼 칸'으로 시작한다.
   const [touched, setTouched] = useState<Record<AutoField, boolean>>(() => {
-    if (!existing) return NO_TOUCH;
-    const e0 = applyOverrides(settings, (existing.pricingOverrides as unknown as PricingOverrides) ?? {});
-    const ct0 = existing.constructionType as ConstructionType;
-    const sqm0 = existing.areaM2;
-    const shape0 = (existing.buildingShape as BuildingShape | null) ?? "rectangle";
-    const perim0 = autoBasePerimeter(ct0, sqm0, shape0, existing.buildingAreaM2 ?? 0, e0.constructionToBuildingRatio);
-    const overhang0 = ct0 === "roof" ? existing.eaveOverhangCm : 0;
-    const gutter0 = autoGutterLength(existing.perimeterM ?? perim0, overhang0, parseGutterSides(existing.gutterMode));
+    if (!src) return NO_TOUCH;
+    const e0 = applyOverrides(settings, (src.pricingOverrides as unknown as PricingOverrides) ?? {});
+    const ct0 = src.constructionType as ConstructionType;
+    const sqm0 = src.areaM2;
+    const shape0 = (src.buildingShape as BuildingShape | null) ?? "rectangle";
+    const perim0 = autoBasePerimeter(ct0, sqm0, shape0, src.buildingAreaM2 ?? 0, e0.constructionToBuildingRatio);
+    const overhang0 = ct0 === "roof" ? src.eaveOverhangCm : 0;
+    const gutter0 = autoGutterLength(src.perimeterM ?? perim0, overhang0, parseGutterSides(src.gutterMode));
     return {
-      perimeter: existing.perimeterM != null && !near(existing.perimeterM, perim0),
-      rail: existing.railPerimeterM != null && !near(existing.railPerimeterM, autoRailPerimeter(sqm0, shape0, existing.parapetHeightCm ?? 60)),
-      drain: existing.stainlessDrainLengthM != null && !near(existing.stainlessDrainLengthM, autoDrainLength(sqm0)),
-      workDays: !near(existing.workDays, autoWorkDays(sqm0, e0.workDaysAreaDivisor), 0.01),
-      gutter: ct0 !== "steelWaterproof" && existing.gutterLengthM != null && !near(existing.gutterLengthM, gutter0),
-      loss: existing.lossRate != null && !near(existing.lossRate, autoLossRate(e0, existing.roofShape as RoofShape | null), 0.0005),
+      perimeter: src.perimeterM != null && !near(src.perimeterM, perim0),
+      rail: src.railPerimeterM != null && !near(src.railPerimeterM, autoRailPerimeter(sqm0, shape0, src.parapetHeightCm ?? 60)),
+      drain: src.stainlessDrainLengthM != null && !near(src.stainlessDrainLengthM, autoDrainLength(sqm0)),
+      workDays: !near(src.workDays, autoWorkDays(sqm0, e0.workDaysAreaDivisor), 0.01),
+      gutter: ct0 !== "steelWaterproof" && src.gutterLengthM != null && !near(src.gutterLengthM, gutter0),
+      loss: src.lossRate != null && !near(src.lossRate, autoLossRate(e0, src.roofShape as RoofShape | null), 0.0005),
     };
   });
   const touch = (f: AutoField) => setTouched((t) => (t[f] ? t : { ...t, [f]: true }));
@@ -169,60 +180,60 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
     return n;
   });
 
-  // ─── Initial values: from `existing` when editing, otherwise sensible defaults ─
+  // ─── Initial values: from `src` (복원한 초안 또는 수정할 견적), otherwise sensible defaults ─
 
   // Step 1: Area
-  const [sqmInput, setSqmInput] = useState(existing ? String(existing.areaM2) : "");
-  const [pyeongInput, setPyeongInput] = useState(existing ? String(sqmToPyeong(existing.areaM2)) : "");
-  const [showBuildingArea, setShowBuildingArea] = useState(!!existing?.buildingAreaM2);
-  const [buildingSqmInput, setBuildingSqmInput] = useState(existing?.buildingAreaM2 ? String(existing.buildingAreaM2) : "");
-  const [buildingPyeongInput, setBuildingPyeongInput] = useState(existing?.buildingAreaM2 ? String(sqmToPyeong(existing.buildingAreaM2)) : "");
+  const [sqmInput, setSqmInput] = useState(src ? String(src.areaM2) : "");
+  const [pyeongInput, setPyeongInput] = useState(src ? String(sqmToPyeong(src.areaM2)) : "");
+  const [showBuildingArea, setShowBuildingArea] = useState(!!src?.buildingAreaM2);
+  const [buildingSqmInput, setBuildingSqmInput] = useState(src?.buildingAreaM2 ? String(src.buildingAreaM2) : "");
+  const [buildingPyeongInput, setBuildingPyeongInput] = useState(src?.buildingAreaM2 ? String(sqmToPyeong(src.buildingAreaM2)) : "");
 
   // Step 2: Construction type
   const [constructionType, setConstructionType] = useState<ConstructionType | null>(
-    (existing?.constructionType as ConstructionType | undefined) ?? null,
+    (src?.constructionType as ConstructionType | undefined) ?? null,
   );
 
   // Step 3-5: Material
-  const [materialType, setMaterialType] = useState<MaterialType>((existing?.materialType as MaterialType | undefined) ?? "slate");
-  const [thickness, setThickness] = useState<Thickness>((existing?.materialThickness as Thickness | undefined) ?? "0.45");
+  const [materialType, setMaterialType] = useState<MaterialType>((src?.materialType as MaterialType | undefined) ?? "slate");
+  const [thickness, setThickness] = useState<Thickness>((src?.materialThickness as Thickness | undefined) ?? "0.45");
   const [textureChoice, setTextureChoice] = useState<string>(() => {
-    const t = existing?.materialTexture;
+    const t = src?.materialTexture;
     // 수정 모드에서 텍스처가 비어 있던 견적은 그대로 비워 둠 (저장 시 '스톤'으로 바뀌던 문제).
-    if (!t) return existing ? "" : "스톤";
+    if (!t) return src ? "" : "스톤";
     return (TEXTURE_PRESETS as readonly string[]).includes(t) ? t : "기타";
   });
   const [textureCustom, setTextureCustom] = useState<string>(() => {
-    const t = existing?.materialTexture ?? "";
+    const t = src?.materialTexture ?? "";
     return (TEXTURE_PRESETS as readonly string[]).includes(t) ? "" : t;
   });
   const [colorChoice, setColorChoice] = useState<string>(() => {
-    const c = existing?.materialColor;
+    const c = src?.materialColor;
     if (!c) return DEFAULT_COLOR;
     return (COLOR_PRESETS as readonly string[]).includes(c) ? c : "기타";
   });
   const [colorCustom, setColorCustom] = useState<string>(() => {
-    const c = existing?.materialColor ?? "";
+    const c = src?.materialColor ?? "";
     return (COLOR_PRESETS as readonly string[]).includes(c) ? "" : c;
   });
 
   // 공사 일정 — 3 modes: none / month (YYYY-MM) / date (YYYY-MM-DD)
   type SchedulePrecision = "none" | "month" | "date";
   const [schedulePrecision, setSchedulePrecision] = useState<SchedulePrecision>(() => {
-    const v = existing?.constructionMonth;
+    const v = src?.constructionMonth;
     if (!v) return "none";
     return v.length === 7 ? "month" : "date"; // 7 = YYYY-MM, 10 = YYYY-MM-DD
   });
   const [constructionMonth, setConstructionMonth] = useState(() => {
-    if (existing?.constructionMonth) return existing.constructionMonth;
+    if (src?.constructionMonth) return src.constructionMonth;
     // 다음 달 — 1일 기준으로 계산 (31일에 setMonth(+1) 하면 두 달 뒤로 넘어가던 문제).
     const now = new Date();
     const d = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
   });
   const [constructionDate, setConstructionDate] = useState(() => {
-    if (existing?.constructionMonth && existing.constructionMonth.length === 10) {
-      return existing.constructionMonth;
+    if (src?.constructionMonth && src.constructionMonth.length === 10) {
+      return src.constructionMonth;
     }
     // 2주 뒤 — 로컬(한국) 날짜로 (toISOString 은 UTC 라 새벽엔 하루 어긋남).
     const d = new Date();
@@ -231,80 +242,80 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   });
 
   // Loss rate — 새 견적의 켜짐/꺼짐은 설정 '로스율 기본 적용'을 따른다 (이전엔 설정을 무시하고 항상 켬).
-  const [applyLossRate, setApplyLossRate] = useState(existing?.applyLossRate ?? settings.useLossRateByDefault);
+  const [applyLossRate, setApplyLossRate] = useState(src?.applyLossRate ?? settings.useLossRateByDefault);
   const [lossRatePct, setLossRatePct] = useState(
     // 0.01% 정밀도 (4.5% 같은 소수 로스율이 수정 모드에서 5% 로 바뀌지 않게)
-    String(Math.round((existing?.lossRate ?? settings.defaultLossRate) * 10000) / 100),
+    String(Math.round((src?.lossRate ?? settings.defaultLossRate) * 10000) / 100),
   );
 
   // 하지작업
   const [substructureType, setSubstructureType] = useState<SubstructureType | "none">(() => {
-    if (isEditing) return (existing?.substructureType as SubstructureType | null) ?? "none";
+    if (src) return (src.substructureType as SubstructureType | null) ?? "none";
     return settings.substructureMode === "steel" ? "steel" : "wood";
   });
 
   // 건물 / 지붕 형태 (자재 자동 추정용) — 미선택 = ㅁ자 기본 (엔진 fallback 과 동일, UI 에도 표시)
   const [buildingShape, setBuildingShape] = useState<BuildingShape | null>(
-    (existing?.buildingShape as BuildingShape | null) ?? "rectangle",
+    (src?.buildingShape as BuildingShape | null) ?? "rectangle",
   );
   const [roofShape, setRoofShape] = useState<RoofShape | null>(
-    (existing?.roofShape as RoofShape | null) ?? null,
+    (src?.roofShape as RoofShape | null) ?? null,
   );
   const [perimeterInput, setPerimeterInput] = useState(
-    existing?.perimeterM ? String(existing.perimeterM) : "",
+    src?.perimeterM ? String(src.perimeterM) : "",
   );
-  const [ridgeCount] = useState(String(existing?.ridgeCount ?? 1));
+  const [ridgeCount] = useState(String(src?.ridgeCount ?? 1));
   const [parapetHeightInput, setParapetHeightInput] = useState(
-    existing?.parapetHeightCm ? String(existing.parapetHeightCm) : "60",
+    src?.parapetHeightCm ? String(src.parapetHeightCm) : "60",
   );
   // 처마 돌출 cm — 지붕공사/옥상지붕에서 외벽 둘레 → 처마 외곽 둘레 보정.
   // 한옥 같으면 100, 일반 50, 평지붕은 0.
   const [eaveOverhangInput, setEaveOverhangInput] = useState(
-    (existing as unknown as { eaveOverhangCm?: number } | undefined)?.eaveOverhangCm != null
-      ? String((existing as unknown as { eaveOverhangCm?: number }).eaveOverhangCm)
+    src?.eaveOverhangCm != null
+      ? String(src.eaveOverhangCm)
       : "50",
   );
 
   // 스틸방수 — 난간/옥탑 구조물 둘레 직접 입력 (자동 추정 X).
   const [railPerimeterInput, setRailPerimeterInput] = useState(
-    (existing as unknown as { railPerimeterM?: number } | undefined)?.railPerimeterM != null
-      ? String((existing as unknown as { railPerimeterM?: number }).railPerimeterM)
+    src?.railPerimeterM != null
+      ? String(src.railPerimeterM)
       : "0",
   );
   const [rooftopPerimeterInput, setRooftopPerimeterInput] = useState(
-    (existing as unknown as { rooftopStructurePerimeterM?: number } | undefined)?.rooftopStructurePerimeterM != null
-      ? String((existing as unknown as { rooftopStructurePerimeterM?: number }).rooftopStructurePerimeterM)
+    src?.rooftopStructurePerimeterM != null
+      ? String(src.rooftopStructurePerimeterM)
       : "0",
   );
 
   // 홈통 (downspout) 개수 — 스테인리스 배수로와 함께
   const [downspoutCount, setDownspoutCount] = useState(
-    (existing as unknown as { downspoutCount?: number } | undefined)?.downspoutCount != null
-      ? String((existing as unknown as { downspoutCount?: number }).downspoutCount)
+    src?.downspoutCount != null
+      ? String(src.downspoutCount)
       : "0",
   );
 
   // 옥탑 구조물 — 높이 / 문 / 창문 (rooftopStructure scope row 아래에 표시)
   const [rooftopHeightInput, setRooftopHeightInput] = useState(
-    (existing as unknown as { rooftopStructureHeightCm?: number } | undefined)?.rooftopStructureHeightCm != null
-      ? String((existing as unknown as { rooftopStructureHeightCm?: number }).rooftopStructureHeightCm)
+    src?.rooftopStructureHeightCm != null
+      ? String(src.rooftopStructureHeightCm)
       : "250",
   );
   const [rooftopDoorCount, setRooftopDoorCount] = useState(
-    (existing as unknown as { rooftopDoorCount?: number } | undefined)?.rooftopDoorCount != null
-      ? String((existing as unknown as { rooftopDoorCount?: number }).rooftopDoorCount)
+    src?.rooftopDoorCount != null
+      ? String(src.rooftopDoorCount)
       : "1",
   );
   const [rooftopWindowCount, setRooftopWindowCount] = useState(
-    (existing as unknown as { rooftopWindowCount?: number } | undefined)?.rooftopWindowCount != null
-      ? String((existing as unknown as { rooftopWindowCount?: number }).rooftopWindowCount)
+    src?.rooftopWindowCount != null
+      ? String(src.rooftopWindowCount)
       : "0",
   );
   // 단열재 multi-select. 기존 견적의 insulationTypes 가 있으면 우선, 없는데 hasInsulation=true 면 ["other"] 로 시드.
   const [insulationTypes, setInsulationTypes] = useState<InsulationType[]>(() => {
-    const stored = (existing as unknown as { insulationTypes?: unknown })?.insulationTypes;
+    const stored = (src as unknown as { insulationTypes?: unknown })?.insulationTypes;
     if (Array.isArray(stored) && stored.length > 0) return stored as InsulationType[];
-    return existing?.hasInsulation ? ["other"] : [];
+    return src?.hasInsulation ? ["other"] : [];
   });
 
   function toggleInsulationType(t: InsulationType) {
@@ -312,26 +323,26 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   }
   // 단열재 노트 (기타 선택 시) + 섹션 펼침 상태
   const [insulationNote, setInsulationNote] = useState(
-    (existing as unknown as { insulationNote?: string } | undefined)?.insulationNote ?? "",
+    src?.insulationNote ?? "",
   );
   const [showInsulation, setShowInsulation] = useState(
-    (Array.isArray((existing as unknown as { insulationTypes?: unknown })?.insulationTypes) &&
-      ((existing as unknown as { insulationTypes?: unknown[] }).insulationTypes?.length ?? 0) > 0) ||
-    !!existing?.hasInsulation,
+    (Array.isArray((src as unknown as { insulationTypes?: unknown })?.insulationTypes) &&
+      ((src as unknown as { insulationTypes?: unknown[] }).insulationTypes?.length ?? 0) > 0) ||
+    !!src?.hasInsulation,
   );
 
   // PE폼 부착 — 강판 결로/소음 방지. 강판 면적과 동일 비율로 추가 단가.
   // 기본 true (대부분 시공에 PE폼 들어감 — 사용자 요청).
   const [hasPeFoam, setHasPeFoam] = useState(
-    (existing as unknown as { hasPeFoam?: boolean } | undefined)?.hasPeFoam ?? true,
+    src?.hasPeFoam ?? true,
   );
 
   // 지붕 형태 — 옵션이라 접힘 기본. 기타 선택 시 노트 입력 가능.
   // 용마루 수는 UI 에서 빠짐 — 항상 1 로 가정. 2동 건물은 사용자가 라인 직접 수정.
   const [roofShapeNote, setRoofShapeNote] = useState(
-    (existing as unknown as { roofShapeNote?: string } | undefined)?.roofShapeNote ?? "",
+    src?.roofShapeNote ?? "",
   );
-  const [showRoofDetails, setShowRoofDetails] = useState(!!existing?.roofShape);
+  const [showRoofDetails, setShowRoofDetails] = useState(!!src?.roofShape);
 
   // Step 6: Scope
   const [scope, setScope] = useState<ScopeFlags>(existingScope);
@@ -339,17 +350,18 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   // 물받이 multi-select sides — 새 견적은 앞·뒤 기본 (공사 유형 선택 시 다시 세팅).
   // 수정 모드는 저장값 그대로 — '안함'(null)으로 저장한 견적이 4면 물받이로 바뀌던 문제 수정.
   const [gutterSides, setGutterSides] = useState<Set<GutterSide>>(() =>
-    existing ? parseGutterSides(existing.gutterMode) : new Set<GutterSide>(["front", "back"]),
+    src ? parseGutterSides(src.gutterMode) : new Set<GutterSide>(["front", "back"]),
   );
-  const [gutterLength, setGutterLength] = useState(existing?.gutterLengthM ? String(existing.gutterLengthM) : "");
+  // 길이 0 도 값 그대로 (초안 복원 — 직접 넣은 0 이 자동 길이로 바뀌지 않게, lib/estimate-draft.ts).
+  const [gutterLength, setGutterLength] = useState(src?.gutterLengthM != null ? String(src.gutterLengthM) : "");
 
-  // 스테인리스 배수로 (스틸방수 전용 — 물받이 대체)
+  // 스테인리스 배수로 (스틸방수 전용 — 물받이 대체). '0 = 안함' 도 값 그대로.
   const [stainlessDrainLength, setStainlessDrainLength] = useState(
-    existing?.stainlessDrainLengthM ? String(existing.stainlessDrainLengthM) : "",
+    src?.stainlessDrainLengthM != null ? String(src.stainlessDrainLengthM) : "",
   );
   // 차양 물받이 (스틸방수 옵션) — 거의 안 써서 기본 접힘. 기존값 있으면 펼침.
   const [showAwningGutter, setShowAwningGutter] = useState(
-    !!(existing && existing.constructionType === "steelWaterproof" && existing.gutterLengthM),
+    !!(src && src.constructionType === "steelWaterproof" && src.gutterLengthM),
   );
 
   function toggleGutterSide(side: GutterSide) {
@@ -363,34 +375,34 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   }
 
   // 두겁 절곡 길이 (난간 시공 시 필수)
-  const [capLength] = useState(existing?.capLengthM ? String(existing.capLengthM) : "");
+  const [capLength] = useState(src?.capLengthM ? String(src.capLengthM) : "");
 
   // 새 배수구 타공 개수
-  const [drainHoles, setDrainHoles] = useState(existing?.drainHoleCount ? String(existing.drainHoleCount) : "1");
+  const [drainHoles, setDrainHoles] = useState(src?.drainHoleCount ? String(src.drainHoleCount) : "1");
 
   // 엔드캡 개수 (지붕공사 / 옥상지붕)
-  const [endCaps, setEndCaps] = useState(existing?.endCapCount ? String(existing.endCapCount) : "1");
+  const [endCaps, setEndCaps] = useState(src?.endCapCount ? String(src.endCapCount) : "1");
   // 처마/덴조 건수 (eave 시공)
   const [denjoCount, setDenjoCount] = useState(
-    (existing as unknown as { denjoCount?: number } | undefined)?.denjoCount ? String((existing as unknown as { denjoCount?: number }).denjoCount) : "1",
+    src?.denjoCount ? String(src.denjoCount) : "1",
   );
 
   // 폐기물 트럭 수
-  const [wasteTrucks, setWasteTrucks] = useState(existing?.wasteTruckCount ? String(existing.wasteTruckCount) : "1");
+  const [wasteTrucks, setWasteTrucks] = useState(src?.wasteTruckCount ? String(src.wasteTruckCount) : "1");
 
   // Step 7: Equipment days (use steppers — small numeric range)
-  const [skyliftDays, setSkyliftDays] = useState(existing?.skyliftDays ? String(existing.skyliftDays) : "1");
-  const [ladderTruckDays, setLadderTruckDays] = useState(existing?.ladderTruckDays ? String(existing.ladderTruckDays) : "1");
-  const [scaffoldDays, setScaffoldDays] = useState(existing?.scaffoldDays ? String(existing.scaffoldDays) : "3");
-  const [scaffoldArea, setScaffoldArea] = useState(existing?.scaffoldAreaM2 ? String(existing.scaffoldAreaM2) : "");
-  const [otherEquipment, setOtherEquipment] = useState(existing?.otherEquipment ?? "");
+  const [skyliftDays, setSkyliftDays] = useState(src?.skyliftDays ? String(src.skyliftDays) : "1");
+  const [ladderTruckDays, setLadderTruckDays] = useState(src?.ladderTruckDays ? String(src.ladderTruckDays) : "1");
+  const [scaffoldDays, setScaffoldDays] = useState(src?.scaffoldDays ? String(src.scaffoldDays) : "3");
+  const [scaffoldArea, setScaffoldArea] = useState(src?.scaffoldAreaM2 ? String(src.scaffoldAreaM2) : "");
+  const [otherEquipment, setOtherEquipment] = useState(src?.otherEquipment ?? "");
 
   // Step 8: Work info (steppers)
-  const [workerCount, setWorkerCount] = useState(existing ? String(existing.workerCount) : String(settings.defaultWorkerCount));
-  const [workDays, setWorkDays] = useState(existing ? String(existing.workDays) : "2");
+  const [workerCount, setWorkerCount] = useState(src ? String(src.workerCount) : String(settings.defaultWorkerCount));
+  const [workDays, setWorkDays] = useState(src ? String(src.workDays) : "2");
 
   // 부대비용(경비) 토글 — 숙박(원거리만)/팀경비는 기본 OFF, 제경비(보험)는 기본 ON.
-  const ex = existing as unknown as { includeLodging?: boolean; includeTeamExpense?: boolean; includeInsurance?: boolean; lodgingNights?: number | null } | undefined;
+  const ex = src as unknown as { includeLodging?: boolean; includeTeamExpense?: boolean; includeInsurance?: boolean; lodgingNights?: number | null } | undefined;
   const [includeLodging, setIncludeLodging] = useState(ex?.includeLodging ?? false);
   const [includeTeamExpense, setIncludeTeamExpense] = useState(ex?.includeTeamExpense ?? false);
   const [includeInsurance, setIncludeInsurance] = useState(ex?.includeInsurance ?? true);
@@ -401,27 +413,27 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   // Catalog selections (마감재 / 물받이 부속 / 부자재 / 절곡)
   const [catalogSelections, setCatalogSelections] = useState<CatalogSelection[]>(
-    (existing?.catalogSelections as unknown as CatalogSelection[]) ?? [],
+    (src?.catalogSelections as unknown as CatalogSelection[]) ?? [],
   );
   const [catalogModes, setCatalogModes] = useState<GroupModesMap>(
-    (existing?.catalogModes as unknown as GroupModesMap) ?? {},
+    (src?.catalogModes as unknown as GroupModesMap) ?? {},
   );
 
   // Step 9: 기타 비용 — 2026-09-28 부터 Estimate.extraCosts 에 원본 저장 → 수정 폼이 복원.
   // (그 전 견적은 원본이 없어 빈 목록 — 수정 확인창에 안내)
   const [extraCosts, setExtraCosts] = useState<ExtraCost[]>(() =>
-    Array.isArray(existing?.extraCosts) ? (existing.extraCosts as unknown as ExtraCost[]) : [],
+    Array.isArray(src?.extraCosts) ? (src.extraCosts as unknown as ExtraCost[]) : [],
   );
 
   // Pricing overrides — per-estimate price replacements (settings stay unchanged)
   const [pricingOverrides, setPricingOverrides] = useState<PricingOverrides>(
-    (existing?.pricingOverrides as unknown as PricingOverrides) ?? {},
+    (src?.pricingOverrides as unknown as PricingOverrides) ?? {},
   );
 
   // 부재별 마감 방식 (절곡/기성품) — 키 없으면 자재 타입 default (기와형 → 기성품).
   // 사용자가 명시적으로 고른 부재만 저장 → 자재를 바꾸면 안 고른 부재는 default 따라감.
   const [finishingMethods, setFinishingMethods] = useState<FinishingMethods>(
-    (existing?.finishingMethods as unknown as FinishingMethods) ?? {},
+    (src?.finishingMethods as unknown as FinishingMethods) ?? {},
   );
   function setFinishingMethod(member: FinishingMember, method: FinishingMethod) {
     setFinishingMethods((prev) => ({ ...prev, [member]: method }));
@@ -453,6 +465,10 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const autoGutter = autoGutterLength(parseFloat(perimeterValue) || autoPerimeter, gutterOverhangCm, gutterSides);
   // 스틸방수의 차양 물받이는 자동값 없음 (직접 입력).
   const gutterValue = constructionType === "steelWaterproof" || touched.gutter ? gutterLength : (autoGutter > 0 ? String(autoGutter) : "");
+  // 제출·자동 저장에 쓰는 숫자 — 칸을 비워 둔 상태면 자동값 (칸에서 나갈 때 자동값으로 돌아가는 규칙과 같게).
+  // 직접 친 0 만 0 (= 안함). 이전엔 비운 칸이 0 으로 저장돼 초안 복원·수정 모드에서 '0 = 안함' 으로 굳었다.
+  const drainNum = drainValue.trim() === "" ? autoDrain : parseFloat(drainValue) || 0;
+  const roofGutterNum = gutterValue.trim() === "" ? autoGutter : parseFloat(gutterValue) || 0;
   const autoLoss = autoLossRate(eff, constructionType === "steelWaterproof" ? null : roofShape);
   const lossValue = touched.loss ? lossRatePct : String(Math.round(autoLoss * 10000) / 100);
 
@@ -461,7 +477,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
   const lossMult = applyLossRate ? 1 + (parseFloat(lossValue) || 0) / 100 : 1;
   const effectiveGutterM = constructionType === "steelWaterproof"
     ? (showAwningGutter ? parseFloat(gutterValue) || 0 : 0)
-    : (gutterSides.size > 0 ? parseFloat(gutterValue) || 0 : 0);
+    : (gutterSides.size > 0 ? roofGutterNum : 0);
   const materialTotalPreview = Math.round(
     sqmNum * lossMult * (getMaterialPriceSqm(eff, materialType, thickness) + (hasPeFoam ? eff.peFoamPricePerSqm : 0))
     + (substructureType === "wood" ? Math.ceil(sqmNum * eff.substructureWoodPiecesPerSqm) * eff.substructureWoodPricePerPiece : 0)
@@ -573,25 +589,9 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
 
   const showRest = constructionType !== null;
 
-  async function handleCreate() {
+  // ─── 제출 payload — 제출과 초안 자동 저장(useDraftAutosave)이 같은 객체를 쓴다 (둘이 어긋나지 않게) ───
+  function buildPayload() {
     const areaM2 = parseFloat(sqmInput) || 0;
-    if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
-    if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
-    if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && !gutterValue) { toast.error("물받이 길이를 입력해 주세요"); return; }
-    // 스틸방수 + 난간/두겁 활성: 난간 둘레 필수 (예전 capLength 가 아니라 railPerimeter)
-    if (constructionType === "steelWaterproof" && (scope.handrail || scope.cap)) {
-      const rail = parseFloat(railValue) || 0;
-      if (rail <= 0) { toast.error("난간 둘레를 입력해 주세요"); return; }
-    }
-    // 스틸방수 + 스테인리스 배수로 0: 확인 다이얼로그로 넘어가게 (실수 방지)
-    if (constructionType === "steelWaterproof") {
-      const drainLen = parseFloat(drainValue) || 0;
-      if (drainLen <= 0) {
-        const ok = window.confirm("스테인리스 배수로 길이가 0입니다.\n정말 시공 안 하시나요? (예 = 계속 진행)");
-        if (!ok) return;
-      }
-    }
-
     const finalColor = colorChoice === "기타" ? (colorCustom || "기타") : colorChoice;
     const finalTexture = textureChoice === "기타" ? (textureCustom || null) : textureChoice;
     const lossRate = applyLossRate ? (parseFloat(lossValue) || 0) / 100 : null;
@@ -601,7 +601,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       : schedulePrecision === "month" ? constructionMonth
       : constructionDate;
 
-    const payload = {
+    return {
       constructionType,
       materialType,
       materialThickness: thickness,
@@ -618,10 +618,8 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
         : (gutterSides.size === 0 ? null : serializeGutterSides(gutterSides)),
       gutterLengthM: constructionType === "steelWaterproof"
         ? (showAwningGutter ? (parseFloat(gutterValue) || 0) : 0)
-        : (gutterSides.size === 0 ? 0 : parseFloat(gutterValue) || 0),
-      stainlessDrainLengthM: constructionType === "steelWaterproof"
-        ? parseFloat(drainValue) || 0
-        : 0,
+        : (gutterSides.size === 0 ? 0 : roofGutterNum),
+      stainlessDrainLengthM: constructionType === "steelWaterproof" ? drainNum : 0,
       capLengthM: (scope.cap || scope.handrail) ? parseFloat(capLength) || 0 : 0,
       drainHoleCount: scope.drainHole ? Math.max(1, parseInt(drainHoles) || 1) : 0,
       endCapCount: scope.endCap ? Math.max(1, parseInt(endCaps) || 1) : 0,
@@ -685,6 +683,28 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
       includeInsurance,
       lodgingNights: includeLodging && lodgingNightsInput ? (parseInt(lodgingNightsInput) || null) : null,
     };
+  }
+  const payload = buildPayload();
+  const { markSubmitted } = useDraftAutosave(draft, payload);
+
+  async function handleCreate() {
+    const { areaM2 } = payload;
+    if (areaM2 <= 0) { toast.error("시공 면적을 입력해 주세요"); return; }
+    if (!constructionType) { toast.error("공사 유형을 선택해 주세요"); return; }
+    // 빈 칸 = 자동 길이. 자동 길이도 없을 때(둘레·면적 없음)만 막는다. 직접 친 0 은 통과 (= 길이 없이 면만 표시).
+    if (constructionType !== "steelWaterproof" && gutterSides.size > 0 && gutterValue.trim() === "" && roofGutterNum <= 0) { toast.error("물받이 길이를 입력해 주세요"); return; }
+    // 스틸방수 + 난간/두겁 활성: 난간 둘레 필수 (예전 capLength 가 아니라 railPerimeter)
+    if (constructionType === "steelWaterproof" && (scope.handrail || scope.cap)) {
+      const rail = parseFloat(railValue) || 0;
+      if (rail <= 0) { toast.error("난간 둘레를 입력해 주세요"); return; }
+    }
+    // 스틸방수 + 스테인리스 배수로 0: 확인 다이얼로그로 넘어가게 (실수 방지)
+    if (constructionType === "steelWaterproof") {
+      if (drainNum <= 0) {
+        const ok = window.confirm("스테인리스 배수로 길이가 0입니다.\n정말 시공 안 하시나요? (예 = 계속 진행)");
+        if (!ok) return;
+      }
+    }
 
     setSaving(true);
     try {
@@ -707,6 +727,7 @@ export function NewEstimateForm({ siteId, settings, existing }: Props) {
         throw new Error(err.error ?? "실패");
       }
       const est = await res.json();
+      markSubmitted(); // 초안 삭제 — 화면 이동(언마운트 저장) 전에
       toast.success(isEditing ? "견적이 수정되었습니다" : "견적이 생성되었습니다");
       // 성공 시 saving 을 풀지 않는다 — 화면 전환 전 재클릭으로 견적이 중복 생성되던 문제.
       router.push(`/sites/${siteId}/estimates/${est.id}`);

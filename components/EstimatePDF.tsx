@@ -6,6 +6,8 @@
 // leading to react-pdf's "Cannot read properties of null (reading 'props')"
 // crash because container.document stays null.
 import type { ReactElement } from "react";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import {
   Document,
   Page,
@@ -28,23 +30,27 @@ import { distributeMarginForDisplay, type DisplayLineItem, type MarginDistributi
 // "Cannot read properties of null (reading 'props')" deep inside its
 // children processor. Use a full-coverage TTF/OTF from a stable CDN.
 //
-// jsdelivr serves Pretendard from the official repo with a long cache.
 // Pretendard covers the full Hangul block + Latin and is what the app
 // already uses on the web side, so the PDF visually matches the UI.
+//
+// 2026-09-30: 폰트 파일을 저장소에 포함 (assets/fonts, SIL OFL 1.1). 이전엔 콜드스타트마다
+// jsdelivr 에서 받아서 CDN 이 멈추면 PDF 가 500 이었다. Vercel 함수에 파일이 실리도록
+// next.config.ts outputFileTracingIncludes 에 PDF 라우트를 등록해 둠. 파일이 없으면(추적 누락 등)
+// 같은 버전의 CDN 주소로 폴백 — PDF 가 아예 안 나오는 것보다 낫다.
+const PRETENDARD_CDN = "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static";
+function pretendardSrc(file: "Pretendard-Regular.otf" | "Pretendard-Bold.otf"): string {
+  const local = path.join(process.cwd(), "assets", "fonts", file);
+  if (existsSync(local)) return local;
+  console.error(`[PDF] bundled font missing (${local}) — falling back to CDN`);
+  return `${PRETENDARD_CDN}/${file}`;
+}
 try {
   Font.register({
     family: "Pretendard",
     fonts: [
-      {
-        // NOTE: extension is .otf (not .ttf) — the .ttf files don't exist
-        // in this repo. Verified live: curl -I on these URLs returns 200.
-        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Regular.otf",
-        fontWeight: "normal",
-      },
-      {
-        src: "https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-Bold.otf",
-        fontWeight: "bold",
-      },
+      // NOTE: .otf (not .ttf) — the upstream repo does not ship .ttf static files.
+      { src: pretendardSrc("Pretendard-Regular.otf"), fontWeight: "normal" },
+      { src: pretendardSrc("Pretendard-Bold.otf"), fontWeight: "bold" },
     ],
   });
 } catch (e) {

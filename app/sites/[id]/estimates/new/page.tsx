@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { requireUserAndSettings } from "@/lib/auth";
-import { NewEstimateForm } from "./NewEstimateForm";
+import { EstimateFormWithDraft } from "./EstimateFormWithDraft";
 import { AppHeader } from "@/components/AppHeader";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +40,8 @@ export default async function NewEstimatePage({
         subtitle={site.customerName}
       />
       <div className="max-w-lg mx-auto px-4 pt-4">
-        <NewEstimateForm siteId={id} settings={settings} existing={existing ?? undefined} />
+        {/* 초안 자동 저장·복원 — 키는 사용자·현장·견적별 (lib/estimate-draft.ts) */}
+        <EstimateFormWithDraft siteId={id} userId={user.id} settings={settings} existing={existing ?? undefined} />
       </div>
     </>
   );

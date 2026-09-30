@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
   // Marking it external makes Next.js load it from node_modules at runtime
   // instead of bundling it through Turbopack.
   serverExternalPackages: ["@prisma/client", "@react-pdf/renderer"],
+  // PDF 폰트는 런타임에 fs 경로로 읽혀서 자동 추적에 안 잡힌다 — PDF 라우트 함수에 명시적으로 포함.
+  // (components/EstimatePDF.tsx pretendardSrc). 키는 라우트 경로 glob, 값은 프로젝트 루트 기준 glob.
+  outputFileTracingIncludes: {
+    "/api/estimates/*/pdf": ["./assets/fonts/**/*"],
+  },
   experimental: {
     // Client router cache for dynamic pages — without this every tab tap /
     // back navigation refetches the full RSC payload (auth + DB roundtrips).

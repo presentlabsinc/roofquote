@@ -159,7 +159,8 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | 스토리지 경로·정리 | [lib/storage.ts](lib/storage.ts) (서버) · [lib/upload-photo.ts](lib/upload-photo.ts) (폰에서 줄여 업로드, EXIF 제거) |
 | 프리셋 스냅샷 범위/헬퍼 | [lib/presets.ts](lib/presets.ts) — `PRESET_EXCLUDE`, `extractPresetSnapshot`, `applyPresetSnapshot` |
 | 프리셋 API | `app/api/presets/route.ts` (생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/undo/rename/delete) |
-| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) — `npm test` (vitest, 101케이스). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
+| 견적 폼 초안 자동 저장 | [lib/estimate-draft.ts](lib/estimate-draft.ts) (키·저장·만료·payload→초기값·자동 저장 규칙 `DraftAutosaver`, React 없음) · `app/sites/[id]/estimates/new/use-draft-autosave.ts` (디바운스·즉시 저장) · `EstimateFormWithDraft.tsx` (복원 배너) |
+| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) + `estimate-draft.test.ts` + `pdf-render.test.ts`(저장소 폰트로 오프라인 PDF 렌더) — `npm test` (vitest, 136케이스, `vitest.config.mts` = `@/` 별칭). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
 | Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
 | Estimate edit API (11 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate edit API" below |
 | PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
@@ -325,7 +326,7 @@ geometric auto-fill default the user can override**; small consumables
   설정 카드·override UI 에서 행 제거 (DB 컬럼은 구버전 호환으로 유지). override 그룹에
   `bendingPricePerMmPer3m`(절곡 단가) 추가 — 이제 이게 마감 부재들의 실질 단가 노브.
 - 테스트: `lib/__tests__/calculations.test.ts` (vitest, `npm test`) — 마감 방식 분기 + 이중 계산
-  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-09-28 기준 전체 101케이스).
+  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-09-30 기준 전체 136케이스).
 
 **✅ RESOLVED (2026-06-12 사용자 확인):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)는
 **자재비 + 절곡 가공비 모두 포함.** 함의:
@@ -532,7 +533,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 - Triggered from EstimateDetail → "입력값 수정" button (with confirmation explaining what gets reset).
 - Navigates to `/sites/[id]/estimates/new?edit={eid}`.
 - `NewEstimateForm` accepts optional `existing?: Estimate` prop. When set:
-  - All useState initializers prefill from `existing.*` instead of defaults
+  - All useState initializers prefill from `existing.*` instead of defaults (정확히는 `src = initial ?? existing` — 아래 '초기값 출처')
   - Form header shows "견적 수정"
   - Submit button shows "수정 저장"
   - PATCH `{ action: "replace", ... }` instead of POST
@@ -543,6 +544,29 @@ All four are mutually derived: editing one updates the other three. The hero car
   **렌더 시 계산**한다 — "사용자가 만진 칸(`touched`)은 그 값, 아니면 자동값". 수정 모드는 저장값이 자동값과 다른 칸만
   touched 로 시작 (그래서 진입 즉시 저장값이 바뀌지 않고, 면적을 바꾸면 안 만진 칸은 새 면적 기준으로 따라감).
   건물형태를 바꾸면 둘레·난간은, 물받이 면을 바꾸면 길이는 다시 자동값으로. 칸을 비우고 나가면 자동값 복귀.
+  제출·자동 저장 payload 도 같은 규칙 — 비운 배수로·물받이 칸은 자동값(`drainNum`·`roofGutterNum`), 직접 친 0 만 0.
+- **초기값 출처 ≠ 수정 모드 (2026-09-30):** 폼은 `initial ?? existing` (`src`) 에서 초기값을 읽고, 수정 모드(헤더·버튼·PATCH)는
+  `existing` 만 본다. `initial` = 복원한 초안 (`EstimateFormInitial` = `estimateColumns` 모양). 새 값 칸을 추가하면 `src.x` 로 읽을 것.
+- **폼 초안 자동 저장 (2026-09-30, 백로그 4-①):** 폼이 제출하는 `payload`(`buildPayload()`) 그대로 localStorage 에 저장 —
+  키 `roofquote:draft:v1:<userId>:<siteId>:<견적id|new>`. 입력이 멈추고 0.8초 뒤 + 앱 전환·탭 닫기·화면 이동 시 즉시.
+  열기만 한 상태(처음 값 그대로)·서버 검증(`parseEstimateBody`)을 못 넘는 상태(유형·면적 없음 등)는 저장 안 함.
+  다시 열면 배너 "작성 중이던 견적이 있어요 (N분 전)" → [이어서 작성] = payload → `parseEstimateBody` → `estimateColumns` →
+  `initial` 로 폼 remount (수정 모드와 같은 초기화·touched 규칙), [버리기] = 삭제 (10초 '되돌리기' 토스트). 제출 성공 시
+  이동 전에 삭제. 14일 지난·깨진 초안은 지움. 수정 모드는 초안의 `baseUpdatedAt` ≠ 견적 `updatedAt` 이면 지우고
+  "저장된 견적이 바뀌어 이전 초안은 지웠어요". 초안은 하이드레이션 후에만 읽는다 (`useSyncExternalStore` 플래그).
+  payload 에 없는 UI 상태(접힘·펼침, 이름·금액 중 하나만 채운 기타 비용 줄, 꺼진 항목 아래 숫자 등)는 복원되지 않는다.
+  - **배너가 묻는 동안의 규칙 (저장 규칙은 `DraftAutosaver` — 테스트 있음):** 배너 밑의 새 폼은 같은 키에 쓰므로, 만졌다
+    되돌리기만 하면 저장소를 건드리지 않고(처음 상태로 돌아왔을 때 지우는 건 **그 폼이 저장했던** 초안뿐), 저장할 만한 새 입력이
+    생기면 덮어쓰기 **직전에** 배너를 닫고 "새 입력을 저장해서 이전 초안은 지웠어요 [되돌리기]" (`DraftTarget.offerRef`).
+    [버리기]·만료 정리는 `clearDraftIfUnchanged` — 읽었던 그 초안(`savedAt`)일 때만 지워 지금 입력을 남긴다.
+    '되돌리기'는 초안을 저장소에 먼저 다시 쓴다 (폼을 떠난 뒤 눌러도 다음에 다시 제안).
+    배너는 언마운트 때 핸들러 해제를 `queueMicrotask` 로 미룬다 — React 가 배너 정리를 폼의 마지막 저장보다 먼저 돌려서,
+    바로 해제하면 화면을 떠나는 순간 제안 중인 초안이 토스트 없이 덮였다. 제출(`markSubmitted`)은 이 폼이 한 번도 저장하지
+    않았고 배너가 아직 묻는 중이면 그 이전 초안을 지우지 않는다 (0.8초 안에 제출해도 다음에 다시 제안).
+  - **직접 넣은 0 (2026-09-30 해결):** 폼은 null 을 '안 만진 칸'(= 자동 길이)으로 보므로, `estimateColumns` 가 **해당될 때의 0 은
+    0 으로** 저장한다 — 스틸방수 배수로 '0 = 안함', 물받이 면을 고른 채 길이 0. 해당 없을 때(다른 유형, 면 없음)만 null.
+    수정 모드와 초안 복원이 같은 규칙을 쓴다. 계산·PDF 는 `> 0` 으로만 보므로 0 과 null 이 똑같이 '없음'.
+    이 수정 전에 0 으로 저장했던 견적은 DB 에 null 이라 수정 모드에서 여전히 자동 길이로 보인다 (복구 불가, 다시 0 입력).
 - **Invariant — replace = 전체 재산정 (intended, 2026-06-12 외부 감사로 확정):** replace 는 단가를 **현재** PricingSettings(+제출된 overrides) 기준으로 다시 스냅샷한다. 그 사이 설정 단가가 바뀌었으면 수정 저장 시 새 단가를 흡수한다 — 이것이 정의된 동작. UI 도 고지함 (EstimateDetail `EditEstimateButton` 확인 다이얼로그: "회사 정보와 단가는 현재 단가 설정값으로 다시 snapshot 됩니다"). 이 문구를 약화시키지 말 것. 결제조건/유효기간 같은 메타만 고칠 땐 replace 가 아니라 action 10 (whitelist meta update) 경로를 쓴다 — 재산정 없음.
 
 ### PDF preview flow
@@ -598,9 +622,9 @@ All four are mutually derived: editing one updates the other three. The hero car
 - **Prisma 6 vs 7:** we deliberately use Prisma 6. Supabase docs target it, and it avoids the Prisma 7 adapter setup. Don't run `npm i prisma@latest` without rewriting the schema/client/adapter setup.
 - **PowerShell here-strings:** the closing `'@` must be at column 0 on its own line. For multi-line git commit messages, write to `.git/COMMIT_MSG_TEMP` and use `git commit -F`. PowerShell can't pipe to git well.
 - **`.env` is gitignored** — when env keys rotate, you have to ask the user for new values; nothing in the repo has them.
-- **react-pdf fonts must be full-coverage TTF/OTF, not Google Fonts chunks.** A URL like `fonts.gstatic.com/s/notosanskr/v36/...woff2` is a *subset* covering ~100 codepoints — render any Hangul outside the subset and react-pdf v4 will misbehave. Use a self-contained font. We use **Pretendard OTF** from `cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/public/static/Pretendard-{Regular,Bold}.otf`. Note the **`.otf`** extension — the same repo does NOT serve `.ttf` files (a 404 on the font URL surfaces as `Failed to fetch font from ...: 404 Not Found` and 500s the whole PDF route). Always wrap `Font.register` in try/catch and call `Font.registerHyphenationCallback((w) => [w])` to disable hyphenation (its default also returns null for unknown chars and contributes to the same crash class).
+- **react-pdf fonts must be full-coverage TTF/OTF, not Google Fonts chunks.** A URL like `fonts.gstatic.com/s/notosanskr/v36/...woff2` is a *subset* covering ~100 codepoints — render any Hangul outside the subset and react-pdf v4 will misbehave. Use a self-contained font. We use **Pretendard OTF** v1.3.9 **bundled in the repo** at `assets/fonts/Pretendard-{Regular,Bold}.otf` (SIL OFL 1.1, `assets/fonts/LICENSE`), read by file path (`pretendardSrc()` in EstimatePDF.tsx) and shipped to the Vercel function via `next.config.ts` `outputFileTracingIncludes` (`/api/estimates/*/pdf`). If the file is missing at runtime it logs `[PDF] bundled font missing` and falls back to the same version on jsdelivr. Note the **`.otf`** extension — upstream does NOT ship static `.ttf` files. Always wrap `Font.register` in try/catch and call `Font.registerHyphenationCallback((w) => [w])` to disable hyphenation (its default also returns null for unknown chars and contributes to the same crash class).
 - **Never put `"use client"` on a component that's only imported by a server route.** `components/EstimatePDF.tsx` is rendered by the server-side PDF route through react-pdf's reconciler. With `"use client"`, Next.js replaces the export with a client-reference proxy when imported in a server module — the proxy doesn't execute the function during reconciliation, so the `<Document>` host node never appears, `container.document` stays null, and react-pdf throws `Cannot read properties of null (reading 'props')` at `react-pdf.js:139`. Same applies to any component that's only ever called from a route handler / server action / RSC.
-- **PDF 폰트는 매 콜드스타트에 jsdelivr 에서 받는다** — CDN 장애 시 PDF 500 (백로그: 폰트를 레포에 포함 + outputFileTracingIncludes).
+- ~~PDF 폰트는 매 콜드스타트에 jsdelivr 에서 받는다~~ ✅ 해결 (2026-09-30) — 저장소 포함 + 추적 포함. `pdf-render.test.ts` 가 네트워크를 막고 렌더해서 CDN 의존이 되살아나면 실패한다. 새 서버 전용 파일을 fs 로 읽게 되면 같은 방식으로 `outputFileTracingIncludes` 에 추가할 것.
 - **react-pdf and `: null` JSX conditionals.** Patterns like `{cond ? <X/> : null}` inside a `<View>` can occasionally cause the same "null props" crash because react-pdf's children flattener doesn't strip `null` as cleanly as React DOM does. Prefer building child arrays via `.filter(Boolean).map(...)` or `.flatMap(...)` when conditionally including elements. `{cond && <X/>}` (without the `: null`) is also OK because react-pdf strips `false`.
 
 ## 우선순위 백로그 (2026-06-12 — 외부 감사 반영, 순서 고정)
@@ -610,11 +634,14 @@ All four are mutually derived: editing one updates the other three. The hero car
 1. ~~**절곡 포함/별도 확정**~~ ✅ 완료 (2026-06-12) — 절곡 단가 = 자재비+가공비 포함 확정, `finishingMethods` 부재별 시스템 구현. RESOLVED 섹션 참조.
 2. ~~**calculations.ts 핵심 함수 vitest**~~ ✅ 완료 (2026-06-12) — `lib/__tests__/calculations.test.ts` 28케이스 (`npm test`). 계산 엔진 수정 시 반드시 테스트 추가/갱신.
 3. ~~**마진 분배 비율 스냅샷**~~ ✅ 완료 (2026-09-28) — 고객명·주소·발행일 스냅샷과 함께. 기존 견적 백필.
-4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ① 폼 초안 localStorage 자동 저장, ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
+4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ~~① 폼 초안 localStorage 자동 저장~~ ✅ 완료 (2026-09-30 — Edit mode 섹션 '폼 초안 자동 저장'), ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
 6. ~~**단가표 확정 → 프리셋**~~ ✅ 완료 (2026-06-16). 실수 덮어쓰기 보호 = 저장 후 '되돌리기' 토스트로 결정·구현 (2026-09-28).
-8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** 발송 PDF 보관(비공개 버킷), PDF 폰트 레포 포함, 폼 초안 자동 저장(4①과 같음),
-   에러 추적(Sentry 등 — 계정 필요), 개발용 Supabase 프로젝트 분리(사용자 작업), 실기기 카톡 파일 공유 확인.
+8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** 발송 PDF 보관(비공개 버킷), ~~PDF 폰트 레포 포함~~(2026-09-30 완료), ~~폼 초안 자동 저장~~(4① 완료),
+   에러 추적(Sentry 등 — 계정 필요), ~~실기기 카톡 파일 공유 확인~~(2026-09-28 사용자 확인).
+   **개발용 DB (2026-09-30 사용자 결정):** 상시 분리하지 않고 운영 프로젝트를 그대로 쓴다. 추가만 하는(nullable 칼럼·새 버킷)
+   변경은 운영에 먼저 올려도 안전하므로 그대로 진행. 스키마를 크게 바꾸는 작업을 로컬에서 시험해야 할 때만 presentlabsinc 에
+   **임시 시험용 프로젝트**를 만들었다가 지운다 (프로젝트 생성·DB 비밀번호는 사용자가 대시보드에서).
 7. **이력 기반 자동 계수 (사용자 요구 — "와 대박" 수준)** — 견적 이력의 `자재수량 ÷ 면적`을 자재별로 집계해 소비 계수를 자동 보정/제안. ML 아님 — 사용자 자기 이력 평균(투명·수렴). **사용자 조건 (2026-06-15): ① 2~3개로 섣불리 발동 금지 — 통계적으로 의미 있는 큰 표본이 쌓였을 때만, ② 단순 평균 넘어 진짜 똑똑한 모델(형태·평수 구간·이상치 제외 등) 목표 — "내가 생각한 그대로 나오네" 수준.** 데이터 임계치 도달 전엔 기하 디폴트 유지. override→기본값 승격(5번)과 한 묶음.
 
 ## Documentation hygiene (you reading this)

@@ -374,8 +374,11 @@ export function estimateColumns(input: EstimateInput, effectiveLossRate: number)
     workerCount: input.workerCount,
     workDays: input.workDays,
     gutterMode: input.gutterMode || null,
-    gutterLengthM: input.gutterLengthM || null,
-    stainlessDrainLengthM: input.stainlessDrainLengthM || null,
+    // 직접 넣은 0 은 0 으로 저장 (2026-09-30) — 스틸방수 배수로 '0 = 안함', 물받이 면을 고른 채 길이 0.
+    // null 로 바꾸면 수정 모드·초안 복원 폼이 '안 만진 칸'으로 보고 자동 길이를 다시 채웠다.
+    // 해당 없는 경우(다른 공사 유형, 물받이 면 없음)만 null. 계산·PDF 는 0 과 null 을 똑같이 '없음'으로 본다.
+    gutterLengthM: input.gutterMode ? input.gutterLengthM : (input.gutterLengthM || null),
+    stainlessDrainLengthM: input.constructionType === "steelWaterproof" ? input.stainlessDrainLengthM : (input.stainlessDrainLengthM || null),
     capLengthM: input.capLengthM || null,
     drainHoleCount: input.drainHoleCount,
     endCapCount: input.endCapCount,

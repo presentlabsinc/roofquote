@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { Prisma, type PricingSettings } from "@prisma/client";
-import { InputError, effectiveLossRateFor, parseEstimateBody, parseMarginRate, snapshotColumns } from "../estimate-input";
+import { InputError, effectiveLossRateFor, estimateColumns, parseEstimateBody, parseMarginRate, snapshotColumns } from "../estimate-input";
 import { safeNextPath } from "../safe-redirect";
 import { buildLineItems, distributeMarginForDisplay, type BuildLineItemsInput } from "../calculations";
 import { mergeGroupModes, resolveGroupDefaults } from "../catalog";
@@ -55,6 +55,25 @@ describe("parseEstimateBody — 서버 입력 검증", () => {
     const i = parseEstimateBody({ ...minimalBody, catalogModes: { bending: { mode: "detailed", detailWidthMm: 700, simpleQty: 12 } } });
     expect(i.catalogModes.bending?.detailWidthMm).toBe(700);
     expect(i.catalogModes.bending?.simpleQty).toBe(12);
+  });
+});
+
+describe("estimateColumns — 직접 넣은 0 은 0 으로 저장 (수정 모드가 자동 길이로 되살리지 않게)", () => {
+  const cols = (over: Record<string, unknown>) => {
+    const i = parseEstimateBody({ ...minimalBody, ...over });
+    return estimateColumns(i, 0);
+  };
+  it("스틸방수 배수로 0 = 안함 → 0", () => {
+    expect(cols({ constructionType: "steelWaterproof", stainlessDrainLengthM: 0 }).stainlessDrainLengthM).toBe(0);
+    expect(cols({ constructionType: "steelWaterproof", stainlessDrainLengthM: 15 }).stainlessDrainLengthM).toBe(15);
+  });
+  it("스틸방수가 아니면 배수로는 해당 없음 → null", () => {
+    expect(cols({ constructionType: "roof", stainlessDrainLengthM: 0 }).stainlessDrainLengthM).toBeNull();
+  });
+  it("물받이 면을 고른 채 길이 0 → 0, 면이 없으면 null", () => {
+    expect(cols({ gutterMode: "front,back", gutterLengthM: 0 }).gutterLengthM).toBe(0);
+    expect(cols({ gutterMode: "front,back", gutterLengthM: 18 }).gutterLengthM).toBe(18);
+    expect(cols({ gutterMode: null, gutterLengthM: 0 }).gutterLengthM).toBeNull();
   });
 });
 
