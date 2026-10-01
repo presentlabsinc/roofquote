@@ -79,7 +79,8 @@ roofquote/
 │   │   ├── presets/                                 # GET/POST 단가 프리셋 + [id]/ (activate/overwrite/rename/delete)
 │   │   ├── sites/                                   # 현장 CRUD
 │   │   │   ├── [id]/                                # 현장 상세/수정/삭제
-│   │   │   └── [id]/estimates/                      # POST 새 견적 생성 (라인아이템 자동 계산)
+│   │   │   ├── [id]/estimates/                      # POST 새 견적 생성 (라인아이템 자동 계산)
+│   │   │   └── [id]/estimates/quick/                # POST 번개 견적 (유형·면적·평당가 → 일반 견적)
 │   │   ├── estimates/[eid]/                         # PATCH 견적 수정 (10 액션 dispatch)
 │   │   ├── estimates/[eid]/pdf/                     # GET PDF (inline 기본, ?download=1 로 다운로드)
 │   │   ├── estimates/[eid]/sent-pdf/                # POST 공유한 PDF 보관(비공개 버킷) · GET 보관본 목록
@@ -92,6 +93,7 @@ roofquote/
 │   │       ├── page.tsx                             # 현장 상세 (사진, 견적 목록)
 │   │       └── estimates/
 │   │           ├── new/                             # 새 견적 만들기 (?edit=eid 로 수정 모드 겸용, 입력 초안 자동 저장·복원)
+│   │           ├── quick/                           # 번개 견적 — 유형·면적·평당가 3입력 + 미리보기
 │   │           └── [eid]/
 │   │               ├── page.tsx                     # 견적 상세 (내부/고객 보기 토글)
 │   │               └── preview/                     # 견적서 미리보기 → 저장/카톡
@@ -113,6 +115,9 @@ roofquote/
 │   ├── catalog.ts                                   # 천보 실단가 카탈로그 + 4그룹 정의 + 유형별 기본값
 │   ├── presets.ts                                   # 프리셋 스냅샷 범위 (단가·계수만, 회사정보 제외)
 │   ├── estimate-draft.ts                            # 견적 폼 초안 자동 저장 (브라우저 localStorage, 14일)
+│   ├── estimate-defaults.ts                         # 새 견적 기본값·면적 자동값 (폼·번개 견적 공용)
+│   ├── estimate-create.ts                           # 견적 생성 공용 (번호·라인·합계·스냅샷, 서버 전용)
+│   ├── quick-estimate.ts                            # 번개 견적 검증·공급가·미리보기
 │   ├── sent-pdf.ts / sent-pdf-path.ts               # 발송 PDF 보관 — 비공개 버킷 입출력(서버 전용) / 경로 규칙·검증(순수)
 │   ├── sent-pdf-client.ts                           # 공유 후 발송 기록 (시각 먼저 → 보관, 시간 제한, 결과별 안내)
 │   ├── storage.ts · content-disposition.ts          # 사진 경로 해석·정리 / PDF 응답 파일명(RFC 5987)
@@ -249,6 +254,14 @@ PDF (v4 디자인) 에 나가는 항목:
 | `{ paymentTerms / validityDays / pdfSentAt }` | 메타 필드 업데이트 (타입 검증). `pdfUrl` 은 받지 않음 — 서버(`/sent-pdf`)만 기록 |
 
 **중요:** `recalcAndReturn` 은 `marginMode === "finalPrice"` 일 때는 사용자가 고정한 `finalPrice` 를 유지하고 `marginRate / marginAmount` 만 재계산합니다 (라인 수정 후에도 "850만원에 맞춰줄게" 가 안 깨지도록). `amount` 모드는 마진 금액, `percent` 모드는 마진율을 고정합니다.
+
+### 번개 견적 (POST `/api/sites/[id]/estimates/quick`)
+
+현장 화면의 **번개 견적** 버튼 — 공사 유형 · 시공면적 · 평당가(부가세 별도) 세 가지만 넣으면 일반 견적과 같은 견적을 만든다.
+라인은 새 견적 폼에 유형·면적만 넣었을 때와 같은 값(설정 기본값 + 면적 자동값), 공급가 = 평당가 × 평수로 정하고 마진은 원가 기준
+역산 (견적 상세의 평당가 입력과 같은 규칙). 만든 뒤엔 상세 화면에서 평당가·마진·라인을 고치거나 '입력값 수정'으로 전부 다시 입력
+(이때 마진은 기본 마진율로 돌아감). 마지막에 쓴 평당가는 공사 유형별로 폰에 기억한다. 면적이 커서 작업 일수 자동값이 365일을
+넘으면(공장값 기준 32,850㎡ 초과) 만들지 않고 일반 견적으로 안내한다. 세부 규칙은 AGENTS.md '번개 견적'.
 
 ### 폼 초안 자동 저장
 

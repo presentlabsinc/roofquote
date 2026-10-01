@@ -21,6 +21,11 @@ import {
 
 export class InputError extends Error {}
 
+/** 시공면적·작업 일수 범위 — 번개 견적(lib/quick-estimate.ts)도 같은 값을 쓴다. */
+export const MIN_AREA_M2 = 0.1;
+export const MAX_AREA_M2 = 100_000;
+export const MAX_WORK_DAYS = 365;
+
 // ─── 작은 검증 헬퍼 ────────────────────────────────────────────────────
 type Obj = Record<string, unknown>;
 
@@ -229,10 +234,10 @@ export function parseEstimateBody(raw: unknown): EstimateInput {
     materialTexture: str(b.materialTexture, "텍스처", 50),
     materialColor: str(b.materialColor, "색상", 50),
     constructionMonth,
-    areaM2: reqNum(b.areaM2, "시공면적", { min: 0.1, max: 100_000 }),
+    areaM2: reqNum(b.areaM2, "시공면적", { min: MIN_AREA_M2, max: MAX_AREA_M2 }),
     buildingAreaM2: num(b.buildingAreaM2, "건물면적", { min: 0, max: 100_000 }),
     workerCount: reqNum(b.workerCount, "작업 인원", { min: 1, max: 100, int: true }),
-    workDays: reqNum(b.workDays, "작업 일수", { min: 0.5, max: 365 }),
+    workDays: reqNum(b.workDays, "작업 일수", { min: 0.5, max: MAX_WORK_DAYS }),
     gutterMode: str(b.gutterMode, "물받이", 40),
     gutterLengthM: num(b.gutterLengthM, "물받이 길이", { min: 0, max: 10_000 }, 0) ?? 0,
     stainlessDrainLengthM: num(b.stainlessDrainLengthM, "배수로 길이", { min: 0, max: 10_000 }, 0) ?? 0,
@@ -357,6 +362,29 @@ export function computeEstimate(settings: PricingSettings, input: EstimateInput)
     lodgingNights: input.lodgingNights,
   });
   return { lineItemDrafts, effectiveLossRate };
+}
+
+// ─── 저장 가능한 금액 범위 ───────────────────────────────────────────────
+/** 금액 컬럼(견적 합계·라인 단가/금액)은 Postgres integer (32비트) — 넘으면 저장이 500 으로 깨진다. */
+export const DB_INT_MIN = -2_147_483_648;
+export const DB_INT_MAX = 2_147_483_647;
+export const MONEY_TOO_LARGE_MESSAGE = "견적 금액이 너무 큽니다 — 면적이나 단가를 확인해 주세요";
+
+function fitsDbInt(n: number): boolean {
+  return Number.isFinite(n) && n >= DB_INT_MIN && n <= DB_INT_MAX;
+}
+
+/**
+ * 저장 전에 모든 금액이 컬럼 범위 안인지 확인 — 넘으면 InputError (→ 400 한국어).
+ * 견적 생성(일반·번개 공용 createEstimate)·전체 수정(replace)·번개 견적 미리보기가 같이 쓴다 (2026-10-01).
+ */
+export function assertMoneyFitsDb(
+  lineItems: readonly { unitPrice: number; total: number }[],
+  totals: { totalCost: number; marginAmount: number; supplyPrice: number; vat: number; finalPrice: number },
+): void {
+  const linesOk = lineItems.every((l) => fitsDbInt(l.unitPrice) && fitsDbInt(l.total));
+  const totalsOk = [totals.totalCost, totals.marginAmount, totals.supplyPrice, totals.vat, totals.finalPrice].every(fitsDbInt);
+  if (!linesOk || !totalsOk) throw new InputError(MONEY_TOO_LARGE_MESSAGE);
 }
 
 // ─── 저장 컬럼 ───────────────────────────────────────────────────────────

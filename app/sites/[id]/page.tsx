@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
-import { FileText, Plus, ChevronRight, Send } from "lucide-react";
+import { FileText, Plus, ChevronRight, Send, Zap } from "lucide-react";
 import { AppHeader } from "@/components/AppHeader";
 import { SitePhotos } from "@/components/SitePhotos";
 import { EditableSiteCard } from "@/components/EditableSiteCard";
@@ -42,26 +42,39 @@ export default async function SiteDetailPage({ params }: { params: Promise<{ id:
         <SitePhotos siteId={id} initialPhotos={photos} />
 
         {/* Estimates header */}
-        <div className="flex items-center justify-between px-1 pt-2">
-          <h2 className="font-semibold text-foreground">견적 ({site.estimates.length})</h2>
+        <div className="flex items-center justify-between gap-2 pl-1 pt-2">
+          <h2 className="font-semibold text-foreground shrink-0">견적 ({site.estimates.length})</h2>
           {site.estimates.length > 0 && (
-            <Link href={`/sites/${id}/estimates/new`}
-              className="flex items-center gap-1 text-sm font-semibold text-primary pressable">
-              <Plus size={16} />새 견적
-            </Link>
+            <div className="flex items-center">
+              {/* 번개 견적 = 유형·면적·평당가만으로 견적 (lib/quick-estimate.ts) */}
+              <Link href={`/sites/${id}/estimates/quick`}
+                className="flex items-center gap-1 min-h-11 px-2.5 text-sm font-semibold text-primary pressable">
+                <Zap size={15} />번개 견적
+              </Link>
+              <Link href={`/sites/${id}/estimates/new`}
+                className="flex items-center gap-1 min-h-11 pl-2.5 pr-1 text-sm font-semibold text-primary pressable">
+                <Plus size={16} />새 견적
+              </Link>
+            </div>
           )}
         </div>
 
         {site.estimates.length === 0 ? (
-          <div className="bg-card rounded-2xl border-2 border-dashed border-border p-8 text-center">
+          <div className="bg-card rounded-2xl border-2 border-dashed border-border px-5 py-8 text-center">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl mx-auto mb-3 flex items-center justify-center">
               <FileText size={26} className="text-primary" />
             </div>
             <p className="text-sm text-muted-foreground mb-4">아직 견적이 없습니다</p>
-            <Link href={`/sites/${id}/estimates/new`}
-              className="inline-flex items-center gap-2 px-5 h-11 bg-primary text-primary-foreground text-sm font-semibold rounded-2xl pressable">
-              <Plus size={17} />견적 만들기
-            </Link>
+            <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto">
+              <Link href={`/sites/${id}/estimates/quick`}
+                className="inline-flex items-center justify-center gap-1.5 px-3 h-11 bg-primary/10 text-primary text-sm font-semibold rounded-2xl pressable">
+                <Zap size={16} />번개 견적
+              </Link>
+              <Link href={`/sites/${id}/estimates/new`}
+                className="inline-flex items-center justify-center gap-1.5 px-3 h-11 bg-primary text-primary-foreground text-sm font-semibold rounded-2xl pressable">
+                <Plus size={17} />견적 만들기
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="space-y-2">

@@ -14,6 +14,7 @@ export function BottomNav() {
     pathname.startsWith("/auth/") ||
     pathname === "/sites/new" ||
     pathname.endsWith("/estimates/new") ||
+    pathname.endsWith("/estimates/quick") ||
     pathname.endsWith("/preview")
   ) return null;
 

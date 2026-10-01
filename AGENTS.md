@@ -148,20 +148,23 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | Concern | File |
 |---|---|
 | DB schema | [prisma/schema.prisma](prisma/schema.prisma) |
-| Pricing / calc logic | [lib/calculations.ts](lib/calculations.ts) — `buildLineItems`, `calcTotals`, `calcFromFinalPrice`, `THICKNESS_MULT` |
+| Pricing / calc logic | [lib/calculations.ts](lib/calculations.ts) — `buildLineItems`, `calcTotals`, `calcFromFinalPrice`, `calcFromSupplyPrice`(평당가·번개 견적 공용), `THICKNESS_MULT` |
 | Type defs (ConstructionType, MaterialType, ScopeFlags, GutterMode, SubstructureType, ExtraCost, color presets, scope maps) | [lib/types.ts](lib/types.ts) |
 | Catalog defaults + helpers | [lib/catalog.ts](lib/catalog.ts) — `DEFAULT_CATALOG`, `CATALOG_CATEGORIES`, `groupCatalog`, `categoryToLineItemCategory` |
 | Prisma client | [lib/prisma.ts](lib/prisma.ts) — singleton, no adapter |
 | Supabase clients | [lib/supabase.ts](lib/supabase.ts) (browser) · [lib/supabase-server.ts](lib/supabase-server.ts) (`supabaseServer`, `supabaseAdmin`) |
 | 공장 기본값 (유일한 출처) | [lib/defaults.ts](lib/defaults.ts) — `FACTORY_DEFAULTS` (신규 계정·설정 '공장 기본값'·옛 프리셋 채우기 공용, 스키마 @default 와 테스트로 일치 검사) |
-| 견적 입력 검증·계산·스냅샷 | [lib/estimate-input.ts](lib/estimate-input.ts) — POST·replace 공용 |
+| 견적 입력 검증·계산·스냅샷 | [lib/estimate-input.ts](lib/estimate-input.ts) — POST·replace 공용 (`assertMoneyFitsDb` = 금액 32비트 범위 → 400) |
+| 새 견적 기본값·자동값 (폼·번개 견적 공용) | [lib/estimate-defaults.ts](lib/estimate-defaults.ts) — 면적 자동값(`autoBasePerimeter` 등), `constructionTypeDefaults`, `NEW_ESTIMATE_DEFAULTS`, `EstimateFormPayload`(폼 제출 모양), `defaultEstimatePayload` |
+| 견적 생성 공용 (번호·라인·합계·스냅샷) | [lib/estimate-create.ts](lib/estimate-create.ts) (server-only) — `createEstimate`, `companyNameError` — 일반 POST·번개 견적 공용 |
+| 번개 견적 | [lib/quick-estimate.ts](lib/quick-estimate.ts) (본문 검증·공급가·미리보기, 순수) · `app/api/sites/[id]/estimates/quick/route.ts` · `app/sites/[id]/estimates/quick/` (화면) |
 | 설정 저장 검증 | [lib/settings-input.ts](lib/settings-input.ts) |
 | 스토리지 경로·정리 | [lib/storage.ts](lib/storage.ts) (서버) · [lib/upload-photo.ts](lib/upload-photo.ts) (폰에서 줄여 업로드, EXIF 제거) |
 | 프리셋 스냅샷 범위/헬퍼 | [lib/presets.ts](lib/presets.ts) — `PRESET_EXCLUDE`, `extractPresetSnapshot`, `applyPresetSnapshot` |
 | 프리셋 API | `app/api/presets/route.ts` (생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/undo/rename/delete) |
 | 견적 폼 초안 자동 저장 | [lib/estimate-draft.ts](lib/estimate-draft.ts) (키·저장·만료·payload→초기값·자동 저장 규칙 `DraftAutosaver`, React 없음) · `app/sites/[id]/estimates/new/use-draft-autosave.ts` (디바운스·즉시 저장) · `EstimateFormWithDraft.tsx` (복원 배너) |
-| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) + `estimate-draft.test.ts` + `pdf-render.test.ts`(저장소 폰트로 오프라인 PDF 렌더) + `sent-pdf*.test.ts`(발송 PDF 경로·버킷·라우트·공유 후 기록 — 가짜 Supabase/Prisma/fetch, `vi.mock("server-only")`) — `npm test` (vitest, 186케이스, `vitest.config.mts` = `@/` 별칭). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
-| Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
+| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) + `estimate-draft.test.ts` + `pdf-render.test.ts`(저장소 폰트로 오프라인 PDF 렌더) + `sent-pdf*.test.ts`(발송 PDF 경로·버킷·라우트·공유 후 기록 — 가짜 Supabase/Prisma/fetch, `vi.mock("server-only")`) + `quick-estimate.test.ts`(번개 견적 기본 payload·공급가 합계·검증·면적 상한·저장 범위·생성 라우트) — `npm test` (vitest, 257케이스, `vitest.config.mts` = `@/` 별칭). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
+| Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) (일반) · `estimates/quick/route.ts` (번개 견적) — 둘 다 `lib/estimate-create.ts` |
 | Estimate edit API (11 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate edit API" below |
 | PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
 | Photo upload | [app/api/upload/route.ts](app/api/upload/route.ts) — requireUser + 매직 바이트 판별(JPEG·PNG·WebP·GIF·HEIC) + 4MB, `supabaseAdmin()` |
@@ -203,7 +206,8 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 1. Update [prisma/schema.prisma](prisma/schema.prisma) — make new fields nullable or add a default for backward compat
 2. 위 오프라인 diff 로 마이그레이션 생성 + `npx prisma generate` (dev server 가 떠 있으면 DLL 잠김 — node 먼저 종료)
 3. `lib/estimate-input.ts` 의 `parseEstimateBody`(검증) + `estimateColumns`(저장) — POST·replace 가 같이 씀
-4. Update the form + the EstimateDetail UI
+4. Update the form + the EstimateDetail UI. 폼 payload 에 칸을 더하면 `lib/estimate-defaults.ts` 의 `EstimateFormPayload` 와
+   `defaultEstimatePayload`(번개 견적 — 새 견적 기본값)도 같이 (타입이 빠진 쪽을 컴파일 오류로 알려 줌)
 5. Update [components/EstimatePDF.tsx](components/EstimatePDF.tsx) if it should appear on the PDF (스냅샷 필드만!)
 6. Type check: `npx tsc --noEmit`. Test: `npm test`. Lint: `npx eslint .`. Build: `npm run build` (DB 안 건드림)
 
@@ -328,7 +332,7 @@ geometric auto-fill default the user can override**; small consumables
   설정 카드·override UI 에서 행 제거 (DB 컬럼은 구버전 호환으로 유지). override 그룹에
   `bendingPricePerMmPer3m`(절곡 단가) 추가 — 이제 이게 마감 부재들의 실질 단가 노브.
 - 테스트: `lib/__tests__/calculations.test.ts` (vitest, `npm test`) — 마감 방식 분기 + 이중 계산
-  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-10-01 기준 전체 186케이스).
+  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-10-01 기준 전체 257케이스).
 
 **✅ RESOLVED (2026-06-12 사용자 확인):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)는
 **자재비 + 절곡 가공비 모두 포함.** 함의:
@@ -474,7 +478,7 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 5. `{ action: "replace", ...allEstimateFields }` — **full edit = 재발행** — `parseEstimateBody` 로 검증, 라인 전체 재생성, 회사·고객·마진 분배 비율·발행일 재스냅샷. Preserves `estimateNumber` and `pdfSentAt`. Resets `marginMode` to "percent".
 6. `{ marginRate }` — set rate (-100% ~ 99%, 범위 밖 400), recompute margin amount / supply / final
 7. `{ marginAmount }` — set amount, back-derive rate, mode → `'amount'`
-8. `{ supplyPrice }` — **평당가 입력용**: 공급가 지정, 마진은 서버의 현재 원가 기준 역산, mode → `'amount'` (클라이언트가 마진 차액을 계산해 보내면 화면이 오래됐을 때 틀렸다)
+8. `{ supplyPrice }` — **평당가 입력용**: 공급가 지정, 마진은 서버의 현재 원가 기준 역산, mode → `'amount'` (클라이언트가 마진 차액을 계산해 보내면 화면이 오래됐을 때 틀렸다). 계산은 `calcFromSupplyPrice` — 번개 견적 생성과 공용
 9. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
 10. `{ vatIncluded }` — toggle: **공급가 유지**, VAT·최종가만 다시 (vat = round(공급가×0.1)). marginMode 는 안 바꾼다
    (finalPrice 모드에서 최종가를 고정하면 토글할 때마다 공급가·마진이 10%씩 흔들렸다).
@@ -572,6 +576,40 @@ All four are mutually derived: editing one updates the other three. The hero car
     이 수정 전에 0 으로 저장했던 견적은 DB 에 null 이라 수정 모드에서 여전히 자동 길이로 보인다 (복구 불가, 다시 0 입력).
 - **Invariant — replace = 전체 재산정 (intended, 2026-06-12 외부 감사로 확정):** replace 는 단가를 **현재** PricingSettings(+제출된 overrides) 기준으로 다시 스냅샷한다. 그 사이 설정 단가가 바뀌었으면 수정 저장 시 새 단가를 흡수한다 — 이것이 정의된 동작. UI 도 고지함 (EstimateDetail `EditEstimateButton` 확인 다이얼로그: "회사 정보와 단가는 현재 단가 설정값으로 다시 snapshot 됩니다"). 이 문구를 약화시키지 말 것. 결제조건/유효기간 같은 메타만 고칠 땐 replace 가 아니라 action 10 (whitelist meta update) 경로를 쓴다 — 재산정 없음.
 
+### 번개 견적 (2026-10-01, 백로그 4-② · 스펙 "현장에서 1분 안에 견적 초안")
+이름은 사용자 결정 (구 백로그 이름 '빠른 견적 입구'). 입구 = 현장 화면의 '새 견적'(헤더)·'견적 만들기'(빈 상태) 옆 **번개 견적** (Zap 아이콘)
+→ `/sites/[id]/estimates/quick` (focused flow — BottomNav 숨김, `StickySubmit`).
+- **입력 3개:** 공사 유형 · 시공면적(평↔㎡ 자동 변환, 폼과 같음) · 평당가(원 정수, **부가세 별도 = 공급가 기준** — 견적 상세 평당가와 같은 정의).
+- **결과 = 일반 견적** (같은 Estimate·상세·PDF·입력값 수정). 라인은 `defaultEstimatePayload(settings, 유형, 면적)`
+  ([lib/estimate-defaults.ts](lib/estimate-defaults.ts)) → `parseEstimateBody` → `computeEstimate` — 새 견적 폼에 유형·면적만 넣고
+  나머지를 안 건드렸을 때 폼이 제출하는 payload 와 같은 값 (사용자 설정 기본값: 인원·하지·로스율 토글·그룹 기본값·경비 토글 +
+  면적 자동값: 둘레·난간·배수로·물받이·작업일수).
+- **가격:** 공급가 = round(평당가 × `sqmToPyeong(면적)`) → `calcFromSupplyPrice` (마진 = 공급가 − 원가, 매출 대비 마진율,
+  marginMode `'amount'` — PATCH `{ supplyPrice }` 와 같은 함수). 부가세 포함 여부 = 설정 `vatIncludedByDefault`.
+  원가보다 낮으면 손해 견적 그대로 저장 (화면 미리보기에 빨간 경고).
+- **서버:** POST `/api/sites/[id]/estimates/quick` `{ constructionType, areaM2, pyeongPrice }` → 현장 소유 확인(404) → 회사명 확인(400)
+  → `parseQuickEstimateBody` ([lib/quick-estimate.ts](lib/quick-estimate.ts) — 유형 3종, 면적 0.1~100,000㎡, 평당가 정수 1~1,000만 원,
+  부가세 포함 최종가 ≤ 32비트 정수 → 400 한국어) → `quickEstimateInput` → `createEstimate({ supplyPrice })` → `{ id, siteId }` 201.
+  생성 경로(번호·라인·합계·스냅샷)는 일반 POST 와 같은 [lib/estimate-create.ts](lib/estimate-create.ts). 404 문구도 한국어.
+- **면적 상한은 설정에 따라 더 작다:** `quickMaxAreaM2` = min(100,000, 365 × 설정 '작업일수 자동 기준') — 공장값 32,850㎡.
+  넘으면 작업 일수 자동값이 견적 검증 한도(365일)를 넘으므로 `QuickNeedsFullFormError` (화면에 없는 '작업 일수' 대신
+  "번개 견적은 시공면적 N㎡까지 … 일반 견적으로"). 설정 기본값 자체가 검증 범위 밖이어도(예: 기본 인원 > 100) 같은 오류로 출처를 밝힌다.
+- **저장 범위:** 금액 컬럼은 32비트 정수 — `assertMoneyFitsDb` ([lib/estimate-input.ts](lib/estimate-input.ts))가 라인 단가·금액과
+  합계를 확인해 넘으면 InputError → 400 (`createEstimate` = 일반·번개 생성, PATCH replace 공용. 이전엔 DB 오류로 500).
+- **미리보기:** `previewQuickEstimate` — 서버와 같은 계산·같은 검증 (평수·예상 원가·마진·공급가·부가세·최종 금액). 서버가 거절할
+  입력이면 `{ ok: false, error }` 로 같은 문구를 보여 주고 제출을 막는다 (`QuickNeedsFullFormError` 면 '일반 견적으로 만들기' 링크).
+- **오류 토스트:** `quickErrorMessage` — 401(proxy 의 영문 "Unauthorized") → 로그인 만료 문구 + [로그인] 버튼(`next` = 번개 견적),
+  404 → 현장 없음, 연결 실패 → 네트워크 문구. 그 밖엔 서버의 한국어 `error`.
+- **마지막 평당가:** 공사 유형별로 이 폰에 기억 — localStorage `roofquote:quick-pyeong:v1:<userId>` (`{ roof: 350000, … }`),
+  생성 성공 시 저장, 유형을 고를 때 채움 (평당가를 직접 친 뒤엔 안 덮음). 저장소가 막혀도 폼은 그대로.
+- **나중에 '입력값 수정'** = 일반 견적과 같은 replace — 저장된 입력이 폼에 열리고, 저장하면 마진이 **percent 모드(기본 마진율)로
+  돌아간다** (평당가로 정한 공급가는 풀림 — 확인 다이얼로그가 고지). 평당가를 다시 맞추려면 상세의 평당가 칸.
+- **폼과 같게 유지할 것:** 폼 `buildPayload()` 의 반환 타입이 `EstimateFormPayload` 라 키는 타입이 묶고, 자동값·유형 기본값·
+  입력 기본값은 같은 모듈(`autoBasePerimeter` 등, `constructionTypeDefaults`, `NEW_ESTIMATE_DEFAULTS`)을 쓴다. 폼의 새 견적
+  제출 규칙을 바꾸면 `defaultEstimatePayload` 도 같이 바꿀 것. 2026-10-01 브라우저 동등성 검사 (임시 페이지·가짜 설정, DB 없음):
+  3유형 × {57.3㎡ 유형 먼저, 45평 면적 먼저, 330.58㎡} × 설정 2종(공장값·바꾼 값) = 18케이스 — 폼 초안 payload ==
+  `defaultEstimatePayload` (키 순서까지), 리팩터 전(HEAD) 폼 == 리팩터 후 폼.
+
 ### PDF preview flow
 - Estimate detail → "견적서 미리보기" button navigates to `/sites/[id]/estimates/[eid]/preview?detail=simple` (default).
 - Preview page embeds `/api/estimates/[eid]/pdf?detail=simple|detailed` in an iframe — the PDF route returns `inline` disposition by default, `?download=1` forces attachment.
@@ -627,7 +665,7 @@ All four are mutually derived: editing one updates the other three. The hero car
 
 ### Visual polish
 - Default font is Pretendard. Don't reintroduce Geist for body text.
-- BottomNav auto-hides on focused task flows (currently `/sites/new`, `/sites/[id]/estimates/new`, and routes ending in `/preview`). Check `components/BottomNav.tsx` if adding new focused flows.
+- BottomNav auto-hides on focused task flows (currently `/sites/new`, `/sites/[id]/estimates/new`, `/sites/[id]/estimates/quick`, and routes ending in `/preview`). Check `components/BottomNav.tsx` if adding new focused flows.
 - Sticky bottom action bars come in two flavors:
   - **BottomNav hidden** (focused flows): use the `StickySubmit` pattern from `app/sites/new/NewSiteForm.tsx` (sits at `bottom-0` with a gradient backdrop).
   - **BottomNav visible** (e.g. estimate detail, settings): position at `bottom-24` (or `bottom-28` for settings) so the button clears the nav pill. Bump the page's `pb-` accordingly (`pb-48` on estimate detail, `pb-32` elsewhere).
@@ -657,10 +695,10 @@ All four are mutually derived: editing one updates the other three. The hero car
 1. ~~**절곡 포함/별도 확정**~~ ✅ 완료 (2026-06-12) — 절곡 단가 = 자재비+가공비 포함 확정, `finishingMethods` 부재별 시스템 구현. RESOLVED 섹션 참조.
 2. ~~**calculations.ts 핵심 함수 vitest**~~ ✅ 완료 (2026-06-12) — `lib/__tests__/calculations.test.ts` 28케이스 (`npm test`). 계산 엔진 수정 시 반드시 테스트 추가/갱신.
 3. ~~**마진 분배 비율 스냅샷**~~ ✅ 완료 (2026-09-28) — 고객명·주소·발행일 스냅샷과 함께. 기존 견적 백필.
-4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ~~① 폼 초안 localStorage 자동 저장~~ ✅ 완료 (2026-09-30 — Edit mode 섹션 '폼 초안 자동 저장'), ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
+4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ~~① 폼 초안 localStorage 자동 저장~~ ✅ 완료 (2026-09-30 — Edit mode 섹션 '폼 초안 자동 저장'), ~~② 빠른 견적 입구~~ ✅ 완료 (2026-10-01 — '번개 견적' 섹션. finalPrice 역산이 아니라 평당가(부가세 별도) = 공급가 기준, marginMode 'amount'). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
 6. ~~**단가표 확정 → 프리셋**~~ ✅ 완료 (2026-06-16). 실수 덮어쓰기 보호 = 저장 후 '되돌리기' 토스트로 결정·구현 (2026-09-28).
-8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** ~~발송 PDF 보관(비공개 버킷)~~(2026-10-01 구현 — 운영 첫 보관 확인 필요), ~~PDF 폰트 레포 포함~~(2026-09-30 완료), ~~폼 초안 자동 저장~~(4① 완료),
+8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** ~~발송 PDF 보관(비공개 버킷)~~(2026-10-01 구현·실기기 확인 — 보관·목록·열기 정상, 위치는 견적 상세 맨 아래), ~~PDF 폰트 레포 포함~~(2026-09-30 완료), ~~폼 초안 자동 저장~~(4① 완료),
    ~~실기기 카톡 파일 공유 확인~~(2026-09-28 사용자 확인).
    **에러 추적(Sentry 등) — 보류 (2026-10-01 사용자 결정: "늘어서 필요하면 그 때 붙이자").** 실사용자 1곳이라 오류는 직접 전달되고
    서버 오류는 Vercel 로그(console.error)에 남는다. 다른 업체가 쓰기 시작하면 붙인다 — 그 전엔 다시 제안하지 말 것.

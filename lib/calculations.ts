@@ -1176,6 +1176,27 @@ export function calcFromFinalPrice(
   return { marginAmount, supplyPrice, vat, marginRate };
 }
 
+/**
+ * 공급가(부가세 전)를 정했을 때 — 평당가 입력(견적 상세)과 번개 견적 공용 (marginMode 'amount').
+ * 마진 = 공급가 − 원가, 마진율 = 마진 / 공급가 (매출 대비), 부가세 = round(공급가 × 0.1).
+ * 공급가가 원가보다 작으면 마진은 음수 (손해 견적 — 저장은 허용).
+ */
+export function calcFromSupplyPrice(
+  totalCost: number,
+  supplyPrice: number,
+  vatIncluded: boolean,
+): { marginAmount: number; marginRate: number; supplyPrice: number; vat: number; finalPrice: number } {
+  const marginAmount = supplyPrice - totalCost;
+  const vat = Math.round(supplyPrice * 0.1);
+  return {
+    marginAmount,
+    marginRate: supplyPrice > 0 ? marginAmount / supplyPrice : 0,
+    supplyPrice,
+    vat,
+    finalPrice: vatIncluded ? supplyPrice + vat : supplyPrice,
+  };
+}
+
 export function formatKRW(amount: number): string {
   return amount.toLocaleString("ko-KR") + "원";
 }

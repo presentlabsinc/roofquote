@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireUserAndSettings } from "@/lib/auth";
-import { calcTotals, calcFromFinalPrice } from "@/lib/calculations";
+import { calcTotals, calcFromFinalPrice, calcFromSupplyPrice } from "@/lib/calculations";
 import {
-  InputError, computeEstimate, estimateColumns, parseEstimateBody, parseMarginRate, snapshotColumns,
+  InputError, assertMoneyFitsDb, computeEstimate, estimateColumns, parseEstimateBody, parseMarginRate, snapshotColumns,
 } from "@/lib/estimate-input";
 import { removeForEstimates } from "@/lib/sent-pdf";
 import type { Estimate } from "@prisma/client";
@@ -148,6 +148,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       const vatIncl = input.vatIncluded ?? estimate.vatIncluded;
       const { lineItemDrafts, effectiveLossRate } = computeEstimate(settings, input);
       const totals = calcTotals(lineItemDrafts, marginRate, vatIncl);
+      // 생성과 같은 저장 범위 확인 — 넘으면 InputError → 아래 catch 가 400 (이전엔 DB 오류로 500).
+      assertMoneyFitsDb(lineItemDrafts, totals);
       const now = new Date();
 
       await prisma.$transaction(async (tx) => {
@@ -210,15 +212,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
     // 7b. 평당가 입력 → 공급가 지정. 마진은 **서버의 현재 원가** 기준으로 역산 (mode 'amount').
     //     클라이언트가 계산한 마진 차액을 보내면, 화면이 오래된 상태일 때 입력한 평당가와 다른
     //     공급가가 저장됐다 (2026-09-28).
+    //     계산은 번개 견적과 같은 calcFromSupplyPrice (2026-10-01).
     if (body.supplyPrice !== undefined) {
       const supplyPrice = won(body.supplyPrice, "공급가", 1);
-      const marginAmount = supplyPrice - estimate.totalCost;
-      const vat = Math.round(supplyPrice * 0.1);
       const updated = await prisma.estimate.update({
         where: { id: eid },
         data: {
-          marginAmount, marginRate: marginAmount / supplyPrice, supplyPrice, vat,
-          finalPrice: estimate.vatIncluded ? supplyPrice + vat : supplyPrice,
+          ...calcFromSupplyPrice(estimate.totalCost, supplyPrice, estimate.vatIncluded),
           marginMode: "amount", updatedAt: new Date(),
         },
         include: { lineItems: { orderBy: { sortOrder: "asc" } }, site: true },
