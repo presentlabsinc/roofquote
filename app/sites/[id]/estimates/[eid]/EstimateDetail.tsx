@@ -1,12 +1,13 @@
 "use client";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText, Edit3, Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Edit2, Check, Eye, EyeOff, Pencil, Undo2, Trash2, FileText, Edit3, Plus, X, ExternalLink } from "lucide-react";
 import type { Estimate, EstimateLineItem, Site } from "@prisma/client";
 import { distributeMarginForDisplay, type MarginDistributionRatios } from "@/lib/calculations";
+import type { SentPdfEntry } from "@/lib/sent-pdf-path";
 
 type FullEstimate = Estimate & { lineItems: EstimateLineItem[]; site: Site };
 
@@ -39,6 +40,14 @@ export function EstimateDetail({
 }) {
   const router = useRouter();
   const [est, setEst] = useState<FullEstimate>(initial);
+  // 서버가 새 데이터를 주면(router.refresh — 예: 미리보기에서 발송 기록이 끝남) 화면 상태도 따라간다.
+  // 이 화면이 이미 열려 있으면 useState 초기값은 다시 읽히지 않아서, 발송 기록·'보낸 견적서'가 옛값에 머물렀다.
+  // est 는 서버 응답으로만 바뀌는 값이라 새 서버 데이터로 덮어도 잃는 입력이 없다.
+  const [prevInitial, setPrevInitial] = useState(initial);
+  if (initial !== prevInitial) {
+    setPrevInitial(initial);
+    setEst(initial);
+  }
   const [expanded, setExpanded] = useState(true);
   const [clientView, setClientView] = useState(false); // 고객 보기 모드
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
@@ -524,6 +533,9 @@ export function EstimateDetail({
         </p>
       )}
 
+      {/* 보낸 견적서 — 보관된 발송본(보낸 그대로). 내부 보기에서만, 없으면 표시 안 함. */}
+      <SentPdfList estimateId={est.id} latestPath={est.pdfUrl} hidden={clientView} />
+
       {/* Edit input + Delete — destructive actions grouped at the bottom */}
       <EditEstimateButton estimateId={est.id} siteId={est.siteId} />
       <DeleteEstimateButton estimateId={est.id} siteId={est.siteId} />
@@ -541,6 +553,75 @@ export function EstimateDetail({
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+const SENT_AT_FMT = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit",
+});
+
+function fmtSize(bytes: number | null) {
+  if (bytes === null) return "";
+  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)}MB` : `${Math.max(1, Math.round(bytes / 1024))}KB`;
+}
+
+/**
+ * 보관된 발송 PDF 목록 — 화면이 뜬 뒤 불러오고, 누르면 보낸 그대로의 PDF 를 새 탭에서 연다.
+ * `latestPath`(= 서버의 pdfUrl, 보관할 때마다 바뀜)가 바뀌면 다시 불러온다 — 보관이 끝나며
+ * router.refresh() 가 오면 목록도 따라온다. 보관한 적이 없으면(null) 요청하지 않는다.
+ */
+function SentPdfList({ estimateId, latestPath, hidden }: { estimateId: string; latestPath: string | null; hidden: boolean }) {
+  const [items, setItems] = useState<SentPdfEntry[]>([]);
+  const [showAll, setShowAll] = useState(false);
+
+  useEffect(() => {
+    if (!latestPath) return;
+    let cancelled = false;
+    fetch(`/api/estimates/${estimateId}/sent-pdf`, { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((j: { items?: SentPdfEntry[] } | null) => {
+        if (!cancelled && Array.isArray(j?.items)) setItems(j.items);
+      })
+      .catch(() => { /* 목록은 부가 정보 — 실패하면 표시 안 함 */ });
+    return () => { cancelled = true; };
+  }, [estimateId, latestPath]);
+
+  if (hidden || !latestPath || items.length === 0) return null;
+  const visible = showAll ? items : items.slice(0, 3);
+
+  return (
+    <div className="bg-card rounded-2xl border border-border/60 px-4 pt-3 pb-1">
+      <h2 className="font-semibold text-foreground text-sm mb-1">보낸 견적서 <span className="text-muted-foreground font-normal tabular-nums">({items.length})</span></h2>
+      <div className="divide-y divide-border/40">
+        {visible.map((it) => (
+          <a
+            key={it.name}
+            href={`/api/estimates/${estimateId}/sent-pdf/${encodeURIComponent(it.name)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-between gap-2 min-h-11 py-2 pressable"
+          >
+            <span className="text-sm text-foreground tabular-nums">{SENT_AT_FMT.format(new Date(it.sentAt))}</span>
+            <span className="flex items-center gap-2 shrink-0">
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                {it.detail === "detailed" ? "상세" : "간단"}
+              </span>
+              {it.size !== null && <span className="text-[11px] text-muted-foreground tabular-nums">{fmtSize(it.size)}</span>}
+              <ExternalLink size={13} className="text-muted-foreground/60" />
+            </span>
+          </a>
+        ))}
+      </div>
+      {items.length > 3 && (
+        <button
+          type="button"
+          onClick={() => setShowAll((v) => !v)}
+          className="w-full min-h-11 text-xs font-medium text-muted-foreground pressable"
+        >
+          {showAll ? "접기" : `${items.length - 3}개 더 보기`}
+        </button>
+      )}
     </div>
   );
 }

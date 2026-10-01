@@ -112,7 +112,7 @@ Multi-tenant. Every page + API route requires a signed-in user; data is scoped b
   **새 테이블을 만드는 마이그레이션은 반드시 `ENABLE ROW LEVEL SECURITY` 를 같이 넣을 것.** FORCE 는 쓰지 말 것 (Prisma 도 막힘).
 - **스토리지:** 업로드 경로는 `<userId>/<uuid>.<ext>` (`/api/upload` — 라우트 인증 + 매직 바이트로 형식 판별).
   사진 삭제·현장 삭제 시 `lib/storage.ts` `removeOwnedObjects()` 가 **본인 폴더 파일만** 지운다. 직인 이전 파일은
-  과거 견적 스냅샷이 가리키므로 지우지 않는다.
+  과거 견적 스냅샷이 가리키므로 지우지 않는다. 발송 PDF 는 별도 **비공개** 버킷 — 아래 '발송 PDF 보관'.
 
 ### Adding a new model
 Any new model that holds user-owned data must:
@@ -160,11 +160,13 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | 프리셋 스냅샷 범위/헬퍼 | [lib/presets.ts](lib/presets.ts) — `PRESET_EXCLUDE`, `extractPresetSnapshot`, `applyPresetSnapshot` |
 | 프리셋 API | `app/api/presets/route.ts` (생성) + `app/api/presets/[id]/route.ts` (activate/overwrite/undo/rename/delete) |
 | 견적 폼 초안 자동 저장 | [lib/estimate-draft.ts](lib/estimate-draft.ts) (키·저장·만료·payload→초기값·자동 저장 규칙 `DraftAutosaver`, React 없음) · `app/sites/[id]/estimates/new/use-draft-autosave.ts` (디바운스·즉시 저장) · `EstimateFormWithDraft.tsx` (복원 배너) |
-| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) + `estimate-draft.test.ts` + `pdf-render.test.ts`(저장소 폰트로 오프라인 PDF 렌더) — `npm test` (vitest, 136케이스, `vitest.config.mts` = `@/` 별칭). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
+| 테스트 | `lib/__tests__/calculations.test.ts` + `presets.test.ts` + `hardening.test.ts`(9/28 보안·신뢰 회귀) + `estimate-draft.test.ts` + `pdf-render.test.ts`(저장소 폰트로 오프라인 PDF 렌더) + `sent-pdf*.test.ts`(발송 PDF 경로·버킷·라우트·공유 후 기록 — 가짜 Supabase/Prisma/fetch, `vi.mock("server-only")`) — `npm test` (vitest, 186케이스, `vitest.config.mts` = `@/` 별칭). CI: `.github/workflows/ci.yml` (tsc·test·lint) |
 | Estimate creation API | [app/api/sites/[id]/estimates/route.ts](app/api/sites/[id]/estimates/route.ts) |
 | Estimate edit API (11 actions) | [app/api/estimates/[eid]/route.ts](app/api/estimates/[eid]/route.ts) — see "Estimate edit API" below |
 | PDF generation (inline / download) | [app/api/estimates/[eid]/pdf/route.ts](app/api/estimates/[eid]/pdf/route.ts) — `?download=1` for attachment, otherwise inline for iframe |
 | Photo upload | [app/api/upload/route.ts](app/api/upload/route.ts) — requireUser + 매직 바이트 판별(JPEG·PNG·WebP·GIF·HEIC) + 4MB, `supabaseAdmin()` |
+| 발송 PDF 보관 | [lib/sent-pdf.ts](lib/sent-pdf.ts) (server-only, 비공개 버킷 입출력) · [lib/sent-pdf-path.ts](lib/sent-pdf-path.ts) (경로 규칙·검증, 순수) · `app/api/estimates/[eid]/sent-pdf/` (POST 보관·GET 목록) + `sent-pdf/[name]/` (GET 열람) |
+| PDF 응답 파일명 | [lib/content-disposition.ts](lib/content-disposition.ts) — RFC 5987 한글 파일명 (PDF·보관본 라우트 공용) |
 | 오류 화면 | `app/error.tsx` (Next 16.3: `retry` prop), `app/global-error.tsx`, `app/not-found.tsx` |
 | Main mobile UI screens | `app/{page,settings,sites/...}/*.tsx` |
 | Shared chrome | `components/AppHeader.tsx`, `components/BottomNav.tsx` |
@@ -326,7 +328,7 @@ geometric auto-fill default the user can override**; small consumables
   설정 카드·override UI 에서 행 제거 (DB 컬럼은 구버전 호환으로 유지). override 그룹에
   `bendingPricePerMmPer3m`(절곡 단가) 추가 — 이제 이게 마감 부재들의 실질 단가 노브.
 - 테스트: `lib/__tests__/calculations.test.ts` (vitest, `npm test`) — 마감 방식 분기 + 이중 계산
-  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-09-30 기준 전체 136케이스).
+  회귀 방지 + calcTotals/calcFromFinalPrice/마진 분배 라운딩 스윕/로스율 (2026-10-01 기준 전체 186케이스).
 
 **✅ RESOLVED (2026-06-12 사용자 확인):** 절곡 단가(`bendingPricePerMmPer3m` 기본 36원)는
 **자재비 + 절곡 가공비 모두 포함.** 함의:
@@ -476,7 +478,8 @@ Each group has **two modes** — the user toggles per group (+ enabled 체크박
 9. `{ finalPrice }` — back-calc from final, mode → `'finalPrice'` (line items untouched)
 10. `{ vatIncluded }` — toggle: **공급가 유지**, VAT·최종가만 다시 (vat = round(공급가×0.1)). marginMode 는 안 바꾼다
    (finalPrice 모드에서 최종가를 고정하면 토글할 때마다 공급가·마진이 10%씩 흔들렸다).
-11. `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` — 타입 검증 후 meta update
+11. `{ paymentTerms / validityDays / pdfSentAt }` — 타입 검증 후 meta update. **`pdfUrl` 은 받지 않는다** (서버 `/sent-pdf` 만 기록 — 2026-10-01).
+    `pdfSentAt` 은 공유 직후 발송 시각 기록용 (보관이 실패해도 남게).
 
 Actions 1-4 (line changes) call `recalcAndReturn(eid, estimate)` — 사용자가 고정한 기준 유지:
 - `finalPrice` 모드 → 최종가 고정, 마진 역산 ("850만원 약속").
@@ -573,7 +576,26 @@ All four are mutually derived: editing one updates the other three. The hero car
 - Estimate detail → "견적서 미리보기" button navigates to `/sites/[id]/estimates/[eid]/preview?detail=simple` (default).
 - Preview page embeds `/api/estimates/[eid]/pdf?detail=simple|detailed` in an iframe — the PDF route returns `inline` disposition by default, `?download=1` forces attachment.
 - A 간단/상세 toggle at the top of the preview switches `?detail=` query — Next router replaces the URL so back-button doesn't pile up history. The iframe `key={detailLevel}` forces a reload on toggle.
-- The preview page has its own sticky action bar with PDF 저장 + 카톡 보내기. Save respects the current detail level (filename suffix 간단/상세). Only the share action marks `pdfSentAt`.
+- The preview page has its own sticky action bar with PDF 저장 + 카톡 보내기. Save respects the current detail level (filename suffix 간단/상세). Only the share action records the send (아래 '발송 PDF 보관').
+
+### 발송 PDF 보관 (2026-10-01 — 스펙 "발송한 PDF 파일 자체도 Storage에 저장")
+- **버킷:** `estimate-pdfs` — **비공개**. `ensureSentPdfBucket()` 이 프로세스당 한 번 확인하고 없으면 만든다
+  (public:false, 10MB, application/pdf 만). 이미 공개로 되어 있으면 보관을 거부한다. 절대 공개로 바꾸지 말 것 —
+  열람은 라우트가 소유 확인 후 service-role 로 받아 돌려준다 (공개·서명 URL 을 밖에 주지 않음).
+- **경로:** `<userId>/<estimateId>/<YYYYMMDDTHHmmssSSSZ>-<simple|detailed>.pdf` (UTC, 이름순 = 시간순).
+  `lib/sent-pdf-path.ts` 의 `parseSentPdfName`/`isSentPdfPathFor` 가 정확한 패턴·본인 폴더만 통과시킨다 (`..`·다른 폴더·확장자 거부).
+- **흐름:** 미리보기 '카톡 보내기' → `navigator.share` 성공 후 [lib/sent-pdf-client.ts](lib/sent-pdf-client.ts)
+  `recordSentPdf()` 가 ① PATCH `{ pdfSentAt }` (keepalive, 10초 제한 — 화면을 떠나도 발송 시각은 남게) ②
+  **공유한 그 File(같은 바이트)** 을 `POST /api/estimates/[eid]/sent-pdf?detail=` (30초 제한, 4MB 이하, `%PDF-` 시작,
+  upsert 없음) → 서버가 `pdfUrl`(경로)·`pdfSentAt` 을 같은 시각으로 다시 기록. 결과 `stored | timeOnly | none | unknown` 에 맞춰
+  **실제로 기록된 것만** 안내 (`sentRecordNotice`). `unknown` = 시간 제한으로 끊음 — 끊어도 서버는 처리를 마칠 수 있으니
+  '못 했다'고 단정하지 않고 '보낸 견적서'에서 확인하라고 안내. none 이 아니면 `router.refresh()` — EstimateDetail 은 새
+  서버 데이터(`initial` prop 변경)를 상태에 다시 반영하므로 이미 열려 있는 상세 화면도 발송 기록·'보낸 견적서' 목록이 따라온다
+  (목록은 `pdfUrl` 이 바뀌면 다시 불러옴). 'PDF 저장'·카톡 인앱 경로는 보관하지 않는다.
+- **pdfUrl 은 서버만 쓴다** (견적 PATCH 메타에서 제거). 재발행(replace)은 pdfUrl·pdfSentAt 유지.
+- **열람:** 견적 상세(내부 보기만) '보낸 견적서' 목록 ← `GET /sent-pdf` (pdfUrl 없으면 스토리지 조회 없이 빈 목록).
+  행을 누르면 `GET /sent-pdf/[name]` 이 inline PDF (`Cache-Control: private, no-store`) 를 새 탭에.
+- **정리:** 견적 삭제·현장 삭제 시 `removeForEstimates(userId, ids)` (best-effort, 로그만 — 삭제 응답은 그대로 성공).
 
 ### Customer PDF layout (components/EstimatePDF.tsx) — v4
 - **Header (dark navy `#1e2530`)**: company name + 사업자등록번호 + phone + address on left; 견적 번호 + 발행일(`issuedAt`, KST) + "X일간 유효" on right.
@@ -611,7 +633,8 @@ All four are mutually derived: editing one updates the other three. The hero car
   - **BottomNav visible** (e.g. estimate detail, settings): position at `bottom-24` (or `bottom-28` for settings) so the button clears the nav pill. Bump the page's `pb-` accordingly (`pb-48` on estimate detail, `pb-32` elsewhere).
 
 ### Don't
-- PDF 파일 자체는 아직 보관하지 않는다 (`pdfUrl` 미사용). 9/28 스냅샷으로 재생성 결과가 발송본과 같게 됐지만, 스펙은 발송 PDF 보관을 요구 — 공개 버킷에 고객 견적서를 올리면 안 되므로 **비공개 버킷 + 서명 URL** 로 할 것 (백로그).
+- 고객 견적서 PDF 를 공개 버킷(`site-photos`)에 올리지 말 것 — 발송본은 비공개 `estimate-pdfs` 에만 (위 '발송 PDF 보관').
+  클라이언트가 보낸 `pdfUrl`·경로를 믿지 말 것 — 서버가 만든 경로만 쓰고, 열람은 이름 패턴 + 소유 확인 후.
 - Don't add base64 image storage. Use Supabase Storage via `/api/upload`.
 - Don't run `git push` from this shell with a fresh clone — it'll fail auth. 푸시 인증은 로컬 저장소 전용 credential helper 가
   gh 의 presentlabsinc 토큰을 쓴다 (2026-09-28~, 원격 URL 에 토큰을 넣지 말 것). 인증이 깨지면 사용자에게 gh 재로그인을 요청.
@@ -637,8 +660,11 @@ All four are mutually derived: editing one updates the other three. The hero car
 4. **현장 즉시성 묶음** (calc 엔진 안 건드림): ~~① 폼 초안 localStorage 자동 저장~~ ✅ 완료 (2026-09-30 — Edit mode 섹션 '폼 초안 자동 저장'), ② 빠른 견적 입구 (유형·면적·평당가 3입력 → finalPrice 역산으로 즉시 생성, 같은 Estimate 객체). ~~③ 견적 복사~~ **폐기 (2026-06-16 사용자)**: 건물 크기·모양이 다 달라 복사가 새로 만들기보다 느림 — "처음부터를 빠르게"가 방향. 다시 제안하지 말 것.
 5. **override → 기본값 승격** — 견적 저장 시 "바꾼 단가 N개를 기본값으로 저장할까요?". 기본 단가표 수렴의 엔진.
 6. ~~**단가표 확정 → 프리셋**~~ ✅ 완료 (2026-06-16). 실수 덮어쓰기 보호 = 저장 후 '되돌리기' 토스트로 결정·구현 (2026-09-28).
-8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** 발송 PDF 보관(비공개 버킷), ~~PDF 폰트 레포 포함~~(2026-09-30 완료), ~~폼 초안 자동 저장~~(4① 완료),
-   에러 추적(Sentry 등 — 계정 필요), ~~실기기 카톡 파일 공유 확인~~(2026-09-28 사용자 확인).
+8. **남은 운영·신뢰 과제 (2026-09-28 점검 후):** ~~발송 PDF 보관(비공개 버킷)~~(2026-10-01 구현 — 운영 첫 보관 확인 필요), ~~PDF 폰트 레포 포함~~(2026-09-30 완료), ~~폼 초안 자동 저장~~(4① 완료),
+   ~~실기기 카톡 파일 공유 확인~~(2026-09-28 사용자 확인).
+   **에러 추적(Sentry 등) — 보류 (2026-10-01 사용자 결정: "늘어서 필요하면 그 때 붙이자").** 실사용자 1곳이라 오류는 직접 전달되고
+   서버 오류는 Vercel 로그(console.error)에 남는다. 다른 업체가 쓰기 시작하면 붙인다 — 그 전엔 다시 제안하지 말 것.
+   붙일 때: 고객명·주소·금액이 오류 기록에 섞이지 않게 거르는 설정을 같이.
    **개발용 DB (2026-09-30 사용자 결정):** 상시 분리하지 않고 운영 프로젝트를 그대로 쓴다. 추가만 하는(nullable 칼럼·새 버킷)
    변경은 운영에 먼저 올려도 안전하므로 그대로 진행. 스키마를 크게 바꾸는 작업을 로컬에서 시험해야 할 때만 presentlabsinc 에
    **임시 시험용 프로젝트**를 만들었다가 지운다 (프로젝트 생성·DB 비밀번호는 사용자가 대시보드에서).

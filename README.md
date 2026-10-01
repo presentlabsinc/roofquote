@@ -49,7 +49,8 @@ npm run dev
 ### Supabase 사전 준비 (한 번만)
 
 1. https://supabase.com → New project (region: Seoul `ap-northeast-2` 권장)
-2. **Storage → New bucket** → `site-photos` (Public bucket 체크)
+2. **Storage → New bucket** → `site-photos` (Public bucket 체크).
+   발송 PDF 보관용 `estimate-pdfs` 는 **비공개** 버킷으로, 첫 보관 때 서버가 자동으로 만든다 (만들 필요 없음 — 공개로 바꾸면 보관을 거부함)
 3. **Project Settings → API** 에서 3개 값 복사:
    - Project URL → `NEXT_PUBLIC_SUPABASE_URL`
    - anon public 키 → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -81,6 +82,8 @@ roofquote/
 │   │   │   └── [id]/estimates/                      # POST 새 견적 생성 (라인아이템 자동 계산)
 │   │   ├── estimates/[eid]/                         # PATCH 견적 수정 (10 액션 dispatch)
 │   │   ├── estimates/[eid]/pdf/                     # GET PDF (inline 기본, ?download=1 로 다운로드)
+│   │   ├── estimates/[eid]/sent-pdf/                # POST 공유한 PDF 보관(비공개 버킷) · GET 보관본 목록
+│   │   ├── estimates/[eid]/sent-pdf/[name]/         # GET 보관본 한 부 (보낸 그대로, inline)
 │   │   └── upload/                                  # POST 사진 업로드 → Supabase Storage URL 반환
 │   ├── settings/                                    # 단가 설정 (프리셋 바 + 단가표 카드들)
 │   ├── sites/
@@ -110,6 +113,9 @@ roofquote/
 │   ├── catalog.ts                                   # 천보 실단가 카탈로그 + 4그룹 정의 + 유형별 기본값
 │   ├── presets.ts                                   # 프리셋 스냅샷 범위 (단가·계수만, 회사정보 제외)
 │   ├── estimate-draft.ts                            # 견적 폼 초안 자동 저장 (브라우저 localStorage, 14일)
+│   ├── sent-pdf.ts / sent-pdf-path.ts               # 발송 PDF 보관 — 비공개 버킷 입출력(서버 전용) / 경로 규칙·검증(순수)
+│   ├── sent-pdf-client.ts                           # 공유 후 발송 기록 (시각 먼저 → 보관, 시간 제한, 결과별 안내)
+│   ├── storage.ts · content-disposition.ts          # 사진 경로 해석·정리 / PDF 응답 파일명(RFC 5987)
 │   ├── __tests__/                                   # vitest — 계산 엔진 + 프리셋 + 초안 등 (npm test)
 │   └── utils.ts                                     # cn() 유틸
 ├── prisma/
@@ -164,6 +170,7 @@ Estimate  (모든 입력값·단가·합계가 생성 시점 snapshot)
   · 조정 레이어: pricingOverrides Json (견적별 절대값 단가), catalogModes/catalogSelections (추가 자재)
   · 합계 snapshot: totalCost, marginMode/Rate/Amount, supplyPrice, vat, finalPrice (매출 대비 마진)
   · 회사 정보 snapshot 7종 + 견적번호(YYYY-NNN 자동 채번) + pdfSentAt
+  · pdfUrl = 마지막으로 보관한 발송 PDF 의 비공개 버킷 경로 (서버만 기록 — 아래 '발송 PDF 보관')
 
 EstimateLineItem  (라인마다 자기 단가 스냅샷)
   category(material/labor/equipment/transport/meals/lodging/waste/removal/other),
@@ -239,7 +246,7 @@ PDF (v4 디자인) 에 나가는 항목:
 | `{ finalPrice }` | 최종가 직접 입력 → 마진금액 역산, 모드 = 'finalPrice' |
 | `{ vatIncluded }` | VAT 토글 → 공급가 유지, VAT·최종가만 재계산 (마진 모드 불변) |
 | `{ supplyPrice }` | 평당가 입력 → 공급가 지정, 마진은 서버 원가 기준 역산 (mode 'amount') |
-| `{ paymentTerms / validityDays / pdfUrl / pdfSentAt }` | 메타 필드 업데이트 (타입 검증) |
+| `{ paymentTerms / validityDays / pdfSentAt }` | 메타 필드 업데이트 (타입 검증). `pdfUrl` 은 받지 않음 — 서버(`/sent-pdf`)만 기록 |
 
 **중요:** `recalcAndReturn` 은 `marginMode === "finalPrice"` 일 때는 사용자가 고정한 `finalPrice` 를 유지하고 `marginRate / marginAmount` 만 재계산합니다 (라인 수정 후에도 "850만원에 맞춰줄게" 가 안 깨지도록). `amount` 모드는 마진 금액, `percent` 모드는 마진율을 고정합니다.
 
@@ -271,7 +278,13 @@ PDF (v4 디자인) 에 나가는 항목:
 - **하단 sticky 버튼**: "견적서 미리보기" → `/preview` 페이지로
 - **미리보기 페이지**: PDF 를 iframe inline 표시 → 검토 후 "PDF 저장" 또는 "카톡 보내기"
   - 진입 시 PDF 를 미리 받아 두고(iOS 는 탭 직후에만 공유창 허용), '카톡 보내기' = PDF **파일** + 요약문을 공유창으로
-  - 파일을 실제로 공유했을 때만 `pdfSentAt` 기록. 파일 공유가 안 되는 곳(카톡 인앱 브라우저·PC)은 PDF 저장 + 요약문 복사 안내
+  - 파일을 실제로 공유했을 때만 발송 기록. 파일 공유가 안 되는 곳(카톡 인앱 브라우저·PC)은 PDF 저장 + 요약문 복사 안내
+- **발송 PDF 보관**: 공유가 끝나면 공유한 그 PDF 파일(같은 바이트)을 비공개 버킷 `estimate-pdfs` 에
+  `<userId>/<estimateId>/<UTC 시각>-<simple|detailed>.pdf` 로 올리고 `pdfUrl`·`pdfSentAt` 기록 (POST `/api/estimates/[eid]/sent-pdf`).
+  발송 시각은 공유 직후 먼저 기록(PATCH, keepalive)하고 업로드엔 시간 제한 — 실제로 기록된 것만 안내
+  (`lib/sent-pdf-client.ts`). 'PDF 저장'·카톡 인앱 경로는 보관하지 않음.
+  견적 상세(내부 보기)의 **보낸 견적서** 목록에서 보낸 그대로 다시 열 수 있다 — 견적서 디자인이 바뀌어도 그대로.
+  견적·현장을 지우면 보관본도 지운다.
 
 ---
 

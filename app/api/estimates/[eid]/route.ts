@@ -5,6 +5,7 @@ import { calcTotals, calcFromFinalPrice } from "@/lib/calculations";
 import {
   InputError, computeEstimate, estimateColumns, parseEstimateBody, parseMarginRate, snapshotColumns,
 } from "@/lib/estimate-input";
+import { removeForEstimates } from "@/lib/sent-pdf";
 import type { Estimate } from "@prisma/client";
 
 const LINE_CATEGORIES = ["material", "labor", "equipment", "transport", "meals", "lodging", "waste", "removal", "other"];
@@ -256,7 +257,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       return NextResponse.json(updated);
     }
 
-    // 10. Meta update (paymentTerms, validityDays, pdfUrl, pdfSentAt) — 타입 검증 후 반영.
+    // 10. Meta update (paymentTerms, validityDays, pdfSentAt) — 타입 검증 후 반영.
+    //     pdfUrl 은 서버(/api/estimates/[eid]/sent-pdf)만 쓴다 — 본문의 pdfUrl 은 무시.
     const updateData: Record<string, unknown> = {};
     if (body.paymentTerms !== undefined) {
       if (typeof body.paymentTerms !== "string" || body.paymentTerms.length > 500) return bad("결제 조건 값이 올바르지 않습니다");
@@ -266,10 +268,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ eid: s
       const d = Number(body.validityDays);
       if (!Number.isInteger(d) || d < 1 || d > 365) return bad("유효기간은 1~365일이어야 합니다");
       updateData.validityDays = d;
-    }
-    if (body.pdfUrl !== undefined) {
-      if (body.pdfUrl !== null && (typeof body.pdfUrl !== "string" || body.pdfUrl.length > 1000)) return bad("pdfUrl 값이 올바르지 않습니다");
-      updateData.pdfUrl = body.pdfUrl;
     }
     if (body.pdfSentAt !== undefined) {
       const t = body.pdfSentAt === null ? null : new Date(String(body.pdfSentAt));
@@ -301,5 +299,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ eid: st
     where: { id: eid, site: { userId: user.id } },
   });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // 보관한 발송 PDF 도 정리 (best-effort — 실패해도 삭제 응답은 성공).
+  await removeForEstimates(user.id, [eid]);
   return NextResponse.json({ ok: true });
 }

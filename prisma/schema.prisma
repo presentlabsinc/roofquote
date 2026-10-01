@@ -395,7 +395,7 @@ model Estimate {
   estimateNumber  String?
 
   // PDF record
-  pdfUrl    String?   // Supabase Storage URL of generated PDF
+  pdfUrl    String?   // 마지막으로 보관한 발송 PDF 의 비공개 버킷(estimate-pdfs) 객체 경로 — /api/estimates/[eid]/sent-pdf 만 씀. 공개 URL 아님
   pdfSentAt DateTime? // timestamp when sent to customer
 
   createdAt DateTime @default(now())

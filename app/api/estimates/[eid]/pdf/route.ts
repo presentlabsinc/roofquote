@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { storagePathFromPublicUrl } from "@/lib/storage";
+import { contentDisposition, safeFileNamePart } from "@/lib/content-disposition";
 import { createElement } from "react";
 
 // PDF generation is heavy (font fetch + react-pdf render). Default Vercel
@@ -39,11 +40,6 @@ async function loadSeal(url: string | null): Promise<{ data: Buffer; format: "pn
   } finally {
     clearTimeout(timer);
   }
-}
-
-/** Content-Disposition 파일명 — 한글은 RFC 5987 로, ASCII 폴백도 함께. */
-function contentDisposition(kind: "inline" | "attachment", koreanName: string, asciiName: string) {
-  return `${kind}; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(koreanName)}`;
 }
 
 export async function GET(req: Request, { params }: { params: Promise<{ eid: string }> }) {
@@ -118,7 +114,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ eid: str
 
     // ?download=1 forces download. Otherwise inline for preview iframes.
     const wantDownload = url.searchParams.get("download") === "1";
-    const customer = (estimate.customerNameSnapshot ?? estimate.site.customerName ?? "고객").replace(/[\\/:*?"<>|\r\n]+/g, " ").trim() || "고객";
+    const customer = safeFileNamePart(estimate.customerNameSnapshot ?? estimate.site.customerName, "고객");
     const koreanName = `견적서-${customer}-${detailLevel === "detailed" ? "상세" : "간단"}.pdf`;
     const asciiName = `estimate-${estimate.estimateNumber ?? eid.slice(0, 8)}.pdf`;
 

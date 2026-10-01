@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
 import { parsePhotos, removeOwnedObjects } from "@/lib/storage";
+import { removeForEstimates } from "@/lib/sent-pdf";
 
 /**
  * Site ownership note: we always look up `findFirst({ id, userId })` (not
@@ -65,11 +66,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const user = await requireUser();
   const { id } = await params;
-  const current = await prisma.site.findFirst({ where: { id, userId: user.id }, select: { photos: true } });
+  const current = await prisma.site.findFirst({
+    where: { id, userId: user.id },
+    select: { photos: true, estimates: { select: { id: true } } },
+  });
   if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
   // Estimate 는 onDelete: Cascade (2026-09-28) — 현장과 함께 견적·라인도 삭제.
   const result = await prisma.site.deleteMany({ where: { id, userId: user.id } });
   if (result.count === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  await removeOwnedObjects(user.id, photoUrls(current.photos));
+  // 사진과 보관한 발송 PDF 정리 (둘 다 best-effort).
+  await Promise.all([
+    removeOwnedObjects(user.id, photoUrls(current.photos)),
+    removeForEstimates(user.id, current.estimates.map((e) => e.id)),
+  ]);
   return NextResponse.json({ ok: true });
 }

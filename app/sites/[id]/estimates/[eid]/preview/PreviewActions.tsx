@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Copy, FileText, Share2 } from "lucide-react";
+import { recordSentPdf, sentRecordNotice } from "@/lib/sent-pdf-client";
 
 interface Props {
   estimateId: string;
@@ -23,7 +25,9 @@ type PdfCache = { level: "simple" | "detailed"; file: File };
  *   1. 화면 진입 시 PDF 를 미리 받아 둔다 — iOS 는 탭 직후(사용자 제스처 안)에만 공유창을 열 수
  *      있어서, 탭한 뒤에 PDF 를 받기 시작하면 공유가 거부될 수 있다.
  *   2. 파일 공유가 되는 브라우저(Android Chrome·iOS Safari)는 PDF 파일 + 요약문을 공유창으로.
- *      실제로 파일을 공유했을 때만 pdfSentAt 기록.
+ *      실제로 파일을 공유했을 때만 발송 기록 (lib/sent-pdf-client.ts) — 발송 시각을 먼저 기록하고
+ *      (PATCH pdfSentAt), 공유한 그 파일(같은 바이트)을 서버에 보관 (POST /sent-pdf → pdfUrl).
+ *      무엇이 기록됐는지 그대로 안내한다.
  *   3. 파일 공유가 안 되는 곳(PC 등)은 PDF 저장 + 요약문 복사 후 안내.
  *   4. 카톡 인앱 브라우저는 파일 공유도 blob 저장도 안 되는 경우가 많다 — 외부 브라우저로 열기
  *      (kakaotalk://web/openExternal)를 권하고, 저장은 서버 URL(첨부 응답)로 직접 이동한다.
@@ -35,9 +39,10 @@ function openInExternalBrowser() {
   window.location.href = `kakaotalk://web/openExternal?url=${encodeURIComponent(window.location.href)}`;
 }
 export function PreviewActions({ estimateId, siteId, customerName, summaryText, detailLevel }: Props) {
-  const [loading, setLoading] = useState<"save" | "share" | null>(null);
+  const router = useRouter();
+  const [loading, setLoading] = useState<"save" | "share" | "record" | null>(null);
   const [pdf, setPdf] = useState<PdfCache | null>(null);
-  const fetching = useRef<Promise<File> | null>(null);
+  const fetching = useRef<{ level: "simple" | "detailed"; promise: Promise<File> } | null>(null);
 
   const filename = `견적서-${customerName}-${detailLevel === "detailed" ? "상세" : "간단"}.pdf`;
   const pdfUrl = `/api/estimates/${estimateId}/pdf?download=1&detail=${detailLevel}`;
@@ -51,13 +56,15 @@ export function PreviewActions({ estimateId, siteId, customerName, summaryText, 
 
   function getPdf(): Promise<File> {
     if (pdf && pdf.level === detailLevel) return Promise.resolve(pdf.file);
-    if (!fetching.current) {
+    // 받는 중인 PDF 가 지금 보는 간단/상세와 같을 때만 재사용 (보관 시 detail 표시가 틀리지 않게).
+    if (!fetching.current || fetching.current.level !== detailLevel) {
       const level = detailLevel;
-      fetching.current = fetchPdf()
+      const promise: Promise<File> = fetchPdf()
         .then((file) => { setPdf({ level, file }); return file; })
-        .finally(() => { fetching.current = null; });
+        .finally(() => { if (fetching.current?.promise === promise) fetching.current = null; });
+      fetching.current = { level, promise };
     }
-    return fetching.current;
+    return fetching.current.promise;
   }
 
   // 진입·간단/상세 전환 시 미리 받아 두기 (공유 버튼이 제스처 안에서 바로 열리게).
@@ -70,14 +77,6 @@ export function PreviewActions({ estimateId, siteId, customerName, summaryText, 
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estimateId, detailLevel]);
-
-  async function markSent() {
-    await fetch(`/api/estimates/${estimateId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pdfSentAt: new Date().toISOString() }),
-    }).catch(() => {});
-  }
 
   function downloadFile(file: File) {
     const url = URL.createObjectURL(file);
@@ -142,11 +141,21 @@ export function PreviewActions({ estimateId, siteId, customerName, summaryText, 
 
     setLoading("share");
     try {
+      const level = detailLevel;
       const file = ready ?? (await getPdf());
       if (canShareFiles(file)) {
         await navigator.share({ files: [file], title: "견적서", text: summaryText });
-        await markSent();
+        // 공유는 끝났다 — 이후 기록 실패는 안내만 (발송 자체는 성공).
         toast.success("견적서를 보냈어요");
+        setLoading("record");
+        const outcome = await recordSentPdf({ estimateId, file, level });
+        const notice = sentRecordNotice(outcome);
+        if (notice) {
+          if (outcome === "none" || outcome === "unknown") toast.warning(notice, { duration: 8000 });
+          else toast.info(notice, { duration: 6000 });
+        }
+        // 상세 화면(마지막 발송·보낸 견적서)이 캐시된 옛 화면을 보이지 않게 — 이미 돌아가 있어도 갱신된다.
+        if (outcome !== "none") router.refresh();
         return;
       }
       // 파일 공유 불가 (카톡 인앱 브라우저·PC 등) — 저장 + 요약문 복사로 안내. 발송 기록은 안 함.
@@ -239,7 +248,7 @@ export function PreviewActions({ estimateId, siteId, customerName, summaryText, 
               className="flex-1 h-14 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 shadow-lg shadow-primary/25 pressable"
             >
               <Share2 size={18} />
-              {loading === "share" ? "준비 중..." : "카톡 보내기"}
+              {loading === "share" ? "준비 중..." : loading === "record" ? "기록 중..." : "카톡 보내기"}
             </Button>
           </div>
         </div>
