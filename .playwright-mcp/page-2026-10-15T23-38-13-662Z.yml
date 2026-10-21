@@ -1,0 +1,307 @@
+- generic [active] [ref=f76e1]:
+  - generic:
+    - link "본문 바로가기":
+      - /url: "#ct"
+  - generic [ref=f76e2]:
+    - generic [ref=f76e3]:
+      - heading [level=1] [ref=f76e4]:
+        - link "블로그" [ref=f76e5] [cursor=pointer]:
+          - /url: /Recommendation.naver
+      - heading [level=2] [ref=f76e7]:
+        - generic [ref=f76e8]:
+          - link "카테고리 이동" [ref=f76e10] [cursor=pointer]:
+            - /url: "#"
+          - link "(주)유반장스틸방수" [ref=f76e13] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=u-banjang
+    - generic [ref=f76e15]:
+      - link "검색" [ref=f76e16] [cursor=pointer]:
+        - /url: /PostSearchList.naver?blogId=u-banjang
+      - button "MY메뉴 열기" [ref=f76e18] [cursor=pointer]
+  - main [ref=f76e21]:
+    - generic [ref=f76e24]:
+      - generic [ref=f76e27]:
+        - link "ETC" [ref=f76e29] [cursor=pointer]:
+          - /url: /PostList.naver?blogId=u-banjang&categoryNo=12&logCode=0&categoryName=ETC#postlist_block
+        - paragraph [ref=f76e31]:
+          - generic [ref=f76e32]: 포스코 포스맥(PosMAC) 강판 — 1.5와 3.0의 차이 한눈에 정리
+        - generic [ref=f76e33]:
+          - link [ref=f76e34] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=u-banjang
+            - img "프로필" [ref=f76e36]
+          - generic [ref=f76e37]:
+            - link [ref=f76e39] [cursor=pointer]:
+              - /url: /PostList.naver?blogId=u-banjang
+              - strong [ref=f76e40]: 주식회사 유반장스틸
+            - paragraph [ref=f76e41]: 2025. 11. 21. 5:19
+        - generic [ref=f76e42]:
+          - link "이웃추가" [ref=f76e43] [cursor=pointer]:
+            - /url: "#"
+          - button "본문 기타 기능" [ref=f76e46] [cursor=pointer]
+      - generic [ref=f76e48]:
+        - link [ref=f76e53] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f76e57]:
+          - paragraph [ref=f76e58]
+          - paragraph [ref=f76e59]:
+            - generic [ref=f76e60]: 🔩 녹슬지 않는 철판, 포스맥(PosMAC) 강판의 모든 것
+          - paragraph [ref=f76e61]:
+            - generic [ref=f76e62]: 📹 드론 촬영으로 보는 실제 적용 사례
+          - paragraph [ref=f76e63]:
+            - text: ㈜유반장스틸방수는 포스코
+            - generic [ref=f76e64]: PosMAC(포스맥)
+            - text: 정품 자재를 사용한 시공 현장을 드론 영상으로 직접 촬영하여, 공사 전후 모습을 생생하게 공개하고 있습니다.
+        - separator [ref=f76e73]
+        - generic [ref=f76e77]:
+          - paragraph [ref=f76e78]:
+            - generic [ref=f76e79]: 1️⃣ 포스맥(PosMAC) 이란?
+          - paragraph [ref=f76e80]:
+            - generic [ref=f76e81]: PosMAC
+            - text: 은 POSCO(포스코)가 개발한
+            - generic [ref=f76e82]: 차세대 내식성 강판
+            - text: 으로,
+          - paragraph [ref=f76e83]: 기존 용융아연도금강판(GI)에 **마그네슘(Mg)**과 **알루미늄(Al)**을 더한 신소재입니다.
+          - paragraph [ref=f76e84]: 이 세 가지 금속이 결합된 도금층이 강력한 보호막을 형성해,
+          - paragraph [ref=f76e85]:
+            - text: 기존 GI 대비
+            - generic [ref=f76e86]: 5~10배 이상의 내식 성능
+            - text: 을 보여줍니다.
+        - separator [ref=f76e91]
+        - paragraph [ref=f76e96]:
+          - generic [ref=f76e97]: 2️⃣ 포스맥의 구조
+        - table [ref=f76e102]:
+          - rowgroup [ref=f76e103]:
+            - row [ref=f76e104]:
+              - cell "구성층" [ref=f76e105]:
+                - paragraph [ref=f76e107]:
+                  - generic [ref=f76e108]: 구성층
+              - cell "설명" [ref=f76e109]:
+                - paragraph [ref=f76e111]:
+                  - generic [ref=f76e112]: 설명
+            - row [ref=f76e113]:
+              - cell "표면층" [ref=f76e114]:
+                - paragraph [ref=f76e116]:
+                  - generic [ref=f76e117]: 표면층
+              - cell [ref=f76e118]:
+                - paragraph [ref=f76e120]: 화학처리 도막(일시방청)
+            - row [ref=f76e121]:
+              - cell "도금층" [ref=f76e122]:
+                - paragraph [ref=f76e124]:
+                  - generic [ref=f76e125]: 도금층
+              - cell [ref=f76e126]:
+                - paragraph [ref=f76e128]: 아연(Zn), 마그네슘(Mg), 알루미늄(Al) 복합층
+            - row [ref=f76e129]:
+              - cell "기판" [ref=f76e130]:
+                - paragraph [ref=f76e132]:
+                  - generic [ref=f76e133]: 기판
+              - cell [ref=f76e134]:
+                - paragraph [ref=f76e136]: 강판(Steel)
+        - generic [ref=f76e140]:
+          - paragraph [ref=f76e141]: 이 복합 도금층이 부식 진행을 억제하고,
+          - paragraph [ref=f76e142]:
+            - text: 절단면까지 스스로 보호하는
+            - generic [ref=f76e143]: 자기수복(Self-Healing) 기능
+            - text: 을 갖추고 있습니다.
+        - generic [ref=f76e146]:
+          - link [ref=f76e148] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f76e150]:
+            - generic [ref=f76e151]: 포스맥 1.5
+        - separator [ref=f76e156]
+        - paragraph [ref=f76e161]:
+          - generic [ref=f76e162]: 3️⃣ 포스맥 1.5 vs 포스맥 3.0 비교
+        - table [ref=f76e167]:
+          - rowgroup [ref=f76e168]:
+            - row [ref=f76e169]:
+              - cell "구분" [ref=f76e170]:
+                - paragraph [ref=f76e172]:
+                  - generic [ref=f76e173]: 구분
+              - cell "PosMAC 1.5" [ref=f76e174]:
+                - paragraph [ref=f76e176]:
+                  - generic [ref=f76e177]: PosMAC 1.5
+              - cell "PosMAC 3.0" [ref=f76e178]:
+                - paragraph [ref=f76e180]:
+                  - generic [ref=f76e181]: PosMAC 3.0
+            - row [ref=f76e182]:
+              - cell "도금층 경도(hv)" [ref=f76e183]:
+                - paragraph [ref=f76e185]:
+                  - generic [ref=f76e186]: 도금층 경도(hv)
+              - cell [ref=f76e187]:
+                - paragraph [ref=f76e189]: 100~110
+              - cell [ref=f76e190]:
+                - paragraph [ref=f76e192]: 110~130
+            - row [ref=f76e193]:
+              - cell "내식성" [ref=f76e194]:
+                - paragraph [ref=f76e196]:
+                  - generic [ref=f76e197]: 내식성
+              - cell [ref=f76e198]:
+                - paragraph [ref=f76e200]: GI 대비 약 2배 ↑
+              - cell [ref=f76e201]:
+                - paragraph [ref=f76e203]: GI 대비 약 5~10배 ↑
+            - row [ref=f76e204]:
+              - cell "가공성" [ref=f76e205]:
+                - paragraph [ref=f76e207]:
+                  - generic [ref=f76e208]: 가공성
+              - cell [ref=f76e209]:
+                - paragraph [ref=f76e211]: 우수 (도금층 균열 적음)
+              - cell [ref=f76e212]:
+                - paragraph [ref=f76e214]: 우수하지만 1.5보다 경도 높음
+            - row [ref=f76e215]:
+              - cell "용접성" [ref=f76e216]:
+                - paragraph [ref=f76e218]:
+                  - generic [ref=f76e219]: 용접성
+              - cell [ref=f76e220]:
+                - paragraph [ref=f76e222]: 양호
+              - cell [ref=f76e223]:
+                - paragraph [ref=f76e225]: 보통
+            - row [ref=f76e226]:
+              - cell "대표 용도" [ref=f76e227]:
+                - paragraph [ref=f76e229]:
+                  - generic [ref=f76e230]: 대표 용도
+              - cell [ref=f76e231]:
+                - paragraph [ref=f76e233]: 지붕재, 가전, 칼라강판 등
+              - cell [ref=f76e234]:
+                - paragraph [ref=f76e236]: 케이블 트레이, 가드레일, 수산양식장, 물탱크 등
+            - row [ref=f76e237]:
+              - cell "도금층 특징" [ref=f76e238]:
+                - paragraph [ref=f76e240]:
+                  - generic [ref=f76e241]: 도금층 특징
+              - cell [ref=f76e242]:
+                - paragraph [ref=f76e244]: 표면 품질 우수, 색상 균일
+              - cell [ref=f76e245]:
+                - paragraph [ref=f76e247]: 절단면 내식성 매우 우수
+        - generic [ref=f76e250]:
+          - link [ref=f76e252] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f76e254]:
+            - generic [ref=f76e255]: 포스맥 3.0
+        - paragraph [ref=f76e260]
+        - separator [ref=f76e265]
+        - paragraph [ref=f76e270]:
+          - generic [ref=f76e271]: 4️⃣ 포스맥의 부식 억제 원리
+        - table [ref=f76e276]:
+          - rowgroup [ref=f76e277]:
+            - row [ref=f76e278]:
+              - cell "구분" [ref=f76e279]:
+                - paragraph [ref=f76e281]:
+                  - generic [ref=f76e282]: 구분
+              - cell "GI (용융아연도금강판)" [ref=f76e283]:
+                - paragraph [ref=f76e285]:
+                  - generic [ref=f76e286]: GI (용융아연도금강판)
+              - cell "PosMAC" [ref=f76e287]:
+                - paragraph [ref=f76e289]:
+                  - generic [ref=f76e290]: PosMAC
+            - row [ref=f76e291]:
+              - cell "부식 생성물" [ref=f76e292]:
+                - paragraph [ref=f76e294]:
+                  - generic [ref=f76e295]: 부식 생성물
+              - cell [ref=f76e296]:
+                - paragraph [ref=f76e298]: ZnO
+              - cell [ref=f76e299]:
+                - paragraph [ref=f76e301]: Zn₅(OH)₈Cl₂·H₂O, Zn₂CO₃(OH)₂·H₂O 등
+            - row [ref=f76e302]:
+              - cell "특징" [ref=f76e303]:
+                - paragraph [ref=f76e305]:
+                  - generic [ref=f76e306]: 특징
+              - cell [ref=f76e307]:
+                - paragraph [ref=f76e309]: 다공성, 보호력 약함
+              - cell [ref=f76e310]:
+                - paragraph [ref=f76e312]: 조밀하고 안정적 구조로 부식 억제
+            - row [ref=f76e313]:
+              - cell "결과" [ref=f76e314]:
+                - paragraph [ref=f76e316]:
+                  - generic [ref=f76e317]: 결과
+              - cell [ref=f76e318]:
+                - paragraph [ref=f76e320]: 부식 진행 쉬움
+              - cell [ref=f76e321]:
+                - paragraph [ref=f76e323]: 절단면까지 스스로 보호 (Self Healing)
+        - paragraph [ref=f76e328]:
+          - text: 👉 즉,
+          - generic [ref=f76e329]: 마그네슘 성분이 안정한 부식성 생성물을 만들어 철판이 부식되는 것을 원천 차단
+          - text: 합니다.
+        - separator [ref=f76e334]
+        - generic [ref=f76e338]:
+          - paragraph [ref=f76e339]:
+            - generic [ref=f76e340]: 5️⃣ 실제 적용 사례
+          - list [ref=f76e341]:
+            - listitem [ref=f76e342]:
+              - paragraph [ref=f76e343]: 에어컨 실외기 케이스
+            - listitem [ref=f76e344]:
+              - paragraph [ref=f76e345]: 세탁기/냉장고 외판
+            - listitem [ref=f76e346]:
+              - paragraph [ref=f76e347]: 건물 지붕재 및 벽체 패널
+            - listitem [ref=f76e348]:
+              - paragraph [ref=f76e349]: 배전반, 케이블 트레이
+            - listitem [ref=f76e350]:
+              - paragraph [ref=f76e351]: 수산양식장, 물탱크, 가드레일 등
+          - paragraph [ref=f76e352]: ㈜유반장스틸방수에서는 모든 **옥상 및 지붕 방수공사에 POSCO 정품 PosMAC 강판(1.5 or 3.0)**을 적용하고 있습니다.
+          - paragraph [ref=f76e353]:
+            - text: 내식성이 강하고, 장기적으로
+            - generic [ref=f76e354]: 녹 발생이 거의 없는 반영구적 방수 효과
+            - text: 를 제공합니다.
+        - separator [ref=f76e359]
+        - paragraph [ref=f76e364]:
+          - generic [ref=f76e365]: ✅ 정리하면
+        - table [ref=f76e370]:
+          - rowgroup [ref=f76e371]:
+            - row [ref=f76e372]:
+              - cell "항목" [ref=f76e373]:
+                - paragraph [ref=f76e375]:
+                  - generic [ref=f76e376]: 항목
+              - cell "포스맥 1.5" [ref=f76e377]:
+                - paragraph [ref=f76e379]:
+                  - generic [ref=f76e380]: 포스맥 1.5
+              - cell "포스맥 3.0" [ref=f76e381]:
+                - paragraph [ref=f76e383]:
+                  - generic [ref=f76e384]: 포스맥 3.0
+            - row [ref=f76e385]:
+              - cell "내식성" [ref=f76e386]:
+                - paragraph [ref=f76e388]:
+                  - generic [ref=f76e389]: 내식성
+              - cell [ref=f76e390]:
+                - paragraph [ref=f76e392]: ★★★
+              - cell [ref=f76e393]:
+                - paragraph [ref=f76e395]: ★★★★★
+            - row [ref=f76e396]:
+              - cell "표면 품질" [ref=f76e397]:
+                - paragraph [ref=f76e399]:
+                  - generic [ref=f76e400]: 표면 품질
+              - cell [ref=f76e401]:
+                - paragraph [ref=f76e403]: ★★★★★
+              - cell [ref=f76e404]:
+                - paragraph [ref=f76e406]: ★★★★
+            - row [ref=f76e407]:
+              - cell "용접성/가공성" [ref=f76e408]:
+                - paragraph [ref=f76e410]:
+                  - generic [ref=f76e411]: 용접성/가공성
+              - cell [ref=f76e412]:
+                - paragraph [ref=f76e414]: ★★★★★
+              - cell [ref=f76e415]:
+                - paragraph [ref=f76e417]: ★★★★
+            - row [ref=f76e418]:
+              - cell "가격대" [ref=f76e419]:
+                - paragraph [ref=f76e421]:
+                  - generic [ref=f76e422]: 가격대
+              - cell [ref=f76e423]:
+                - paragraph [ref=f76e425]: 합리적
+              - cell [ref=f76e426]:
+                - paragraph [ref=f76e428]: 다소 높음
+            - row [ref=f76e429]:
+              - cell "적합 용도" [ref=f76e430]:
+                - paragraph [ref=f76e432]:
+                  - generic [ref=f76e433]: 적합 용도
+              - cell [ref=f76e434]:
+                - paragraph [ref=f76e436]: 칼라강판, 주택 지붕, 방수 패널
+              - cell [ref=f76e437]:
+                - paragraph [ref=f76e439]: 산업설비, 옥외 구조물, 해안 지역
+        - separator [ref=f76e444]
+        - paragraph [ref=f76e449]:
+          - generic [ref=f76e450]: 💬 결론
+        - blockquote [ref=f76e454]:
+          - generic [ref=f76e455]:
+            - paragraph [ref=f76e456]:
+              - generic [ref=f76e457]: 포스맥은 “녹슬지 않는 철판”으로 불릴 만큼 뛰어난 내식성과 경제성을 갖춘 신소재입니다.
+            - paragraph [ref=f76e458]: 유반장스틸방수는 POSCO 정품 PosMAC을 사용하여,
+            - paragraph [ref=f76e459]:
+              - generic [ref=f76e460]: 합법 면허 시공 + 특허 공법 + 국가자격 보유 기술진
+              - text: 의 체계적인 방수공사를 제공합니다.
+        - paragraph [ref=f76e465]

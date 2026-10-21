@@ -1,0 +1,218 @@
+- generic [active] [ref=f27e1]:
+  - generic:  
+  - text: 
+  - generic:
+    - list [ref=f27e3]:  
+    - button "닫기" [ref=f27e4] [cursor=pointer]:
+      - generic [aria-hidden] [ref=f27e5]: 
+  - banner [ref=f27e7]:
+    - generic [ref=f27e8]:
+      - generic: 
+      - generic [ref=f27e9]:
+        - text: 
+        - generic [ref=f27e10]:
+          - generic [ref=f27e22]:
+            - paragraph [ref=f27e23]:
+              - strong [ref=f27e25]: 조달청· 나라장터
+              - strong [ref=f27e27]
+              - strong [ref=f27e29]: 등록업체!
+              - strong [ref=f27e30]
+            - paragraph [ref=f27e31]:
+              - strong [ref=f27e32]:
+                - generic [ref=f27e33]: 특허기술
+              - strong [ref=f27e35]: 보유!
+              - strong [ref=f27e37]: 여성기업
+              - strong [ref=f27e39]: 인증!
+            - paragraph [ref=f27e40]:
+              - strong [ref=f27e42]: 관공서 · 공공기관
+              - generic [ref=f27e43]:
+                - strong [ref=f27e44]
+                - strong [ref=f27e45]: 수의계약
+                - strong [ref=f27e46]: 가능!
+          - generic [ref=f27e51]:
+            - link "옥상스틸방수·지붕공사|㈜유반장스틸방수 옥상스틸방수·지붕공사|㈜유반장스틸방수 옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f27e58] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f27e59]: 옥상스틸방수·지붕공사|㈜유반장스틸방수
+              - img "옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f27e60]
+              - img "옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f27e61]
+            - link "" [ref=f27e67] [cursor=pointer]:
+              - /url: javascript:;
+  - main [ref=f27e72]:
+    - generic [ref=f27e73]:
+      - paragraph [ref=f27e81]:
+        - text: 📣
+        - strong [ref=f27e82]:
+          - text: 유반장스틸방수의 다양한 시공사례를 살펴보시고 문의주세요 친절하게 상담해 드립니다
+          - generic [ref=f27e83]: (전국시공)
+      - separator [ref=f27e90]
+      - generic [ref=f27e95]:
+        - generic [ref=f27e96]:
+          - generic [ref=f27e97]:
+            - paragraph [ref=f27e102] [cursor=pointer]
+            - paragraph [ref=f27e107] [cursor=pointer]
+          - generic [ref=f27e108]:
+            - paragraph [ref=f27e113] [cursor=pointer]:
+              - text: 스틸방수
+              - generic [ref=f27e114]: 영주 스틸방수 지붕공사
+            - paragraph [ref=f27e119] [cursor=pointer]
+        - link "더보기" [ref=f27e121] [cursor=pointer]:
+          - /url: javascript:;
+  - main [ref=f27e125]:
+    - generic [ref=f27e126]:
+      - separator [ref=f27e133]
+      - generic [ref=f27e140]:
+        - paragraph [ref=f27e141]:
+          - strong [ref=f27e143]: 최고의 기술력과 전국적시공인프라 - 시공사례 살펴보기
+        - paragraph [ref=f27e144]
+        - paragraph [ref=f27e145]:
+          - strong [ref=f27e147]: 전국을 무대로 책임시공과 체계적인 관리로 최상의 방수솔루션을 제공하는 유반장스틸방수,
+        - paragraph [ref=f27e148]:
+          - strong [ref=f27e150]: 고객만족을 위한 무한한 책임정신은 저희가 고객님께 드리는 최고의 약속입니다.
+        - paragraph [ref=f27e151]
+      - generic [ref=f27e161]:
+        - heading "대전 옥상방수 비용 총정리｜포함·제외 항목 모르면 견적 비교가 어렵습니다" [level=1] [ref=f27e163]
+        - generic [ref=f27e167]:
+          - generic [ref=f27e168]: 관리자
+          - link "옥상방수" [ref=f27e170] [cursor=pointer]:
+            - /url: /waterproof/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9
+        - generic [ref=f27e172]:
+          - paragraph [ref=f27e173]:
+            - img "b2e04af938001.png" [ref=f27e174] [cursor=pointer]
+          - paragraph [ref=f27e175]:
+            - strong [ref=f27e177]:
+              - emphasis [ref=f27e178]: ① 대전 옥상방수 비용 총정리｜포함·제외 항목 모르면 견적 비교가 어렵습니다
+          - paragraph [ref=f27e179]: 대전 옥상방수 상담을 진행하다 보면 가장 많이 듣는 질문이 있습니다.
+          - paragraph [ref=f27e180]: “왜 업체마다 금액 차이가 이렇게 크죠?”“이 견적에 다 포함된 건가요?”“공사하다가 추가 비용이 또 생기지는 않나요?”
+          - paragraph [ref=f27e181]: 결론부터 말씀드리면,👉 대전 옥상방수 비용 차이의 대부분은 자재가 아니라 ‘포함·제외 항목’의 차이입니다.
+          - paragraph [ref=f27e182]:
+            - strong [ref=f27e183]:
+              - emphasis [ref=f27e184]: 🔎 대전 옥상방수 비용이 달라지는 이유
+          - paragraph [ref=f27e185]: 대전은 준공 10년 이상 빌라·상가·근린생활시설이 밀집된 지역입니다.특히 다음과 같은 구조가 많습니다.
+          - list [ref=f27e186]:
+            - listitem [ref=f27e187]:
+              - paragraph [ref=f27e188]: 평지붕 + 난간(파라펫) 구조
+            - listitem [ref=f27e189]:
+              - paragraph [ref=f27e190]: 우수관이 벽체 쪽으로 몰린 설계
+            - listitem [ref=f27e191]:
+              - paragraph [ref=f27e192]: 기존 도막방수 위 덧방 반복
+            - listitem [ref=f27e193]:
+              - paragraph [ref=f27e194]:
+                - img "0f8cdb0fc4195.jpg" [ref=f27e195] [cursor=pointer]
+                - text: 부분 보수 이력 다수
+          - paragraph [ref=f27e196]: 이 구조에서는 단순 도막 재시공만으로는 누수가 반복될 가능성이 높습니다.그래서 스틸방수, 패널스틸방수, 리얼스틸방수 같은 구조형 공법이 필요한 경우가 많습니다.
+          - paragraph [ref=f27e197]:
+            - strong [ref=f27e198]:
+              - emphasis [ref=f27e199]: 🧱 대전 옥상방수 기본 포함 항목 (일반적 기준)
+          - paragraph [ref=f27e200]: 일반적으로 다음 항목은 기본 견적에 포함됩니다.
+          - list [ref=f27e201]:
+            - listitem [ref=f27e202]:
+              - paragraph [ref=f27e203]: 기존 바닥 정리
+            - listitem [ref=f27e204]:
+              - paragraph [ref=f27e205]: 본 시공 공정 (도막방수 또는 스틸방수)
+            - listitem [ref=f27e206]:
+              - paragraph [ref=f27e207]: 기본 체결 자재
+            - listitem [ref=f27e208]:
+              - paragraph [ref=f27e209]:
+                - text: 간단한 코킹 및 마감
+                - img "df9d6e05063be.jpg" [ref=f27e210] [cursor=pointer]
+          - paragraph [ref=f27e211]: 하지만 여기서 중요한 점은👉 “어디까지가 기본인지”는 업체마다 다르다는 것입니다.
+          - paragraph [ref=f27e212]: ⚠️ 반드시 확인해야 할 추가 비용 항목
+          - paragraph [ref=f27e213]:
+            - emphasis [ref=f27e214]:
+              - strong [ref=f27e215]: ❗ 1. 하부 구조 보강
+            - text: 경량철골, 목재 하부틀, 수평 보정 등은 별도 항목인 경우가 많습니다.스틸방수나 지붕공사에서는 이 부분이 비용 차이를 크게 만듭니다.
+          - paragraph [ref=f27e216]:
+            - emphasis [ref=f27e217]:
+              - strong [ref=f27e218]: ❗ 2. 후레싱 마감
+            - text: 벽체 접합부, 난간, 우수관 주변 후레싱은 누수 재발과 직결됩니다.
+          - paragraph [ref=f27e219]: ❗ 3. 비계 및 장비 사용료대전 상가·빌라 구조는 비계 설치가 필요한 경우가 많습니다.
+          - paragraph [ref=f27e220]:
+            - emphasis [ref=f27e221]:
+              - strong [ref=f27e222]: ❗ 4. 폐기물 처리비
+            - text: 기존 방수층 철거 및 반출 비용이 별도일 수 있습니다.
+            - img "fd84ee084a407.png" [ref=f27e223] [cursor=pointer]
+          - paragraph [ref=f27e224]
+          - paragraph [ref=f27e225]: 📊 대전 옥상방수 견적 비교 체크리스트
+          - paragraph [ref=f27e226]: ✔ 하부 구조 포함 여부✔ 후레싱 범위✔ 비계·장비 포함 여부✔ 폐기물 처리 포함 여부✔ 하자보증 조건✔ 책임 시공 주체 명시 여부
+          - paragraph [ref=f27e227]: 이 6가지만 확인해도싼 견적과 제대로 된 견적이 구분됩니다.
+          - paragraph [ref=f27e228]:
+            - text: 👷 책임 시공 기준
+            - img "ce70d2a4a2ae9.jpg" [ref=f27e229] [cursor=pointer]
+          - paragraph [ref=f27e230]:
+            - emphasis [ref=f27e231]:
+              - strong [ref=f27e232]: ㈜유반장스틸방수는
+          - paragraph [ref=f27e233]: ✔ 옥상방수공사업 면허 보유✔ 지붕판금공사업 면허 보유✔ 건축기사 책임시공✔ 방수산업기사 100% 책임보증✔ POSCO 정품 강판 사용
+          - paragraph [ref=f27e234]:
+            - text: 을 기준으로 시공합니다.
+            - img "536c4f45ca179.png" [ref=f27e235] [cursor=pointer]
+          - paragraph [ref=f27e236]: 또한 여성기업 확인 기업으로👉 관공서 수의계약 5,500만원까지 가능합니다.
+          - paragraph [ref=f27e237]: 대전 지역 학교·관공서·공공기관 옥상방수 공사 직접 계약 대응이 가능합니다.
+          - paragraph [ref=f27e238]: 🏁 마무리
+          - paragraph [ref=f27e239]: 대전 옥상방수 비용은얼마냐보다 무엇이 포함되어 있느냐가 더 중요합니다.
+          - paragraph [ref=f27e240]: 도면·치수·현장 사진을 보내주시면대전 기준으로 구조 판단 후 정확하게 안내드립니다.
+        - generic [ref=f27e241]:
+          - generic [ref=f27e242]:
+            - link "천안 옥상방수, 실패 없는 업체 선정 가이드" [ref=f27e243] [cursor=pointer]:
+              - /url: /waterproof/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=170764155&t=board
+              - generic [aria-hidden] [ref=f27e244]: 
+            - link "용인·평택 우레탄방수 vs 스틸방수 | 30년 내구성 합법 시공｜㈜유반장스틸방수" [ref=f27e246] [cursor=pointer]:
+              - /url: /waterproof/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=168171467&t=board
+              - generic [aria-hidden] [ref=f27e247]: 
+          - generic [ref=f27e249]:
+            - button "목록" [ref=f27e250] [cursor=pointer]
+            - button "글쓰기" [ref=f27e251] [cursor=pointer]
+  - text:    
+  - main [ref=f27e267]:
+    - separator [ref=f27e274]
+    - generic [ref=f27e275]:
+      - link "문의전화 바로걸기 1588-5922" [ref=f27e289] [cursor=pointer]:
+        - /url: tel:15885922
+        - generic [aria-hidden] [ref=f27e290]: 
+        - text: 문의전화 바로걸기 1588-5922
+      - generic [ref=f27e302]:
+        - separator [ref=f27e303]
+        - separator [ref=f27e304]
+      - link "유반장스틸방수소개" [ref=f27e318] [cursor=pointer]:
+        - /url: /Company-Overview
+        - generic [aria-hidden] [ref=f27e319]: 
+        - text: 유반장스틸방수소개
+    - generic [ref=f27e320]:
+      - link "스틸방수의 장점" [ref=f27e334] [cursor=pointer]:
+        - /url: /20
+        - generic [aria-hidden] [ref=f27e335]: 
+        - text: 스틸방수의 장점
+      - link "스틸방수 시공과정" [ref=f27e349] [cursor=pointer]:
+        - /url: /21
+        - generic [aria-hidden] [ref=f27e350]: 
+        - text: 스틸방수 시공과정
+      - link "외벽 스틸방수" [ref=f27e364] [cursor=pointer]:
+        - /url: /22
+        - generic [aria-hidden] [ref=f27e365]: 
+        - text: 외벽 스틸방수
+      - link "전국시공사례" [ref=f27e379] [cursor=pointer]:
+        - /url: /Careers
+        - generic [aria-hidden] [ref=f27e380]: 
+        - text: 전국시공사례
+      - link "고객지원" [ref=f27e394] [cursor=pointer]:
+        - /url: /Contact
+        - generic [aria-hidden] [ref=f27e395]: 
+        - text: 고객지원
+      - separator [ref=f27e408]
+      - generic [ref=f27e421]:
+        - paragraph [ref=f27e422]: (주)유반장스틸방수
+        - paragraph [ref=f27e423]: 법인등록번호 160111-0071556
+        - paragraph [ref=f27e424]: "대표자 : 이경민 TEL : 1588-5922"
+        - paragraph [ref=f27e425]: "경기 남양주점: 경기도 구리시 갈매중앙로 201-3"
+        - paragraph [ref=f27e426]: "경기지사 : 경기도 평택시 송탄2로 25번길 40"
+        - paragraph [ref=f27e427]: "대전본사 : 대전광역시 서구 둔산북로121아너스빌"
+        - paragraph [ref=f27e428]: "경북지사 : 경북 상주시 동수4길 127"
+        - paragraph [ref=f27e429]: "광양 남부권지사 : 전남 광양시 광양읍 서평4길 45"
+      - generic [ref=f27e442]:
+        - paragraph [ref=f27e443]: "@Copyright 2022. All Right Reserved. Hosted by"
+        - paragraph [ref=f27e444]:
+          - strong [ref=f27e446]: u-banjang steel
+  - contentinfo [ref=f27e453]
+  - iframe [ref=f27e459]
+  - link [ref=f27e460] [cursor=pointer]:
+    - /url: "javascript:Kakao.Channel.chat({channelPublicId: '_Hxixlcxj'});"
+    - img "카카오톡 채널 채팅하기 버튼" [ref=f27e461]

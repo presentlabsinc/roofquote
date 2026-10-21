@@ -110,6 +110,9 @@ Multi-tenant. Every page + API route requires a signed-in user; data is scoped b
 - **RLS:** 모든 public 테이블에 Row Level Security 켜짐 (정책 없음 — migration `20260928030100_enable_rls`).
   앱은 Prisma(테이블 소유자)로만 접근해서 영향 없고, 브라우저에 공개된 anon 키의 Data API 접근은 차단.
   **새 테이블을 만드는 마이그레이션은 반드시 `ENABLE ROW LEVEL SECURITY` 를 같이 넣을 것.** FORCE 는 쓰지 말 것 (Prisma 도 막힘).
+  **Supabase 10/30 변경 (2026-10-21 필독 공지):** public 에 새로 만드는 테이블은 Data API(anon·authenticated·service_role)에
+  자동으로 열리지 않는다. 이 앱은 테이블을 Prisma(소유자)로만 쓰므로 영향 없음 — 오히려 지금 방침(Data API 차단)과 같다.
+  Data API 로 테이블을 읽게 만들 일이 생기면 그 마이그레이션에 **필요한 범위만 GRANT + RLS 정책**을 같이 넣을 것.
 - **스토리지:** 업로드 경로는 `<userId>/<uuid>.<ext>` (`/api/upload` — 라우트 인증 + 매직 바이트로 형식 판별).
   사진 삭제·현장 삭제 시 `lib/storage.ts` `removeOwnedObjects()` 가 **본인 폴더 파일만** 지운다. 직인 이전 파일은
   과거 견적 스냅샷이 가리키므로 지우지 않는다. 발송 PDF 는 별도 **비공개** 버킷 — 아래 '발송 PDF 보관'.
@@ -170,6 +173,7 @@ These are real constraints. Violating them silently corrupts past quotes — a u
 | Photo upload | [app/api/upload/route.ts](app/api/upload/route.ts) — requireUser + 매직 바이트 판별(JPEG·PNG·WebP·GIF·HEIC) + 4MB, `supabaseAdmin()` |
 | 발송 PDF 보관 | [lib/sent-pdf.ts](lib/sent-pdf.ts) (server-only, 비공개 버킷 입출력) · [lib/sent-pdf-path.ts](lib/sent-pdf-path.ts) (경로 규칙·검증, 순수) · `app/api/estimates/[eid]/sent-pdf/` (POST 보관·GET 목록) + `sent-pdf/[name]/` (GET 열람) |
 | PDF 응답 파일명 | [lib/content-disposition.ts](lib/content-disposition.ts) — RFC 5987 한글 파일명 (PDF·보관본 라우트 공용) |
+| Supabase 일시정지 방지 | `app/api/cron/keepalive/route.ts` + `vercel.json` crons (매일 00:00 UTC = 09:00 KST, `SELECT 1` 만). 무료 프로젝트는 7일 무활동이면 멈춤. `CRON_SECRET` 설정 시 그 Bearer 만 허용. proxy 공개 경로 `/api/cron/` |
 | 오류 화면 | `app/error.tsx` (Next 16.3: `retry` prop), `app/global-error.tsx`, `app/not-found.tsx` |
 | Main mobile UI screens | `app/{page,settings,sites/...}/*.tsx` |
 | Shared chrome | `components/AppHeader.tsx`, `components/BottomNav.tsx` |

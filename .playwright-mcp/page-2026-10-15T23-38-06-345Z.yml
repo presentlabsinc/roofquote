@@ -1,0 +1,303 @@
+- generic [active] [ref=f75e1]:
+  - generic:
+    - link "본문 바로가기":
+      - /url: "#ct"
+  - generic [ref=f75e2]:
+    - generic [ref=f75e3]:
+      - heading [level=1] [ref=f75e4]:
+        - link "블로그" [ref=f75e5] [cursor=pointer]:
+          - /url: /Recommendation.naver
+      - heading [level=2] [ref=f75e7]:
+        - generic [ref=f75e8]:
+          - link "카테고리 이동" [ref=f75e10] [cursor=pointer]:
+            - /url: "#"
+          - link "(주)유반장스틸방수" [ref=f75e13] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=u-banjang
+    - generic [ref=f75e15]:
+      - link "검색" [ref=f75e16] [cursor=pointer]:
+        - /url: /PostSearchList.naver?blogId=u-banjang
+      - button "MY메뉴 열기" [ref=f75e18] [cursor=pointer]
+  - main [ref=f75e21]:
+    - generic [ref=f75e24]:
+      - generic [ref=f75e27]:
+        - link "지붕방수" [ref=f75e29] [cursor=pointer]:
+          - /url: /PostList.naver?blogId=u-banjang&categoryNo=11&logCode=0&categoryName=%EC%A7%80%EB%B6%95%EB%B0%A9%EC%88%98#postlist_block
+        - paragraph [ref=f75e31]:
+          - generic [ref=f75e32]: 대전지붕공사 합법·불법 차이, 소방법과 우레탄방수 단점까지 확인하세요
+        - generic [ref=f75e33]:
+          - link [ref=f75e34] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=u-banjang
+            - img "프로필" [ref=f75e36]
+          - generic [ref=f75e37]:
+            - link [ref=f75e39] [cursor=pointer]:
+              - /url: /PostList.naver?blogId=u-banjang
+              - strong [ref=f75e40]: 주식회사 유반장스틸
+            - paragraph [ref=f75e41]: 2026. 8. 31. 13:03
+        - generic:
+          - link "이웃추가" [ref=f75e42] [cursor=pointer]:
+            - /url: "#"
+          - button "본문 기타 기능" [ref=f75e45] [cursor=pointer]
+      - generic [ref=f75e47]:
+        - generic [ref=f75e51]:
+          - paragraph [ref=f75e52]:
+            - generic [ref=f75e53]: 대전지붕공사, 무조건 지붕을 덮으면 될까요? 합법 시공과 소방법까지 확인해야 합니다
+          - paragraph [ref=f75e54]: 대전에서 옥상 누수 때문에 지붕공사를 알아보시는 분들이 많습니다. 기존 우레탄방수를 다시 시공할지, 칼라강판 지붕을 새로 설치할지, 스틸방수로 해결할지 고민하게 됩니다.
+          - paragraph [ref=f75e55]:
+            - text: 하지만
+            - generic [ref=f75e56]: 대전지붕공사는 물만 새지 않게 막는다고 끝나는 공사가 아닙니다.
+          - paragraph [ref=f75e57]: 옥상 위에 새로운 지붕 구조물을 설치할 경우 건축물의 높이와 면적, 지붕틀 변경 여부에 따라 증축이나 대수선으로 판단될 수 있습니다. 허가나 신고 대상인데도 확인 없이 공사하면 위반건축물 문제가 생길 수 있고, 건물의 용도와 구조에 따라 소방법까지 함께 검토해야 합니다.
+          - paragraph [ref=f75e58]: 따라서 지붕공사를 시작하기 전에는 다음 세 가지를 반드시 확인해야 합니다.
+          - list [ref=f75e59]:
+            - listitem [ref=f75e60]:
+              - paragraph [ref=f75e61]: 건축법상 허가·신고 대상인지
+            - listitem [ref=f75e62]:
+              - paragraph [ref=f75e63]: 화재 확산과 피난에 문제가 없는 구조인지
+            - listitem [ref=f75e64]:
+              - paragraph [ref=f75e65]: 해당 공사를 적법하게 수행할 수 있는 등록업체인지
+        - generic [ref=f75e68]:
+          - link [ref=f75e70] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e72]: 합법적지붕공사 리얼 스틸방수 & 패널 스틸방수
+        - generic [ref=f75e76]:
+          - paragraph [ref=f75e77]:
+            - generic [ref=f75e78]: 대전지붕공사, 합법과 불법의 차이는 무엇일까요?
+          - paragraph [ref=f75e79]: 기존 지붕재를 같은 형태로 단순 보수하거나 손상된 부분만 교체하는 공사는 일반적인 유지보수에 해당할 수 있습니다.
+          - paragraph [ref=f75e80]: 반면 옥상 위에 철골 기둥을 세우고 지붕을 높게 설치하거나, 벽체를 만들고 내부 공간이 생기도록 시공하면 이야기가 달라집니다. 건축면적이나 연면적이 증가하거나 건축물의 외형과 구조가 변경되면 증축 또는 대수선으로 판단될 가능성이 있습니다.
+          - paragraph [ref=f75e81]:
+            - text: 특히 「건축법 시행령」에서는 지붕틀을 증설·해체하거나 일정 범위 이상 수선·변경하는 행위를 대수선 범위에 포함하고 있습니다. 따라서 “옥상에 지붕만 하나 씌우는 공사”라고 단순하게 판단해서는 안 됩니다. 현장 주소와 건축물대장을 기준으로 관할 구청 건축과에 먼저 확인하는 것이 안전합니다.
+            - link "국가법령정보센터 건축법 시행령" [ref=f75e83] [cursor=pointer]:
+              - /url: https://www.law.go.kr/LSW/lumLsLinkPop.do?lspttninfSeq=105337
+          - paragraph [ref=f75e84]: 허가나 신고가 필요한 공사를 임의로 진행하면 다음과 같은 문제가 발생할 수 있습니다.
+          - list [ref=f75e85]:
+            - listitem [ref=f75e86]:
+              - paragraph [ref=f75e87]: 위반건축물 등재
+            - listitem [ref=f75e88]:
+              - paragraph [ref=f75e89]: 시정명령 및 원상복구 명령
+            - listitem [ref=f75e90]:
+              - paragraph [ref=f75e91]: 이행강제금 부과
+            - listitem [ref=f75e92]:
+              - paragraph [ref=f75e93]: 건물 매매·대출·용도변경 시 불이익
+            - listitem [ref=f75e94]:
+              - paragraph [ref=f75e95]: 화재나 안전사고 발생 시 책임 문제
+            - listitem [ref=f75e96]:
+              - paragraph [ref=f75e97]: 보험 보상 과정에서의 분쟁
+          - paragraph [ref=f75e98]: 저렴한 견적만 보고 시작한 지붕공사가 나중에는 철거비와 이행강제금까지 발생하는 공사가 될 수 있습니다.
+        - generic [ref=f75e101]:
+          - link [ref=f75e103] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e105]: 합법과 불법 지붕공사 설명
+        - generic [ref=f75e109]:
+          - paragraph [ref=f75e110]:
+            - generic [ref=f75e111]: “신고가 필요 없다”는 말만 믿으면 안 됩니다
+          - paragraph [ref=f75e112]: 지붕공사 업체가 현장 확인도 하지 않고 무조건 “신고 없이 해도 된다”고 말한다면 주의해야 합니다.
+          - paragraph [ref=f75e113]: 허가나 신고 대상 여부는 지붕재의 종류만으로 결정되지 않습니다. 기존 건물의 용도와 구조, 지붕의 높이, 새로 설치되는 기둥과 보, 공간 형성 여부, 건축면적 증가 여부 등을 종합적으로 확인해야 합니다.
+          - paragraph [ref=f75e114]: 같은 칼라강판 지붕공사라도 어떤 현장은 단순 보수에 해당할 수 있고, 다른 현장은 증축이나 대수선으로 판단될 수 있습니다.
+          - paragraph [ref=f75e115]: ㈜유반장스틸방수는 법률 판단을 임의로 단정하지 않습니다. 신고 여부가 불분명한 현장은 건축물대장을 확인하고, 필요하면 건축주가 관할 행정기관 또는 건축사에게 확인한 후 공사를 진행할 수 있도록 안내합니다.
+        - generic [ref=f75e118]:
+          - generic [ref=f75e119]:
+            - link [ref=f75e121] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f75e123] [cursor=pointer]:
+              - /url: "#"
+          - paragraph [ref=f75e125]: 반드시 시공전 지붕공사는 구청 시청건설과 주무관과 꼭 !상의 하세요!
+        - generic [ref=f75e129]:
+          - paragraph [ref=f75e130]:
+            - generic [ref=f75e131]: 대전지붕공사와 소방법, 무엇을 확인해야 할까요?
+          - paragraph [ref=f75e132]: 옥상지붕공사는 건축법뿐 아니라 화재 안전도 중요합니다.
+          - paragraph [ref=f75e133]: 지붕을 새로 설치하면서 기존의 피난 통로, 옥상 출입구, 소방시설 또는 배연·환기 기능을 막아서는 안 됩니다. 건축물의 용도와 규모에 따라 적용되는 기준이 다르기 때문에 공장, 상가, 학교, 병원, 종교시설, 다중이용시설 등은 더욱 세심한 검토가 필요합니다.
+          - paragraph [ref=f75e134]: 특히 다음과 같은 시공은 주의해야 합니다.
+          - list [ref=f75e135]:
+            - listitem [ref=f75e136]:
+              - paragraph [ref=f75e137]: 옥상 출입문이나 피난 통로를 좁히는 구조
+            - listitem [ref=f75e138]:
+              - paragraph [ref=f75e139]: 소방시설과 점검 공간을 가리는 시공
+            - listitem [ref=f75e140]:
+              - paragraph [ref=f75e141]: 배연창·환기구·배기구를 막는 시공
+            - listitem [ref=f75e142]:
+              - paragraph [ref=f75e143]: 방화구획이나 방화벽의 성능을 훼손하는 시공
+            - listitem [ref=f75e144]:
+              - paragraph [ref=f75e145]: 용접·절단 작업 중 화재감시와 소화기 배치가 없는 현장
+            - listitem [ref=f75e146]:
+              - paragraph [ref=f75e147]: 화재에 취약한 단열재와 마감재를 무분별하게 사용하는 공사
+          - paragraph [ref=f75e148]:
+            - text: 「소방시설 설치 및 관리에 관한 법률」에 따라 대상 건축물의 소방시설은 정상적으로 유지·관리되어야 합니다. 지붕공사로 기존 소방시설의 기능에 영향을 주거나 위치를 변경해야 한다면 사전에 소방전문업체 및 관계기관 확인이 필요할 수 있습니다.
+            - link "국가법령정보센터 소방시설 설치 및 관리에 관한 법률" [ref=f75e150] [cursor=pointer]:
+              - /url: https://www.law.go.kr/LSW/lsInfoP.do?ancYnChk=0&lsId=009503
+          - paragraph [ref=f75e151]: 용접이나 절단처럼 불꽃이 발생하는 작업을 진행할 때는 작업 반경의 가연물을 제거하고, 소화기 배치와 화재감시자 운영 등 현장 화재 예방조치를 철저히 해야 합니다.
+        - generic [ref=f75e154]:
+          - link [ref=f75e156] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e158]: 대전 스마트시티 리얼 스틸방수
+        - generic [ref=f75e162]:
+          - paragraph [ref=f75e163]:
+            - generic [ref=f75e164]: 우레탄방수의 단점은 무엇일까요?
+          - paragraph [ref=f75e165]: 우레탄방수는 이음매가 적고 복잡한 옥상에도 시공하기 쉬워 널리 사용됩니다. 초기 공사비도 금속방수보다 낮은 편입니다.
+          - paragraph [ref=f75e166]: 그러나 옥상의 상태와 시공 품질, 사용 환경에 따라 다음과 같은 단점이 나타날 수 있습니다.
+          - paragraph [ref=f75e167]:
+            - generic [ref=f75e168]: 1. 바탕면 상태에 영향을 많이 받습니다
+          - paragraph [ref=f75e169]: 기존 바닥에 수분이나 먼지, 들뜬 방수층이 남아 있으면 접착력이 떨어질 수 있습니다. 충분한 건조와 바탕면 처리가 되지 않으면 부풀음과 들뜸이 발생할 가능성이 큽니다.
+          - paragraph [ref=f75e170]:
+            - generic [ref=f75e171]: 2. 균열을 완전히 막기 어렵습니다
+          - paragraph [ref=f75e172]: 콘크리트는 온도 변화와 구조적 움직임으로 균열이 생길 수 있습니다. 바탕 균열이 계속 움직이면 우레탄층도 함께 갈라질 수 있습니다.
+          - paragraph [ref=f75e173]:
+            - generic [ref=f75e174]: 3. 자외선과 외부 충격에 취약할 수 있습니다
+          - paragraph [ref=f75e175]: 옥상은 강한 자외선과 비, 눈, 온도 변화를 반복해서 받습니다. 보호용 상도 관리가 부족하면 변색과 분말화, 표면 열화가 빨라질 수 있습니다. 날카로운 물건이나 설비 작업자의 이동으로 방수층이 손상되기도 합니다.
+        - generic [ref=f75e178]:
+          - link [ref=f75e180] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e182]: 수명이 짧은 우레탄 페인트 방수!
+        - generic [ref=f75e186]:
+          - paragraph [ref=f75e187]:
+            - generic [ref=f75e188]: 4. 일정한 두께 확보가 어렵습니다
+          - paragraph [ref=f75e189]: 우레탄방수는 현장에서 액상 재료를 도포하기 때문에 작업자의 숙련도와 사용량에 따라 두께 편차가 발생할 수 있습니다. 겉으로는 깔끔해 보여도 얇게 시공된 부분에서 먼저 문제가 생길 수 있습니다.
+          - paragraph [ref=f75e190]:
+            - generic [ref=f75e191]: 5. 주기적인 유지관리가 필요합니다
+          - paragraph [ref=f75e192]: 영구적으로 보수가 필요 없는 공법은 아닙니다. 배수구 주변, 벽체 접합부, 설비 기초, 균열 부위 등을 정기적으로 점검하고 상도 또는 부분 보수를 해야 합니다.
+          - paragraph [ref=f75e193]:
+            - generic [ref=f75e194]: 6. 반복 덧칠이 근본 해결이 아닐 수 있습니다
+          - paragraph [ref=f75e195]: 기존 방수층이 들떠 있거나 바닥 내부에 수분이 남아 있는데 다시 우레탄만 덧칠하면 같은 문제가 반복될 수 있습니다. 누수 원인과 배수 상태를 먼저 확인해야 합니다.
+        - generic [ref=f75e198]:
+          - link [ref=f75e200] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e202]: 패널 스틸방수 시공중
+        - generic [ref=f75e206]:
+          - paragraph [ref=f75e207]:
+            - generic [ref=f75e208]: 반복되는 옥상 누수, 스틸방수가 대안이 될 수 있습니다
+          - paragraph [ref=f75e209]: 우레탄방수를 여러 차례 다시 시공했는데도 누수가 반복된다면 금속판을 이용한 스틸방수를 검토할 수 있습니다.
+          - paragraph [ref=f75e210]: 스틸방수는 옥상 바닥과 난간 안쪽에 금속 방수층을 설치하고, 빗물이 배수 방향으로 흐르도록 시공하는 방식입니다. 액상 방수재를 반복해서 덧바르는 방식과 달리 금속판 자체가 방수층 역할을 합니다.
+        - generic [ref=f75e213]:
+          - link [ref=f75e215] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e217]: 패널 스틸방수 시공후
+        - generic [ref=f75e221]:
+          - paragraph [ref=f75e222]: 현장 조건에 따라 다음과 같은 장점이 있습니다.
+          - list [ref=f75e223]:
+            - listitem [ref=f75e224]:
+              - paragraph [ref=f75e225]: 자외선과 외부 환경에 대한 내구성
+            - listitem [ref=f75e226]:
+              - paragraph [ref=f75e227]: 콘크리트 바탕 균열의 영향을 상대적으로 적게 받는 구조
+            - listitem [ref=f75e228]:
+              - paragraph [ref=f75e229]: 기존 옥상 위 시공으로 철거 범위와 폐기물 감소 가능
+            - listitem [ref=f75e230]:
+              - paragraph [ref=f75e231]: 배수 방향을 고려한 맞춤 절곡 시공
+            - listitem [ref=f75e232]:
+              - paragraph [ref=f75e233]: 옥상 높이를 크게 올리는 지붕 구조물과 다른 시공 방식
+            - listitem [ref=f75e234]:
+              - paragraph [ref=f75e235]: 공사 후 유지관리 부담 감소 기대
+        - generic [ref=f75e238]:
+          - link [ref=f75e240] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e242]: 리얼 스틸방수 시공전
+        - generic [ref=f75e246]:
+          - paragraph [ref=f75e247]: 다만 스틸방수도 아무 업체나 시공해서는 안 됩니다. 금속판의 두께와 재질, 체결 방식, 이음부 처리, 벽체 접합부, 배수구, 설비 기초 주변 마감에 따라 결과가 달라집니다.
+          - paragraph [ref=f75e248]: 또한 난간 높이 아래에서 시공하는 스틸방수라고 하더라도 모든 현장이 자동으로 허가·신고 대상에서 제외된다고 단정할 수는 없습니다. 기존 구조를 변경하거나 새로운 구조물이 추가되는 경우에는 반드시 현장별 검토가 필요합니다.
+        - generic [ref=f75e251]:
+          - link [ref=f75e253] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e255]: 리얼 스틸방수 시공후
+        - generic [ref=f75e259]:
+          - paragraph [ref=f75e260]:
+            - generic [ref=f75e261]: 대전지붕공사 업체를 선택할 때 확인할 사항
+          - paragraph [ref=f75e262]: 견적 금액만 비교하기보다 다음 내용을 확인해야 합니다.
+          - list [ref=f75e263]:
+            - listitem [ref=f75e264]:
+              - paragraph [ref=f75e265]: 사업자등록증과 법인 정보
+            - listitem [ref=f75e266]:
+              - paragraph [ref=f75e267]: 전문건설업 등록 여부
+            - listitem [ref=f75e268]:
+              - paragraph [ref=f75e269]: 지붕판금·건축물조립공사업 등 공사에 필요한 업종 보유 여부
+            - listitem [ref=f75e270]:
+              - paragraph [ref=f75e271]: 현장대리인 및 건축기술자 배치 여부
+            - listitem [ref=f75e272]:
+              - paragraph [ref=f75e273]: 사용 자재의 종류와 두께
+            - listitem [ref=f75e274]:
+              - paragraph [ref=f75e275]: 구조물 설치 방식과 방수 상세
+            - listitem [ref=f75e276]:
+              - paragraph [ref=f75e277]: 건축법 및 소방법 검토 여부
+            - listitem [ref=f75e278]:
+              - paragraph [ref=f75e279]: 계약서·공사내역서·하자보증 가능 여부
+            - listitem [ref=f75e280]:
+              - paragraph [ref=f75e281]: 실제 시공사례와 공사 전후 기록
+          - paragraph [ref=f75e282]: 무등록 시공업체나 개인 작업자에게 맡기면 하자 발생 시 책임 소재가 불분명할 수 있습니다. 특히 구조물을 설치하는 지붕공사는 풍압, 적설하중, 체결 상태와 화재 위험까지 고려해야 하므로 업체의 등록 여부와 기술 능력을 확인하는 것이 중요합니다.
+        - generic [ref=f75e285]:
+          - link [ref=f75e287] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e289]: 방수면허+지붕면허 복수면허 보유기업
+        - generic [ref=f75e293]:
+          - paragraph [ref=f75e294]:
+            - generic [ref=f75e295]: ㈜유반장스틸방수의 대전지붕공사
+          - paragraph [ref=f75e296]: ㈜유반장스틸방수는 대전 본사 직영으로 운영되는 전문건설업 등록 법인입니다.
+          - list [ref=f75e297]:
+            - listitem [ref=f75e298]:
+              - paragraph [ref=f75e299]: 옥상방수공사업 등록
+            - listitem [ref=f75e300]:
+              - paragraph [ref=f75e301]: 지붕판금공사업 등록
+            - listitem [ref=f75e302]:
+              - paragraph [ref=f75e303]: 전문건설협회 등록
+            - listitem [ref=f75e304]:
+              - paragraph [ref=f75e305]: 전문건설공제조합 가입
+            - listitem [ref=f75e306]:
+              - paragraph [ref=f75e307]: 조달청 나라장터 등록
+            - listitem [ref=f75e308]:
+              - paragraph [ref=f75e309]: 여성기업 인증
+            - listitem [ref=f75e310]:
+              - paragraph [ref=f75e311]: 특허 제10-2447732호
+            - listitem [ref=f75e312]:
+              - paragraph [ref=f75e313]: ‘스틸 방수 시공방법 및 방수시스템’
+            - listitem [ref=f75e314]:
+              - paragraph [ref=f75e315]: 건축기사 책임시공
+            - listitem [ref=f75e316]:
+              - paragraph [ref=f75e317]: 방수산업기사 책임보증
+            - listitem [ref=f75e318]:
+              - paragraph [ref=f75e319]: 리얼스틸·패널스틸 직접 생산 및 시공
+            - listitem [ref=f75e320]:
+              - paragraph [ref=f75e321]: 공사 전후 드론 촬영 가능
+          - paragraph [ref=f75e322]: 기존 우레탄방수의 상태와 누수 원인, 바닥 균열, 난간과 배수구, 옥상 설비를 먼저 확인한 뒤 현장에 적합한 공법을 제안합니다.
+          - paragraph [ref=f75e323]: 무조건 지붕을 높게 세우거나 무조건 스틸방수만 권하지 않습니다. 건축물의 구조와 사용 목적, 예산, 허가·신고 가능 여부를 검토해 우레탄 보수, 부분 보강, 리얼스틸방수, 패널스틸방수 또는 적법한 지붕공사 중 알맞은 방법을 안내합니다.
+        - generic [ref=f75e326]:
+          - generic [ref=f75e327]:
+            - link [ref=f75e329] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f75e331] [cursor=pointer]:
+              - /url: "#"
+          - paragraph [ref=f75e334]: 국가공인자격 방수산업기사 건축기사 책임시공!
+        - generic [ref=f75e338]:
+          - paragraph [ref=f75e339]:
+            - generic [ref=f75e340]: 대전지붕공사, 공사 전에 합법 여부부터 확인하세요
+          - paragraph [ref=f75e341]: 옥상 누수는 빨리 막는 것도 중요하지만, 공사가 끝난 뒤 위반건축물이나 화재 안전 문제가 생기지 않도록 하는 것이 더 중요합니다.
+          - paragraph [ref=f75e342]: 대전지붕공사를 계획하고 있다면 다음 순서로 준비해 보시기 바랍니다.
+          - list [ref=f75e343]:
+            - listitem [ref=f75e344]:
+              - paragraph [ref=f75e345]: 누수 원인과 기존 방수층 상태 확인
+            - listitem [ref=f75e346]:
+              - paragraph [ref=f75e347]: 건축물대장과 건물 용도 확인
+            - listitem [ref=f75e348]:
+              - paragraph [ref=f75e349]: 지붕 높이·면적·구조 변경 여부 검토
+            - listitem [ref=f75e350]:
+              - paragraph [ref=f75e351]: 관할 구청의 허가·신고 대상 여부 확인
+            - listitem [ref=f75e352]:
+              - paragraph [ref=f75e353]: 소방시설과 피난 통로 영향 확인
+            - listitem [ref=f75e354]:
+              - paragraph [ref=f75e355]: 등록된 전문건설업체와 서면 계약
+            - listitem [ref=f75e356]:
+              - paragraph [ref=f75e357]: 자재·시공 상세·하자보증 내용 확인
+          - paragraph [ref=f75e358]:
+            - text: ㈜유반장스틸방수는
+            - generic [ref=f75e359]: 합법적인 면허 시공과 건축기술자의 책임시공
+            - text: 을 원칙으로 합니다. 대전 옥상 누수, 대전지붕공사, 우레탄방수 보수 또는 스틸방수가 필요하다면 현장 상태부터 정확하게 확인해 드리겠습니다.
+          - paragraph [ref=f75e360]: ※ 건축허가·신고 및 소방 관련 적용 기준은 건축물의 용도, 규모, 구조와 공사 범위에 따라 달라질 수 있습니다. 최종 판단은 관할 행정기관, 건축사 및 소방전문가에게 확인하시기 바랍니다.
+        - generic [ref=f75e363]:
+          - link [ref=f75e365] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e367]: 리얼 스틸방수 지붕공사
+        - separator [ref=f75e372]
+        - generic [ref=f75e376]:
+          - paragraph [ref=f75e377]:
+            - generic [ref=f75e378]: 해시태그
+          - paragraph [ref=f75e379]:
+            - generic [ref=f75e380]: "#대전지붕공사 #대전옥상방수 #대전방수공사 #대전스틸방수 #옥상지붕공사 #지붕공사 #옥상방수 #우레탄방수 #우레탄방수단점 #스틸방수 #리얼스틸방수 #패널스틸방수 #불법지붕 #합법지붕공사 #건축법 #소방법 #옥상누수 #대전누수공사 #유반장스틸방수 #전문건설업체"
+        - generic [ref=f75e383]:
+          - link [ref=f75e385] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f75e387]: 전화 바로연결!
+        - paragraph [ref=f75e392]

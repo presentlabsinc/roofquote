@@ -1,0 +1,702 @@
+- generic [active] [ref=f91e1]:
+  - link "Skip to main content" [ref=f91e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f91e3]:
+    - generic:
+      - generic:
+        - navigation "Secondary"
+    - link "Journal of Light Construction" [ref=f91e7] [cursor=pointer]:
+      - /url: https://www.jlconline.com/
+      - img "Journal of Light Construction" [ref=f91e8]
+    - button "Open menu" [ref=f91e9] [cursor=pointer]
+  - main [ref=f91e10]:
+    - generic [ref=f91e11]:
+      - generic [ref=f91e12]:
+        - generic [ref=f91e13]:
+          - navigation "Breadcrumb" [ref=f91e14]:
+            - list [ref=f91e15]:
+              - listitem [ref=f91e16]:
+                - link "Cost vs Value" [ref=f91e17] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/2025/
+              - listitem [ref=f91e18]:
+                - link "National" [ref=f91e19] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/2025/national/
+          - button "Share" [ref=f91e20] [cursor=pointer]
+        - heading "2025 Cost vs Value Report" [level=1] [ref=f91e21]
+        - paragraph [ref=f91e22]: We compare average costs for 28 remodeling projects with the value those projects retain at resale in 119 U.S. markets.
+        - generic [ref=f91e23]:
+          - generic [ref=f91e24]:
+            - generic [ref=f91e25]: "Change Year:"
+            - generic [ref=f91e26]:
+              - generic [ref=f91e27]: "Change Year:"
+              - button "2025" [ref=f91e28]
+          - generic [ref=f91e30]:
+            - generic [ref=f91e31]:
+              - text: "Region:"
+              - button "Open Region Map" [ref=f91e32] [cursor=pointer]: Here
+            - generic [ref=f91e33]:
+              - generic [ref=f91e34]: "Select Region:"
+              - button "Choose a region" [ref=f91e35]
+          - generic [ref=f91e37]:
+            - generic [ref=f91e38]: "City:"
+            - generic [ref=f91e39]:
+              - generic [ref=f91e40]: "Select City:"
+              - button "Choose a city" [ref=f91e41]
+        - generic [ref=f91e43]:
+          - generic [ref=f91e44]: ■ National Region
+          - generic [ref=f91e45]: ■ National Averages
+        - table [ref=f91e46]:
+          - rowgroup [ref=f91e47]:
+            - row [ref=f91e48]:
+              - columnheader "Project Sort by Project name" [ref=f91e49]:
+                - generic [ref=f91e50]:
+                  - generic [ref=f91e51]: Project
+                  - button "Sort by Project name" [ref=f91e52] [cursor=pointer]
+          - rowgroup [ref=f91e53]:
+            - row [ref=f91e54]:
+              - 'cell "Garage Door Replacement Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e55]':
+                - link "Garage Door Replacement" [ref=f91e56] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/garage-door-replacement/
+                - list [ref=f91e57]:
+                  - listitem [ref=f91e58]:
+                    - generic [ref=f91e59]: "Job Cost:"
+                    - list [ref=f91e60]:
+                      - listitem "National Job Cost" [ref=f91e61]: $4,672
+                      - listitem "National Job Cost" [ref=f91e62]: $4,672
+                  - listitem [ref=f91e63]:
+                    - generic [ref=f91e64]: "Resale Value:"
+                    - list [ref=f91e65]:
+                      - listitem "National Resale Value" [ref=f91e66]: $12,507
+                      - listitem "National Resale Value" [ref=f91e67]: $12,507
+                  - listitem [ref=f91e68]:
+                    - generic [ref=f91e69]: "Cost Recouped:"
+                    - list [ref=f91e70]:
+                      - listitem "National Cost Recouped" [ref=f91e71]: 267.7%
+                      - listitem "National Cost Recouped" [ref=f91e72]: 267.7%
+            - row [ref=f91e73]:
+              - 'cell "Entry Door Replacement | Steel Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e74]':
+                - link "Entry Door Replacement | Steel" [ref=f91e75] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/entry-door-replacement-steel/
+                - list [ref=f91e76]:
+                  - listitem [ref=f91e77]:
+                    - generic [ref=f91e78]: "Job Cost:"
+                    - list [ref=f91e79]:
+                      - listitem "National Job Cost" [ref=f91e80]: $2,435
+                      - listitem "National Job Cost" [ref=f91e81]: $2,435
+                  - listitem [ref=f91e82]:
+                    - generic [ref=f91e83]: "Resale Value:"
+                    - list [ref=f91e84]:
+                      - listitem "National Resale Value" [ref=f91e85]: $5,270
+                      - listitem "National Resale Value" [ref=f91e86]: $5,270
+                  - listitem [ref=f91e87]:
+                    - generic [ref=f91e88]: "Cost Recouped:"
+                    - list [ref=f91e89]:
+                      - listitem "National Cost Recouped" [ref=f91e90]: 216.4%
+                      - listitem "National Cost Recouped" [ref=f91e91]: 216.4%
+            - row [ref=f91e92]:
+              - 'cell "Manufactured Stone Veneer Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e93]':
+                - link "Manufactured Stone Veneer" [ref=f91e94] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/manufactured-stone-veneer/
+                - list [ref=f91e95]:
+                  - listitem [ref=f91e96]:
+                    - generic [ref=f91e97]: "Job Cost:"
+                    - list [ref=f91e98]:
+                      - listitem "National Job Cost" [ref=f91e99]: $11,702
+                      - listitem "National Job Cost" [ref=f91e100]: $11,702
+                  - listitem [ref=f91e101]:
+                    - generic [ref=f91e102]: "Resale Value:"
+                    - list [ref=f91e103]:
+                      - listitem "National Resale Value" [ref=f91e104]: $24,328
+                      - listitem "National Resale Value" [ref=f91e105]: $24,328
+                  - listitem [ref=f91e106]:
+                    - generic [ref=f91e107]: "Cost Recouped:"
+                    - list [ref=f91e108]:
+                      - listitem "National Cost Recouped" [ref=f91e109]: 207.9%
+                      - listitem "National Cost Recouped" [ref=f91e110]: 207.9%
+            - row [ref=f91e111]:
+              - 'cell "Siding Replacement | Fiber-Cement Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e112]':
+                - link "Siding Replacement | Fiber-Cement" [ref=f91e113] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/siding-replacement-fiber-cement/
+                - list [ref=f91e114]:
+                  - listitem [ref=f91e115]:
+                    - generic [ref=f91e116]: "Job Cost:"
+                    - list [ref=f91e117]:
+                      - listitem "National Job Cost" [ref=f91e118]: $21,485
+                      - listitem "National Job Cost" [ref=f91e119]: $21,485
+                  - listitem [ref=f91e120]:
+                    - generic [ref=f91e121]: "Resale Value:"
+                    - list [ref=f91e122]:
+                      - listitem "National Resale Value" [ref=f91e123]: $24,420
+                      - listitem "National Resale Value" [ref=f91e124]: $24,420
+                  - listitem [ref=f91e125]:
+                    - generic [ref=f91e126]: "Cost Recouped:"
+                    - list [ref=f91e127]:
+                      - listitem "National Cost Recouped" [ref=f91e128]: 113.7%
+                      - listitem "National Cost Recouped" [ref=f91e129]: 113.7%
+            - row [ref=f91e130]:
+              - 'cell "Minor Kitchen Remodel | Midrange Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e131]':
+                - link "Minor Kitchen Remodel | Midrange" [ref=f91e132] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/minor-kitchen-remodel-midrange/
+                - list [ref=f91e133]:
+                  - listitem [ref=f91e134]:
+                    - generic [ref=f91e135]: "Job Cost:"
+                    - list [ref=f91e136]:
+                      - listitem "National Job Cost" [ref=f91e137]: $28,458
+                      - listitem "National Job Cost" [ref=f91e138]: $28,458
+                  - listitem [ref=f91e139]:
+                    - generic [ref=f91e140]: "Resale Value:"
+                    - list [ref=f91e141]:
+                      - listitem "National Resale Value" [ref=f91e142]: $32,141
+                      - listitem "National Resale Value" [ref=f91e143]: $32,141
+                  - listitem [ref=f91e144]:
+                    - generic [ref=f91e145]: "Cost Recouped:"
+                    - list [ref=f91e146]:
+                      - listitem "National Cost Recouped" [ref=f91e147]: 112.9%
+                      - listitem "National Cost Recouped" [ref=f91e148]: 112.9%
+            - row [ref=f91e149]:
+              - 'cell "Siding Replacement | Vinyl Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e150]':
+                - link "Siding Replacement | Vinyl" [ref=f91e151] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/siding-replacement-vinyl/
+                - list [ref=f91e152]:
+                  - listitem [ref=f91e153]:
+                    - generic [ref=f91e154]: "Job Cost:"
+                    - list [ref=f91e155]:
+                      - listitem "National Job Cost" [ref=f91e156]: $17,950
+                      - listitem "National Job Cost" [ref=f91e157]: $17,950
+                  - listitem [ref=f91e158]:
+                    - generic [ref=f91e159]: "Resale Value:"
+                    - list [ref=f91e160]:
+                      - listitem "National Resale Value" [ref=f91e161]: $17,313
+                      - listitem "National Resale Value" [ref=f91e162]: $17,313
+                  - listitem [ref=f91e163]:
+                    - generic [ref=f91e164]: "Cost Recouped:"
+                    - list [ref=f91e165]:
+                      - listitem "National Cost Recouped" [ref=f91e166]: 96.5%
+                      - listitem "National Cost Recouped" [ref=f91e167]: 96.5%
+            - row [ref=f91e168]:
+              - 'cell "Backup Power Generator Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e169]':
+                - link "Backup Power Generator" [ref=f91e170] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/backup-power-generator/
+                - list [ref=f91e171]:
+                  - listitem [ref=f91e172]:
+                    - generic [ref=f91e173]: "Job Cost:"
+                    - list [ref=f91e174]:
+                      - listitem "National Job Cost" [ref=f91e175]: $13,534
+                      - listitem "National Job Cost" [ref=f91e176]: $13,534
+                  - listitem [ref=f91e177]:
+                    - generic [ref=f91e178]: "Resale Value:"
+                    - list [ref=f91e179]:
+                      - listitem "National Resale Value" [ref=f91e180]: $12,902
+                      - listitem "National Resale Value" [ref=f91e181]: $12,902
+                  - listitem [ref=f91e182]:
+                    - generic [ref=f91e183]: "Cost Recouped:"
+                    - list [ref=f91e184]:
+                      - listitem "National Cost Recouped" [ref=f91e185]: 95.3%
+                      - listitem "National Cost Recouped" [ref=f91e186]: 95.3%
+            - row [ref=f91e187]:
+              - 'cell "Deck Addition | Wood Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e188]':
+                - link "Deck Addition | Wood" [ref=f91e189] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/deck-addition-wood/
+                - list [ref=f91e190]:
+                  - listitem [ref=f91e191]:
+                    - generic [ref=f91e192]: "Job Cost:"
+                    - list [ref=f91e193]:
+                      - listitem "National Job Cost" [ref=f91e194]: $18,263
+                      - listitem "National Job Cost" [ref=f91e195]: $18,263
+                  - listitem [ref=f91e196]:
+                    - generic [ref=f91e197]: "Resale Value:"
+                    - list [ref=f91e198]:
+                      - listitem "National Resale Value" [ref=f91e199]: $17,323
+                      - listitem "National Resale Value" [ref=f91e200]: $17,323
+                  - listitem [ref=f91e201]:
+                    - generic [ref=f91e202]: "Cost Recouped:"
+                    - list [ref=f91e203]:
+                      - listitem "National Cost Recouped" [ref=f91e204]: 94.9%
+                      - listitem "National Cost Recouped" [ref=f91e205]: 94.9%
+            - row [ref=f91e206]:
+              - 'cell "Deck Addition | Composite Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e207]':
+                - link "Deck Addition | Composite" [ref=f91e208] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/deck-addition-composite/
+                - list [ref=f91e209]:
+                  - listitem [ref=f91e210]:
+                    - generic [ref=f91e211]: "Job Cost:"
+                    - list [ref=f91e212]:
+                      - listitem "National Job Cost" [ref=f91e213]: $25,096
+                      - listitem "National Job Cost" [ref=f91e214]: $25,096
+                  - listitem [ref=f91e215]:
+                    - generic [ref=f91e216]: "Resale Value:"
+                    - list [ref=f91e217]:
+                      - listitem "National Resale Value" [ref=f91e218]: $22,199
+                      - listitem "National Resale Value" [ref=f91e219]: $22,199
+                  - listitem [ref=f91e220]:
+                    - generic [ref=f91e221]: "Cost Recouped:"
+                    - list [ref=f91e222]:
+                      - listitem "National Cost Recouped" [ref=f91e223]: 88.5%
+                      - listitem "National Cost Recouped" [ref=f91e224]: 88.5%
+            - row [ref=f91e225]:
+              - 'cell "Grand Entrance | Fiberglass Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e226]':
+                - link "Grand Entrance | Fiberglass" [ref=f91e227] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/grand-entrance-fiberglass-upscale/
+                - list [ref=f91e228]:
+                  - listitem [ref=f91e229]:
+                    - generic [ref=f91e230]: "Job Cost:"
+                    - list [ref=f91e231]:
+                      - listitem "National Job Cost" [ref=f91e232]: $11,754
+                      - listitem "National Job Cost" [ref=f91e233]: $11,754
+                  - listitem [ref=f91e234]:
+                    - generic [ref=f91e235]: "Resale Value:"
+                    - list [ref=f91e236]:
+                      - listitem "National Resale Value" [ref=f91e237]: $9,959
+                      - listitem "National Resale Value" [ref=f91e238]: $9,959
+                  - listitem [ref=f91e239]:
+                    - generic [ref=f91e240]: "Cost Recouped:"
+                    - list [ref=f91e241]:
+                      - listitem "National Cost Recouped" [ref=f91e242]: 84.7%
+                      - listitem "National Cost Recouped" [ref=f91e243]: 84.7%
+            - row [ref=f91e244]:
+              - 'cell "Bath Remodel | Midrange Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e245]':
+                - link "Bath Remodel | Midrange" [ref=f91e246] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/bath-remodel-midrange/
+                - list [ref=f91e247]:
+                  - listitem [ref=f91e248]:
+                    - generic [ref=f91e249]: "Job Cost:"
+                    - list [ref=f91e250]:
+                      - listitem "National Job Cost" [ref=f91e251]: $26,138
+                      - listitem "National Job Cost" [ref=f91e252]: $26,138
+                  - listitem [ref=f91e253]:
+                    - generic [ref=f91e254]: "Resale Value:"
+                    - list [ref=f91e255]:
+                      - listitem "National Resale Value" [ref=f91e256]: $20,915
+                      - listitem "National Resale Value" [ref=f91e257]: $20,915
+                  - listitem [ref=f91e258]:
+                    - generic [ref=f91e259]: "Cost Recouped:"
+                    - list [ref=f91e260]:
+                      - listitem "National Cost Recouped" [ref=f91e261]: 80%
+                      - listitem "National Cost Recouped" [ref=f91e262]: 80%
+            - row [ref=f91e263]:
+              - 'cell "Window Replacement | Vinyl Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e264]':
+                - link "Window Replacement | Vinyl" [ref=f91e265] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/window-replacement-vinyl-upscale/
+                - list [ref=f91e266]:
+                  - listitem [ref=f91e267]:
+                    - generic [ref=f91e268]: "Job Cost:"
+                    - list [ref=f91e269]:
+                      - listitem "National Job Cost" [ref=f91e270]: $22,073
+                      - listitem "National Job Cost" [ref=f91e271]: $22,073
+                  - listitem [ref=f91e272]:
+                    - generic [ref=f91e273]: "Resale Value:"
+                    - list [ref=f91e274]:
+                      - listitem "National Resale Value" [ref=f91e275]: $16,657
+                      - listitem "National Resale Value" [ref=f91e276]: $16,657
+                  - listitem [ref=f91e277]:
+                    - generic [ref=f91e278]: "Cost Recouped:"
+                    - list [ref=f91e279]:
+                      - listitem "National Cost Recouped" [ref=f91e280]: 75.5%
+                      - listitem "National Cost Recouped" [ref=f91e281]: 75.5%
+            - row [ref=f91e282]:
+              - 'cell "HVAC Conversion | Electrification Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e283]':
+                - link "HVAC Conversion | Electrification" [ref=f91e284] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/hvac-conversion-electrification/
+                - list [ref=f91e285]:
+                  - listitem [ref=f91e286]:
+                    - generic [ref=f91e287]: "Job Cost:"
+                    - list [ref=f91e288]:
+                      - listitem "National Job Cost" [ref=f91e289]: $19,484
+                      - listitem "National Job Cost" [ref=f91e290]: $19,484
+                  - listitem [ref=f91e291]:
+                    - generic [ref=f91e292]: "Resale Value:"
+                    - list [ref=f91e293]:
+                      - listitem "National Resale Value" [ref=f91e294]: $14,053
+                      - listitem "National Resale Value" [ref=f91e295]: $14,053
+                  - listitem [ref=f91e296]:
+                    - generic [ref=f91e297]: "Cost Recouped:"
+                    - list [ref=f91e298]:
+                      - listitem "National Cost Recouped" [ref=f91e299]: 72.1%
+                      - listitem "National Cost Recouped" [ref=f91e300]: 72.1%
+            - row [ref=f91e301]:
+              - 'cell "Basement Remodel Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e302]':
+                - link "Basement Remodel" [ref=f91e303] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/basement-remodel/
+                - list [ref=f91e304]:
+                  - listitem [ref=f91e305]:
+                    - generic [ref=f91e306]: "Job Cost:"
+                    - list [ref=f91e307]:
+                      - listitem "National Job Cost" [ref=f91e308]: $52,012
+                      - listitem "National Job Cost" [ref=f91e309]: $52,012
+                  - listitem [ref=f91e310]:
+                    - generic [ref=f91e311]: "Resale Value:"
+                    - list [ref=f91e312]:
+                      - listitem "National Resale Value" [ref=f91e313]: $36,905
+                      - listitem "National Resale Value" [ref=f91e314]: $36,905
+                  - listitem [ref=f91e315]:
+                    - generic [ref=f91e316]: "Cost Recouped:"
+                    - list [ref=f91e317]:
+                      - listitem "National Cost Recouped" [ref=f91e318]: 71%
+                      - listitem "National Cost Recouped" [ref=f91e319]: 71%
+            - row [ref=f91e320]:
+              - 'cell "Window Replacement | Wood Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e321]':
+                - link "Window Replacement | Wood" [ref=f91e322] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/window-replacement-wood-upscale/
+                - list [ref=f91e323]:
+                  - listitem [ref=f91e324]:
+                    - generic [ref=f91e325]: "Job Cost:"
+                    - list [ref=f91e326]:
+                      - listitem "National Job Cost" [ref=f91e327]: $26,781
+                      - listitem "National Job Cost" [ref=f91e328]: $26,781
+                  - listitem [ref=f91e329]:
+                    - generic [ref=f91e330]: "Resale Value:"
+                    - list [ref=f91e331]:
+                      - listitem "National Resale Value" [ref=f91e332]: $18,764
+                      - listitem "National Resale Value" [ref=f91e333]: $18,764
+                  - listitem [ref=f91e334]:
+                    - generic [ref=f91e335]: "Cost Recouped:"
+                    - list [ref=f91e336]:
+                      - listitem "National Cost Recouped" [ref=f91e337]: 70.1%
+                      - listitem "National Cost Recouped" [ref=f91e338]: 70.1%
+            - row [ref=f91e339]:
+              - 'cell "Roofing Replacement | Asphalt Shingles Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e340]':
+                - link "Roofing Replacement | Asphalt Shingles" [ref=f91e341] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/roofing-replacement-asphalt-shingles/
+                - list [ref=f91e342]:
+                  - listitem [ref=f91e343]:
+                    - generic [ref=f91e344]: "Job Cost:"
+                    - list [ref=f91e345]:
+                      - listitem "National Job Cost" [ref=f91e346]: $31,871
+                      - listitem "National Job Cost" [ref=f91e347]: $31,871
+                  - listitem [ref=f91e348]:
+                    - generic [ref=f91e349]: "Resale Value:"
+                    - list [ref=f91e350]:
+                      - listitem "National Resale Value" [ref=f91e351]: $21,501
+                      - listitem "National Resale Value" [ref=f91e352]: $21,501
+                  - listitem [ref=f91e353]:
+                    - generic [ref=f91e354]: "Cost Recouped:"
+                    - list [ref=f91e355]:
+                      - listitem "National Cost Recouped" [ref=f91e356]: 67.5%
+                      - listitem "National Cost Recouped" [ref=f91e357]: 67.5%
+            - row [ref=f91e358]:
+              - 'cell "Bath Remodel | Universal Design Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e359]':
+                - link "Bath Remodel | Universal Design" [ref=f91e360] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/bath-remodel-universal-design/
+                - list [ref=f91e361]:
+                  - listitem [ref=f91e362]:
+                    - generic [ref=f91e363]: "Job Cost:"
+                    - list [ref=f91e364]:
+                      - listitem "National Job Cost" [ref=f91e365]: $42,183
+                      - listitem "National Job Cost" [ref=f91e366]: $42,183
+                  - listitem [ref=f91e367]:
+                    - generic [ref=f91e368]: "Resale Value:"
+                    - list [ref=f91e369]:
+                      - listitem "National Resale Value" [ref=f91e370]: $25,812
+                      - listitem "National Resale Value" [ref=f91e371]: $25,812
+                  - listitem [ref=f91e372]:
+                    - generic [ref=f91e373]: "Cost Recouped:"
+                    - list [ref=f91e374]:
+                      - listitem "National Cost Recouped" [ref=f91e375]: 61.2%
+                      - listitem "National Cost Recouped" [ref=f91e376]: 61.2%
+            - row [ref=f91e377]:
+              - 'cell "Bathroom Addition | Midrange Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e378]':
+                - link "Bathroom Addition | Midrange" [ref=f91e379] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/bathroom-addition-midrange/
+                - list [ref=f91e380]:
+                  - listitem [ref=f91e381]:
+                    - generic [ref=f91e382]: "Job Cost:"
+                    - list [ref=f91e383]:
+                      - listitem "National Job Cost" [ref=f91e384]: $60,645
+                      - listitem "National Job Cost" [ref=f91e385]: $60,645
+                  - listitem [ref=f91e386]:
+                    - generic [ref=f91e387]: "Resale Value:"
+                    - list [ref=f91e388]:
+                      - listitem "National Resale Value" [ref=f91e389]: $32,347
+                      - listitem "National Resale Value" [ref=f91e390]: $32,347
+                  - listitem [ref=f91e391]:
+                    - generic [ref=f91e392]: "Cost Recouped:"
+                    - list [ref=f91e393]:
+                      - listitem "National Cost Recouped" [ref=f91e394]: 53.3%
+                      - listitem "National Cost Recouped" [ref=f91e395]: 53.3%
+            - row [ref=f91e396]:
+              - 'cell "Major Kitchen Remodel | Midrange Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e397]':
+                - link "Major Kitchen Remodel | Midrange" [ref=f91e398] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/major-kitchen-remodel-midrange/
+                - list [ref=f91e399]:
+                  - listitem [ref=f91e400]:
+                    - generic [ref=f91e401]: "Job Cost:"
+                    - list [ref=f91e402]:
+                      - listitem "National Job Cost" [ref=f91e403]: $82,793
+                      - listitem "National Job Cost" [ref=f91e404]: $82,793
+                  - listitem [ref=f91e405]:
+                    - generic [ref=f91e406]: "Resale Value:"
+                    - list [ref=f91e407]:
+                      - listitem "National Resale Value" [ref=f91e408]: $42,130
+                      - listitem "National Resale Value" [ref=f91e409]: $42,130
+                  - listitem [ref=f91e410]:
+                    - generic [ref=f91e411]: "Cost Recouped:"
+                    - list [ref=f91e412]:
+                      - listitem "National Cost Recouped" [ref=f91e413]: 50.9%
+                      - listitem "National Cost Recouped" [ref=f91e414]: 50.9%
+            - row [ref=f91e415]:
+              - 'cell "Roofing Replacement | Metal Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e416]':
+                - link "Roofing Replacement | Metal" [ref=f91e417] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/roofing-replacement-metal/
+                - list [ref=f91e418]:
+                  - listitem [ref=f91e419]:
+                    - generic [ref=f91e420]: "Job Cost:"
+                    - list [ref=f91e421]:
+                      - listitem "National Job Cost" [ref=f91e422]: $51,865
+                      - listitem "National Job Cost" [ref=f91e423]: $51,865
+                  - listitem [ref=f91e424]:
+                    - generic [ref=f91e425]: "Resale Value:"
+                    - list [ref=f91e426]:
+                      - listitem "National Resale Value" [ref=f91e427]: $25,972
+                      - listitem "National Resale Value" [ref=f91e428]: $25,972
+                  - listitem [ref=f91e429]:
+                    - generic [ref=f91e430]: "Cost Recouped:"
+                    - list [ref=f91e431]:
+                      - listitem "National Cost Recouped" [ref=f91e432]: 50.1%
+                      - listitem "National Cost Recouped" [ref=f91e433]: 50.1%
+            - row [ref=f91e434]:
+              - 'cell "Backyard Patio Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e435]':
+                - link "Backyard Patio" [ref=f91e436] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/backyard-patio/
+                - list [ref=f91e437]:
+                  - listitem [ref=f91e438]:
+                    - generic [ref=f91e439]: "Job Cost:"
+                    - list [ref=f91e440]:
+                      - listitem "National Job Cost" [ref=f91e441]: $51,454
+                      - listitem "National Job Cost" [ref=f91e442]: $51,454
+                  - listitem [ref=f91e443]:
+                    - generic [ref=f91e444]: "Resale Value:"
+                    - list [ref=f91e445]:
+                      - listitem "National Resale Value" [ref=f91e446]: $23,672
+                      - listitem "National Resale Value" [ref=f91e447]: $23,672
+                  - listitem [ref=f91e448]:
+                    - generic [ref=f91e449]: "Cost Recouped:"
+                    - list [ref=f91e450]:
+                      - listitem "National Cost Recouped" [ref=f91e451]: 46%
+                      - listitem "National Cost Recouped" [ref=f91e452]: 46%
+            - row [ref=f91e453]:
+              - 'cell "Bath Remodel | Upscale Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e454]':
+                - link "Bath Remodel | Upscale" [ref=f91e455] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/bath-remodel-upscale-upscale/
+                - list [ref=f91e456]:
+                  - listitem [ref=f91e457]:
+                    - generic [ref=f91e458]: "Job Cost:"
+                    - list [ref=f91e459]:
+                      - listitem "National Job Cost" [ref=f91e460]: $81,612
+                      - listitem "National Job Cost" [ref=f91e461]: $81,612
+                  - listitem [ref=f91e462]:
+                    - generic [ref=f91e463]: "Resale Value:"
+                    - list [ref=f91e464]:
+                      - listitem "National Resale Value" [ref=f91e465]: $34,000
+                      - listitem "National Resale Value" [ref=f91e466]: $34,000
+                  - listitem [ref=f91e467]:
+                    - generic [ref=f91e468]: "Cost Recouped:"
+                    - list [ref=f91e469]:
+                      - listitem "National Cost Recouped" [ref=f91e470]: 41.7%
+                      - listitem "National Cost Recouped" [ref=f91e471]: 41.7%
+            - row [ref=f91e472]:
+              - 'cell "Accessory Dwelling Unit Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e473]':
+                - link "Accessory Dwelling Unit" [ref=f91e474] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cvv-project-type/accessory-dwelling-unit/
+                - list [ref=f91e475]:
+                  - listitem [ref=f91e476]:
+                    - generic [ref=f91e477]: "Job Cost:"
+                    - list [ref=f91e478]:
+                      - listitem "National Job Cost" [ref=f91e479]: $166,406
+                      - listitem "National Job Cost" [ref=f91e480]: $166,406
+                  - listitem [ref=f91e481]:
+                    - generic [ref=f91e482]: "Resale Value:"
+                    - list [ref=f91e483]:
+                      - listitem "National Resale Value" [ref=f91e484]: $68,656
+                      - listitem "National Resale Value" [ref=f91e485]: $68,656
+                  - listitem [ref=f91e486]:
+                    - generic [ref=f91e487]: "Cost Recouped:"
+                    - list [ref=f91e488]:
+                      - listitem "National Cost Recouped" [ref=f91e489]: 41.3%
+                      - listitem "National Cost Recouped" [ref=f91e490]: 41.3%
+            - row [ref=f91e491]:
+              - 'cell "Bathroom Addition | Upscale Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e492]':
+                - link "Bathroom Addition | Upscale" [ref=f91e493] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/bathroom-addition-upscale-upscale/
+                - list [ref=f91e494]:
+                  - listitem [ref=f91e495]:
+                    - generic [ref=f91e496]: "Job Cost:"
+                    - list [ref=f91e497]:
+                      - listitem "National Job Cost" [ref=f91e498]: $111,255
+                      - listitem "National Job Cost" [ref=f91e499]: $111,255
+                  - listitem [ref=f91e500]:
+                    - generic [ref=f91e501]: "Resale Value:"
+                    - list [ref=f91e502]:
+                      - listitem "National Resale Value" [ref=f91e503]: $40,526
+                      - listitem "National Resale Value" [ref=f91e504]: $40,526
+                  - listitem [ref=f91e505]:
+                    - generic [ref=f91e506]: "Cost Recouped:"
+                    - list [ref=f91e507]:
+                      - listitem "National Cost Recouped" [ref=f91e508]: 36.4%
+                      - listitem "National Cost Recouped" [ref=f91e509]: 36.4%
+            - row [ref=f91e510]:
+              - 'cell "Major Kitchen Remodel | Upscale Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e511]':
+                - link "Major Kitchen Remodel | Upscale" [ref=f91e512] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/major-kitchen-remodel-upscale-upscale/
+                - list [ref=f91e513]:
+                  - listitem [ref=f91e514]:
+                    - generic [ref=f91e515]: "Job Cost:"
+                    - list [ref=f91e516]:
+                      - listitem "National Job Cost" [ref=f91e517]: $164,104
+                      - listitem "National Job Cost" [ref=f91e518]: $164,104
+                  - listitem [ref=f91e519]:
+                    - generic [ref=f91e520]: "Resale Value:"
+                    - list [ref=f91e521]:
+                      - listitem "National Resale Value" [ref=f91e522]: $58,561
+                      - listitem "National Resale Value" [ref=f91e523]: $58,561
+                  - listitem [ref=f91e524]:
+                    - generic [ref=f91e525]: "Cost Recouped:"
+                    - list [ref=f91e526]:
+                      - listitem "National Cost Recouped" [ref=f91e527]: 35.7%
+                      - listitem "National Cost Recouped" [ref=f91e528]: 35.7%
+            - row [ref=f91e529]:
+              - 'cell "Primary Suite Addition | Midrange Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e530]':
+                - link "Primary Suite Addition | Midrange" [ref=f91e531] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/primary-suite-addition-midrange/
+                - list [ref=f91e532]:
+                  - listitem [ref=f91e533]:
+                    - generic [ref=f91e534]: "Job Cost:"
+                    - list [ref=f91e535]:
+                      - listitem "National Job Cost" [ref=f91e536]: $170,517
+                      - listitem "National Job Cost" [ref=f91e537]: $170,517
+                  - listitem [ref=f91e538]:
+                    - generic [ref=f91e539]: "Resale Value:"
+                    - list [ref=f91e540]:
+                      - listitem "National Resale Value" [ref=f91e541]: $55,097
+                      - listitem "National Resale Value" [ref=f91e542]: $55,097
+                  - listitem [ref=f91e543]:
+                    - generic [ref=f91e544]: "Cost Recouped:"
+                    - list [ref=f91e545]:
+                      - listitem "National Cost Recouped" [ref=f91e546]: 32.3%
+                      - listitem "National Cost Recouped" [ref=f91e547]: 32.3%
+            - row [ref=f91e548]:
+              - 'cell "Solar Power Installation Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e549]':
+                - link "Solar Power Installation" [ref=f91e550] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cvv-project-type/solar-power-installation/
+                - list [ref=f91e551]:
+                  - listitem [ref=f91e552]:
+                    - generic [ref=f91e553]: "Job Cost:"
+                    - list [ref=f91e554]:
+                      - listitem "National Job Cost" [ref=f91e555]: $55,937
+                      - listitem "National Job Cost" [ref=f91e556]: $55,937
+                  - listitem [ref=f91e557]:
+                    - generic [ref=f91e558]: "Resale Value:"
+                    - list [ref=f91e559]:
+                      - listitem "National Resale Value" [ref=f91e560]: $16,625
+                      - listitem "National Resale Value" [ref=f91e561]: $16,625
+                  - listitem [ref=f91e562]:
+                    - generic [ref=f91e563]: "Cost Recouped:"
+                    - list [ref=f91e564]:
+                      - listitem "National Cost Recouped" [ref=f91e565]: 29.7%
+                      - listitem "National Cost Recouped" [ref=f91e566]: 29.7%
+            - row [ref=f91e567]:
+              - 'cell "Primary Suite Addition | Upscale Job Cost: National Job Cost National Job Cost Resale Value: National Resale Value National Resale Value Cost Recouped: National Cost Recouped National Cost Recouped" [ref=f91e568]':
+                - link "Primary Suite Addition | Upscale" [ref=f91e569] [cursor=pointer]:
+                  - /url: https://www.jlconline.com/cost-vs-value/primary-suite-addition-upscale-upscale/
+                - list [ref=f91e570]:
+                  - listitem [ref=f91e571]:
+                    - generic [ref=f91e572]: "Job Cost:"
+                    - list [ref=f91e573]:
+                      - listitem "National Job Cost" [ref=f91e574]: $351,613
+                      - listitem "National Job Cost" [ref=f91e575]: $351,613
+                  - listitem [ref=f91e576]:
+                    - generic [ref=f91e577]: "Resale Value:"
+                    - list [ref=f91e578]:
+                      - listitem "National Resale Value" [ref=f91e579]: $63,136
+                      - listitem "National Resale Value" [ref=f91e580]: $63,136
+                  - listitem [ref=f91e581]:
+                    - generic [ref=f91e582]: "Cost Recouped:"
+                    - list [ref=f91e583]:
+                      - listitem "National Cost Recouped" [ref=f91e584]: 18%
+                      - listitem "National Cost Recouped" [ref=f91e585]: 18%
+        - generic [ref=f91e586]:
+          - link "Key Trends in the 2025 Cost vs. Value Report ," [ref=f91e587] [cursor=pointer]:
+            - /url: /cost-vs-value/2025-cost-vs-value-report-key-trends
+          - link "Re-Use and Licensing Guidelines ," [ref=f91e588] [cursor=pointer]:
+            - /url: /cost-vs-value/2025/re-use-and-licensing-guidelines
+          - link "Methodology ," [ref=f91e589] [cursor=pointer]:
+            - /url: /cost-vs-value/2025/methodology
+          - link "What the Numbers Mean" [ref=f91e590] [cursor=pointer]:
+            - /url: /cost-vs-value/2025/what-the-numbers-mean/
+      - generic [ref=f91e592]:
+        - iframe [ref=f91e596]:
+          - generic [ref=f96e1]:
+            - link [ref=f96e2] [cursor=pointer]:
+              - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjssiyj8dEdDrqDxll2NDx9we3AwiL2gsgUYkTChc2iIUhy7g4UQDPflIHO8-XceOy9NyYRbi3PZkZTYZWbqITiQ7ENDAnSbwqF0dxulrWta3deTcJQt_PghkrN7HE-Rv2SchPEg-7cB1_tlMsxl3oHscMga8MBJ4YRp_eb5pP22lzS8FgzDnbeURcBTJc0td_Z5UQ1br40FLzVJv97j1q3iAJknOcwDfHmKJhbfVcEjHpvVM1PwkhxRvqBKvHbPdqtJ969stRigSZvUZUTX8J62Z4L3zE0OThnt81mbfO30AcrvH0p9QWv_AVH62O5L18OrFVNMJ_tEZiT_A9xkcEovjDuZPzOyZH6_monDdjT7bVRkTZ_Hw3xd3QallW1nnPajN5EnMe4AVpbFfFenMgP8EsbFqHw939OayZyLm&sai=AMfl-YTM0wawhSeaHtlW3iqBRpvXGqU5C7i2U008YKwK1VDBqkSklNaXzS0P1HWhA7IiKl82Qlp34oViYAKVtcrnMWGdK_Tf0ufHdWhTTPWNmtwNsU6JcgFY94-qSH-IDrRyM1mOumj-ZETEnoV2d0AP4IbVo0WYqKXQIa-Dm5cQjG-i4rK9Z2_Jkftzd2up7SVwJqnzdaZd-KztWm1a3_q2v3U7_pRGzpjxsvSZG_DRzoSZrLkhVMyR0HoOY5llGx1zRGI12_yPhxw41kD8E3Ek2PwRA7hsisEY3Fm0MYa9znRSORJP0ME5fNZbsyXRAVLy5grLdxSmxiKwSef9o6PFRBY2wCcQDV0oQALk9Vukf8JpK0Dm8v0Sag6t&sig=Cg0ArKJSzJcVzjO7TqBy&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=https://zonda.dragonforms.com/loading.do%3Fomedasite%3DJLC_newspecialNB%26pk%3DJLCWBHAMLB
+            - generic [ref=f96e3] [cursor=pointer]
+            - button [ref=f96e8] [cursor=pointer]
+        - generic [ref=f91e597]:
+          - heading "Upcoming Events" [level=2] [ref=f91e598]
+          - list [ref=f91e599]:
+            - listitem [ref=f91e600]:
+              - 'heading "Rising Trends: Home Elevators Add Luxury & Convenience" [level=3] [ref=f91e601]'
+              - time [ref=f91e602]: On Demand
+              - paragraph [ref=f91e603]: Webinar
+              - link "Register Now" [ref=f91e604] [cursor=pointer]:
+                - /url: https://reg.hanleywood.com/rf/543638/10608040/s/JLCEVNTPG/a/9954/
+        - region [ref=f91e605]:
+          - heading "Trending" [level=2] [ref=f91e606]
+          - list [ref=f91e607]:
+            - listitem [ref=f91e608]:
+              - article [ref=f91e609] [cursor=pointer]:
+                - generic [ref=f91e610]:
+                  - generic [ref=f91e611]: Carpenter's Log
+                  - heading [level=3] [ref=f91e612]:
+                    - link "Fixing Terrible Trim Transitions" [ref=f91e613]:
+                      - /url: https://www.jlconline.com/how-to/interiors/fixing-terrible-transitions/
+                  - generic [ref=f91e614]: 2 MIN READ
+            - listitem [ref=f91e615]:
+              - article [ref=f91e616] [cursor=pointer]:
+                - generic [ref=f91e617]:
+                  - generic [ref=f91e618]: Troubleshooting
+                  - heading [level=3] [ref=f91e619]:
+                    - link "Avoiding Common Construction Defects" [ref=f91e620]:
+                      - /url: https://www.jlconline.com/how-to/exteriors/avoiding-the-most-common-construction-defects_o/
+                  - generic [ref=f91e621]: 14 MIN READ
+            - listitem [ref=f91e622]:
+              - article [ref=f91e623] [cursor=pointer]:
+                - generic [ref=f91e624]:
+                  - generic [ref=f91e625]: Products
+                  - heading [level=3] [ref=f91e626]:
+                    - link "Latest Product Roundup" [ref=f91e627]:
+                      - /url: https://www.jlconline.com/products-tools/latest-product-roundup-3/
+                  - generic [ref=f91e628]: 1 MIN READ
+        - iframe [ref=f91e632]:
+          - generic [ref=f97e1]:
+            - link [ref=f97e2] [cursor=pointer]:
+              - /url: https://googleads.g.doubleclick.net/pcs/click?xai=AKAOjsvi9yJeCUD4r9_80cg8tqjxzbLw3nKrD1nE36n2HetK7kqyO_LdRWcDDdbXFk9hXMAu2fQAKl2REzDOq2Oo5igMoHZSozHXBeRJS9-mn_uMll79vD0UYAAePKaAUJPR3qZ-ebZlD_M9oeRkSN6pfpYO7S1KIJrQqwHzlt5DHE5WXz4sdXkn2Uq1T_QF6p2_TFkt8KUxCp8gDwwPH0VJVGcVYwwHc-lGkUVKAAlKPR9VP3dXwlQ0X-Cg6ImDlIzlIg4_yC9kBKdFx5C5ih3bM7N_7AqKqEGCP-_f36Onw8injlH3YOKHHfjpZuLIy1GuSJZNZwwQmBGdw4mQZ074WjXwaqfQjrJrIKay_AYd1JLAnz-3IkaP-IS2fDxC2V9Y5n6LhMsRAI6RgFe94ljxKkBF84PKD1JeUFHtWg2p&sai=AMfl-YSUihf9LIaWcTtc-3V889wNyUC2fWqbq7UanFNIdtb8aXtDV6vuEGYXELdjlSfwBFJIoVcn7z1Qf5txPmlhy-TDBIX4HYsGwiRVwj6XR0FHHVRuhk68vhYMXWz63pb1EBXPfzSajlzSAOhm-2N3UdabK8ZOKph9CJfps1DhlTpr2TTfLAsVgY_aMlBIVP3lfnaMS4EkYRq6iaQtuQ-idHFVrZvFBVoF6K4MzZ1l8sp1tEaH6NjxLE1E68i6rqYF-ZydgA3xWdVzfYQglACYButnNGx973jX3K68lA_WSOF_tBLORdFzaTOkbJvZKwDbbyDQS6bNUVhtq4SLjfIVRQAaAxhXQggQU4kYHpkmTIv3r2U9r2YH_qlR&sig=Cg0ArKJSzOeIs8lG4NjL&fbs_aeid=%5Bgw_fbsaeid%5D&adurl=https://zonda.dragonforms.com/loading.do%3Fomedasite%3DJLC_newspecialNB%26pk%3DJLCWBHAHP
+            - generic [ref=f97e3] [cursor=pointer]
+            - button [ref=f97e8] [cursor=pointer]
+  - contentinfo [ref=f91e633]:
+    - generic [ref=f91e634]:
+      - generic [ref=f91e635]:
+        - img "Editorial Cover" [ref=f91e637]
+        - generic [ref=f91e638]:
+          - link [ref=f91e639] [cursor=pointer]:
+            - /url: https://lsc-pagepro.mydigitalpublication.com/publication/?i=866822
+            - heading "Digital Edition 2026" [level=3] [ref=f91e640]
+          - paragraph [ref=f91e641]: Only JLC subscribers have access to content from the July/Aug issue of JLC at this time. Articles will be posted online soon. In the meantime, feel free to browse the digital edition.
+          - link "\"Subscribe to our magazine" [ref=f91e642] [cursor=pointer]:
+            - /url: https://zonda.dragonforms.com/loading.do?omedasite=JLC_new&pk=jlconline
+            - text: Subscribe
+          - link "\"Go to magazine archives" [ref=f91e643] [cursor=pointer]:
+            - /url: https://www.jlconline.com/magazine/journal-of-light-construction
+            - text: Magazine Archives
+      - generic "Find us on social media" [ref=f91e646]:
+        - link "Follow us on X" [ref=f91e647] [cursor=pointer]:
+          - /url: https://twitter.com/jlconline
+        - link "Follow us on Facebook" [ref=f91e648] [cursor=pointer]:
+          - /url: https://www.facebook.com/JLCOnline
+        - link "Follow us on Instagram" [ref=f91e649] [cursor=pointer]:
+          - /url: https://www.instagram.com/jlconline/?hl=en
+    - generic [ref=f91e650]:
+      - paragraph [ref=f91e651]: © 2026 JOURNAL OF LIGHT CONSTRUCTION Magazine - A 526 Media Group Publication
+      - generic "Footer Links" [ref=f91e653]:
+        - link "526 Media Group" [ref=f91e654] [cursor=pointer]:
+          - /url: https://526mediagroup.com/
+        - link "Privacy Policy" [ref=f91e655] [cursor=pointer]:
+          - /url: https://www.building-products.com/privacy-policy/

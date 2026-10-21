@@ -1,0 +1,2142 @@
+- generic [active] [ref=f1e1]:
+  - link "본문 바로가기" [ref=f1e2] [cursor=pointer]:
+    - /url: "#ct"
+  - banner:
+    - generic [ref=f1e6]:
+      - heading [level=1] [ref=f1e7]:
+        - link "Naver" [ref=f1e8] [cursor=pointer]:
+          - /url: https://m.naver.com/
+        - link "이전페이지":
+          - /url: "#"
+      - search [ref=f1e10]:
+        - generic [ref=f1e11]:
+          - generic [ref=f1e13]:
+            - textbox "검색어를 입력해 주세요" [ref=f1e14]: 대전 옥상스틸방수
+            - button "입력 내용 삭제" [ref=f1e15]
+          - generic [ref=f1e17]:
+            - button "음성검색" [ref=f1e18]
+            - button "검색"
+    - tablist [ref=f1e22]:
+      - tab "AI new" [ref=f1e23] [cursor=pointer]:
+        - text: AI
+        - generic [ref=f1e24]: new
+      - tab "블로그" [ref=f1e26] [cursor=pointer]
+      - tab "카페" [ref=f1e27] [cursor=pointer]
+      - tab "클립" [ref=f1e28] [cursor=pointer]
+      - tab "이미지" [ref=f1e29] [cursor=pointer]
+      - tab "지식iN" [ref=f1e30] [cursor=pointer]
+      - tab "동영상" [ref=f1e31] [cursor=pointer]
+      - tab "쇼핑" [ref=f1e32] [cursor=pointer]
+      - tab "뉴스" [ref=f1e33] [cursor=pointer]
+      - tab "어학사전" [ref=f1e34] [cursor=pointer]
+      - tab "지도" [ref=f1e35] [cursor=pointer]
+      - tab "인플루언서" [ref=f1e36] [cursor=pointer]
+      - tab "검색옵션" [ref=f1e37] [cursor=pointer]
+  - generic [ref=f1e39]:
+    - generic [ref=f1e42]:
+      - list [ref=f1e44]:
+        - listitem [ref=f1e45]:
+          - generic [ref=f1e46]:
+            - link "favicon6 주식회사유반장스틸 u-banjang.com/ 광고 국가공인 (주)유반장옥상방수 특허 + 방수건설면허" [ref=f1e49] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/O-5MMzpzC3VHl89UmMSAsdLsCr0Dg8apFHleRg8E7oAaXua6apkyLiJQoMD9zg4mrr-TmnMwKpip_PiYs-xPADoK7rwTwxISYuZbQZfwvSa_1wtLqR4jyPNm1eeynxSlmXolGDWy695c4S93O0-0fC1Yw--xppq_MDuWqYO14DOWyX93lBlnxoBwic39zAZ1KLFmDlLpKFsVEaycGgArCMRzurR63_j6dWTStqxK_ZSW10d7UZP_g2fsqDUI4Ggiz5v47S8cvKHvDgnmtNz2yTy2vz6mFFXzm15uSPEHdfnoOXEXRx9v897azZifNMLvWxnpv0d75-PNvHLX9EiBx_7OnfaGuRcNS0VMkM6LdmujOxfuHoon2inCpSIwfOonvQNusIRUxqvE_b5TTE8vy4Ma6xKBaowmr9EIacBBinX5lHTn5Jd7SR_WUy45xkaNQKeueYoLveiB01NmcZgDzSp7R2gRlmrgpa4tXoC_gj8=?c=mnaver.search.plsearch&t=0
+              - generic [ref=f1e51]:
+                - img "favicon6" [ref=f1e53]
+                - generic [ref=f1e54]: 주식회사유반장스틸
+                - generic [ref=f1e55]: u-banjang.com/
+                - link "광고" [ref=f1e56]
+              - generic [ref=f1e62]:
+                - generic [ref=f1e63]:
+                  - text: 국가공인 (주)유반장
+                  - mark [ref=f1e64]: 옥상
+                  - mark [ref=f1e65]: 방수
+                - generic [ref=f1e66]:
+                  - text: 특허 +
+                  - mark [ref=f1e67]: 방수
+                  - text: 건설면허
+            - link [ref=f1e71] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/O-5MMzpzC3VHl89UmMSAsdLsCr0Dg8apFHleRg8E7oAaXua6apkyLiJQoMD9zg4mrr-TmnMwKpip_PiYs-xPADoK7rwTwxISYuZbQZfwvSa_1wtLqR4jyPNm1eeynxSlmXolGDWy695c4S93O0-0fC1Yw--xppq_MDuWqYO14DOWyX93lBlnxoBwic39zAZ1KLFmDlLpKFsVEaycGgArCMRzurR63_j6dWTStqxK_ZSW10d7UZP_g2fsqDUI4Ggiz5v47S8cvKHvDgnmtNz2yTy2vz6mFFXzm15uSPEHdfnoOXEXRx9v897azZifNMLvWxnpv0d75-PNvHLX9EiBx_7OnfaGuRcNS0VMkM6LdmujOxfuHoon2inCpSIwfOonvQNusIRUxqvE_b5TTE8vy4Ma6xKBaowmr9EIacBBinX5lHTn5Jd7SR_WUy45xkaNQKeueYoLveiB01NmcZgDzSp7R2gRlmrgpa4tXoC_gj8=?c=mnaver.search.plsearch&t=0
+              - mark [ref=f1e72]: 옥상
+              - mark [ref=f1e73]: 스틸
+              - mark [ref=f1e74]: 방수
+              - text: /지붕공사/외벽
+              - mark [ref=f1e75]: 스틸
+              - mark [ref=f1e76]: 방수
+              - text: 전문건설업 면허 보유 (지붕판금,
+              - mark [ref=f1e77]: 옥상
+              - mark [ref=f1e78]: 방수
+              - text: )
+              - mark [ref=f1e79]: 방수
+              - text: 산업기사 100%책임보증
+            - link "이벤트 관공서,공공기관 수의계약! 더보기" [ref=f1e80] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/kB_nUxdV2klHTSMX4Hxm2Qjc0-Ov-ENmCBtnBkzNo62XdBW58M0LywjlGuKhClv15TfRXdgnbfZy2A56oVkH7lufo9r2SeqxA54jfE6WVIctDpr1sSv9q9y68Sw44MlPPy1D60VkrbyoZ-48xPOns8RCdRcd2bLNGBGgYVLAqjEaFrZ6hmfC0wKk6oggP4WSEfFUHFx1ypIxSyQ5dP1KqF9k729a4DBGRpH0FmMhXj1GhDy86X7xP43hAZZ2jUEVAM4Rwa_Di_pf1v5WSG5nTGEAyD5lTkzkDNCURqetJaemET6eAQP3CZouwih_bUUcNbKr2R59nHX026Cx0XjCAIsqrU9F4OfOVzqJ46BEzJVbP4tRkXdoRsThOKCbJm18AX3q8jtk7vElGTR_s4OeCsg4I1I9jP78gntsaYZW3pdSNi1jFeRdZ6SdgD5c_SjurFlJsG0qzsGSIQt3qoYRl6Hrd8J8dPfbNq6x095tW6XH8H5LRNI2NazoHXKBBxYF?c=mnaver.search.plsearch&t=0
+              - generic [ref=f1e87]: 이벤트
+              - generic [ref=f1e88]: 관공서,공공기관 수의계약!
+              - img "더보기" [ref=f1e89]
+            - generic [ref=f1e92]:
+              - link "옥상스틸방수" [ref=f1e94] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/kwWewdVC66hTPSVjB8Xr4bcbyrEgzyW_73oB67tAJLBlyQeCxTpPpP5IcflKIVJvB-gdTyUCn78gOi1s76vFrVixMN-QcNhbIoQcc8Gca_P5miP549_SUp8r_B0AbrdWN6vBU7Il64rMzYy5Tv9Lp3Z3Jaxif7teIHwN6-inScaCapyIEqZErOp9U2clEthO-HxVLe_2HOyhaXnvJ9VwH3B8gvsM2nN8FP-p1M8Z2cGRnswAGMLA426yjkbQNpLaE3D1wBD7DLMQ9Qc46Xyg0KkCvtfHo4dc0yhyCvvLidB1hqDQMgU3zWi0Keue7AcgFixYQp7Vys9Aka0VVegnLfuwa8MmLMvXH6N_sRLSyjB-akg2xDCg3Oq4atHYczZ7z6fyxtoecbQN0a62rr1aYoQiRlGL4K2_pTn9ahL1W_ocMXhXsOmPeOJBDKG8Y8IqY7DxiaHbZaQDH5NbkxAJBUxrkoq9fFVFkLflJ4wq_YrWJtBCeUieXHnui9jbTwEC?c=mnaver.search.plsearch&t=0
+              - link "지붕공사" [ref=f1e99] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/kwWewdVC66hTPSVjB8Xr4bcbyrEgzyW_73oB67tAJLBlyQeCxTpPpP5IcflKIVJvB-gdTyUCn78gOi1s76vFrVixMN-QcNhbIoQcc8Gca_P5miP549_SUp8r_B0AbrdWN6vBU7Il64rMzYy5Tv9Lp3Z3Jaxif7teIHwN6-inScaCapyIEqZErOp9U2clEthO-HxVLe_2HOyhaXnvJ9VwH3B8gvsM2nN8FP-p1M8Z2cGRnswAGMLA426yjkbQNpLaE3D1wBD7DLMQ9Qc46Xyg0KkCvtfHo4dc0yhyCvvLidB1hqDQMgU3zWi0Keue7AcgFixYQp7Vys9Aka0VVegnLfuwa8MmLMvXH6N_sRLSyjB-akg2xDCg3Oq4atHYczZ7z6fyxtoecbQN0a62rr1aYoQiRlGL4K2_pTn9ahL1W_ocMXhXsOmPeOJBDKG8Y8IqY7DxiaHbZaQDH5NbkxAJBUxrkoq9fFVFkLflJ4wq_YrWJtBCeUieXHnui9jbTwEC?c=mnaver.search.plsearch&t=0
+              - link "외벽스틸방수" [ref=f1e104] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/kwWewdVC66hTPSVjB8Xr4bcbyrEgzyW_73oB67tAJLBlyQeCxTpPpP5IcflKIVJvB-gdTyUCn78gOi1s76vFrVixMN-QcNhbIoQcc8Gca_P5miP549_SUp8r_B0AbrdWN6vBU7Il64rMzYy5Tv9Lp3Z3Jaxif7teIHwN6-inScaCapyIEqZErOp9U2clEthO-HxVLe_2HOyhaXnvJ9VwH3B8gvsM2nN8FP-p1M8Z2cGRnswAGMLA426yjkbQNpLaE3D1wBD7DLMQ9Qc46Xyg0KkCvtfHo4dc0yhyCvvLidB1hqDQMgU3zWi0Keue7AcgFixYQp7Vys9Aka0VVegnLfuwa8MmLMvXH6N_sRLSyjB-akg2xDCg3Oq4atHYczZ7z6fyxtoecbQN0a62rr1aYoQiRlGL4K2_pTn9ahL1W_ocMXhXsOmPeOJBDKG8Y8IqY7DxiaHbZaQDH5NbkxAJBUxrkoq9fFVFkLflJ4wq_YrWJtBCeUieXHnui9jbTwEC?c=mnaver.search.plsearch&t=0
+        - listitem [ref=f1e108]:
+          - generic [ref=f1e109]:
+            - link "favicon6 주식회사오웰스틸 owellsteel.com 광고 옥상방수 전문기업 (주)오웰스틸" [ref=f1e112] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/gGit9WKzuzshohRmEVeq0iyTArrQGotHb7xFpU4feJn1vHFO96n85WRLc2fjw2nVJopNCAQ2Y2CJT-UFMXsPZfZG2S4dGePeXY2xndSG6S4vZqG8BQW4T-MyTyywneIHGQxPEUexlyaK6JGT4qz1z2zAoThuXtrdftFNdQ9ij5Oib7v1GJ6qK8rTFSz9gDokyZRT0yc0actzA6tX-9NjxlvikBLzl4kcMHle4lZQazVoyi2pdV3J-3u5Ame3JAuiVbgp4Fiok03lpMd9BXMZ2Mtzy-PdEfjIxbnACGfjmHusAF02je2z6Wz25yndjWV511jWqoFHhCByRlgwDGWMHwE4MseaqYGAbvlDOOyElWjl6_LkejUCircPJP934K1eKjhMuZ67z39JV3KHcG8VDMzBg-C1iLBzFSi0DTQrlutcUy0-acwmmajlI5Xdzz3ytUJqSAX59NaH7MYKTn5iCiJiPadm7dOL_73AlvdqzleqBLeKkHAhs3VH437HRBYN?c=mnaver.search.plsearch&t=0
+              - generic [ref=f1e114]:
+                - img "favicon6" [ref=f1e116]
+                - generic [ref=f1e117]: 주식회사오웰스틸
+                - generic [ref=f1e118]: owellsteel.com
+                - link "광고" [ref=f1e119]
+              - generic [ref=f1e125]:
+                - generic [ref=f1e126]:
+                  - mark [ref=f1e127]: 옥상
+                  - mark [ref=f1e128]: 방수
+                  - text: 전문기업
+                - generic [ref=f1e129]:
+                  - text: (주)오웰
+                  - mark [ref=f1e130]: 스틸
+            - generic [ref=f1e131]:
+              - link [ref=f1e134] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/gGit9WKzuzshohRmEVeq0iyTArrQGotHb7xFpU4feJn1vHFO96n85WRLc2fjw2nVJopNCAQ2Y2CJT-UFMXsPZfZG2S4dGePeXY2xndSG6S4vZqG8BQW4T-MyTyywneIHGQxPEUexlyaK6JGT4qz1z2zAoThuXtrdftFNdQ9ij5Oib7v1GJ6qK8rTFSz9gDokyZRT0yc0actzA6tX-9NjxlvikBLzl4kcMHle4lZQazVoyi2pdV3J-3u5Ame3JAuiVbgp4Fiok03lpMd9BXMZ2Mtzy-PdEfjIxbnACGfjmHusAF02je2z6Wz25yndjWV511jWqoFHhCByRlgwDGWMHwE4MseaqYGAbvlDOOyElWjl6_LkejUCircPJP934K1eKjhMuZ67z39JV3KHcG8VDMzBg-C1iLBzFSi0DTQrlutcUy0-acwmmajlI5Xdzz3ytUJqSAX59NaH7MYKTn5iCiJiPadm7dOL_73AlvdqzleqBLeKkHAhs3VH437HRBYN?c=mnaver.search.plsearch&t=0
+                - text: 조달등록으로 검증된 시공품질. 반복되는 보수 고민을 해결한 혁신적인
+                - mark [ref=f1e135]: 방수
+                - text: 솔루션!
+              - link [ref=f1e137] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/TXEJwu2-WQZzGnKnzNZPYTfTUi-L9vxAhlZnlDQHM-UjLPBHY7bbrfM05MQcv-fA0eJ_I8q3Z2yvHBUs-Js_y_7LgAK2aTnUoBI1eX2LRSwilap2bfZWSAQZYj2KI0gJx9U6TV-Du3973SJlG4t32ZNIsy41Alhzr9vOImXk-pLY2qBLzAT_Z8bl87jgMVLIX0Fzhdl03NQF03aEQYe0fG_7BThATAnZn9ufdp4UdL_LebSPHz07kb2HGZfrkznVV5naism6QIwHhnPoJgsxv6IYADcCE1gDYJjLqLdUyT6xy1fslWxTTl6ndTV4WewoMeJodSvqX0uWokv7kOaCN0U5WYCvQZsY2AI7vFS9lza0ZAiXbErikUJE6bSYYRVH9WJgDUfgcW0RXiBmUzDeTiwAqDOGFj6zHB5CzDs7vjtrJpu8hhwevPAnicgEAF0euhf8vD4MhEhs7GV8GMamz-75kg_f-Q4gQPUX9bf9PmMED_ZKnYKLpLdNxlj_V6hS?c=mnaver.search.plsearch&t=0
+            - list [ref=f1e140]:
+              - listitem [ref=f1e141]:
+                - link "기술소개" [ref=f1e142] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/bX2jmIqGQRAPNyLXis1bK1ln81NM0kMHoKWvUygZVdj8QV7cwWngDMVTPqmBOvqgXeporRJTiExqisUtu4UmVLwAExzbetatDJ1neoNFS4hMQraC8g0NZQQJHsT8naEv6EmwsqA6p9qVTsshj8HW7ym0OFdswUlAlIkte5xPk3GgqJEGf4PpB-BokJFzJU7mIPWAAadrl926bdpMwCyDGa2iHjz3uD7Q1MqxMHBOSFg8zVNBUg49ejjG7P7RW_dR95Rh_MTgyik5Mif3gae5xyzA_G-Tcx0pReUYlqxbQTYdkXkUlJD-Tj9CMgcNZpqYQPalLDcBfnv3C4dEje84SLUC9-t23_5dHq7YZcuU_QYAmWAIFDTuFBeWmHDyy1MoJqJLixT-Qb02YWv-uAYakr9BrmD79h-4ddnFZUSCPFdSv4kmj2o7KKIlcr_rdPE_zbe64Ro0SpYVBHdRc0PEzKnybGuCqZ2h8mHgg-6RsUCS0J7hH3uEyE2AMgDsTgb7PB5WP9WPdfFzK8L_dmuj1g==?c=mnaver.search.plsearch&t=0
+              - listitem [ref=f1e144]:
+                - link "시공실적" [ref=f1e145] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/a1ZzvLvEyLMxCP4NQ_5YciHCHQRHOiQRwGtiXcWclzLRigOScBnWblIXaOkNzn2BfVT1cAasDYgDPP8LO1S1l6F2tsxzOBCpjqmP5MRmas-Il13fEylCpa-LSLeiQcOUGR9O_b-DKbgZfanPvHyWxJ3HaNz8pf7ug_lp1Ur2HXvsfvbUtlAS-vZMryr2dzJkUfjr36Xxf-qY6WOTi1LFMw7pPrOWmdtU2n_GWO5Zxk0cItkNuuG9QejC3UAyHFVMS_mH9VIfx3e7wqMJsjTvlyNpbcaLgAjUwj73IJDJUIL7mw1Kg8A35O8c0KWYc11T4pwh64F8CW_fGOX0Y8sftfiOGuno9lIQIBhOSrmS8OTNMnObkZMUGg6Gk-LjoZzbu8ckepv4ValTzyVCodAKBwzUQvpF7lA3o3KiOhW6yquoyRkiw2P8icT3bs29v0JZLQX8rL9Qdd4msf-lXm3Kn2B5Wwat0MRte6c8GWovh-z9S4ccMtvYdryNeOQwKlLpSpUqR-mzs4UiE-zgjwLovg==?c=mnaver.search.plsearch&t=0
+              - listitem [ref=f1e147]:
+                - link "조달구매안내" [ref=f1e148] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/DdoAvzJKGfwcKg_GmB1o1KgRpzqXz6ZhwKZsQp9K1XTLkdbs0-p2aHBLiFdQMbEJEu8gjhcwpPNE178dCBVX96VpeEwA3ll6ECGkGJETchaf9Z-D-IpYQCppZXGe-yXukfTpHS5mdU0-qHseCSjnIomRFrYv4WhtSfHMs_svKeq9jTUEhJN25npN4g2TM_68BBUFlS06YaJpAcXlWiUu3MRZrOgM2RjhN-u4RCnAF0H8xKkvEx31dzJ8Tf1Z3G5JJCtGvJ7Kp7F3nqwjpdoc5wDeLAKynI9lQOGtJ9OCLDnkTfIn1z33UZLP4eWtBsmIyeLgyxBQTnI2iJGVMNHRZff0US8tvYtB7bHe1Oa4xNjck8P9nuZ-GswfAtMHc8oSvQfwu0RSm3Y-eTA5arlQ2xDPK5WR8Xm2VU6P4HXYUOa57_qacx4O1se6KFkWBATgw5k8R_oZbEGkiWx9LFoWZwrSNZhTzTuWMlJf80XrNH7fzh3mxTnZyAAOENOMB4Wuq_ymievEfpVvRjkCioQqyQ==?c=mnaver.search.plsearch&t=0
+              - listitem [ref=f1e150]:
+                - link "견적문의" [ref=f1e151] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/o232cBEUbQtc_E5I-1Xcu5QO5hMyUfTr0oA4UTVRmO1kFwzq49tK5_qaj1n4E98LFEGAFIEAf6lNwcy7WPFPpTf9yUPj3TBS6S83aowprJSS4YP73WqRn_oIPBdiJwG-kn5zokzcohOZQnksMAV28rHdPbKLFykTqxc44GK5coaI_l6H5RaZx0hzrtgB8yeLT4tq-qIXk0KEkiX2a0zrVer9fEQgfqoxCbA1su_6VeeQQ2MYu1gbnz7PNSmlogpJ_RqAenA_y-Rv1nfGKU6qBBvo5iPHTPF0nkl329oLlXlBAzEn5sHgTHsSydRepiUcWGbH-mhJ157D9tdDQ6fpop1dj9PNJHj6mgfNvZynrN1WCgA2P-DouN2JFRzqxNguKn-gzHoMkzo7C9a-s_y4z8z5zS3wQZ_RoSqUc4E5UaK3aADsZLtWMLrlgIgsDEhxEpzQdJsp7CpzrAsJJ-336nOXNMpqnp41efmbzneIsP6HQEygVYi-dWHoV1xbkyP2-b7ifXDMOcACcBaTeV0QoQ==?c=mnaver.search.plsearch&t=0
+        - listitem [ref=f1e153]:
+          - generic [ref=f1e154]:
+            - link "favicon6 세종루프 blog.naver.com/sejongroof_ 광고 지붕공사 직접책임시공 국내산 정품자재 직접시공 무료 방문견적 상담진행" [ref=f1e157] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSH-qTgVxP7lSG08EeToMZaSpxqBVlK_d50IniBg93nJMbpirVR7COax3upZNnVbxD6ZYvxddbHjkaNHgv9QWV9PfoG-NOWU_t-svNVNI8bhVttDekk_U4un2EAWxWKjx61L72YRtEDli056B73SIpHMlb44y-NqTxSbfgQsD1zyiBGNz2DIot6j4uRodLtGgrx8LBnrPIGtnXffD_ow3tNpd9rNN87OphiCBXy_PD1dkczr_WyNoXoMz5hCYYELg_ZkZadFqxTQqqg-b8uAGV3zsm0b3Cl22nKsI5kh0P9TeQ==?c=mnaver.search.plsearch&t=0
+              - generic [ref=f1e159]:
+                - img "favicon6" [ref=f1e161]
+                - generic [ref=f1e162]: 세종루프
+                - generic [ref=f1e163]: blog.naver.com/sejongroof_
+                - link "광고" [ref=f1e164]
+              - generic [ref=f1e170]: 지붕공사 직접책임시공 국내산 정품자재 직접시공 무료 방문견적 상담진행
+            - link [ref=f1e174] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSH-qTgVxP7lSG08EeToMZaSpxqBVlK_d50IniBg93nJMbpirVR7COax3upZNnVbxD6ZYvxddbHjkaNHgv9QWV9PfoG-NOWU_t-svNVNI8bhVttDekk_U4un2EAWxWKjx61L72YRtEDli056B73SIpHMlb44y-NqTxSbfgQsD1zyiBGNz2DIot6j4uRodLtGgrx8LBnrPIGtnXffD_ow3tNpd9rNN87OphiCBXy_PD1dkczr_WyNoXoMz5hCYYELg_ZkZadFqxTQqqg-b8uAGV3zsm0b3Cl22nKsI5kh0P9TeQ==?c=mnaver.search.plsearch&t=0
+              - text: 외주 없이 처음부터 끝까지 직접 시공,
+              - mark [ref=f1e175]: 옥상
+              - mark [ref=f1e176]: 스틸
+              - mark [ref=f1e177]: 방수
+              - text: 부터 지붕개량 무료 방문 견적 칼라강판 외벽공사
+              - mark [ref=f1e178]: 스틸
+              - mark [ref=f1e179]: 방수
+              - text: 전문, 풍부한 시공 경험의 세종지붕이 직접 책임집니다.
+            - generic [ref=f1e180]:
+              - link "스틸방수" [ref=f1e182] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSH-qTgVxP7lSG08EeToMZaSpxqBVlK_d50IniBg93nJMbpirVR7COax3upZNnVbxD6ZYvxddbHjkaNHgv9QWV9PXEcnyCnlq2jZSAR49gsUyVxzPJ0ZHqHxmGaDPhfh91luAjJpQhawP5Q694uLQ8pmEp5wzyMO5iuumjJiGDStppqtTD1EZcQcqiOJRnaTZjA7JSfrWFTGYAJlrNsNdIoJlRDmanD_f7HTyE51jIl27s1Yik2A0Wt3nOadLJmpNgdpLQR-Y4t9K5IdsWTC_KtAPfy4_xpGU-t00e6v7sES6_ZO_kYqN4Qtw3Plcy_mfk8=?c=mnaver.search.plsearch&t=0
+              - link "외벽방수" [ref=f1e187] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSH-qTgVxP7lSG08EeToMZaSpxqBVlK_d50IniBg93nJMbpirVR7COax3upZNnVbxD6ZYvxddbHjkaNHgv9QWV9PXEcnyCnlq2jZSAR49gsUyVxzPJ0ZHqHxmGaDPhfh91luAjJpQhawP5Q694uLQ8pmEp5wzyMO5iuumjJiGDStppqtTD1EZcQcqiOJRnaTZjA7JSfrWFTGYAJlrNsNdIoJlRDmanD_f7HTyE51jIl27s1Yik2A0Wt3nOadLJmpNgdpLQR-Y4t9K5IdsWTC_KtAPfy4_xpGU-t00e6v7sES6_ZO_kYqN4Qtw3Plcy_mfk8=?c=mnaver.search.plsearch&t=0
+              - link "지붕공사" [ref=f1e192] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSH-qTgVxP7lSG08EeToMZaSpxqBVlK_d50IniBg93nJMbpirVR7COax3upZNnVbxD6ZYvxddbHjkaNHgv9QWV9PXEcnyCnlq2jZSAR49gsUyVxzPJ0ZHqHxmGaDPhfh91luAjJpQhawP5Q694uLQ8pmEp5wzyMO5iuumjJiGDStppqtTD1EZcQcqiOJRnaTZjA7JSfrWFTGYAJlrNsNdIoJlRDmanD_f7HTyE51jIl27s1Yik2A0Wt3nOadLJmpNgdpLQR-Y4t9K5IdsWTC_KtAPfy4_xpGU-t00e6v7sES6_ZO_kYqN4Qtw3Plcy_mfk8=?c=mnaver.search.plsearch&t=0
+        - listitem [ref=f1e196]:
+          - generic [ref=f1e197]:
+            - link "favicon6 대한지붕공사 blog.naver.com/tkdduq6005 광고 칼라강판 옥상방수 지붕공사 지붕의달인 대한지붕공사" [ref=f1e200] [cursor=pointer]:
+              - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSG-mcmdc6SHC5RhEMHAw36UMPJ_Kj3FwxE01A-XMxCLIp6-wn2znHqE8IGY_rKnr1b_AUdTBqjySc42ApBMmajImfcVSuX6ijNyQ1ZdhnQKnxa3BAWHaAy2kHK9ipWOxIoYhjUl3QL3Yit3jqx_aB632t-jxv5vMU5algt23ir2_xlE1D96h6wsmPEAbCArEk3pwFCrIVCbxTk-6Py35vMW_SuWejh7SMeQGmf8ofWYfjdlhoCOw3QO32XDiEmA3BnqQDyVVWFKiLXCtakZH9P0xB4mC4BvYKj3W2T7wx6yGA==?c=mnaver.search.plsearch&t=0
+              - generic [ref=f1e202]:
+                - img "favicon6" [ref=f1e204]
+                - generic [ref=f1e205]: 대한지붕공사
+                - generic [ref=f1e206]: blog.naver.com/tkdduq6005
+                - link "광고" [ref=f1e207]
+              - generic [ref=f1e213]:
+                - generic [ref=f1e214]:
+                  - text: 칼라강판
+                  - mark [ref=f1e215]: 옥상
+                  - mark [ref=f1e216]: 방수
+                  - text: 지붕공사
+                - text: 지붕의달인 대한지붕공사
+            - generic [ref=f1e217]:
+              - link [ref=f1e220] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSG-mcmdc6SHC5RhEMHAw36UMPJ_Kj3FwxE01A-XMxCLIp6-wn2znHqE8IGY_rKnr1b_AUdTBqjySc42ApBMmajImfcVSuX6ijNyQ1ZdhnQKnxa3BAWHaAy2kHK9ipWOxIoYhjUl3QL3Yit3jqx_aB632t-jxv5vMU5algt23ir2_xlE1D96h6wsmPEAbCArEk3pwFCrIVCbxTk-6Py35vMW_SuWejh7SMeQGmf8ofWYfjdlhoCOw3QO32XDiEmA3BnqQDyVVWFKiLXCtakZH9P0xB4mC4BvYKj3W2T7wx6yGA==?c=mnaver.search.plsearch&t=0
+                - text: 지속가능한 완벽한
+                - mark [ref=f1e221]: 방수
+                - text: 합리적인 가격으로 최상의 만족을 보장합니다 전국무료견적
+              - link [ref=f1e223] [cursor=pointer]:
+                - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSG-mcmdc6SHC5RhEMHAw36UMPJ_Kj3FwxE01A-XMxCLIp6-wn2znHqE8IGY_rKnr1b_AUdTBqjySc42ApBMmajIvSSXItGuE6D0RUrP3G7YWDxmz80XBclWj3bGKw5upq_rMzjzUEmYO4U-3dx-icnrcqGlw20eatwi2DGWH8Gwca5mKMfHCcfmXdai838zPPPTJT3yq7OeyYNEhY3CUMpX1m0tMA1NofUFIekS8U4lED_myls8di3JheczeLjB6KS0HaIXrGK_UgBKVxRkHYFREg5L7sXs-yqrCbDlFb8F8Q==?c=mnaver.search.plsearch&t=0
+            - list [ref=f1e226]:
+              - listitem [ref=f1e227]:
+                - link "시공사례" [ref=f1e228] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSHQlGmvywN0X6uCIavSsEgyNLrseaRM5zIsEbHtTMBMR0BuvGJk5I3fArYuhjTFOkbXBwQxg1rAvC8axyvdp_LzdL2K99qpTVkRf7T8mQOCD6MOm73vbL8gQIfPBL4z5WGz9YPjsnDGihfd0zqBJqrBORIsJg4rpdD-NRWGSrE8P3dX-lpxBvV0ohZeq7pDL6TNtuQCiEV-CNTQGQZNYfjpvCTH-G6mHZ3M9ELesTPFWYQHc-aPI0RzTS2YC0fi0D4bR3eNmNi191wNoeLpm6Mc6NxdE13P4tVJS0f161zfmw==?c=mnaver.search.plsearch&t=0
+              - listitem [ref=f1e230]:
+                - link "갤러리" [ref=f1e231] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSGKCsAqkRsCRBZ-fJpm2DyMNfsdGSPOGtiX63YNf0B6vqp2xO7UM9Nz5Ty4LDUKrnXtMfJWQRE2CFWCN1VHJiwQxDuHS1sn3n8e1ctIoDQk_R_Ji6vj7un_KA028LJRfowQloiPt1bRI0kfsdxJbEV4pRo4dtgxkA7gd_-ehpQh0WA0egvjTU9iKH030sulyp_FET60F1m9dCJGUSkIrdpmZ0bPhIhkQ_wQVzjoL61GrWEFUZrInfgdaOt3UKU4aqFNLZSCmxOdXlXZKOd8m_0zQ3j8vjdVRg9dXrjyI7qqFnjlXUy2pFcLb8IMoZnoPnY=?c=mnaver.search.plsearch&t=0
+              - listitem [ref=f1e233]:
+                - link "고객센터" [ref=f1e234] [cursor=pointer]:
+                  - /url: https://ader.naver.com/v1/YR9nqRv9frD3FJEQRtt1Uqm_8Ze2BrnerrwudCXkxSGKCsAqkRsCRBZ-fJpm2DyMNfsdGSPOGtiX63YNf0B6vvSEkYf5tqCwG3C0e9P9ZMx7f_b5-3xigdnXNWhSQ1br_zp3uWBVHvoEd61KR9DX0IrSkE7gtND5UWIi78jHIC8or-vD8Dz6iYGZ6lXh-HiTRADOr73thQCIEvEmeV2uR2ah5-sPLrAHJts9qn_BBmkOzr6hOJ-aOBK_zGbEbxmn0xIsVwRPkoNe_W-G2401Oj1Ti8urjol79-l_NLKB3AhsRB8oV7ezr6PpN9I_7xaiZKaUypIdZzpHeLm2kWIY2xOZ8yC6xkrnxUom-hM8D9Q=?c=mnaver.search.plsearch&t=0
+      - link "더보기" [ref=f1e237] [cursor=pointer]:
+        - /url: https://m.ad.search.naver.com/search.naver?where=m_expd&query=%EB%8C%80%EC%A0%84%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&referenceId=jWaGpdqoii4ssB7QFjZ-419816&buckets=NS-SHP-RANK-26%5E5%2Cimpression-neo-SA_SERVING-1119%5E5
+    - generic [ref=f1e241]:
+      - generic [ref=f1e245]:
+        - generic [ref=f1e247]:
+          - generic [ref=f1e248]:
+            - link [ref=f1e250] [cursor=pointer]:
+              - /url: https://m.cafe.naver.com/kimyoooo
+            - generic [ref=f1e253]:
+              - link "지성아빠의 나눔세상 - 전원 & 귀농 -" [ref=f1e256] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kimyoooo
+              - generic [ref=f1e261]: 2026.09.09.
+          - button "옵션 메뉴 열기" [ref=f1e264] [cursor=pointer]
+        - generic [ref=f1e269]:
+          - link [ref=f1e270] [cursor=pointer]:
+            - /url: https://m.cafe.naver.com/kimyoooo/1339721?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzM5NzIxLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.vCaGicAgO-CNsUGdNbX_MfetACOBV9_rAINjTGkLJ9k
+            - generic [ref=f1e271]:
+              - mark [ref=f1e272]: 옥상
+              - mark [ref=f1e273]: 방수
+              - mark [ref=f1e274]: 스틸
+              - text: 시공 도와주세요.
+          - generic [ref=f1e275]:
+            - link [ref=f1e277] [cursor=pointer]:
+              - /url: https://m.cafe.naver.com/kimyoooo/1339721?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzM5NzIxLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.vCaGicAgO-CNsUGdNbX_MfetACOBV9_rAINjTGkLJ9k
+              - generic [ref=f1e278]:
+                - mark [ref=f1e279]: 옥상
+                - text: 에 누수가 있어
+                - mark [ref=f1e280]: 방수
+                - text: 공사를 하려고 하는데, 문외한인 제가 보아도 문제가 있어보여 고수님들의 고견을 구합니다.
+                - mark [ref=f1e281]: 스틸
+                - text: 시공하면
+                - mark [ref=f1e282]: 옥상
+                - text: 바닥에서 얼마나 높아지게 되나요? 어제부터 공사를 시작했는데,
+                - mark [ref=f1e283]: 옥상
+                - text: 바닥에서 5~60 cm 높이로 나무틀을 만들어 놓았습니다. 바닥이 높아지니
+                - mark [ref=f1e284]: 옥상
+                - text: 문도 잘라내고,
+                - mark [ref=f1e285]: 옥상
+                - text: 옥탑집 문도 1/3가량 잘라냈습니다. 너무 당황해서 사진도...
+            - link [ref=f1e286] [cursor=pointer]:
+              - /url: https://m.cafe.naver.com/kimyoooo/1339721?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzM5NzIxLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.vCaGicAgO-CNsUGdNbX_MfetACOBV9_rAINjTGkLJ9k
+        - link [ref=f1e297] [cursor=pointer]:
+          - /url: https://m.cafe.naver.com/kimyoooo/1339721?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzM5NzIxLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.vCaGicAgO-CNsUGdNbX_MfetACOBV9_rAINjTGkLJ9k
+          - generic [ref=f1e298]:
+            - text: 증축은 3가지 면적증가, 층수증가 그리고 높이증가인데 여기서 높이는 건축물의 최고높이입니다! 건축물의 최고높이는 가장 일반적인 것이 지면에서
+            - mark [ref=f1e299]: 옥상
+            - text: 난간까지 산정합니다 그래서 저렇게하면 난간보다 높이가 더 높아지지 않으니 높이증가에 해당하지 않습니다 결론은
+      - generic [ref=f1e303]:
+        - generic [ref=f1e305]:
+          - generic [ref=f1e306]:
+            - link [ref=f1e308] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel
+            - generic [ref=f1e311]:
+              - link "옥상방수 대표기업 (주)오웰스틸" [ref=f1e314] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/owellsteel
+              - generic [ref=f1e319]: 2주 전
+          - button "옵션 메뉴 열기" [ref=f1e322] [cursor=pointer]
+        - generic [ref=f1e327]:
+          - generic [ref=f1e328]:
+            - link [ref=f1e329] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+              - generic [ref=f1e330]:
+                - mark [ref=f1e331]: 대전 옥상
+                - mark [ref=f1e332]: 방수
+                - text: 공사를 찾고 계신다면 '이것'만은 알고 계약하세요! (ft
+                - mark [ref=f1e333]: 스틸방수
+                - text: )
+            - link [ref=f1e334] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+              - generic [ref=f1e335]:
+                - text: 속 잔존수분이 빠져나가는 통로가 확보되어, 도막
+                - mark [ref=f1e336]: 방수
+                - text: 에서 흔한 부풀음과 터짐이 생기지 않습니다. 나중에 문제가 생기더라도 중앙캡과 몰딩을 풀어 해당 패널만 교체할 수 있습니다. 부분보수, 문제가 생긴 패널 한 장만 해체한 모습(분홍색은 하부 단열재)
+                - mark [ref=f1e337]: 대전
+                - text: 에서도 시공해 왔습니다. 저희 오웰
+                - mark [ref=f1e338]: 스틸
+                - text: 의
+                - mark [ref=f1e339]: 스틸방수
+                - text: 는 전국의 관공서·병원·학교·공동주택
+                - mark [ref=f1e340]: 옥상
+                - text: 에 시공되
+          - generic [ref=f1e341]:
+            - link [ref=f1e342] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e346] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e350] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e354] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e358] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e362] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e366] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e370] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e374] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+            - link [ref=f1e378] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/owellsteel/224429646016
+      - generic [ref=f1e387]:
+        - generic [ref=f1e388]:
+          - link "대한민국 대표 포스코지붕공사 2026.08.25. www.poscoroofing.com›daejeon-steel-cost" [ref=f1e389] [cursor=pointer]:
+            - /url: https://www.poscoroofing.com/
+            - generic [ref=f1e395]:
+              - generic [ref=f1e396]: 대한민국 대표 포스코지붕공사
+              - generic [ref=f1e400]:
+                - generic [ref=f1e401]: 2026.08.25.
+                - generic [ref=f1e403]: www.poscoroofing.com›daejeon-steel-cost
+          - button "옵션 메뉴 열기" [ref=f1e405] [cursor=pointer]
+        - generic [ref=f1e410]:
+          - link [ref=f1e412] [cursor=pointer]:
+            - /url: https://www.poscoroofing.com/daejeon-steel-cost/
+            - generic [ref=f1e413]:
+              - mark [ref=f1e414]: 대전 옥상
+              - mark [ref=f1e415]: 방수
+              - mark [ref=f1e416]: 스틸방수
+              - text: 가격·비용
+          - link [ref=f1e418] [cursor=pointer]:
+            - /url: https://www.poscoroofing.com/daejeon-steel-cost/
+            - generic [ref=f1e419]:
+              - mark [ref=f1e420]: 대전 옥상
+              - mark [ref=f1e421]: 방수
+              - text: 비용과
+              - mark [ref=f1e422]: 스틸방수
+              - text: 견적을 평수별로 정리했습니다. 우레탄과 가격 차이도 확인하세요.
+      - generic [ref=f1e426]:
+        - generic [ref=f1e428]:
+          - generic [ref=f1e429]:
+            - link [ref=f1e431] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536
+            - generic [ref=f1e437]:
+              - link "소원을 말해봐" [ref=f1e440] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/bkiee7536
+              - generic [ref=f1e442]: 4주 전
+          - button "옵션 메뉴 열기" [ref=f1e445] [cursor=pointer]
+        - generic [ref=f1e450]:
+          - generic [ref=f1e451]:
+            - link [ref=f1e452] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+              - generic [ref=f1e453]:
+                - mark [ref=f1e454]: 대전
+                - text: 지붕
+                - mark [ref=f1e455]: 스틸 방수
+                - text: 공사
+                - mark [ref=f1e456]: 대전시
+                - text: 논산 외벽
+                - mark [ref=f1e457]: 스틸 방수
+                - text: 공사 논산시패널시공
+            - link [ref=f1e458] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+              - generic [ref=f1e459]:
+                - text: "충분히 상담받으실 수 있으며 직접 방문하여 무료 견적도 가능하오니 편하게 문의해 보세요! 공장직영 생산에서 제조 설치시공까지 원스톱으로 진행해 드립니다 #"
+                - mark [ref=f1e460]: 대전
+                - mark [ref=f1e461]: 스틸방수
+                - text: "공사 #"
+                - mark [ref=f1e462]: 대전시
+                - mark [ref=f1e463]: 스틸방수
+                - text: "공사 #"
+                - mark [ref=f1e464]: 대전옥상스틸방수
+                - text: "공사 #"
+                - mark [ref=f1e465]: 대전시
+                - mark [ref=f1e466]: 스틸
+                - mark [ref=f1e467]: 옥상
+                - mark [ref=f1e468]: 방수
+                - text: "공사 #"
+                - mark [ref=f1e469]: 대전
+                - text: 지붕
+                - mark [ref=f1e470]: 스틸방수
+                - text: "공사 #"
+                - mark [ref=f1e471]: 대전
+                - text: 외벽
+                - mark [ref=f1e472]: 스틸방수
+                - text: "공사 #논산"
+                - mark [ref=f1e473]: 스틸방수
+                - text: "공사 #논산외벽"
+                - mark [ref=f1e474]: 스틸방수
+                - text: "공사 #논산지붕"
+                - mark [ref=f1e475]: 스틸방수
+                - text: 공사
+          - generic [ref=f1e476]:
+            - link [ref=f1e477] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e481] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e485] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e489] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e493] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e497] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e501] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e505] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e509] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+            - link [ref=f1e513] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/bkiee7536/224414683572
+      - generic [ref=f1e520]:
+        - generic [ref=f1e522]:
+          - generic [ref=f1e523]:
+            - link [ref=f1e525] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof
+            - generic [ref=f1e528]:
+              - link "스틸방수전문업체 세종지붕" [ref=f1e531] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/sjroof
+              - generic [ref=f1e533]: 2026.09.09.
+          - button "옵션 메뉴 열기" [ref=f1e536] [cursor=pointer]
+        - generic [ref=f1e541]:
+          - generic [ref=f1e542]:
+            - link [ref=f1e543] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+              - generic [ref=f1e544]:
+                - text: "["
+                - mark [ref=f1e545]: 대전
+                - mark [ref=f1e546]: 스틸방수
+                - text: "]"
+                - mark [ref=f1e547]: 대전
+                - text: 단독주택 바닥형
+                - mark [ref=f1e548]: 스틸방수
+                - text: "& 멀티징크 외벽 정석시공기"
+            - link [ref=f1e549] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+              - generic [ref=f1e550]:
+                - text: 오늘은
+                - mark [ref=f1e551]: 대전
+                - text: 에 위치한 단독주택
+                - mark [ref=f1e552]: 옥상
+                - text: 바닥형
+                - mark [ref=f1e553]: 스틸방수
+                - text: 및 외벽 멀티징크 시공현장입니다. 시공전 현장 모습입니다. 특이점이로는 평철소재의 철재난간으로 되어있었습니다. 이러한 철재 난간의 경우에는 바닥과 난간접합부 틈새로 빗물이 스며들어 누수를 일으키기 쉽습니다. 따라서 일반적으로 일부 철거 및 보강을 통하여 목재하지 구조작업을 진행한후에 외벽공사를...
+          - generic [ref=f1e554]:
+            - link [ref=f1e555] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e559] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e563] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e567] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e571] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e575] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e579] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e583] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e587] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+            - link [ref=f1e591] [cursor=pointer]:
+              - /url: https://m.blog.naver.com/sjroof/224406447766
+    - generic [ref=f1e598]:
+      - heading "플레이스 MY" [level=3] [ref=f1e599]:
+        - generic [ref=f1e600]: 플레이스
+        - button "MY" [ref=f1e603] [cursor=pointer]
+      - generic [ref=f1e605]:
+        - generic [ref=f1e606]:
+          - text: 위치 정보 없음
+          - button "변경" [ref=f1e607] [cursor=pointer]
+        - button "내위치" [ref=f1e609] [cursor=pointer]
+      - button "20km © NAVER Corp. 지도보기" [ref=f1e2971] [cursor=pointer]:
+        - generic [ref=f1e2972]:
+          - generic: 20km
+          - generic: © NAVER Corp.
+        - generic [ref=f1e3033]: 지도보기
+      - generic [ref=f1e623]:
+        - button "관련도순" [pressed] [ref=f1e625] [cursor=pointer]
+        - button "거리순" [ref=f1e627] [cursor=pointer]
+      - list [ref=f1e629]:
+        - listitem [ref=f1e630]:
+          - generic [ref=f1e631]:
+            - generic:
+              - button
+            - generic [ref=f1e632]:
+              - button [ref=f1e634] [cursor=pointer]:
+                - generic [ref=f1e635]:
+                  - text: 유반장
+                  - mark [ref=f1e636]: 스틸방수
+                  - text: 본사
+                - text: 전문건설업
+              - button "영업 중 18:00에 영업 종료" [ref=f1e638] [cursor=pointer]
+              - generic [ref=f1e641]:
+                - generic [ref=f1e642]:
+                  - generic [ref=f1e643]: 현재 위치에서
+                  - text: 140km
+                - button "대전 서구 둔산동 상세주소 열기" [ref=f1e645] [cursor=pointer]:
+                  - generic [ref=f1e646]: 대전 서구 둔산동
+                  - generic [ref=f1e647]: 상세주소 열기
+                - generic [ref=f1e651]: 휠체어 출입 가능
+          - generic [ref=f1e662]:
+            - button "전화" [ref=f1e664] [cursor=pointer]
+            - button "길찾기" [ref=f1e666] [cursor=pointer]
+            - link "공유" [ref=f1e668] [cursor=pointer]:
+              - /url: "#"
+        - listitem [ref=f1e669]:
+          - generic [ref=f1e670]:
+            - generic:
+              - button
+            - generic [ref=f1e671]:
+              - button [ref=f1e673] [cursor=pointer]:
+                - generic [ref=f1e674]:
+                  - text: 유반장
+                  - mark [ref=f1e675]: 스틸방수
+                - text: 전문건설업
+              - button "영업 중 18:00에 영업 종료" [ref=f1e677] [cursor=pointer]
+              - generic [ref=f1e680]:
+                - generic [ref=f1e681]:
+                  - generic [ref=f1e682]: 현재 위치에서
+                  - text: 134km
+                - button "대전 유성구 반석동 상세주소 열기" [ref=f1e684] [cursor=pointer]:
+                  - generic [ref=f1e685]: 대전 유성구 반석동
+                  - generic [ref=f1e686]: 상세주소 열기
+          - generic [ref=f1e696]:
+            - button "전화" [ref=f1e698] [cursor=pointer]
+            - button "길찾기" [ref=f1e700] [cursor=pointer]
+            - link "공유" [ref=f1e702] [cursor=pointer]:
+              - /url: "#"
+        - listitem [ref=f1e703]:
+          - generic [ref=f1e705]:
+            - button [ref=f1e707] [cursor=pointer]:
+              - generic [ref=f1e708]:
+                - mark [ref=f1e709]: 스틸
+                - text: 우드
+              - text: 내장목공사
+            - button "영업 중 22:00에 영업 종료" [ref=f1e711] [cursor=pointer]
+            - generic [ref=f1e714]:
+              - generic [ref=f1e715]:
+                - generic [ref=f1e716]: 현재 위치에서
+                - text: 150km
+              - button "대전 동구 낭월동 상세주소 열기" [ref=f1e718] [cursor=pointer]:
+                - generic [ref=f1e719]: 대전 동구 낭월동
+                - generic [ref=f1e720]: 상세주소 열기
+          - generic [ref=f1e730]:
+            - button "전화" [ref=f1e732] [cursor=pointer]
+            - button "길찾기" [ref=f1e734] [cursor=pointer]
+            - link "공유" [ref=f1e736] [cursor=pointer]:
+              - /url: "#"
+        - listitem [ref=f1e737]:
+          - generic [ref=f1e739]:
+            - button [ref=f1e741] [cursor=pointer]:
+              - generic [ref=f1e742]:
+                - text: 코이
+                - mark [ref=f1e743]: 스틸
+              - text: 지붕공사
+            - generic [ref=f1e746]:
+              - generic [ref=f1e747]:
+                - generic [ref=f1e748]: 현재 위치에서
+                - text: 131km
+              - button "대전 대덕구 덕암동 상세주소 열기" [ref=f1e750] [cursor=pointer]:
+                - generic [ref=f1e751]: 대전 대덕구 덕암동
+                - generic [ref=f1e752]: 상세주소 열기
+          - generic [ref=f1e762]:
+            - button "전화" [ref=f1e764] [cursor=pointer]
+            - button "길찾기" [ref=f1e766] [cursor=pointer]
+            - link "공유" [ref=f1e768] [cursor=pointer]:
+              - /url: "#"
+    - generic [ref=f1e770]:
+      - generic [ref=f1e771]:
+        - generic [ref=f1e773]:
+          - heading "네이버 쇼핑 인기상품" [level=2] [ref=f1e774]
+          - button "이 정보가 표시된 이유" [ref=f1e776]
+          - link "다른 사이트 더보기" [ref=f1e783] [cursor=pointer]:
+            - /url: https://m.search.naver.com/search.naver?sm=tab_clk.shpftc&qvt=0&query=%EA%B0%80%EA%B2%A9%EB%B9%84%EA%B5%90%EC%82%AC%EC%9D%B4%ED%8A%B8%20nsite%3Anaver.com&ssc=tab.m_ur.all
+        - generic [ref=f1e784]: 찾으시는 상품과 유사한 상품을 노출합니다.
+        - generic [ref=f1e785]:
+          - list [ref=f1e792]:
+            - listitem [ref=f1e793]:
+              - button "필터 전체 보기" [ref=f1e794]
+            - listitem [ref=f1e801]:
+              - button "N 배송" [ref=f1e802]
+            - listitem [ref=f1e804]:
+              - button "무료배송" [ref=f1e805]
+            - listitem [ref=f1e807]:
+              - button "공식인증" [ref=f1e808]
+            - listitem [ref=f1e810]:
+              - button "색상" [ref=f1e811]
+            - listitem [ref=f1e815]:
+              - button "빠른배송" [ref=f1e816]
+          - generic [ref=f1e818]:
+            - list [ref=f1e821]:
+              - listitem [ref=f1e822]:
+                - list [ref=f1e823]:
+                  - listitem [ref=f1e824]:
+                    - generic [ref=f1e825]:
+                      - link "정품과 정법시공! 연합스틸 옥상 스틸 방수 패널 판넬 1200 40,700 원 배송비 착불 10원 연합TM 광고 네이버페이플러스 포인트 최대 407원" [ref=f1e826] [cursor=pointer]:
+                        - /url: https://ader.naver.com/v1/cfQQ6ig-7anVG9ImWVHz4lJfuWDihj05wJieyE5PdTXOMBB1ztdG2rfKf5jsX3H6uLAiy--Icn4spHF6aozSeGYRt0aMlUz1gi7SZkz3yXDpofBHEvg8gdzFfWQjoeH3YnCGsD281GBNNsT0kQmxeq20gls0QuSKsDw5y-Ko52HESaOwl6iHCzle6Bqv2tzitBEjrElTbdkWNF44bploaZH7A8w4goXc8AW6w1RXiNrT8mb_1NWE5TFSZ1rNaHW0KO3uGakcPil0ezottAEkykugpnZ1PjGRvC00KOKFC8iuu94wNOJ6dvuilzsP0NX-GNBk8GrBisGlTbW-h4jD7KJAyCdJWLtlsWbafJZ9dMh3mka3MNs4N8kC4ysmMMIYLL4GUq-cAZ9qD7gfTsrzZBm_7Pvs7VXY8uKTqj1RSbDOJHVibXAkuTb7r637eh4dzTqp0U7C8uvItMmXruPnZuRXbUOnzGbnkVQ3kK2gsIO_exwhtV2uMRJHkwwDv5js6eSN3U5daayTg4iOzDuPyTCVuNR1po5qVJfti04sL-sRZDKg9tFyHNDIaXV6RAFLreBnLqT_gwQQfQp34FFF7A==?c=mnaver.tab.m.theme.npla&t=0&ui=GUIDE
+                      - generic [ref=f1e827]:
+                        - img "연합<mark>스틸</mark> <mark>옥상 스틸 방수</mark> 패널 판넬 1200"
+                      - generic [ref=f1e829]:
+                        - generic [ref=f1e830]: 정품과 정법시공!
+                        - strong [ref=f1e831]:
+                          - generic [ref=f1e832]:
+                            - text: 연합
+                            - mark [ref=f1e833]: 스틸
+                            - mark [ref=f1e834]: 옥상 스틸 방수
+                            - text: 패널 판넬 1200
+                        - generic [ref=f1e836]:
+                          - generic [ref=f1e837]:
+                            - generic [ref=f1e838]: 40,700
+                            - generic [ref=f1e839]: 원
+                          - generic [ref=f1e841]:
+                            - generic [ref=f1e847]: 배송비
+                            - text: 착불 10원
+                        - generic [ref=f1e849]:
+                          - generic [ref=f1e850]: 연합TM
+                          - link "광고" [ref=f1e852] [cursor=pointer]:
+                            - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=10503&faqId=10891
+                        - generic [ref=f1e859]:
+                          - generic [ref=f1e860]: 네이버페이플러스
+                          - generic [ref=f1e867]: 포인트 최대 407원
+                  - listitem [ref=f1e868]:
+                    - generic [ref=f1e869]:
+                      - link "정품과 정법시공! 포스코 정품 옥상 스틸 방수 패널 판넬 870 24,200 원 배송비 착불 10원 연합TM 광고 네이버페이플러스 포인트 최대 242원" [ref=f1e870] [cursor=pointer]:
+                        - /url: https://ader.naver.com/v1/CQIV4KaMY37KdXlh7g78STXYRIjrliS6-mdMnlceFDTOL1g4JKvOqgJmHiAMQf04h9AO3VV8Ur7e8eururnvlq4UWAxgFdkIlnT6YPV8v2jybgmujPF97MKj0au-Lh8eB7fc_T08cRasXHzX7Mvz8TVPK6AttVuIMrEOTgiS0-XMSUStFacKlq_HFP7oVmoaZNVvaU6Uu4fTYlsnxvATv_8Om1QasQstROk7-0EuU1wGUjhPEwDPLJuJiATy7WNZETDL4LVLq_X6s4Ni42N5NZT25OD2j7XXithScqJzNpquxAg1MAqbblLNhdWg1aB4Zx9ybh7VztSIccG7FI8mMap4GyNt1a3khQwZLogoqMEw-RxmOvfWhEQtWzoAdYzBVDvHcy6ET3oKDEL4RpcgKJHZ3OD5p-hOG3c40l1L3XqVYtV1Ae7xND3c_3wZO95KlQ8Uo-6gRviF25XGdYFxykHW3Pu7oE8W39twqQphp3q9B_4uwlqdTumizszAiH3cCwZDFC94Xc83tf0yF1cQ1S-39K_k7-jQpU0FTfQyRPD-40DlD8pp2q2zHIX6gPgDLwp6FDpCD8VTskKMF7SbfQ==?c=mnaver.tab.m.theme.npla&t=0&ui=GUIDE
+                      - generic [ref=f1e871]:
+                        - img "포스코 정품 <mark>옥상 스틸 방수</mark> 패널 판넬 870"
+                      - generic [ref=f1e873]:
+                        - generic [ref=f1e874]: 정품과 정법시공!
+                        - strong [ref=f1e875]:
+                          - generic [ref=f1e876]:
+                            - text: 포스코 정품
+                            - mark [ref=f1e877]: 옥상 스틸 방수
+                            - text: 패널 판넬 870
+                        - generic [ref=f1e879]:
+                          - generic [ref=f1e880]:
+                            - generic [ref=f1e881]: 24,200
+                            - generic [ref=f1e882]: 원
+                          - generic [ref=f1e884]:
+                            - generic [ref=f1e890]: 배송비
+                            - text: 착불 10원
+                        - generic [ref=f1e892]:
+                          - generic [ref=f1e893]: 연합TM
+                          - link "광고" [ref=f1e895] [cursor=pointer]:
+                            - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=10503&faqId=10891
+                        - generic [ref=f1e902]:
+                          - generic [ref=f1e903]: 네이버페이플러스
+                          - generic [ref=f1e910]: 포인트 최대 242원
+                  - listitem [ref=f1e911]:
+                    - generic [ref=f1e912]:
+                      - link "24시 상품문의가능 옥상스틸방수 시트 열차단 방수제 누수 외벽 단열 테이프 3.0mm 방수 시트 (폭 1mx길이 5m) 74,900 원 73,900 원 쿠폰할인가 배송비 무료 오늘출발 14:00까지 주문 시 프라임픽업 광고 네이버페이플러스 포인트 최대 849원" [ref=f1e913] [cursor=pointer]:
+                        - /url: https://ader.naver.com/v1/GxDwQFDf3irEh9TO8cYXvzHn6e0OKMz6TA9402w5hcen00flLN2zJVAsgYAJux3qQYn-xhvKYVq08YvrXHv4JbnpoqhkoVKK28oA5e0ktpknvwngzp6i-XsxizJsS2a78WkY6Hf3RM0-UCM5kac5BsEEpQzDfEz6CptOlpNZ9FTNbRd4S8iSOoCevaw8Ckwv0s12Yy-u2cv5ptqqT-ekD-0y3fK1UFs94thyUizA8G_gcwIEVtvhL0a5pzrHd7KEOFo-pDxygrcbLsZHQIpT0LxdhWN26BuwPcUcyr37_91ffXP4ItzTnLt3-cTVJTatwVKa1tnFvZW7B-YRSrdIM_a6LHZkOyIbf7Ywno59R0rfrc_H0qZqWLXjy9FRYpkvM8uxWM88UiPrGJi8S_-av_PJKOC1GhSSkFsP93goz2slgYExGS3GLISy3v8yMot7vT9d6R7faWJxywJspCd94HHlTFgYu3YRDADQdpzTRyWbZtGRhJByAlVgIsA3SLvjwiPV8qAP8L79isz3xzz8b3KlVjGv_sk-QZB3xe7O9sBV8RXMMIkqzM4gOuNEcaLv3v9wZ_IE_M4hLCuketNWsA==?c=mnaver.tab.m.theme.npla&t=0&ui=GUIDE
+                      - generic [ref=f1e914]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>방수</mark>제 누수 외벽 단열 테이프 3.0mm <mark>방수</mark> 시트 (폭 1mx길이 5m)"
+                      - generic [ref=f1e916]:
+                        - generic [ref=f1e917]: 24시 상품문의가능
+                        - strong [ref=f1e918]:
+                          - generic [ref=f1e919]:
+                            - mark [ref=f1e920]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e921]: 방수
+                            - text: 제 누수 외벽 단열 테이프 3.0mm
+                            - mark [ref=f1e922]: 방수
+                            - text: 시트 (폭 1mx길이 5m)
+                        - generic [ref=f1e924]:
+                          - generic [ref=f1e925]:
+                            - generic [ref=f1e926]: 74,900
+                            - generic [ref=f1e927]: 원
+                          - generic [ref=f1e928]:
+                            - generic [ref=f1e929]:
+                              - generic [ref=f1e930]: 73,900
+                              - generic [ref=f1e931]: 원
+                            - generic [ref=f1e932]: 쿠폰할인가
+                          - generic [ref=f1e934]:
+                            - generic [ref=f1e940]: 배송비
+                            - text: 무료
+                        - generic [ref=f1e941]:
+                          - generic [ref=f1e942]: 오늘출발
+                          - generic [ref=f1e943]: 14:00까지 주문 시
+                        - generic [ref=f1e945]:
+                          - generic [ref=f1e946]: 프라임픽업
+                          - link "광고" [ref=f1e948] [cursor=pointer]:
+                            - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=10503&faqId=10891
+                        - generic [ref=f1e955]:
+                          - generic [ref=f1e956]: 네이버페이플러스
+                          - generic [ref=f1e963]: 포인트 최대 849원
+                  - listitem [ref=f1e964]:
+                    - generic [ref=f1e965]:
+                      - link "정품과 정법시공! 연합스틸 옥상 스틸 방수 패널 판넬 1200 40,700 원 배송비 착불 10원 연합TM 광고 네이버페이플러스 포인트 최대 407원" [ref=f1e966] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=84426137197&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywi&h=d1fb40c2a1ffc332f0c4d3955ddd9a893e080395&frm=MOSCPRO
+                      - generic [ref=f1e967]:
+                        - img "연합<mark>스틸</mark> <mark>옥상 스틸 방수</mark> 패널 판넬 1200"
+                      - generic [ref=f1e969]:
+                        - strong [ref=f1e970]:
+                          - generic [ref=f1e971]:
+                            - text: 연합
+                            - mark [ref=f1e972]: 스틸
+                            - mark [ref=f1e973]: 옥상 스틸 방수
+                            - text: 패널 판넬 1200
+                        - generic [ref=f1e975]:
+                          - generic [ref=f1e976]:
+                            - generic [ref=f1e977]: 40,700
+                            - generic [ref=f1e978]: 원
+                          - generic [ref=f1e980]:
+                            - generic [ref=f1e986]: 배송비
+                            - text: 착불 10원
+                        - generic [ref=f1e987]:
+                          - generic [ref=f1e988]:
+                            - generic [ref=f1e991]: "5.0"
+                            - generic [ref=f1e992]: (10)
+                          - generic [ref=f1e993]: 구매 7
+                        - generic [ref=f1e994]: 연합TM
+                        - generic [ref=f1e997]:
+                          - generic [ref=f1e998]: 네이버페이플러스
+                          - generic [ref=f1e1005]: 포인트 최대 407원
+                  - listitem [ref=f1e1006]:
+                    - generic [ref=f1e1007]:
+                      - link "옥상 스틸방수 셀프 지붕 방수시트 누수 38,500 원 배송비 착불 60,000원 5.0 (12) 명가스틸 네이버페이플러스 포인트 최대 385원" [ref=f1e1008] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=89746861737&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywi&h=9b899162336387effed693f4e96f66f093af85b3&frm=MOSCPRO
+                      - generic [ref=f1e1009]:
+                        - img "<mark>옥상 스틸방수</mark> 셀프 지붕 <mark>방수</mark>시트 누수"
+                      - generic [ref=f1e1011]:
+                        - strong [ref=f1e1012]:
+                          - generic [ref=f1e1013]:
+                            - mark [ref=f1e1014]: 옥상 스틸방수
+                            - text: 셀프 지붕
+                            - mark [ref=f1e1015]: 방수
+                            - text: 시트 누수
+                        - generic [ref=f1e1017]:
+                          - generic [ref=f1e1018]:
+                            - generic [ref=f1e1019]: 38,500
+                            - generic [ref=f1e1020]: 원
+                          - generic [ref=f1e1022]:
+                            - generic [ref=f1e1028]: 배송비
+                            - text: 착불 60,000원
+                        - generic [ref=f1e1030]:
+                          - generic [ref=f1e1033]: "5.0"
+                          - generic [ref=f1e1034]: (12)
+                        - generic [ref=f1e1035]: 명가스틸
+                        - generic [ref=f1e1038]:
+                          - generic [ref=f1e1039]: 네이버페이플러스
+                          - generic [ref=f1e1046]: 포인트 최대 385원
+                  - listitem [ref=f1e1047]:
+                    - generic [ref=f1e1048]:
+                      - link "정품과 정법시공! 포스코 정품 옥상 스틸 방수 패널 판넬 870 24,200 원 배송비 착불 10원 연합TM 광고 네이버페이플러스 포인트 최대 242원" [ref=f1e1049] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=84421284508&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywi&h=57bfa8533728a7bedc10bcfb4a90b4985d94a433&frm=MOSCPRO
+                      - generic [ref=f1e1050]:
+                        - img "연합<mark>스틸</mark> <mark>옥상 스틸 방수</mark> 패널 판넬 870"
+                      - generic [ref=f1e1052]:
+                        - strong [ref=f1e1053]:
+                          - generic [ref=f1e1054]:
+                            - text: 연합
+                            - mark [ref=f1e1055]: 스틸
+                            - mark [ref=f1e1056]: 옥상 스틸 방수
+                            - text: 패널 판넬 870
+                        - generic [ref=f1e1058]:
+                          - generic [ref=f1e1059]:
+                            - generic [ref=f1e1060]: 24,200
+                            - generic [ref=f1e1061]: 원
+                          - generic [ref=f1e1063]:
+                            - generic [ref=f1e1069]: 배송비
+                            - text: 착불 10원
+                        - generic [ref=f1e1070]:
+                          - generic [ref=f1e1071]:
+                            - generic [ref=f1e1074]: "5.0"
+                            - generic [ref=f1e1075]: (4)
+                          - generic [ref=f1e1076]: 구매 1
+                        - generic [ref=f1e1077]: 연합TM
+                        - generic [ref=f1e1080]:
+                          - generic [ref=f1e1081]: 네이버페이플러스
+                          - generic [ref=f1e1088]: 포인트 최대 242원
+                  - listitem [ref=f1e1089]:
+                    - generic [ref=f1e1090]:
+                      - link "옥상스틸방수 시트 리노베이션 옥상방수 강력접착 스틸 지붕 할인 전 판매가 46,700 원 24% 할인 35,030 원 배송비 무료 오늘출발 16:00까지 주문 시 11번가" [ref=f1e1091] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=61447926992&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywi&h=ce8c634712ff61d653d612f2faf9275fe0bdbde5&frm=MOSCPRO
+                      - generic [ref=f1e1092]:
+                        - img "<mark>옥상스틸방수</mark> 시트 리노베이션 <mark>옥상</mark><mark>방수</mark> 강력접착 <mark>스틸</mark> 지붕"
+                      - generic [ref=f1e1094]:
+                        - strong [ref=f1e1095]:
+                          - generic [ref=f1e1096]:
+                            - mark [ref=f1e1097]: 옥상스틸방수
+                            - text: 시트 리노베이션
+                            - mark [ref=f1e1098]: 옥상
+                            - mark [ref=f1e1099]: 방수
+                            - text: 강력접착
+                            - mark [ref=f1e1100]: 스틸
+                            - text: 지붕
+                        - generic [ref=f1e1101]:
+                          - generic [ref=f1e1102]:
+                            - generic [ref=f1e1103]: 할인 전 판매가
+                            - generic [ref=f1e1104]: 46,700
+                            - generic [ref=f1e1105]: 원
+                          - generic [ref=f1e1106]:
+                            - generic [ref=f1e1107]:
+                              - generic [ref=f1e1108]:
+                                - text: 24%
+                                - generic [ref=f1e1109]: 할인
+                              - generic [ref=f1e1110]: 35,030
+                              - generic [ref=f1e1111]: 원
+                            - generic [ref=f1e1113]:
+                              - generic [ref=f1e1119]: 배송비
+                              - text: 무료
+                        - generic [ref=f1e1120]:
+                          - generic [ref=f1e1121]: 오늘출발
+                          - generic [ref=f1e1122]: 16:00까지 주문 시
+                        - generic [ref=f1e1123]: 11번가
+                  - listitem [ref=f1e1126]:
+                    - generic [ref=f1e1127]:
+                      - link "해외옥상스틸방수 시트 열차단 외벽 단열 균열 방수제 옥상 지붕 할인 전 판매가 76,900 원 5% 할인 72,990 원 69,990 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 18:00까지 주문 시 데일리온몰 네이버페이플러스 포인트 최대 729원" [ref=f1e1128] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91291559978&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywj&h=e68900341a887024fed009e30a257e0e96c6766e&frm=MOSCPRO
+                      - generic [ref=f1e1129]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 외벽 단열 균열 <mark>방수</mark>제 <mark>옥상</mark> 지붕"
+                      - generic [ref=f1e1131]:
+                        - strong [ref=f1e1132]:
+                          - text: 해외
+                          - generic [ref=f1e1133]:
+                            - mark [ref=f1e1134]: 옥상스틸방수
+                            - text: 시트 열차단 외벽 단열 균열
+                            - mark [ref=f1e1135]: 방수
+                            - text: 제
+                            - mark [ref=f1e1136]: 옥상
+                            - text: 지붕
+                        - generic [ref=f1e1137]:
+                          - generic [ref=f1e1138]:
+                            - generic [ref=f1e1139]: 할인 전 판매가
+                            - generic [ref=f1e1140]: 76,900
+                            - generic [ref=f1e1141]: 원
+                          - generic [ref=f1e1142]:
+                            - generic [ref=f1e1143]:
+                              - generic [ref=f1e1144]:
+                                - text: 5%
+                                - generic [ref=f1e1145]: 할인
+                              - generic [ref=f1e1146]: 72,990
+                              - generic [ref=f1e1147]: 원
+                            - generic [ref=f1e1148]:
+                              - generic [ref=f1e1149]:
+                                - generic [ref=f1e1150]: 69,990
+                                - generic [ref=f1e1151]: 원
+                              - generic [ref=f1e1152]: 쿠폰할인가
+                            - generic [ref=f1e1154]:
+                              - generic [ref=f1e1160]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1162]:
+                            - generic [ref=f1e1163]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1165]
+                        - generic [ref=f1e1170]:
+                          - generic [ref=f1e1171]: 오늘출발
+                          - generic [ref=f1e1172]: 18:00까지 주문 시
+                        - generic [ref=f1e1173]: 데일리온몰
+                        - generic [ref=f1e1176]:
+                          - generic [ref=f1e1177]: 네이버페이플러스
+                          - generic [ref=f1e1184]: 포인트 최대 729원
+                  - listitem [ref=f1e1185]:
+                    - generic [ref=f1e1186]:
+                      - link "해외옥상스틸방수 시트 열차단 지붕 외벽 방수제 단열 옥상 균열 할인 전 판매가 76,900 원 4% 할인 73,390 원 72,890 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 12:00까지 주문 시 코모딕 네이버페이플러스 포인트 최대 733원" [ref=f1e1187] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91289197225&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywj&h=2132053fa999b35935f21ee0fb34dec60f028803&frm=MOSCPRO
+                      - generic [ref=f1e1188]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 지붕 외벽 <mark>방수</mark>제 단열 <mark>옥상</mark> 균열"
+                      - generic [ref=f1e1190]:
+                        - strong [ref=f1e1191]:
+                          - text: 해외
+                          - generic [ref=f1e1192]:
+                            - mark [ref=f1e1193]: 옥상스틸방수
+                            - text: 시트 열차단 지붕 외벽
+                            - mark [ref=f1e1194]: 방수
+                            - text: 제 단열
+                            - mark [ref=f1e1195]: 옥상
+                            - text: 균열
+                        - generic [ref=f1e1196]:
+                          - generic [ref=f1e1197]:
+                            - generic [ref=f1e1198]: 할인 전 판매가
+                            - generic [ref=f1e1199]: 76,900
+                            - generic [ref=f1e1200]: 원
+                          - generic [ref=f1e1201]:
+                            - generic [ref=f1e1202]:
+                              - generic [ref=f1e1203]:
+                                - text: 4%
+                                - generic [ref=f1e1204]: 할인
+                              - generic [ref=f1e1205]: 73,390
+                              - generic [ref=f1e1206]: 원
+                            - generic [ref=f1e1207]:
+                              - generic [ref=f1e1208]:
+                                - generic [ref=f1e1209]: 72,890
+                                - generic [ref=f1e1210]: 원
+                              - generic [ref=f1e1211]: 쿠폰할인가
+                            - generic [ref=f1e1213]:
+                              - generic [ref=f1e1219]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1221]:
+                            - generic [ref=f1e1222]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1224]
+                        - generic [ref=f1e1229]:
+                          - generic [ref=f1e1230]: 오늘출발
+                          - generic [ref=f1e1231]: 12:00까지 주문 시
+                        - generic [ref=f1e1232]: 코모딕
+                        - generic [ref=f1e1235]:
+                          - generic [ref=f1e1236]: 네이버페이플러스
+                          - generic [ref=f1e1243]: 포인트 최대 733원
+                  - listitem [ref=f1e1244]:
+                    - generic [ref=f1e1245]:
+                      - link "해외옥상스틸방수 시트 열차단 외벽 균열 지붕 옥상 방수제 단열 할인 전 판매가 76,900 원 3% 할인 73,990 원 73,490 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 12:00까지 주문 시 코모딕 네이버페이플러스 포인트 최대 739원" [ref=f1e1246] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91286388701&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywj&h=480f79a1580ac335861569a0e468f80ee52ed817&frm=MOSCPRO
+                      - generic [ref=f1e1247]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 외벽 균열 지붕 <mark>옥상</mark> <mark>방수</mark>제 단열"
+                      - generic [ref=f1e1249]:
+                        - strong [ref=f1e1250]:
+                          - text: 해외
+                          - generic [ref=f1e1251]:
+                            - mark [ref=f1e1252]: 옥상스틸방수
+                            - text: 시트 열차단 외벽 균열 지붕
+                            - mark [ref=f1e1253]: 옥상
+                            - mark [ref=f1e1254]: 방수
+                            - text: 제 단열
+                        - generic [ref=f1e1255]:
+                          - generic [ref=f1e1256]:
+                            - generic [ref=f1e1257]: 할인 전 판매가
+                            - generic [ref=f1e1258]: 76,900
+                            - generic [ref=f1e1259]: 원
+                          - generic [ref=f1e1260]:
+                            - generic [ref=f1e1261]:
+                              - generic [ref=f1e1262]:
+                                - text: 3%
+                                - generic [ref=f1e1263]: 할인
+                              - generic [ref=f1e1264]: 73,990
+                              - generic [ref=f1e1265]: 원
+                            - generic [ref=f1e1266]:
+                              - generic [ref=f1e1267]:
+                                - generic [ref=f1e1268]: 73,490
+                                - generic [ref=f1e1269]: 원
+                              - generic [ref=f1e1270]: 쿠폰할인가
+                            - generic [ref=f1e1272]:
+                              - generic [ref=f1e1278]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1280]:
+                            - generic [ref=f1e1281]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1283]
+                        - generic [ref=f1e1288]:
+                          - generic [ref=f1e1289]: 오늘출발
+                          - generic [ref=f1e1290]: 12:00까지 주문 시
+                        - generic [ref=f1e1291]: 코모딕
+                        - generic [ref=f1e1294]:
+                          - generic [ref=f1e1295]: 네이버페이플러스
+                          - generic [ref=f1e1302]: 포인트 최대 739원
+                  - listitem [ref=f1e1303]:
+                    - generic [ref=f1e1304]:
+                      - link "해외옥상스틸방수 시트 열차단 방수제 단열 옥상 균열 지붕 외벽 할인 전 판매가 76,900 원 4% 할인 73,490 원 72,490 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 16:00까지 주문 시 어센트글로벌유통 네이버페이플러스 포인트 최대 734원" [ref=f1e1305] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91285551652&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywj&h=65301f602f5dcb57d1b47a00c3736d13d29c63f8&frm=MOSCPRO
+                      - generic [ref=f1e1306]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>방수</mark>제 단열 <mark>옥상</mark> 균열 지붕 외벽"
+                      - generic [ref=f1e1308]:
+                        - strong [ref=f1e1309]:
+                          - text: 해외
+                          - generic [ref=f1e1310]:
+                            - mark [ref=f1e1311]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e1312]: 방수
+                            - text: 제 단열
+                            - mark [ref=f1e1313]: 옥상
+                            - text: 균열 지붕 외벽
+                        - generic [ref=f1e1314]:
+                          - generic [ref=f1e1315]:
+                            - generic [ref=f1e1316]: 할인 전 판매가
+                            - generic [ref=f1e1317]: 76,900
+                            - generic [ref=f1e1318]: 원
+                          - generic [ref=f1e1319]:
+                            - generic [ref=f1e1320]:
+                              - generic [ref=f1e1321]:
+                                - text: 4%
+                                - generic [ref=f1e1322]: 할인
+                              - generic [ref=f1e1323]: 73,490
+                              - generic [ref=f1e1324]: 원
+                            - generic [ref=f1e1325]:
+                              - generic [ref=f1e1326]:
+                                - generic [ref=f1e1327]: 72,490
+                                - generic [ref=f1e1328]: 원
+                              - generic [ref=f1e1329]: 쿠폰할인가
+                            - generic [ref=f1e1331]:
+                              - generic [ref=f1e1337]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1339]:
+                            - generic [ref=f1e1340]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1342]
+                        - generic [ref=f1e1347]:
+                          - generic [ref=f1e1348]: 오늘출발
+                          - generic [ref=f1e1349]: 16:00까지 주문 시
+                        - generic [ref=f1e1350]: 어센트글로벌유통
+                        - generic [ref=f1e1353]:
+                          - generic [ref=f1e1354]: 네이버페이플러스
+                          - generic [ref=f1e1361]: 포인트 최대 734원
+                  - listitem [ref=f1e1362]:
+                    - generic [ref=f1e1363]:
+                      - link "해외옥상스틸방수 시트 열차단 옥상 균열 외벽 방수제 지붕 단열 할인 전 판매가 76,900 원 3% 할인 74,090 원 73,090 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 18:00까지 주문 시 바이스픽 네이버페이플러스 포인트 최대 740원" [ref=f1e1364] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91285528331&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywj&h=afdf99bf9cde1b359434d085057fa6259507a254&frm=MOSCPRO
+                      - generic [ref=f1e1365]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>옥상</mark> 균열 외벽 <mark>방수</mark>제 지붕 단열"
+                      - generic [ref=f1e1367]:
+                        - strong [ref=f1e1368]:
+                          - text: 해외
+                          - generic [ref=f1e1369]:
+                            - mark [ref=f1e1370]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e1371]: 옥상
+                            - text: 균열 외벽
+                            - mark [ref=f1e1372]: 방수
+                            - text: 제 지붕 단열
+                        - generic [ref=f1e1373]:
+                          - generic [ref=f1e1374]:
+                            - generic [ref=f1e1375]: 할인 전 판매가
+                            - generic [ref=f1e1376]: 76,900
+                            - generic [ref=f1e1377]: 원
+                          - generic [ref=f1e1378]:
+                            - generic [ref=f1e1379]:
+                              - generic [ref=f1e1380]:
+                                - text: 3%
+                                - generic [ref=f1e1381]: 할인
+                              - generic [ref=f1e1382]: 74,090
+                              - generic [ref=f1e1383]: 원
+                            - generic [ref=f1e1384]:
+                              - generic [ref=f1e1385]:
+                                - generic [ref=f1e1386]: 73,090
+                                - generic [ref=f1e1387]: 원
+                              - generic [ref=f1e1388]: 쿠폰할인가
+                            - generic [ref=f1e1390]:
+                              - generic [ref=f1e1396]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1398]:
+                            - generic [ref=f1e1399]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1401]
+                        - generic [ref=f1e1406]:
+                          - generic [ref=f1e1407]: 오늘출발
+                          - generic [ref=f1e1408]: 18:00까지 주문 시
+                        - generic [ref=f1e1409]: 바이스픽
+                        - generic [ref=f1e1412]:
+                          - generic [ref=f1e1413]: 네이버페이플러스
+                          - generic [ref=f1e1420]: 포인트 최대 740원
+              - listitem [ref=f1e1421]:
+                - list [ref=f1e1422]:
+                  - listitem [ref=f1e1423]:
+                    - generic [ref=f1e1424]:
+                      - link "지붕 방수 테이프 길이 폭 옥상 블루 크랙 기와 보수 컬러 누수 외벽 스틸 옥상방수 방수액 지붕방수 방수시트 칼라 스틸 블루 20cm 15m 할인 전 판매가 82,500 원 82,400 원 배송비 무료 오늘출발 06:00까지 주문 시 월드마켓J 광고 네이버페이플러스 포인트 최대 824원" [ref=f1e1425] [cursor=pointer]:
+                        - /url: https://ader.naver.com/v1/DMWa_kpO7v_GMB2Di-lDWaDoyl1jKvTfXwFr4HPBkpHPTowUqCapAOr9OOOdISWnP4dWwDpNlwGR9E4EFSUzG2CE--g5PG4VkEZj6TZgKLhZ77HHmZlwsJRw9wDKMwZaAZEQ6kkhg2O1GWhXKH6t9DXzIRxvCrS1Nxm3_0_WhDbuQcYTrV6Ftl3MKctPTF0nUcudVhJ0-PL0_OBm1FCyPjG3sD-KXH5gKSed1Keh_Sa1sQhw0FeL--8H5fV1kOJWzCspHRGF7B7hyjndqqCDZdqgldj5J0AnmJ4aegYzm5BgdKIdFh__v4pEoe-5VOb7r9i1aLGivTkAjmM8sgV8ZVx2KWAmtXUS1iXPnBzhZeM2VR6A1syYzDQd1YCbic94cQiHf8mw1-0uTBXiRQoJRovgGLvoRqdlx-MuR19ZKt8IJzTLRghhMm3mFuQ7abRznF37dTSMQa9OktyrjWby9tc8p9nUH0Pt7gxQriOQVPK8Xh8Eba7mhXFUfdDQu0ITbpELlrVz4msBVsQcryWvXg66tEbU9NB13L4Dewe_opkWJ98w_4uBDYAt3DZ9oAsXgGmabQrN7V5M0Rkd44w1dA==?c=mnaver.tab.m.theme.npla&t=0&ui=GUIDE
+                      - generic [ref=f1e1426]:
+                        - img "지붕 <mark>방수</mark> 테이프 길이 폭 <mark>옥상</mark> 블루 크랙 기와 보수 컬러 누수 외벽 <mark>스틸</mark> <mark>옥상</mark><mark>방수</mark> <mark>방수</mark>액 지붕<mark>방수</mark> <mark>방수</mark>시트 칼라 <mark>스틸</mark> 블루 20cm 15m"
+                      - generic [ref=f1e1428]:
+                        - strong [ref=f1e1429]:
+                          - generic [ref=f1e1430]:
+                            - text: 지붕
+                            - mark [ref=f1e1431]: 방수
+                            - text: 테이프 길이 폭
+                            - mark [ref=f1e1432]: 옥상
+                            - text: 블루 크랙 기와 보수 컬러 누수 외벽
+                            - mark [ref=f1e1433]: 스틸
+                            - mark [ref=f1e1434]: 옥상
+                            - mark [ref=f1e1435]: 방수
+                            - mark [ref=f1e1436]: 방수
+                            - text: 액 지붕
+                            - mark [ref=f1e1437]: 방수
+                            - mark [ref=f1e1438]: 방수
+                            - text: 시트 칼라
+                            - mark [ref=f1e1439]: 스틸
+                            - text: 블루 20cm 15m
+                        - generic [ref=f1e1440]:
+                          - generic [ref=f1e1441]:
+                            - generic [ref=f1e1442]: 할인 전 판매가
+                            - generic [ref=f1e1443]: 82,500
+                            - generic [ref=f1e1444]: 원
+                          - generic [ref=f1e1445]:
+                            - generic [ref=f1e1446]:
+                              - generic [ref=f1e1447]: 82,400
+                              - generic [ref=f1e1448]: 원
+                            - generic [ref=f1e1450]:
+                              - generic [ref=f1e1456]: 배송비
+                              - text: 무료
+                        - generic [ref=f1e1457]:
+                          - generic [ref=f1e1458]: 오늘출발
+                          - generic [ref=f1e1459]: 06:00까지 주문 시
+                        - generic [ref=f1e1461]:
+                          - generic [ref=f1e1462]: 월드마켓J
+                          - link "광고" [ref=f1e1464] [cursor=pointer]:
+                            - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=10503&faqId=10891
+                        - generic [ref=f1e1471]:
+                          - generic [ref=f1e1472]: 네이버페이플러스
+                          - generic [ref=f1e1479]: 포인트 최대 824원
+                  - listitem [ref=f1e1480]:
+                    - generic [ref=f1e1481]:
+                      - link "옥상스틸방수 시트 열차단 옥상 방수제 외벽 지붕 누수 단열 할인 전 판매가 74,400 원 3% 할인 72,160 원 71,160 원 쿠폰할인가 배송비 무료 오늘출발 18:00까지 주문 시 DRAGER 광고 네이버페이플러스 포인트 최대 721원" [ref=f1e1482] [cursor=pointer]:
+                        - /url: https://ader.naver.com/v1/9bMDfXJw9MXXT_uTxqmK8_BT02jQk5gKAhSQVETKSd9TM_ajRd1agc5Y6n4uvSLGQVmDtRmSu_Ud1-T2SOEPYSryiij4tu3prIk2lfFfMH2NR-O4XhOgywFZeyGaFoc3EpWt2i9JvY5JLs8Tcu1rJ64_kaNMqb3c1cY_xQFWlR06j667bq7V_nuPQoCAItwXV_gkR__VBxs8ae_HpJ-S9mlTLf7Yr6J_UR8_kzipaCmNX6n8wU40F1H_uSa7Y2xWvCS67AToT9-D8X2s5PjeHTxkndaZzkJzdty72nSrZj9Z8o8Z4V7rTJakdrow55SksgBL4CoKIjJhUyqbvFo_t7kMWHZ-tK6Vrqrden6vzofQ_SRQRg35Nx1R5bjqEREr4XgraeTHxrMHQspv5YdktA==?c=mnaver.tab.m.theme.npla&t=0&ui=GUIDE
+                      - generic [ref=f1e1483]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>옥상</mark> <mark>방수</mark>제 외벽 지붕 누수 단열"
+                      - generic [ref=f1e1485]:
+                        - strong [ref=f1e1486]:
+                          - generic [ref=f1e1487]:
+                            - mark [ref=f1e1488]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e1489]: 옥상
+                            - mark [ref=f1e1490]: 방수
+                            - text: 제 외벽 지붕 누수 단열
+                        - generic [ref=f1e1491]:
+                          - generic [ref=f1e1492]:
+                            - generic [ref=f1e1493]: 할인 전 판매가
+                            - generic [ref=f1e1494]: 74,400
+                            - generic [ref=f1e1495]: 원
+                          - generic [ref=f1e1496]:
+                            - generic [ref=f1e1497]:
+                              - generic [ref=f1e1498]:
+                                - text: 3%
+                                - generic [ref=f1e1499]: 할인
+                              - generic [ref=f1e1500]: 72,160
+                              - generic [ref=f1e1501]: 원
+                            - generic [ref=f1e1502]:
+                              - generic [ref=f1e1503]:
+                                - generic [ref=f1e1504]: 71,160
+                                - generic [ref=f1e1505]: 원
+                              - generic [ref=f1e1506]: 쿠폰할인가
+                            - generic [ref=f1e1508]:
+                              - generic [ref=f1e1514]: 배송비
+                              - text: 무료
+                        - generic [ref=f1e1515]:
+                          - generic [ref=f1e1516]: 오늘출발
+                          - generic [ref=f1e1517]: 18:00까지 주문 시
+                        - generic [ref=f1e1519]:
+                          - generic [ref=f1e1520]: DRAGER
+                          - link "광고" [ref=f1e1522] [cursor=pointer]:
+                            - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=10503&faqId=10891
+                        - generic [ref=f1e1529]:
+                          - generic [ref=f1e1530]: 네이버페이플러스
+                          - generic [ref=f1e1537]: 포인트 최대 721원
+                  - listitem [ref=f1e1538]:
+                    - generic [ref=f1e1539]:
+                      - link "24시 상품문의가능 옥상스틸방수 시트 열차단 자체 외벽 방수제 균열 지붕 단열 3.0mm 1m x 5m 82,800 원 81,800 원 쿠폰할인가 배송비 무료 오늘출발 14:00까지 주문 시 인터글로브 광고 네이버페이플러스 포인트 최대 928원" [ref=f1e1540] [cursor=pointer]:
+                        - /url: https://ader.naver.com/v1/eUeDYpXS9_UB2hkbffcTIh6MTMKYXOVOFExzzJNF20nbmNOLFcgNsuHQJLT5_XSzAUqA4aw9ora5UlEIIkjrERJOBRp1qwNjS7FVdf94G9wtj0bCYMkZHarZvvwwV06W20oooBMiPnMAZAlXStoZsFl2al4tMZscMWe_Nmt_b6SCiAhKkbA5f5MhJ4Efxn7cHR1qkkHNa9uF_2Xe3zMHicbrMTNi0Fs9qSl_NaQTeq9ccKIsJ7qpyFaGuRsq18i-YlH66GEIjXHu7nNqwIhkxU4S-bz_Yo4f91RyHOAvBQ8yLiFyVLzDU6Laj-p9dRhYC_KXHF6O8_Yi_01HFH2yTDkTkyNVwsIlyzuQzmbCzlfnloMu19KOzQZ13dGVNFhhVZ98Ti_8LuQD-uKiUHmte6LnNcwfb9drdLZC0YQtFpzjOhwok1pdGd9_uj6x1-wEddva3P0nq1vJQINEdVeuD3dAJ21QqWhyXaVeKyqw7irC9pNf2JbVsZoCMOA8iCGE15qlWXSMnb7q01PVTh_30FMm4-0SbKBd8HD1fYlpaGiMOSyMO8WxYT4wU8C2v3AsJe0mHAXymo15X-YuHVRFDQ==?c=mnaver.tab.m.theme.npla&t=0&ui=GUIDE
+                      - generic [ref=f1e1541]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 자체 외벽 <mark>방수</mark>제 균열 지붕 단열 3.0mm 1m x 5m"
+                      - generic [ref=f1e1543]:
+                        - generic [ref=f1e1544]: 24시 상품문의가능
+                        - strong [ref=f1e1545]:
+                          - generic [ref=f1e1546]:
+                            - mark [ref=f1e1547]: 옥상스틸방수
+                            - text: 시트 열차단 자체 외벽
+                            - mark [ref=f1e1548]: 방수
+                            - text: 제 균열 지붕 단열 3.0mm 1m x 5m
+                        - generic [ref=f1e1550]:
+                          - generic [ref=f1e1551]:
+                            - generic [ref=f1e1552]: 82,800
+                            - generic [ref=f1e1553]: 원
+                          - generic [ref=f1e1554]:
+                            - generic [ref=f1e1555]:
+                              - generic [ref=f1e1556]: 81,800
+                              - generic [ref=f1e1557]: 원
+                            - generic [ref=f1e1558]: 쿠폰할인가
+                          - generic [ref=f1e1560]:
+                            - generic [ref=f1e1566]: 배송비
+                            - text: 무료
+                        - generic [ref=f1e1567]:
+                          - generic [ref=f1e1568]: 오늘출발
+                          - generic [ref=f1e1569]: 14:00까지 주문 시
+                        - generic [ref=f1e1571]:
+                          - generic [ref=f1e1572]: 인터글로브
+                          - link "광고" [ref=f1e1574] [cursor=pointer]:
+                            - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=10503&faqId=10891
+                        - generic [ref=f1e1581]:
+                          - generic [ref=f1e1582]: 네이버페이플러스
+                          - generic [ref=f1e1589]: 포인트 최대 928원
+                  - listitem [ref=f1e1590]:
+                    - generic [ref=f1e1591]:
+                      - link "해외옥상스틸방수 시트 열차단 옥상 지붕 균열 단열 방수제 외벽 할인 전 판매가 76,900 원 3% 할인 74,590 원 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 14:00까지 주문 시 도담7941 네이버페이플러스 포인트 최대 745원" [ref=f1e1592] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91284790208&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywj&h=ed55fd97e3dd58520bca95fec1910027cd24bf3e&frm=MOSCPRO
+                      - generic [ref=f1e1593]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>옥상</mark> 지붕 균열 단열 <mark>방수</mark>제 외벽"
+                      - generic [ref=f1e1595]:
+                        - strong [ref=f1e1596]:
+                          - text: 해외
+                          - generic [ref=f1e1597]:
+                            - mark [ref=f1e1598]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e1599]: 옥상
+                            - text: 지붕 균열 단열
+                            - mark [ref=f1e1600]: 방수
+                            - text: 제 외벽
+                        - generic [ref=f1e1601]:
+                          - generic [ref=f1e1602]:
+                            - generic [ref=f1e1603]: 할인 전 판매가
+                            - generic [ref=f1e1604]: 76,900
+                            - generic [ref=f1e1605]: 원
+                          - generic [ref=f1e1606]:
+                            - generic [ref=f1e1607]:
+                              - generic [ref=f1e1608]:
+                                - text: 3%
+                                - generic [ref=f1e1609]: 할인
+                              - generic [ref=f1e1610]: 74,590
+                              - generic [ref=f1e1611]: 원
+                            - generic [ref=f1e1613]:
+                              - generic [ref=f1e1619]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1621]:
+                            - generic [ref=f1e1622]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1624]
+                        - generic [ref=f1e1629]:
+                          - generic [ref=f1e1630]: 오늘출발
+                          - generic [ref=f1e1631]: 14:00까지 주문 시
+                        - generic [ref=f1e1632]: 도담7941
+                        - generic [ref=f1e1635]:
+                          - generic [ref=f1e1636]: 네이버페이플러스
+                          - generic [ref=f1e1643]: 포인트 최대 745원
+                  - listitem [ref=f1e1644]:
+                    - generic [ref=f1e1645]:
+                      - link "옥상스틸방수 시트 열차단 방수제 균열 누수 지붕 보수 스라브 외벽 할인 전 판매가 85,400 원 9% 할인 77,080 원 배송비 무료 오늘출발 09:00까지 주문 시 11번가" [ref=f1e1646] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=61639165685&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=9db49269bef490145098e3f5aaa906ec6c83636b&frm=MOSCPRO
+                      - generic [ref=f1e1647]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>방수</mark>제 균열 누수 지붕 보수 스라브 외벽"
+                      - generic [ref=f1e1649]:
+                        - strong [ref=f1e1650]:
+                          - generic [ref=f1e1651]:
+                            - mark [ref=f1e1652]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e1653]: 방수
+                            - text: 제 균열 누수 지붕 보수 스라브 외벽
+                        - generic [ref=f1e1654]:
+                          - generic [ref=f1e1655]:
+                            - generic [ref=f1e1656]: 할인 전 판매가
+                            - generic [ref=f1e1657]: 85,400
+                            - generic [ref=f1e1658]: 원
+                          - generic [ref=f1e1659]:
+                            - generic [ref=f1e1660]:
+                              - generic [ref=f1e1661]:
+                                - text: 9%
+                                - generic [ref=f1e1662]: 할인
+                              - generic [ref=f1e1663]: 77,080
+                              - generic [ref=f1e1664]: 원
+                            - generic [ref=f1e1666]:
+                              - generic [ref=f1e1672]: 배송비
+                              - text: 무료
+                        - generic [ref=f1e1673]:
+                          - generic [ref=f1e1674]: 오늘출발
+                          - generic [ref=f1e1675]: 09:00까지 주문 시
+                        - generic [ref=f1e1676]: 11번가
+                  - listitem [ref=f1e1679]:
+                    - generic [ref=f1e1680]:
+                      - link "해외옥상스틸방수 시트 열차단 방수제 균열 지붕 외벽 단열 옥상 할인 전 판매가 76,900 원 3% 할인 74,090 원 73,090 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 16:00까지 주문 시 어센트글로벌유통 네이버페이플러스 포인트 최대 740원" [ref=f1e1681] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91284549629&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=c2e4ea5db2fcbd18656d6076c2916cc90b7cb43f&frm=MOSCPRO
+                      - generic [ref=f1e1682]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 <mark>방수</mark>제 균열 지붕 외벽 단열 <mark>옥상</mark>"
+                      - generic [ref=f1e1684]:
+                        - strong [ref=f1e1685]:
+                          - text: 해외
+                          - generic [ref=f1e1686]:
+                            - mark [ref=f1e1687]: 옥상스틸방수
+                            - text: 시트 열차단
+                            - mark [ref=f1e1688]: 방수
+                            - text: 제 균열 지붕 외벽 단열
+                            - mark [ref=f1e1689]: 옥상
+                        - generic [ref=f1e1690]:
+                          - generic [ref=f1e1691]:
+                            - generic [ref=f1e1692]: 할인 전 판매가
+                            - generic [ref=f1e1693]: 76,900
+                            - generic [ref=f1e1694]: 원
+                          - generic [ref=f1e1695]:
+                            - generic [ref=f1e1696]:
+                              - generic [ref=f1e1697]:
+                                - text: 3%
+                                - generic [ref=f1e1698]: 할인
+                              - generic [ref=f1e1699]: 74,090
+                              - generic [ref=f1e1700]: 원
+                            - generic [ref=f1e1701]:
+                              - generic [ref=f1e1702]:
+                                - generic [ref=f1e1703]: 73,090
+                                - generic [ref=f1e1704]: 원
+                              - generic [ref=f1e1705]: 쿠폰할인가
+                            - generic [ref=f1e1707]:
+                              - generic [ref=f1e1713]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1715]:
+                            - generic [ref=f1e1716]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1718]
+                        - generic [ref=f1e1723]:
+                          - generic [ref=f1e1724]: 오늘출발
+                          - generic [ref=f1e1725]: 16:00까지 주문 시
+                        - generic [ref=f1e1726]: 어센트글로벌유통
+                        - generic [ref=f1e1729]:
+                          - generic [ref=f1e1730]: 네이버페이플러스
+                          - generic [ref=f1e1737]: 포인트 최대 740원
+                  - listitem [ref=f1e1738]:
+                    - generic [ref=f1e1739]:
+                      - link "해외옥상스틸방수 시트 열차단 단열 옥상 외벽 방수제 균열 지붕 할인 전 판매가 76,900 원 4% 할인 73,790 원 71,790 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 16:00까지 주문 시 찾은상회 네이버페이플러스 포인트 최대 737원" [ref=f1e1740] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91283676361&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=d01b06fc0bb5998696569bcce807004ba5e9f17e&frm=MOSCPRO
+                      - generic [ref=f1e1741]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 단열 <mark>옥상</mark> 외벽 <mark>방수</mark>제 균열 지붕"
+                      - generic [ref=f1e1743]:
+                        - strong [ref=f1e1744]:
+                          - text: 해외
+                          - generic [ref=f1e1745]:
+                            - mark [ref=f1e1746]: 옥상스틸방수
+                            - text: 시트 열차단 단열
+                            - mark [ref=f1e1747]: 옥상
+                            - text: 외벽
+                            - mark [ref=f1e1748]: 방수
+                            - text: 제 균열 지붕
+                        - generic [ref=f1e1749]:
+                          - generic [ref=f1e1750]:
+                            - generic [ref=f1e1751]: 할인 전 판매가
+                            - generic [ref=f1e1752]: 76,900
+                            - generic [ref=f1e1753]: 원
+                          - generic [ref=f1e1754]:
+                            - generic [ref=f1e1755]:
+                              - generic [ref=f1e1756]:
+                                - text: 4%
+                                - generic [ref=f1e1757]: 할인
+                              - generic [ref=f1e1758]: 73,790
+                              - generic [ref=f1e1759]: 원
+                            - generic [ref=f1e1760]:
+                              - generic [ref=f1e1761]:
+                                - generic [ref=f1e1762]: 71,790
+                                - generic [ref=f1e1763]: 원
+                              - generic [ref=f1e1764]: 쿠폰할인가
+                            - generic [ref=f1e1766]:
+                              - generic [ref=f1e1772]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1774]:
+                            - generic [ref=f1e1775]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1777]
+                        - generic [ref=f1e1782]:
+                          - generic [ref=f1e1783]: 오늘출발
+                          - generic [ref=f1e1784]: 16:00까지 주문 시
+                        - generic [ref=f1e1785]: 찾은상회
+                        - generic [ref=f1e1788]:
+                          - generic [ref=f1e1789]: 네이버페이플러스
+                          - generic [ref=f1e1796]: 포인트 최대 737원
+                  - listitem [ref=f1e1797]:
+                    - generic [ref=f1e1798]:
+                      - link "해외옥상스틸방수 시트 열차단 균열 방수제 옥상 단열 외벽 지붕 할인 전 판매가 76,900 원 3% 할인 73,990 원 73,890 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 16:00까지 주문 시 온빛무역 네이버페이플러스 포인트 최대 739원" [ref=f1e1799] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91283482158&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=67e6f8f7c82560a121107df0f90857f53724739b&frm=MOSCPRO
+                      - generic [ref=f1e1800]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 균열 <mark>방수</mark>제 <mark>옥상</mark> 단열 외벽 지붕"
+                      - generic [ref=f1e1802]:
+                        - strong [ref=f1e1803]:
+                          - text: 해외
+                          - generic [ref=f1e1804]:
+                            - mark [ref=f1e1805]: 옥상스틸방수
+                            - text: 시트 열차단 균열
+                            - mark [ref=f1e1806]: 방수
+                            - text: 제
+                            - mark [ref=f1e1807]: 옥상
+                            - text: 단열 외벽 지붕
+                        - generic [ref=f1e1808]:
+                          - generic [ref=f1e1809]:
+                            - generic [ref=f1e1810]: 할인 전 판매가
+                            - generic [ref=f1e1811]: 76,900
+                            - generic [ref=f1e1812]: 원
+                          - generic [ref=f1e1813]:
+                            - generic [ref=f1e1814]:
+                              - generic [ref=f1e1815]:
+                                - text: 3%
+                                - generic [ref=f1e1816]: 할인
+                              - generic [ref=f1e1817]: 73,990
+                              - generic [ref=f1e1818]: 원
+                            - generic [ref=f1e1819]:
+                              - generic [ref=f1e1820]:
+                                - generic [ref=f1e1821]: 73,890
+                                - generic [ref=f1e1822]: 원
+                              - generic [ref=f1e1823]: 쿠폰할인가
+                            - generic [ref=f1e1825]:
+                              - generic [ref=f1e1831]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1833]:
+                            - generic [ref=f1e1834]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1836]
+                        - generic [ref=f1e1841]:
+                          - generic [ref=f1e1842]: 오늘출발
+                          - generic [ref=f1e1843]: 16:00까지 주문 시
+                        - generic [ref=f1e1844]: 온빛무역
+                        - generic [ref=f1e1847]:
+                          - generic [ref=f1e1848]: 네이버페이플러스
+                          - generic [ref=f1e1855]: 포인트 최대 739원
+                  - listitem [ref=f1e1856]:
+                    - generic [ref=f1e1857]:
+                      - link "해외옥상스틸방수 시트 열차단 지붕 방수제 옥상 단열 균열 외벽 할인 전 판매가 76,900 원 3% 할인 74,090 원 73,090 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 18:00까지 주문 시 고앤드바이 네이버페이플러스 포인트 최대 740원" [ref=f1e1858] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91283068811&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=c556233dd2912d851b432e1aeab71dbc3941c205&frm=MOSCPRO
+                      - generic [ref=f1e1859]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 지붕 <mark>방수</mark>제 <mark>옥상</mark> 단열 균열 외벽"
+                      - generic [ref=f1e1861]:
+                        - strong [ref=f1e1862]:
+                          - text: 해외
+                          - generic [ref=f1e1863]:
+                            - mark [ref=f1e1864]: 옥상스틸방수
+                            - text: 시트 열차단 지붕
+                            - mark [ref=f1e1865]: 방수
+                            - text: 제
+                            - mark [ref=f1e1866]: 옥상
+                            - text: 단열 균열 외벽
+                        - generic [ref=f1e1867]:
+                          - generic [ref=f1e1868]:
+                            - generic [ref=f1e1869]: 할인 전 판매가
+                            - generic [ref=f1e1870]: 76,900
+                            - generic [ref=f1e1871]: 원
+                          - generic [ref=f1e1872]:
+                            - generic [ref=f1e1873]:
+                              - generic [ref=f1e1874]:
+                                - text: 3%
+                                - generic [ref=f1e1875]: 할인
+                              - generic [ref=f1e1876]: 74,090
+                              - generic [ref=f1e1877]: 원
+                            - generic [ref=f1e1878]:
+                              - generic [ref=f1e1879]:
+                                - generic [ref=f1e1880]: 73,090
+                                - generic [ref=f1e1881]: 원
+                              - generic [ref=f1e1882]: 쿠폰할인가
+                            - generic [ref=f1e1884]:
+                              - generic [ref=f1e1890]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1892]:
+                            - generic [ref=f1e1893]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1895]
+                        - generic [ref=f1e1900]:
+                          - generic [ref=f1e1901]: 오늘출발
+                          - generic [ref=f1e1902]: 18:00까지 주문 시
+                        - generic [ref=f1e1903]: 고앤드바이
+                        - generic [ref=f1e1906]:
+                          - generic [ref=f1e1907]: 네이버페이플러스
+                          - generic [ref=f1e1914]: 포인트 최대 740원
+                  - listitem [ref=f1e1915]:
+                    - generic [ref=f1e1916]:
+                      - link "해외옥상스틸방수 시트 열차단 균열 옥상 지붕 방수제 외벽 단열 할인 전 판매가 76,900 원 3% 할인 74,090 원 73,090 원 쿠폰할인가 배송비 무료 관부가세 별도 이 정보가 표시된 이유 오늘출발 16:00까지 주문 시 에이몰구매대행 네이버페이플러스 포인트 최대 740원" [ref=f1e1917] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91282436046&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=64e0b22ef88690f60f4a57ac80a576f0084d694c&frm=MOSCPRO
+                      - generic [ref=f1e1918]:
+                        - img "<mark>옥상스틸방수</mark> 시트 열차단 균열 <mark>옥상</mark> 지붕 <mark>방수</mark>제 외벽 단열"
+                      - generic [ref=f1e1920]:
+                        - strong [ref=f1e1921]:
+                          - text: 해외
+                          - generic [ref=f1e1922]:
+                            - mark [ref=f1e1923]: 옥상스틸방수
+                            - text: 시트 열차단 균열
+                            - mark [ref=f1e1924]: 옥상
+                            - text: 지붕
+                            - mark [ref=f1e1925]: 방수
+                            - text: 제 외벽 단열
+                        - generic [ref=f1e1926]:
+                          - generic [ref=f1e1927]:
+                            - generic [ref=f1e1928]: 할인 전 판매가
+                            - generic [ref=f1e1929]: 76,900
+                            - generic [ref=f1e1930]: 원
+                          - generic [ref=f1e1931]:
+                            - generic [ref=f1e1932]:
+                              - generic [ref=f1e1933]:
+                                - text: 3%
+                                - generic [ref=f1e1934]: 할인
+                              - generic [ref=f1e1935]: 74,090
+                              - generic [ref=f1e1936]: 원
+                            - generic [ref=f1e1937]:
+                              - generic [ref=f1e1938]:
+                                - generic [ref=f1e1939]: 73,090
+                                - generic [ref=f1e1940]: 원
+                              - generic [ref=f1e1941]: 쿠폰할인가
+                            - generic [ref=f1e1943]:
+                              - generic [ref=f1e1949]: 배송비
+                              - text: 무료
+                          - generic [ref=f1e1951]:
+                            - generic [ref=f1e1952]: 관부가세 별도
+                            - button "이 정보가 표시된 이유" [ref=f1e1954]
+                        - generic [ref=f1e1959]:
+                          - generic [ref=f1e1960]: 오늘출발
+                          - generic [ref=f1e1961]: 16:00까지 주문 시
+                        - generic [ref=f1e1962]: 에이몰구매대행
+                        - generic [ref=f1e1965]:
+                          - generic [ref=f1e1966]: 네이버페이플러스
+                          - generic [ref=f1e1973]: 포인트 최대 740원
+                  - listitem [ref=f1e1974]:
+                    - generic [ref=f1e1975]:
+                      - link "해외방수제 단열 외벽 지붕 테이프 옥상스틸방수 시트 열차단 할인 전 판매가 88,800 원 2% 할인 87,020 원 배송비 무료 오늘출발 18:00까지 주문 시 에포크마켓 네이버페이플러스 포인트 최대 870원" [ref=f1e1976] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91264985851&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=52a22f082a8817641cab5febee4a47e9875c32a6&frm=MOSCPRO
+                      - generic [ref=f1e1977]:
+                        - img "<mark>방수</mark>제 단열 외벽 지붕 테이프 <mark>옥상스틸방수</mark> 시트 열차단"
+                      - generic [ref=f1e1979]:
+                        - strong [ref=f1e1980]:
+                          - text: 해외
+                          - generic [ref=f1e1981]:
+                            - mark [ref=f1e1982]: 방수
+                            - text: 제 단열 외벽 지붕 테이프
+                            - mark [ref=f1e1983]: 옥상스틸방수
+                            - text: 시트 열차단
+                        - generic [ref=f1e1984]:
+                          - generic [ref=f1e1985]:
+                            - generic [ref=f1e1986]: 할인 전 판매가
+                            - generic [ref=f1e1987]: 88,800
+                            - generic [ref=f1e1988]: 원
+                          - generic [ref=f1e1989]:
+                            - generic [ref=f1e1990]:
+                              - generic [ref=f1e1991]:
+                                - text: 2%
+                                - generic [ref=f1e1992]: 할인
+                              - generic [ref=f1e1993]: 87,020
+                              - generic [ref=f1e1994]: 원
+                            - generic [ref=f1e1996]:
+                              - generic [ref=f1e2002]: 배송비
+                              - text: 무료
+                        - generic [ref=f1e2003]:
+                          - generic [ref=f1e2004]: 오늘출발
+                          - generic [ref=f1e2005]: 18:00까지 주문 시
+                        - generic [ref=f1e2006]: 에포크마켓
+                        - generic [ref=f1e2009]:
+                          - generic [ref=f1e2010]: 네이버페이플러스
+                          - generic [ref=f1e2017]: 포인트 최대 870원
+                  - listitem [ref=f1e2018]:
+                    - generic [ref=f1e2019]:
+                      - link "단열 옥상 방수제 시트 열차단 옥상스틸방수 지붕 누수 외벽 할인 전 판매가 105,500 원 2% 할인 103,390 원 배송비 무료 오늘출발 18:00까지 주문 시 데일리바운스마켓 네이버페이플러스 포인트 최대 1,033원" [ref=f1e2020] [cursor=pointer]:
+                        - /url: https://cr3.shopping.naver.com/v2/bridge/searchGate?nv_mid=91261075239&cat_id=50006192&query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&t=mva9oywk&h=baae2840e648b6c6cb830089de326c6a0082f511&frm=MOSCPRO
+                      - generic [ref=f1e2021]:
+                        - img "단열 <mark>옥상</mark> <mark>방수</mark>제 시트 열차단 <mark>옥상스틸방수</mark> 지붕 누수 외벽"
+                      - generic [ref=f1e2023]:
+                        - strong [ref=f1e2024]:
+                          - generic [ref=f1e2025]:
+                            - text: 단열
+                            - mark [ref=f1e2026]: 옥상
+                            - mark [ref=f1e2027]: 방수
+                            - text: 제 시트 열차단
+                            - mark [ref=f1e2028]: 옥상스틸방수
+                            - text: 지붕 누수 외벽
+                        - generic [ref=f1e2029]:
+                          - generic [ref=f1e2030]:
+                            - generic [ref=f1e2031]: 할인 전 판매가
+                            - generic [ref=f1e2032]: 105,500
+                            - generic [ref=f1e2033]: 원
+                          - generic [ref=f1e2034]:
+                            - generic [ref=f1e2035]:
+                              - generic [ref=f1e2036]:
+                                - text: 2%
+                                - generic [ref=f1e2037]: 할인
+                              - generic [ref=f1e2038]: 103,390
+                              - generic [ref=f1e2039]: 원
+                            - generic [ref=f1e2041]:
+                              - generic [ref=f1e2047]: 배송비
+                              - text: 무료
+                        - generic [ref=f1e2048]:
+                          - generic [ref=f1e2049]: 오늘출발
+                          - generic [ref=f1e2050]: 18:00까지 주문 시
+                        - generic [ref=f1e2051]: 데일리바운스마켓
+                        - generic [ref=f1e2054]:
+                          - generic [ref=f1e2055]: 네이버페이플러스
+                          - generic [ref=f1e2062]: 포인트 최대 1,033원
+              - listitem [ref=f1e2063]
+              - listitem [ref=f1e2064]
+              - listitem [ref=f1e2065]
+            - generic [ref=f1e2066]:
+              - button "이전 페이지" [disabled] [ref=f1e2067]
+              - generic [ref=f1e2071]:
+                - generic [ref=f1e2072]:
+                  - generic [ref=f1e2073]: 현재
+                  - text: "1"
+                - generic [ref=f1e2075]: 전체
+                - text: "5"
+              - button "다음 페이지" [ref=f1e2076]
+          - link "상품 더보기" [ref=f1e2081] [cursor=pointer]:
+            - /url: https://msearch.shopping.naver.com/search/all?query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&frm=MOSCPRO&nl-ts-pid=jWaGpdqoii4ssB7QFjZ-419816
+          - generic [ref=f1e2085]:
+            - text: 네이버는 상품 판매의 당사자가 아닙니다.
+            - link "법적고지 및 안내" [ref=f1e2086] [cursor=pointer]:
+              - /url: https://m.help.pay.naver.com/faq/list.help?rootCategoryId=11004&faqId=10909
+      - generic [ref=f1e2087]:
+        - link [ref=f1e2088] [cursor=pointer]:
+          - /url: https://m.search.naver.com/search.naver?query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&ssc=tab.m_ait.all&sm=mtb_clk.aitabshop&ait_agent_type=shopping&dtm_source=search&dtm_medium=shopping_banner
+          - strong [ref=f1e2089]: AI로 더 알아보기
+          - paragraph [ref=f1e2090]: 궁금한 점을 대화로 확인해보세요.
+        - link "AI탭 바로가기" [ref=f1e2091] [cursor=pointer]:
+          - /url: https://m.search.naver.com/search.naver?query=%EB%8C%80%EC%A0%84%20%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&ssc=tab.m_ait.all&sm=mtb_clk.aitabshop&ait_agent_type=shopping&dtm_source=search&dtm_medium=shopping_banner
+    - generic [ref=f1e2093]:
+      - generic [ref=f1e2094]:
+        - generic [ref=f1e2098]:
+          - generic [ref=f1e2100]:
+            - generic [ref=f1e2101]:
+              - link [ref=f1e2103] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_
+              - generic [ref=f1e2106]:
+                - link "옥상방수.보수 전문 방수하는특전사 공식 블로그" [ref=f1e2109] [cursor=pointer]:
+                  - /url: https://m.blog.naver.com/steel1201_
+                - generic [ref=f1e2111]: 5일 전
+            - button "옵션 메뉴 열기" [ref=f1e2114] [cursor=pointer]
+          - generic [ref=f1e2119]:
+            - generic [ref=f1e2120]:
+              - link [ref=f1e2121] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+                - generic [ref=f1e2122]:
+                  - mark [ref=f1e2123]: 스틸방수
+                  - text: 어떤
+                  - mark [ref=f1e2124]: 옥상
+                  - text: 에 적합할까?
+                  - mark [ref=f1e2125]: 옥상
+                  - text: 누수 예방을 위한
+                  - mark [ref=f1e2126]: 옥상
+                  - mark [ref=f1e2127]: 방수
+                  - text: 방법
+              - link [ref=f1e2128] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+                - generic [ref=f1e2129]:
+                  - mark [ref=f1e2130]: 옥상
+                  - text: 에 물이 고이는 이유부터 확인해야 합니다
+                  - mark [ref=f1e2131]: 방수
+                  - text: 하는특전사
+                  - mark [ref=f1e2132]: 옥상스틸방수
+                  - text: 전문
+                  - mark [ref=f1e2133]: 방수
+                  - text: 하는 특전사 시공 전 비가 내린 뒤
+                  - mark [ref=f1e2134]: 옥상
+                  - text: 바닥에 물이 남는 현상은 배수구 막힘이나 바닥 구배 부족 등 여러 원인으로 발생할 수 있습니다. 특히 오래된 건물은 표면이 고르지 않거나 일부 구간이 내려앉아 물이 특정 위치에 모이기도 합니다. 그렇다고 물이 고여 있다는 사실만으로...
+            - generic [ref=f1e2135]:
+              - link [ref=f1e2136] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2140] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2144] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2148] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2152] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2156] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2160] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2164] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2168] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+              - link [ref=f1e2172] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/steel1201_/224438170782
+        - generic [ref=f1e2181]:
+          - generic [ref=f1e2182]:
+            - link "u-banjang.com 2026.07.03. u-banjang.com›Careers" [ref=f1e2183] [cursor=pointer]:
+              - /url: https://u-banjang.com/
+              - generic [ref=f1e2189]:
+                - generic [ref=f1e2190]: u-banjang.com
+                - generic [ref=f1e2194]:
+                  - generic [ref=f1e2195]: 2026.07.03.
+                  - generic [ref=f1e2197]: u-banjang.com›Careers
+            - button "옵션 메뉴 열기" [ref=f1e2199] [cursor=pointer]
+          - generic [ref=f1e2204]:
+            - link [ref=f1e2206] [cursor=pointer]:
+              - /url: https://u-banjang.com/Careers/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=172193057&t=board
+              - generic [ref=f1e2207]:
+                - mark [ref=f1e2208]: 대전 옥상
+                - mark [ref=f1e2209]: 방수
+                - text: 전문업체 | 리얼
+                - mark [ref=f1e2210]: 스틸방수
+                - text: ㈜유반장
+                - mark [ref=f1e2211]: 스틸방수
+                - text: ": 전국 시공사례 |"
+                - mark [ref=f1e2212]: 옥상
+                - mark [ref=f1e2213]: 방수
+                - text: ·지붕공사....
+            - generic [ref=f1e2214]:
+              - link [ref=f1e2215] [cursor=pointer]:
+                - /url: https://u-banjang.com/Careers/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=172193057&t=board
+                - 'img "<mark>대전 옥상</mark><mark>방수</mark> 전문업체 | 리얼<mark>스틸방수</mark> ㈜유반장<mark>스틸방수</mark> : 전국 시공사례 | <mark>옥상</mark><mark>방수</mark>·지붕공사....의 이미지" [ref=f1e2217]'
+              - link [ref=f1e2219] [cursor=pointer]:
+                - /url: https://u-banjang.com/Careers/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=172193057&t=board
+                - generic [ref=f1e2220]:
+                  - mark [ref=f1e2221]: 대전 옥상
+                  - mark [ref=f1e2222]: 방수
+                  - text: 전문업체㈜유반장
+                  - mark [ref=f1e2223]: 스틸방수
+                  - mark [ref=f1e2224]: 대전
+                  - text: 에서
+                  - mark [ref=f1e2225]: 옥상
+                  - text: 누수, 노후
+                  - mark [ref=f1e2226]: 방수
+                  - text: 층, 우레탄 들뜸, 바닥 균열로 고민하고 계신가요?
+                  - mark [ref=f1e2227]: 옥상
+                  - text: 누수는 단순히 물이 새는 문제가 아니라 건물의 수명, 내부 마감재 손상, 곰팡이, 구조체 부식까지 이어질 수 있는 중요한 문제입니다.㈜유반장
+                  - mark [ref=f1e2228]: 스틸방수
+                  - text: 는
+                  - mark [ref=f1e2229]: 대전
+                  - text: 본사를 중심으로 세종, 청주, 천안, 공주, 옥천, 금산, 논산 등 충청권...
+        - generic [ref=f1e2235]:
+          - generic [ref=f1e2236]:
+            - generic [ref=f1e2243]:
+              - generic [ref=f1e2244]: poscoroofing.com
+              - generic [ref=f1e2246]: daejeon.poscoroofing.com›steel
+            - button "옵션 메뉴 열기" [ref=f1e2251] [cursor=pointer]
+          - generic [ref=f1e2256]:
+            - link [ref=f1e2258] [cursor=pointer]:
+              - /url: https://daejeon.poscoroofing.com/steel/
+              - generic [ref=f1e2259]:
+                - mark [ref=f1e2260]: 대전 옥상 스틸방수
+                - text: · 바닥형·지붕형·하이브리드 | 포스코지붕공사
+            - generic [ref=f1e2261]:
+              - link [ref=f1e2262] [cursor=pointer]:
+                - /url: https://daejeon.poscoroofing.com/steel/
+                - img "<mark>대전 옥상 스틸방수</mark> · 바닥형·지붕형·하이브리드 | 포스코지붕공사의 이미지" [ref=f1e2264]
+              - link [ref=f1e2266] [cursor=pointer]:
+                - /url: https://daejeon.poscoroofing.com/steel/
+                - generic [ref=f1e2267]:
+                  - mark [ref=f1e2268]: 스틸방수
+                  - text: 는 새는 곳만 막지 않아요.
+                  - mark [ref=f1e2269]: 옥상
+                  - text: 전체를 칼라강판으로 덮어서 빗물이 콘크리트 바닥에 닿지 않게 하는 게 핵심이에요.
+        - generic [ref=f1e2274]:
+          - generic [ref=f1e2275]:
+            - generic [ref=f1e2276]:
+              - link "지붕공사코리아 www.roofingkorea.com›daejeon-roofing" [ref=f1e2277] [cursor=pointer]:
+                - /url: https://www.roofingkorea.com/
+                - generic [ref=f1e2283]:
+                  - generic [ref=f1e2284]: 지붕공사코리아
+                  - generic [ref=f1e2286]: www.roofingkorea.com›daejeon-roofing
+              - button "옵션 메뉴 열기" [ref=f1e2291] [cursor=pointer]
+            - generic [ref=f1e2296]:
+              - link [ref=f1e2298] [cursor=pointer]:
+                - /url: https://www.roofingkorea.com/daejeon-roofing/
+                - generic [ref=f1e2299]:
+                  - mark [ref=f1e2300]: 대전
+                  - text: 지붕공사 · 지붕개량 ·
+                  - mark [ref=f1e2301]: 스틸방수
+              - link [ref=f1e2303] [cursor=pointer]:
+                - /url: https://www.roofingkorea.com/daejeon-roofing/
+                - generic [ref=f1e2304]:
+                  - mark [ref=f1e2305]: 대전
+                  - text: 지붕공사 전문. 오래된 기와·슁글 지붕개량부터 슬라브
+                  - mark [ref=f1e2306]: 옥상
+                  - mark [ref=f1e2307]: 방수
+                  - text: ·
+                  - mark [ref=f1e2308]: 스틸방수
+                  - text: 까지 시공합니다. 실제 지붕면적 기준 예상 비용을 계산기로 1분 만에 확인하세요. 세종·계룡·옥천 등 인근 지역까지 시공합니다.
+          - generic [ref=f1e2309]:
+            - link "칼라강판 지붕공사의 이미지 칼라강판 지붕공사" [ref=f1e2310] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/roofing/
+              - generic [ref=f1e2311]:
+                - img "칼라강판 지붕공사의 이미지" [ref=f1e2313]
+                - generic [ref=f1e2315]: 칼라강판 지붕공사
+            - link "옥상 스틸방수의 이미지 옥상 스틸방수" [ref=f1e2317] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98/
+              - generic [ref=f1e2318]:
+                - img "옥상 스틸방수의 이미지" [ref=f1e2320]
+                - generic [ref=f1e2322]: 옥상 스틸방수
+            - link "칼라강판 외벽공사의 이미지 칼라강판 외벽공사" [ref=f1e2324] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/exterior-wall/
+              - generic [ref=f1e2325]:
+                - img "칼라강판 외벽공사의 이미지" [ref=f1e2327]
+                - generic [ref=f1e2329]: 칼라강판 외벽공사
+            - link "공장·창고 대형건물의 이미지 공장·창고 대형건물" [ref=f1e2331] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/large-buildings/
+              - generic [ref=f1e2332]:
+                - img "공장·창고 대형건물의 이미지" [ref=f1e2334]
+                - generic [ref=f1e2336]: 공장·창고 대형건물
+            - link "대전 지붕공사 비용의 이미지 대전 지붕공사 비용" [ref=f1e2338] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/guide/daejeon-roof-cost/
+              - generic [ref=f1e2339]:
+                - img "대전 지붕공사 비용의 이미지" [ref=f1e2341]
+                - generic [ref=f1e2343]: 대전 지붕공사 비용
+            - link "비용 계산기의 이미지 비용 계산기" [ref=f1e2345] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/%EC%8A%A4%ED%8B%B8-%EC%98%A5%EC%83%81%EB%B0%A9%EC%88%98-%EA%B3%84%EC%82%B0%EA%B8%B0/
+              - generic [ref=f1e2346]:
+                - img "비용 계산기의 이미지" [ref=f1e2348]
+                - generic [ref=f1e2350]: 비용 계산기
+            - link "지붕·옥상 시공사례의 이미지 지붕·옥상 시공사례" [ref=f1e2352] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/projects/
+              - generic [ref=f1e2353]:
+                - img "지붕·옥상 시공사례의 이미지" [ref=f1e2355]
+                - generic [ref=f1e2357]: 지붕·옥상 시공사례
+            - link "태양광 설치의 이미지 태양광 설치" [ref=f1e2359] [cursor=pointer]:
+              - /url: https://www.roofingkorea.com/solar/
+              - generic [ref=f1e2360]:
+                - img "태양광 설치의 이미지" [ref=f1e2362]
+                - generic [ref=f1e2364]: 태양광 설치
+        - generic [ref=f1e2371]:
+          - generic [ref=f1e2372]:
+            - link "한농스틸 본사 steel-up.com›page" [ref=f1e2373] [cursor=pointer]:
+              - /url: https://steel-up.com/
+              - generic [ref=f1e2393]:
+                - generic [ref=f1e2394]: 한농스틸 본사
+                - generic [ref=f1e2396]: steel-up.com›page
+            - button "옵션 메뉴 열기" [ref=f1e2401] [cursor=pointer]
+          - generic [ref=f1e2406]:
+            - link [ref=f1e2408] [cursor=pointer]:
+              - /url: https://steel-up.com/m/page/sub2_view.php?boardid=board2&category=2&idx=212
+              - generic [ref=f1e2409]:
+                - mark [ref=f1e2410]: 옥상
+                - text: 판넬지붕 → 바닥 시트형
+            - generic [ref=f1e2411]:
+              - link [ref=f1e2412] [cursor=pointer]:
+                - /url: https://steel-up.com/m/page/sub2_view.php?boardid=board2&category=2&idx=212
+                - img "<mark>옥상</mark> 판넬지붕 → 바닥 시트형의 이미지" [ref=f1e2414]
+              - link [ref=f1e2416] [cursor=pointer]:
+                - /url: https://steel-up.com/m/page/sub2_view.php?boardid=board2&category=2&idx=212
+                - generic [ref=f1e2417]:
+                  - text: 오늘은
+                  - mark [ref=f1e2418]: 대전 옥상
+                  - mark [ref=f1e2419]: 방수
+                  - text: 현장을 설명드릴게요 허가를 받지 않고 불법증축 공사를 하셨다가 문제가 되어 한농
+                  - mark [ref=f1e2420]: 스틸
+                  - text: 에 의뢰를 하셨습니다
+        - generic [ref=f1e2424]:
+          - generic [ref=f1e2426]:
+            - generic [ref=f1e2427]:
+              - link [ref=f1e2429] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kimyoooo
+              - generic [ref=f1e2432]:
+                - link "지성아빠의 나눔세상 - 전원 & 귀농 -" [ref=f1e2435] [cursor=pointer]:
+                  - /url: https://m.cafe.naver.com/kimyoooo
+                - generic [ref=f1e2440]: 4주 전
+            - button "옵션 메뉴 열기" [ref=f1e2443] [cursor=pointer]
+          - generic [ref=f1e2448]:
+            - link [ref=f1e2449] [cursor=pointer]:
+              - /url: https://m.cafe.naver.com/kimyoooo/1341878?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzQxODc4LCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.s556jcMOIcBBE91oNzRfbqGB-UHHsDGhdLSuI5trS_I
+              - generic [ref=f1e2450]:
+                - mark [ref=f1e2451]: 스틸방수
+                - text: 작업했습니다.
+            - generic [ref=f1e2452]:
+              - link [ref=f1e2454] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kimyoooo/1341878?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzQxODc4LCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.s556jcMOIcBBE91oNzRfbqGB-UHHsDGhdLSuI5trS_I
+                - generic [ref=f1e2455]:
+                  - text: 저희 마을 건물주분들
+                  - mark [ref=f1e2456]: 옥상
+                  - text: 누수로 스트레스 받아서 제가 먼저 시공받아보고 내년쯤 하자없고 큰 문제없음 공식적으로 추천해볼 예정입니다. 그동안
+                  - mark [ref=f1e2457]: 방수
+                  - text: 때문에 이것저것 많은 시도를 해봤는데 이번만큼은 좋은방법이길 바라며 시공했구요.
+                  - mark [ref=f1e2458]: 스틸방수
+                  - text: 업체 비교후 선정한 루프메이트 김사장 이친구는 현장에서 만난 업체중 손꼽는 기분좋은 업체였습니다. 상식이 통하고...
+              - link [ref=f1e2459] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kimyoooo/1341878?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzQxODc4LCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.s556jcMOIcBBE91oNzRfbqGB-UHHsDGhdLSuI5trS_I
+          - link "결합부위를 외장용 실리콘으로 마감하나요? 그렇다면 실리콘 내구성은 어떤지 궁금합니다…" [ref=f1e2470] [cursor=pointer]:
+            - /url: https://m.cafe.naver.com/kimyoooo/1341878?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpbXlvb29vIiwiYXJ0aWNsZUlkIjoxMzQxODc4LCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5M30.s556jcMOIcBBE91oNzRfbqGB-UHHsDGhdLSuI5trS_I
+        - generic [ref=f1e2475]:
+          - generic [ref=f1e2477]:
+            - generic [ref=f1e2478]:
+              - link [ref=f1e2480] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig
+              - generic [ref=f1e2483]:
+                - link "ㆍ피터팬의 좋은방 구하기ㆍ" [ref=f1e2486] [cursor=pointer]:
+                  - /url: https://m.cafe.naver.com/kig
+                - generic [ref=f1e2491]: 2026.09.13.
+            - button "옵션 메뉴 열기" [ref=f1e2494] [cursor=pointer]
+          - generic [ref=f1e2499]:
+            - generic [ref=f1e2500]:
+              - link [ref=f1e2501] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+                - generic [ref=f1e2502]:
+                  - text: 청주 지붕공사
+                  - mark [ref=f1e2503]: 옥상
+                  - text: 누수 걱정,
+                  - mark [ref=f1e2504]: 스틸방수
+                  - text: 로 해결했어요
+              - link [ref=f1e2505] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+                - generic [ref=f1e2506]:
+                  - text: 그래서 알아보게 된 방법이 바로
+                  - mark [ref=f1e2507]: 옥상스틸방수
+                  - text: 였어요. 기존 바닥 위를 칼라강판으로 덮어 빗물이
+                  - mark [ref=f1e2508]: 옥상
+                  - text: 바닥에 직접 닿는 것을 막아주는 방식이라 반복되는 누수 걱정을 줄일 수 있다는 설명이 인상적이었어요. 2. 칼라강판 시공을 선택한 이유 제가 알아본 참좋은지붕은 30년 이상 현장에서 기술과 경험을 쌓아온 곳이라고 해요. 단순히
+                  - mark [ref=f1e2509]: 방수
+                  - text: 제를 덧바르는 방식이 아닌,
+                  - mark [ref=f1e2510]: 옥상
+                  - text: ...
+            - generic [ref=f1e2511]:
+              - link [ref=f1e2512] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+              - link [ref=f1e2516] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+              - link [ref=f1e2520] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+              - link [ref=f1e2524] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+              - link [ref=f1e2528] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+              - link [ref=f1e2532] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+              - link [ref=f1e2536] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+          - link "청주 지붕 공사 알아보고 있었는데 시공 방식이 자세히 나와 있어서 도움 많이 됐어요!" [ref=f1e2547] [cursor=pointer]:
+            - /url: https://m.cafe.naver.com/kig/19624242?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImtpZyIsImFydGljbGVJZCI6MTk2MjQyNDIsImlzc3VlZEF0IjoxNzkyMTEyODA1NDkzfQ.xyDHz9dEUShnO41WmnPVl3UXX_CN1hixYvNCCzg8Hm0
+        - generic [ref=f1e2552]:
+          - generic [ref=f1e2554]:
+            - generic [ref=f1e2555]:
+              - link [ref=f1e2557] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof
+              - generic [ref=f1e2560]:
+                - link "디자인루프" [ref=f1e2563] [cursor=pointer]:
+                  - /url: https://m.blog.naver.com/design_roof
+                - generic [ref=f1e2568]: 3주 전
+            - button "옵션 메뉴 열기" [ref=f1e2571] [cursor=pointer]
+          - generic [ref=f1e2576]:
+            - generic [ref=f1e2577]:
+              - link [ref=f1e2578] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+                - generic [ref=f1e2579]:
+                  - mark [ref=f1e2580]: 스틸방수
+                  - text: 는 빗물을 어떻게 밖으로 내보낼까요?
+              - link [ref=f1e2581] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+                - generic [ref=f1e2582]:
+                  - mark [ref=f1e2583]: 스틸방수
+                  - text: ", 빗물은 어디로 빠질까요? 경사부터 물받이까지"
+                  - mark [ref=f1e2584]: 옥상
+                  - mark [ref=f1e2585]: 방수
+                  - text: 를 알아보다 보면 이런 궁금증이 생깁니다. “
+                  - mark [ref=f1e2586]: 옥상
+                  - text: 위를 강판으로 덮으면, 그 위에 떨어진 빗물은 어디로 갈까요?”
+                  - mark [ref=f1e2587]: 스틸방수
+                  - text: 를 이해하려면 강판의 재질과 함께 빗물이 빠져나가는 경로를 살펴보면 좋습니다. 오늘은 디자인루프 홈페이지에 소개된 구조를 바탕으로 빗물이 이동하는 과정을 설명해...
+            - generic [ref=f1e2588]:
+              - link [ref=f1e2589] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+              - link [ref=f1e2593] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+              - link [ref=f1e2597] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+              - link [ref=f1e2601] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+              - link [ref=f1e2605] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/design_roof/224426627245
+        - generic [ref=f1e2612]:
+          - generic [ref=f1e2614]:
+            - generic [ref=f1e2615]:
+              - link [ref=f1e2617] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_
+              - generic [ref=f1e2620]:
+                - link "좌충우돌 김소장의 지붕공사 그리고 일상이야기" [ref=f1e2623] [cursor=pointer]:
+                  - /url: https://m.blog.naver.com/roof2you_
+                - generic [ref=f1e2625]: 2주 전
+            - button "옵션 메뉴 열기" [ref=f1e2628] [cursor=pointer]
+          - generic [ref=f1e2633]:
+            - generic [ref=f1e2634]:
+              - link [ref=f1e2635] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+                - generic [ref=f1e2636]:
+                  - text: 철거 없이 바로 시공하는
+                  - mark [ref=f1e2637]: 옥상 스틸방수
+              - link [ref=f1e2638] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+                - generic [ref=f1e2639]:
+                  - text: 안녕하세요 지붕공사전문 좌충우돌 김소장입니다 이번 시간에는
+                  - mark [ref=f1e2640]: 옥상 스틸방수
+                  - text: 가 가진 핵심적인 장점과 함께 장기간 사용했을 때 유지보수 비용을 얼마나 효과적으로 줄일 수 있는지에 대해 설명드리고자 합니다
+                  - mark [ref=f1e2641]: 옥상 스틸방수
+                  - text: 포스맥칼라강판의 핵심 기존에 가장 흔히 사용되는 우레탄
+                  - mark [ref=f1e2642]: 방수
+                  - text: 칠 자외선, 온도 변화, 빗물 침투 및 콘크리트 수축·팽창에 매우 취약합니다...
+            - generic [ref=f1e2643]:
+              - link [ref=f1e2644] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2648] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2652] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2656] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2660] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2664] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2668] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2672] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2676] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+              - link [ref=f1e2680] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/roof2you_/224432135255
+        - generic [ref=f1e2687]:
+          - generic [ref=f1e2689]:
+            - generic [ref=f1e2690]:
+              - link [ref=f1e2692] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof
+              - generic [ref=f1e2695]:
+                - link "지붕공사 전문시공업체 현대강판" [ref=f1e2698] [cursor=pointer]:
+                  - /url: https://m.blog.naver.com/hyundai_roof
+                - generic [ref=f1e2700]: 3주 전
+            - button "옵션 메뉴 열기" [ref=f1e2703] [cursor=pointer]
+          - generic [ref=f1e2708]:
+            - generic [ref=f1e2709]:
+              - link [ref=f1e2710] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+                - generic [ref=f1e2711]:
+                  - text: 우레탄
+                  - mark [ref=f1e2712]: 방수
+                  - mark [ref=f1e2713]: 스틸방수
+                  - text: 비교 딱 정리해드립니다
+              - link [ref=f1e2714] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+                - generic [ref=f1e2715]:
+                  - text: 필요합니다
+                  - mark [ref=f1e2716]: 옥상 스틸방수
+                  - text: 는 현장 조건에 맞춰 지붕의 경사를 만들고 물받이와 홈통까지 연결하여 빗물의 흐름을 정리할 수 있습니다 물이 지붕에 머무는 시간을 줄이는 설계는 반복적인 물고임을 개선하는 데 도움이 됩니다 이렇게 현장상황에 맞게 정해진 범위내에 맞게 각도를 해 준다면 비가 내려도 고이는 방식이 아닌 흘러내리는 방식으로 누수 걱정 없이 지낼 수...
+            - generic [ref=f1e2717]:
+              - link [ref=f1e2718] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2722] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2726] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2730] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2734] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2738] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2742] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2746] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2750] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+              - link [ref=f1e2754] [cursor=pointer]:
+                - /url: https://m.blog.naver.com/hyundai_roof/224423680122
+        - generic [ref=f1e2761]:
+          - generic [ref=f1e2763]:
+            - generic [ref=f1e2764]:
+              - link [ref=f1e2766] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory
+              - generic [ref=f1e2769]:
+                - 'link "네일동 : 일본여행카페" [ref=f1e2772] [cursor=pointer]':
+                  - /url: https://m.cafe.naver.com/jpnstory
+                - generic [ref=f1e2777]: 2026.08.31.
+            - button "옵션 메뉴 열기" [ref=f1e2780] [cursor=pointer]
+          - generic [ref=f1e2785]:
+            - generic [ref=f1e2786]:
+              - link "내가 보려고 쓴, 일본 여행에서 한번쯤 마주쳤을 거장 9인의 작품들 (긺 주의)" [ref=f1e2787] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2789] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+                - generic [ref=f1e2790]:
+                  - text: 단 3mm의 얇은 알루미늄·
+                  - mark [ref=f1e2791]: 스틸
+                  - text: 테이블인데 가로 10m 폭 2.5m 무게가 700kg 응력은 물론 각 부분의 소품의 위치나 무게도 정교하게 계산 된 거죠 결과적으로 전시 장소에서 편 테이블은 완벽히 수평을 유지하고 있는데 중력의 영향에서 벗어나 비물질화 된 사물이 된 느낌이에요 "작은 건축을 설계하듯 큰 테이블을 만들었다" 는 본인의 말처럼 가구와 건축의 경계를...
+            - generic [ref=f1e2792]:
+              - link [ref=f1e2793] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2797] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2801] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2805] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2809] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2813] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2817] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2821] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2825] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+              - link [ref=f1e2829] [cursor=pointer]:
+                - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+          - link "좋은 건축물들을 소개해 주셔서 고맙습니다. 오~ 정말 흥미로운 구조물들이 ... 어쩜 저런 생각들을 하신것인지...그걸 또 구현해낸 엔지니어들에게도...감탄하고있습니다. 저도 뮤지엄산이 흥미로웠지만, 제주도가서 본 방주교회와 포도호텔 ..그리고 본태 박물관도 인상적" [ref=f1e2840] [cursor=pointer]:
+            - /url: https://m.cafe.naver.com/jpnstory/4371912?art=ZXh0ZXJuYWwtc2VydmljZS1uYXZlci1zZWFyY2gtY2FmZS1wcg.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjYWZlVHlwZSI6IkNBRkVfVVJMIiwiY2FmZVVybCI6ImpwbnN0b3J5IiwiYXJ0aWNsZUlkIjo0MzcxOTEyLCJpc3N1ZWRBdCI6MTc5MjExMjgwNTQ5NH0.LgU7gi4k9YtFy0-KuyghnNDrYuvbPdUAgwcc3qlOwTs
+        - generic [ref=f1e2847]:
+          - generic [ref=f1e2848]:
+            - link "sejongroof.com sejongroof.com" [ref=f1e2849] [cursor=pointer]:
+              - /url: https://sejongroof.com/
+              - generic [ref=f1e2855]:
+                - generic [ref=f1e2856]: sejongroof.com
+                - generic [ref=f1e2858]: sejongroof.com
+            - button "옵션 메뉴 열기" [ref=f1e2863] [cursor=pointer]
+          - generic [ref=f1e2868]:
+            - link [ref=f1e2870] [cursor=pointer]:
+              - /url: https://sejongroof.com/
+              - generic [ref=f1e2871]:
+                - text: 세종지붕 - 지붕공사 전문기업.
+                - mark [ref=f1e2872]: 스틸방수
+                - text: ","
+                - mark [ref=f1e2873]: 옥상
+                - mark [ref=f1e2874]: 방수
+                - text: 특허등록
+            - generic [ref=f1e2875]:
+              - link "시공사례" [ref=f1e2876] [cursor=pointer]:
+                - /url: https://sejongroof.com/%EC%8B%9C%EA%B3%B5%EC%82%AC%EB%A1%80/
+              - link "시공방법 및 특징" [ref=f1e2878] [cursor=pointer]:
+                - /url: https://sejongroof.com/%EC%8B%9C%EA%B3%B5%EB%B0%A9%EB%B2%95-%EB%B0%8F-%ED%8A%B9%EC%A7%95/
+              - link "회사소개" [ref=f1e2880] [cursor=pointer]:
+                - /url: https://sejongroof.com/%ED%9A%8C%EC%82%AC%EC%86%8C%EA%B0%9C/
+              - link "견적문의" [ref=f1e2882] [cursor=pointer]:
+                - /url: https://sejongroof.com/%EA%B2%AC%EC%A0%81%EB%AC%B8%EC%9D%98/
+              - link "시공 FAQ" [ref=f1e2884] [cursor=pointer]:
+                - /url: https://sejongroof.com/%EC%8B%9C%EA%B3%B5-faq/
+            - link [ref=f1e2887] [cursor=pointer]:
+              - /url: https://sejongroof.com/
+              - generic [ref=f1e2888]:
+                - mark [ref=f1e2889]: 스틸 방수
+                - text: 전문 세종지붕. 수명이 10배 더 긴
+                - mark [ref=f1e2890]: 옥상
+                - text: ", 지붕"
+                - mark [ref=f1e2891]: 방수
+                - text: . 지붕
+                - mark [ref=f1e2892]: 방수
+                - text: ","
+                - mark [ref=f1e2893]: 옥상
+                - mark [ref=f1e2894]: 방수
+                - text: ","
+                - mark [ref=f1e2895]: 스틸방수
+                - text: 특허등록. 노후건물, 신축건물, 관공서, 대학교, 상가, 주택, 빌딩
+                - mark [ref=f1e2896]: 스틸 방수
+                - text: 시공. 전국 무료 견적문의 1544-7358
+      - link "검색결과 더보기" [ref=f1e2899] [cursor=pointer]:
+        - /url: "?nso=&page=2&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_pge&ssc=tab.m_ur.all&start=1"
+    - generic [ref=f1e2903]:
+      - heading "이미지" [level=2] [ref=f1e2907]
+      - generic [ref=f1e2909]:
+        - img "스틸방수 대전/청주 옥상방수 전문기업" [ref=f1e2911]
+        - generic:
+          - img "대전 옥상방수는 유반장 스틸방수에서 시작하세요!!!"
+        - generic:
+          - img "[대전, 옥천, 금산] 스틸 옥상방수 1등 기업 지붕공사 시공 브리핑"
+        - generic:
+          - img "[대전/충청 옥상 스틸 방수] 대전 요양병원 옥상방수 공사"
+        - generic:
+          - img "대전 옥상방수 실력을 가진 기업을 선택하는 방법, 스틸방수 기준은 무엇일까?"
+        - generic:
+          - img "대전/청주 옥상 누수공사 지붕스틸방수 방법"
+        - generic:
+          - img "대전 옥상방수 및 지붕공사 방법"
+        - generic:
+          - img "대전 청주 스틸방수 옥상누수 해결법"
+        - generic:
+          - img "대전 신협 옥상스틸방수 지붕공사 잘짓는건축"
+      - link "이미지 더보기" [ref=f1e2913] [cursor=pointer]:
+        - /url: "?mode=&nso=so%3Ar%2Cp%3Aall&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_nmr&ssc=tab.m_image.all&where=m_image"
+        - generic [ref=f1e2917]:
+          - generic [ref=f1e2918]: 이미지
+          - generic [ref=f1e2919]: 더보기
+    - generic [ref=f1e2925]:
+      - button "이전페이지" [disabled] [ref=f1e2926]
+      - generic "페이지 탐색" [ref=f1e2928]:
+        - link "1페이지" [ref=f1e2929] [cursor=pointer]:
+          - /url: "?nso=&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_pge&ssc=tab.m.all"
+          - text: "1"
+        - link "2페이지" [ref=f1e2930] [cursor=pointer]:
+          - /url: "?nso=&page=2&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_pge&ssc=tab.m_ur.all&start=1"
+          - text: "2"
+        - link "3페이지" [ref=f1e2931] [cursor=pointer]:
+          - /url: "?nso=&page=3&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_pge&ssc=tab.m_ur.all&start=21"
+          - text: "3"
+        - link "4페이지" [ref=f1e2932] [cursor=pointer]:
+          - /url: "?nso=&page=4&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_pge&ssc=tab.m_ur.all&start=41"
+          - text: "4"
+        - link "5페이지" [ref=f1e2933] [cursor=pointer]:
+          - /url: "?nso=&page=5&qdt=0&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&sm=mtb_pge&ssc=tab.m_ur.all&start=61"
+          - text: "5"
+      - button "다음페이지" [ref=f1e2934]
+  - contentinfo [ref=f1e2936]:
+    - generic [ref=f1e2937]:
+      - generic [ref=f1e2938]:
+        - generic [ref=f1e2939]:
+          - button "가 폰트작게보기" [ref=f1e2941] [cursor=pointer]:
+            - text: 가
+            - generic [ref=f1e2942]: 폰트작게보기
+          - button "가 폰트크게보기" [ref=f1e2944] [cursor=pointer]:
+            - text: 가
+            - generic [ref=f1e2945]: 폰트크게보기
+        - generic [ref=f1e2946]:
+          - button "공유하기" [ref=f1e2948] [cursor=pointer]
+          - button "맨위로" [ref=f1e2951] [cursor=pointer]
+      - generic [ref=f1e2954]:
+        - link "로그인" [ref=f1e2956] [cursor=pointer]:
+          - /url: https://nid.naver.com/nidlogin.login?svctype=262144&url=https%3A%2F%2Fm.search.naver.com%2Fsearch.naver%3Fwhere%3Dm%26sm%3Dmtp_hty%26query%3D%25EB%258C%2580%25EC%25A0%2584%2B%25EC%2598%25A5%25EC%2583%2581%25EC%258A%25A4%25ED%258B%25B8%25EB%25B0%25A9%25EC%2588%2598
+        - link "전체서비스" [ref=f1e2958] [cursor=pointer]:
+          - /url: https://m.naver.com/services.html?f=svc.search
+        - link "PC버전" [ref=f1e2960] [cursor=pointer]:
+          - /url: https://search.naver.com/search.naver?where=nexearch&sm=mtb_pcv&query=%EB%8C%80%EC%A0%84+%EC%98%A5%EC%83%81%EC%8A%A4%ED%8B%B8%EB%B0%A9%EC%88%98&ssc=tab.nx.all
+      - generic [ref=f1e2961]:
+        - generic [ref=f1e2962]:
+          - link "이용약관" [ref=f1e2964] [cursor=pointer]:
+            - /url: https://policy.naver.com/policy-mobile/term.html
+          - link "개인정보처리방침" [ref=f1e2966] [cursor=pointer]:
+            - /url: https://policy.naver.com/policy-mobile/privacy.html
+          - link "검색 고객센터" [ref=f1e2968] [cursor=pointer]:
+            - /url: https://help.naver.com/alias/search/integration/main.naver
+        - link "NAVER" [ref=f1e2969] [cursor=pointer]:
+          - /url: https://www.navercorp.com/

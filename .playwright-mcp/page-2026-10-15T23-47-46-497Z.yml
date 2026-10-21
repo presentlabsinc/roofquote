@@ -1,0 +1,308 @@
+- generic [active] [ref=f163e1]:
+  - generic:
+    - link "본문 바로가기":
+      - /url: "#ct"
+  - generic [ref=f163e2]:
+    - generic [ref=f163e3]:
+      - heading [level=1] [ref=f163e4]:
+        - link "블로그" [ref=f163e5] [cursor=pointer]:
+          - /url: /Recommendation.naver
+      - heading [level=2] [ref=f163e7]:
+        - generic [ref=f163e8]:
+          - link "카테고리 이동" [ref=f163e10] [cursor=pointer]:
+            - /url: "#"
+          - link "(주)유반장스틸방수" [ref=f163e13] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=u-banjang
+    - generic [ref=f163e15]:
+      - link "검색" [ref=f163e16] [cursor=pointer]:
+        - /url: /PostSearchList.naver?blogId=u-banjang
+      - button "MY메뉴 열기" [ref=f163e18] [cursor=pointer]
+  - main [ref=f163e21]:
+    - generic [ref=f163e24]:
+      - generic [ref=f163e27]:
+        - link "지붕방수" [ref=f163e29] [cursor=pointer]:
+          - /url: /PostList.naver?blogId=u-banjang&categoryNo=11&logCode=0&categoryName=%EC%A7%80%EB%B6%95%EB%B0%A9%EC%88%98#postlist_block
+        - paragraph [ref=f163e31]:
+          - generic [ref=f163e32]: 대전 지붕공사 비용 한눈에 보기｜평당·㎡당 스틸방수 단가 및 시공 가이드
+        - generic [ref=f163e33]:
+          - link [ref=f163e34] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=u-banjang
+            - img "프로필" [ref=f163e36]
+          - generic [ref=f163e37]:
+            - link [ref=f163e39] [cursor=pointer]:
+              - /url: /PostList.naver?blogId=u-banjang
+              - strong [ref=f163e40]: 주식회사 유반장스틸
+            - paragraph [ref=f163e41]: 2025. 10. 26. 6:40
+        - generic [ref=f163e42]:
+          - link "이웃추가" [ref=f163e43] [cursor=pointer]:
+            - /url: "#"
+          - button "본문 기타 기능" [ref=f163e46] [cursor=pointer]
+      - generic [ref=f163e48]:
+        - paragraph [ref=f163e53]
+        - generic [ref=f163e56]:
+          - link [ref=f163e58] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f163e60]: 대전 지붕공사 완료 후 전경 — 포스코 정품 강판으로 반영구적 방수층 완성
+        - separator [ref=f163e65]
+        - generic [ref=f163e69]:
+          - paragraph [ref=f163e70]:
+            - generic [ref=f163e71]: 🏗️ 대전 지붕공사 비용과 스틸방수 단가 총정리
+          - paragraph [ref=f163e72]:
+            - generic [ref=f163e73]: 합법 시공·국가기술자 책임시공｜㈜유반장스틸방수
+        - paragraph [ref=f163e79]:
+          - generic [ref=f163e80]: 드론 영상으로 공사 전·후를 비교, 투명한 품질 관리 시스템 운영
+        - separator [ref=f163e85]
+        - generic [ref=f163e89]:
+          - paragraph [ref=f163e90]:
+            - generic [ref=f163e91]: 📌 왜 대전에서는 지붕공사가 중요할까?
+          - paragraph [ref=f163e92]:
+            - text: 대전 지역은
+            - generic [ref=f163e93]: 한여름 폭우·한겨울 한파
+            - text: 가 반복되는 기후 특성상,
+          - paragraph [ref=f163e94]: 지붕의 누수·결로·단열 문제로 인한 민원이 꾸준히 발생합니다.
+          - paragraph [ref=f163e95]: 특히 오래된 상가나 주택, 공장형 건물은 방수층 노후로 인해
+          - paragraph [ref=f163e96]:
+            - text: 비가 오면
+            - generic [ref=f163e97]: 천정 누수
+            - text: 가 생기거나, 결로로 내부 곰팡이가 생기기 쉽습니다.
+          - paragraph [ref=f163e98]:
+            - text: 이런 문제를
+            - generic [ref=f163e99]: 근본적으로 차단하는 공법
+            - text: 이 바로
+          - paragraph [ref=f163e100]: "**‘스틸방수 기반 지붕공사’**입니다."
+          - paragraph [ref=f163e101]: 금속 강판 구조를 적용해 수분 침투를 원천 차단하고,
+          - paragraph [ref=f163e102]: 내식성 높은 포스코 정품 자재로 반영구적 내구성을 확보합니다.
+        - generic [ref=f163e105]:
+          - link [ref=f163e107] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f163e109]: 대전 지붕공사 완료 후 전경 — 포스코 정품 강판으로 반영구적 방수층 완성
+        - separator [ref=f163e114]
+        - generic [ref=f163e118]:
+          - paragraph [ref=f163e119]:
+            - generic [ref=f163e120]: 🧱 ㈜유반장스틸방수 대전 본사의 합법 시공체계
+          - paragraph [ref=f163e121]:
+            - text: ㈜유반장스틸방수는
+            - generic [ref=f163e122]: 대전광역시 서구 둔산북로 121 본사
+            - text: 를 중심으로
+          - paragraph [ref=f163e123]:
+            - text: 전국 주요 도시에 지점을 운영하며,
+            - generic [ref=f163e124]: 정식 등록된 건설업 면허 보유업체
+            - text: 입니다.
+          - list [ref=f163e125]:
+            - listitem [ref=f163e126]:
+              - paragraph [ref=f163e127]:
+                - generic [ref=f163e128]: "보유 면허(2025.07.08 등록):"
+            - listitem [ref=f163e129]:
+              - paragraph [ref=f163e130]: ① 옥상방수공사업 (도장·습식·방수공사업)
+            - listitem [ref=f163e131]:
+              - paragraph [ref=f163e132]: ② 지붕판금공사업 (금속구조물·지붕·조립공사업)
+            - listitem [ref=f163e133]:
+              - paragraph [ref=f163e134]:
+                - generic [ref=f163e135]: "등록기관:"
+                - text: 대전광역시 서구청
+            - listitem [ref=f163e136]:
+              - paragraph [ref=f163e137]:
+                - generic [ref=f163e138]: "대표자:"
+                - text: 이경민
+            - listitem [ref=f163e139]:
+              - paragraph [ref=f163e140]:
+                - generic [ref=f163e141]: "특허등록번호:"
+                - text: 제10-2447732호
+            - listitem [ref=f163e142]:
+              - paragraph [ref=f163e143]: (스틸 방수 시공방법 및 그 방법으로 시공된 방수시스템)
+            - listitem [ref=f163e144]:
+              - paragraph [ref=f163e145]:
+                - generic [ref=f163e146]: "시공책임:"
+                - text: 건축기사 책임시공 · 방수산업기사 100% 책임보증
+        - generic [ref=f163e150]:
+          - link [ref=f163e152] [cursor=pointer]:
+            - /url: "#"
+          - link [ref=f163e154] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=f163e157]:
+          - link [ref=f163e159] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f163e161]: 패널스틸방수 외벽 일체형 시공 후 — 균열 없이 매끄러운 마감
+        - separator [ref=f163e166]
+        - generic [ref=f163e170]:
+          - paragraph [ref=f163e171]:
+            - generic [ref=f163e172]: 🔩 스틸방수 기반 지붕공사란?
+          - paragraph [ref=f163e173]:
+            - text: 기존의 우레탄·아스팔트 방수는 시간이 지나면
+            - generic [ref=f163e174]: 갈라짐과 누수
+            - text: 가 발생하지만,
+          - paragraph [ref=f163e175]:
+            - text: 스틸방수는 포스코 정품
+            - generic [ref=f163e176]: GI-X 강판
+            - text: 과
+            - generic [ref=f163e177]: PosMAC 1.5(버전)
+            - text: 강판을 활용하여
+          - paragraph [ref=f163e178]: 지붕면 자체를 ‘금속 방수층’으로 전환하는 기술입니다.
+        - table [ref=f163e183]:
+          - rowgroup [ref=f163e184]:
+            - row [ref=f163e185]:
+              - cell "구분" [ref=f163e186]:
+                - paragraph [ref=f163e188]:
+                  - generic [ref=f163e189]: 구분
+              - cell "적용 자재" [ref=f163e190]:
+                - paragraph [ref=f163e192]:
+                  - generic [ref=f163e193]: 적용 자재
+              - cell "주요 특징" [ref=f163e194]:
+                - paragraph [ref=f163e196]:
+                  - generic [ref=f163e197]: 주요 특징
+            - row [ref=f163e198]:
+              - cell "리얼스틸방수(GI-X)" [ref=f163e199]:
+                - paragraph [ref=f163e201]:
+                  - generic [ref=f163e202]: 리얼스틸방수(GI-X)
+              - cell [ref=f163e203]:
+                - paragraph [ref=f163e205]: 포스코 GI-X 용융아연도금강판
+              - cell [ref=f163e206]:
+                - paragraph [ref=f163e208]: 내식성 우수, 바닥·슬라브 일체형
+            - row [ref=f163e209]:
+              - cell "패널스틸방수(PosMAC 1.5)" [ref=f163e210]:
+                - paragraph [ref=f163e212]:
+                  - generic [ref=f163e213]: 패널스틸방수(PosMAC 1.5)
+              - cell [ref=f163e214]:
+                - paragraph [ref=f163e216]: 포스코 PosMAC 1.5 강판
+              - cell [ref=f163e217]:
+                - paragraph [ref=f163e219]: 내식성 5~10배, 단열·결로방지 탁월
+        - generic [ref=f163e223]:
+          - paragraph [ref=f163e224]:
+            - text: 두 공법 모두
+            - generic [ref=f163e225]: 국가공인 자재검증서 및 시공 특허 기반 시공 방식
+            - text: 으로,
+          - paragraph [ref=f163e226]: 지붕 누수·결로·열손실 문제를 동시에 해결할 수 있습니다.
+        - generic [ref=f163e229]:
+          - generic [ref=f163e230]:
+            - link [ref=f163e232] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f163e234] [cursor=pointer]:
+              - /url: "#"
+          - paragraph [ref=f163e236]: POSCO 정품 GI-X / PosMAC 1.5 강판 적용, 공식 인증자재 사용
+        - separator [ref=f163e241]
+        - paragraph [ref=f163e246]:
+          - generic [ref=f163e247]: ⚙️ 2025년 10월 기준 지붕공사 및 스틸방수 비용 단가표
+        - table [ref=f163e252]:
+          - rowgroup [ref=f163e253]:
+            - row [ref=f163e254]:
+              - cell "강판 두께" [ref=f163e255]:
+                - paragraph [ref=f163e257]:
+                  - generic [ref=f163e258]: 강판 두께
+              - cell "적용 자재" [ref=f163e259]:
+                - paragraph [ref=f163e261]:
+                  - generic [ref=f163e262]: 적용 자재
+              - cell "평당 시공 단가(3.3㎡)" [ref=f163e263]:
+                - paragraph [ref=f163e265]:
+                  - generic [ref=f163e266]: 평당 시공 단가(3.3㎡)
+              - cell "㎡당 시공 단가(1×1m)" [ref=f163e267]:
+                - paragraph [ref=f163e269]:
+                  - generic [ref=f163e270]: ㎡당 시공 단가(1×1m)
+              - cell "적용 예시" [ref=f163e271]:
+                - paragraph [ref=f163e273]:
+                  - generic [ref=f163e274]: 적용 예시
+            - row [ref=f163e275]:
+              - cell [ref=f163e276]:
+                - paragraph [ref=f163e278]: 0.45T
+              - cell [ref=f163e279]:
+                - paragraph [ref=f163e281]: POSCO GI-X
+              - cell [ref=f163e282]:
+                - paragraph [ref=f163e284]: ₩190,000 ~ ₩200,000
+              - cell [ref=f163e285]:
+                - paragraph [ref=f163e287]: ₩57,000 ~ ₩61,000
+              - cell [ref=f163e288]:
+                - paragraph [ref=f163e290]: 소형 주택, 접근 용이 옥상
+            - row [ref=f163e291]:
+              - cell [ref=f163e292]:
+                - paragraph [ref=f163e294]: 0.50T
+              - cell [ref=f163e295]:
+                - paragraph [ref=f163e297]: GI-X / PosMAC
+              - cell [ref=f163e298]:
+                - paragraph [ref=f163e300]: ₩220,000 ~ ₩230,000
+              - cell [ref=f163e301]:
+                - paragraph [ref=f163e303]: ₩67,000 ~ ₩70,000
+              - cell [ref=f163e304]:
+                - paragraph [ref=f163e306]: 중형 빌라, 상가형 지붕
+            - row [ref=f163e307]:
+              - cell [ref=f163e308]:
+                - paragraph [ref=f163e310]: 0.60T
+              - cell [ref=f163e311]:
+                - paragraph [ref=f163e313]: PosMAC 1.5(버전)
+              - cell [ref=f163e314]:
+                - paragraph [ref=f163e316]: ₩240,000 ~ ₩250,000
+              - cell [ref=f163e317]:
+                - paragraph [ref=f163e319]: ₩73,000 ~ ₩76,000
+              - cell [ref=f163e320]:
+                - paragraph [ref=f163e322]: 공장, 종교시설, 외벽형 구조
+        - generic [ref=f163e326]:
+          - paragraph [ref=f163e327]:
+            - text: 📅
+            - generic [ref=f163e328]: "단가 기준일:"
+            - text: 2025년 10월 (부가세 별도)
+          - paragraph [ref=f163e329]: ※ 현장 구조·난이도·폐기물 처리 포함 여부에 따라 ±10~15% 변동 가능
+        - generic [ref=f163e332]:
+          - link [ref=f163e334] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f163e336]: 무허가 공사 걱정 없는 합법적 시공 — 대전 서구청 등록 전문건설업체
+        - separator [ref=f163e341]
+        - generic [ref=f163e345]:
+          - paragraph [ref=f163e346]:
+            - generic [ref=f163e347]: 🧰 대전 지붕공사 시 체크포인트 5가지
+          - paragraph [ref=f163e348]:
+            - text: 1️⃣
+            - generic [ref=f163e349]: 정식 건설업 면허 보유 여부 확인
+          - paragraph [ref=f163e350]: → 옥상방수공사업, 지붕판금공사업 등록 여부 확인 필수
+          - paragraph [ref=f163e351]:
+            - text: 2️⃣
+            - generic [ref=f163e352]: 국가기술자 직접 시공 여부
+          - paragraph [ref=f163e353]: → 건축기사·방수산업기사 보유 인력의 현장 참여 여부
+          - paragraph [ref=f163e354]:
+            - text: 3️⃣
+            - generic [ref=f163e355]: 포스코 정품 자재 사용 여부
+          - paragraph [ref=f163e356]: → GI-X / PosMAC 1.5 인증서 보유 업체인지 확인
+          - paragraph [ref=f163e357]:
+            - text: 4️⃣
+            - generic [ref=f163e358]: 하자보증 조건 명시 여부
+          - paragraph [ref=f163e359]: → 무상 3년 + 연장 2년 이상 보증인지 확인
+          - paragraph [ref=f163e360]:
+            - text: 5️⃣
+            - generic [ref=f163e361]: 시공 전·후 관리 체계 확인
+          - paragraph [ref=f163e362]: → 드론 촬영 및 품질관리 보고서 제공 여부
+        - generic [ref=f163e365]:
+          - generic [ref=f163e366]:
+            - link [ref=f163e368] [cursor=pointer]:
+              - /url: "#"
+            - link [ref=f163e370] [cursor=pointer]:
+              - /url: "#"
+          - paragraph [ref=f163e373]: ㈜유반장스틸방수 대전 본사 시공 — 건축기사 책임시공 & 방수산업기사 100% 보증
+        - separator [ref=f163e378]
+        - generic [ref=f163e382]:
+          - paragraph [ref=f163e383]:
+            - generic [ref=f163e384]: 📞 대전 지붕공사 상담 안내
+          - paragraph [ref=f163e385]:
+            - text: 📍
+            - generic [ref=f163e386]: ㈜유반장스틸방수 대전 본사
+          - paragraph [ref=f163e387]: 대전광역시 서구 둔산북로 121
+          - paragraph [ref=f163e388]:
+            - text: "☎ 대표번호 :"
+            - generic [ref=f163e389]: 1588-5922
+          - paragraph [ref=f163e390]:
+            - text: "🌐 공식 홈페이지 :"
+            - link "www.u-banjang.com" [ref=f163e392] [cursor=pointer]:
+              - /url: http://www.u-banjang.com/
+        - generic [ref=f163e395]:
+          - link [ref=f163e397] [cursor=pointer]:
+            - /url: "#"
+          - paragraph [ref=f163e399]: 건축기사 책임시공 & 방수산업기사 100% 보증
+        - separator [ref=f163e404]
+        - generic [ref=f163e408]:
+          - paragraph [ref=f163e409]:
+            - generic [ref=f163e410]: 🏷️ 해시태그
+          - paragraph [ref=f163e411]:
+            - generic [ref=f163e412]: "#대전지붕공사 #옥상스틸방수 #스틸방수비용 #지붕공사단가"
+          - paragraph [ref=f163e413]:
+            - generic [ref=f163e414]: "#리얼스틸방수 #패널스틸방수 #포스코강판 #PosMAC #GIX"
+          - paragraph [ref=f163e415]:
+            - generic [ref=f163e416]: "#옥상방수 #지붕보수 #옥상리모델링 #대전방수업체 #합법시공"
+          - paragraph [ref=f163e417]:
+            - generic [ref=f163e418]: "#건축기사책임시공 #방수산업기사시공 #유반장스틸방수"
+          - paragraph [ref=f163e419]

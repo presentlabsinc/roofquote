@@ -1,0 +1,287 @@
+- generic [active] [ref=f19e1]:
+  - generic:  
+  - text: 
+  - generic:
+    - list [ref=f19e3]:  
+    - button "닫기" [ref=f19e4] [cursor=pointer]:
+      - generic [aria-hidden] [ref=f19e5]: 
+  - banner [ref=f19e7]:
+    - generic [ref=f19e8]:
+      - generic: 
+      - generic [ref=f19e9]:
+        - text: 
+        - generic [ref=f19e10]:
+          - generic [ref=f19e22]:
+            - paragraph [ref=f19e23]:
+              - strong [ref=f19e25]: 조달청· 나라장터
+              - strong [ref=f19e27]
+              - strong [ref=f19e29]: 등록업체!
+              - strong [ref=f19e30]
+            - paragraph [ref=f19e31]:
+              - strong [ref=f19e32]:
+                - generic [ref=f19e33]: 특허기술
+              - strong [ref=f19e35]: 보유!
+              - strong [ref=f19e37]: 여성기업
+              - strong [ref=f19e39]: 인증!
+            - paragraph [ref=f19e40]:
+              - strong [ref=f19e42]: 관공서 · 공공기관
+              - generic [ref=f19e43]:
+                - strong [ref=f19e44]
+                - strong [ref=f19e45]: 수의계약
+                - strong [ref=f19e46]: 가능!
+          - generic [ref=f19e51]:
+            - link "옥상스틸방수·지붕공사|㈜유반장스틸방수 옥상스틸방수·지붕공사|㈜유반장스틸방수 옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f19e58] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f19e59]: 옥상스틸방수·지붕공사|㈜유반장스틸방수
+              - img "옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f19e60]
+              - img "옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f19e61]
+            - link "" [ref=f19e67] [cursor=pointer]:
+              - /url: javascript:;
+  - main [ref=f19e72]:
+    - generic [ref=f19e73]:
+      - paragraph [ref=f19e81]:
+        - text: 📣
+        - strong [ref=f19e82]:
+          - text: 유반장스틸방수의 다양한 시공사례를 살펴보시고 문의주세요 친절하게 상담해 드립니다
+          - generic [ref=f19e83]: (전국시공)
+      - separator [ref=f19e90]
+      - generic [ref=f19e95]:
+        - generic [ref=f19e96]:
+          - generic [ref=f19e97]:
+            - paragraph [ref=f19e102] [cursor=pointer]
+            - paragraph [ref=f19e107] [cursor=pointer]
+          - generic [ref=f19e108]:
+            - paragraph [ref=f19e113] [cursor=pointer]:
+              - text: 스틸방수
+              - generic [ref=f19e114]: 영주 스틸방수 지붕공사
+            - paragraph [ref=f19e119] [cursor=pointer]
+        - link "더보기" [ref=f19e121] [cursor=pointer]:
+          - /url: javascript:;
+  - main [ref=f19e125]:
+    - generic [ref=f19e126]:
+      - separator [ref=f19e133]
+      - generic [ref=f19e140]:
+        - paragraph [ref=f19e141]:
+          - strong [ref=f19e143]: 최고의 기술력과 전국적시공인프라 - 시공사례 살펴보기
+        - paragraph [ref=f19e144]
+        - paragraph [ref=f19e145]:
+          - strong [ref=f19e147]: 전국을 무대로 책임시공과 체계적인 관리로 최상의 방수솔루션을 제공하는 유반장스틸방수,
+        - paragraph [ref=f19e148]:
+          - strong [ref=f19e150]: 고객만족을 위한 무한한 책임정신은 저희가 고객님께 드리는 최고의 약속입니다.
+        - paragraph [ref=f19e151]
+      - generic [ref=f19e161]:
+        - heading "스페니쉬기와 POSCO 칼라강판 지붕공사 [ 차열강판/ 내오염강판/ 불연강판 ]" [level=1] [ref=f19e163]
+        - generic [ref=f19e167]:
+          - generic [ref=f19e168]: 관리자
+          - link "지붕공사" [ref=f19e170] [cursor=pointer]:
+            - /url: /roofing/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9
+        - generic [ref=f19e172]:
+          - paragraph [ref=f19e173]:
+            - img "bd98e71e53b48.png" [ref=f19e174] [cursor=pointer]
+          - paragraph [ref=f19e175]
+          - paragraph [ref=f19e176]: 이번에 소개해 드릴 것은 스페니쉬 기와형 칼라강판입니다
+          - paragraph [ref=f19e177]: 지중해 지붕 스타일이라고도 불리는 스페니쉬 기와지붕은 은은한 화사함과 이국적인 분위기를 연출합니다
+          - paragraph [ref=f19e178]: 북유럽풍 지붕이라고 잘못 알고 있는 분들도 있는데요 스페인이나 그리스 등 따뜻한 지중해 지방에서
+          - paragraph [ref=f19e179]: 사용되는 지붕 스타일로 미국에서도 캘리포니아 같은 더운 기후의 조건에 맞는 지붕 재입니다
+          - paragraph [ref=f19e180]
+          - paragraph [ref=f19e181]:
+            - img "e789523ec0494.jpg" [ref=f19e182] [cursor=pointer]
+          - paragraph [ref=f19e183]
+          - paragraph [ref=f19e184]: 오래되고 많이 노화된 건물을 새롭게 재 단장하길 원하시는 의뢰인께서는 고급스러운 느낌의 기페니쉬 기와형 칼라강판으로
+          - paragraph [ref=f19e185]: 오래되고 낡은 느낌의 건물에서 지중해 지붕 스타일의 스페니쉬 기와형으로 공사가 완료되고
+          - paragraph [ref=f19e186]: 외벽도 밝은 외장재로 마무리 된다면 매우 아름다운 건물로 달라질 것입니다
+          - paragraph [ref=f19e187]
+          - paragraph [ref=f19e188]:
+            - img "08f0138550e83.jpg" [ref=f19e189] [cursor=pointer]
+          - paragraph [ref=f19e190]
+          - paragraph [ref=f19e191]: 스페니쉬기와 칼라강판 지붕공사 [ 차열강판/ 내오염강판/ 불연강판 ] 시공영상
+          - paragraph [ref=f19e192]
+          - paragraph [ref=f19e193]:
+            - iframe [ref=f19e195]:
+              - generic [ref=f20e1]:
+                - generic "YouTube 동영상 플레이어" [ref=f20e3]
+                - generic [ref=f20e5]:
+                  - generic:
+                    - generic:
+                      - generic [ref=f20e6] [cursor=pointer]
+                      - button "동영상 재생" [ref=f20e10] [cursor=pointer]
+                      - button "재생 컨트롤 숨기기" [ref=f20e12] [cursor=pointer]
+                      - generic [ref=f20e14]:
+                        - generic [ref=f20e21]:
+                          - generic [ref=f20e22]:
+                            - link "스페니쉬기와 POSCO 칼라강판 지붕공사 [ 차열강판/ 내오염강판/ 불연강판 ]" [ref=f20e23] [cursor=pointer]:
+                              - /url: https://www.youtube.com/watch?v=GAUT_QAlIrk
+                            - link "주식회사 유반장스틸방수" [ref=f20e24] [cursor=pointer]:
+                              - /url: /channel/UCu7cGc-rxNFceMjbRHqcO2Q
+                          - generic [ref=f20e26]:
+                            - button [ref=f20e27] [cursor=pointer]
+                            - generic [ref=f20e29]:
+                              - generic: 주식회사 유반장스틸방수
+                              - generic: 구독자 14명
+                        - generic [ref=f20e30]:
+                          - button "공유" [ref=f20e33] [cursor=pointer]
+                          - link "YouTube에서 보기" [ref=f20e44] [cursor=pointer]:
+                            - /url: https://www.youtube.com/watch?v=GAUT_QAlIrk
+                            - generic [ref=f20e45]: "다음에서 보기:"
+            - img "030bf501f6f5c.jpg" [ref=f19e196] [cursor=pointer]
+          - paragraph [ref=f19e197]
+          - paragraph [ref=f19e198]: 스페니쉬기와형 POSCO 칼라강판 지붕 어떠신가요? 테릴기와나 토기와 등에서 느낄 수 있는
+          - paragraph [ref=f19e199]: 중후함에는 못 미칠지 모르겠지만 비교적 저렴한 가격과 적은 시간으로
+          - paragraph [ref=f19e200]: 이런 느낌을 연출할 수 있다는 것만으로도 상당한 매력이 아닐 수 없습니다.
+          - paragraph [ref=f19e201]:
+            - img "53b23b91bdef4.jpg" [ref=f19e202] [cursor=pointer]
+          - paragraph [ref=f19e203]
+          - paragraph [ref=f19e204]
+          - paragraph [ref=f19e205]: 칼라강판은 고객님들이 원하는 아름다운 색상,질감을 다양하게 구현할수 있는 장점을 가지고 있으며
+          - paragraph [ref=f19e206]: 고객님들이 원하는 맞춤형 제품으로 시공할수 있습니다. 또한 POSCO 칼라강판은 차열/내오염/불연칼라강판등이 출시되어
+          - paragraph [ref=f19e207]: 이는 고객님들의 이익과 안전을 먼저 생각한다는 것입니다.
+          - paragraph [ref=f19e208]:
+            - img "1e2d6bf8dac2d.jpg" [ref=f19e209] [cursor=pointer]
+          - paragraph [ref=f19e210]
+          - paragraph [ref=f19e211]:
+            - strong [ref=f19e214]:
+              - emphasis [ref=f19e215]: 차열강판이란?
+          - paragraph [ref=f19e216]
+          - paragraph [ref=f19e217]: 태양의 적외선을 반사하여 열을 차단하며
+          - paragraph [ref=f19e218]: 건물의 내부 온도상승을 방지하는 기능입니다.
+          - paragraph [ref=f19e219]: 차열성으로 냉방비 절감 효과가 있습니다.
+          - paragraph [ref=f19e220]
+          - table [ref=f19e221]:
+            - rowgroup [ref=f19e222]:
+              - row [ref=f19e223]:
+                - cell [ref=f19e224]:
+                  - img "9254ccd99bacb.jpg" [ref=f19e225] [cursor=pointer]
+                - cell [ref=f19e226]:
+                  - img "b35da20429744.jpg" [ref=f19e227] [cursor=pointer]
+          - paragraph [ref=f19e228]
+          - paragraph [ref=f19e229]
+          - paragraph [ref=f19e230]:
+            - emphasis [ref=f19e231]:
+              - strong [ref=f19e232]: 2022년 최신 스틸 방수 특허 획득!
+          - paragraph [ref=f19e233]:
+            - strong [ref=f19e234]:
+              - emphasis [ref=f19e235]:
+                - generic [ref=f19e236]: "특허번호: 제10-2447732 호"
+          - paragraph [ref=f19e237]:
+            - strong [ref=f19e238]:
+              - emphasis [ref=f19e239]: 국가공인자격 옥상 방수 용접 산업기사
+          - paragraph [ref=f19e240]:
+            - strong [ref=f19e241]:
+              - emphasis [ref=f19e242]: 100% 책임 보증
+          - paragraph [ref=f19e243]:
+            - img "527005155d462.png" [ref=f19e244] [cursor=pointer]
+          - strong [ref=f19e247]:
+            - emphasis [ref=f19e248]:
+              - generic [ref=f19e249]: 내오염강판
+          - paragraph [ref=f19e251]
+          - paragraph [ref=f19e252]: 표면에 친수성을 부여하여 오염 물질이
+          - paragraph [ref=f19e253]: 우천시 빗물에 의해 제거 되도록 하여 상시 깨끗한 표면
+          - paragraph [ref=f19e254]: 상태를 유지해주는 기능입니다.
+          - paragraph [ref=f19e255]: 매일 새집처럼 느끼실수 있습니다.
+          - paragraph [ref=f19e256]
+          - paragraph [ref=f19e257]:
+            - img "8ff964e5857f0.jpg" [ref=f19e258] [cursor=pointer]
+          - paragraph [ref=f19e259]
+          - paragraph [ref=f19e260]:
+            - strong [ref=f19e261]:
+              - emphasis [ref=f19e264]: 불연 칼라강판
+          - paragraph [ref=f19e265]
+          - paragraph [ref=f19e266]: 화재시 도막이 타지 않고 자체 소화되어 불길의 이동을
+          - paragraph [ref=f19e267]: 차단하여 화재로 인한 연기 발생을 방지
+          - paragraph [ref=f19e268]: 업계 최초 난연1급 고내열성 기능을 추가한 강판만으로 시공합니다.
+          - paragraph [ref=f19e269]
+          - paragraph [ref=f19e270]:
+            - img "212669e125b10.jpg" [ref=f19e271] [cursor=pointer]
+          - paragraph [ref=f19e272]
+          - paragraph [ref=f19e273]: 칼라강판은 내구성 내식성에 있어서 최적의 지붕재료 입니다.
+          - paragraph [ref=f19e274]: 또한 열처리 및 코팅 도색이 되어 반영구적 제품으로 인식되어 있으며
+          - paragraph [ref=f19e275]: 무게가 경량으로 개발되어 오래된 주택이나 경량골조 주택,목조주택에도 하중을
+          - paragraph [ref=f19e276]: 받지 않아 고객님이 원하는 형태로 시공이 가능합니다.
+          - paragraph [ref=f19e277]
+          - paragraph [ref=f19e278]:
+            - img "2b9f275332ee8.jpg" [ref=f19e279] [cursor=pointer]
+          - paragraph [ref=f19e280]
+          - paragraph [ref=f19e281]
+          - paragraph [ref=f19e282]: 목재 프레임 작업이 끝나면 그 위에 스페니쉬 기와형 칼라강판 시공을 하게 되는데요
+          - paragraph [ref=f19e283]: 공사 의뢰인의 집에 딱 맞게 공장에서 커스텀 제작되어 나오기 때문에 한 장 한 장 지붕을 다 씌우고
+          - paragraph [ref=f19e284]: 용마루와 처마 등 트림 작업이 끝나면 완벽한 모양의 지붕이 완성됩니다
+          - paragraph [ref=f19e285]:
+            - img "c7b83b0ebe73a.jpg" [ref=f19e286] [cursor=pointer]
+          - paragraph [ref=f19e287]
+          - paragraph [ref=f19e288]: 스페니쉬 기와형 칼라강판 시공이 진행될수록 집 전체의 분위기가 달라지고
+          - paragraph [ref=f19e289]: 이국적인 스테니쉬 기와형 칼라강판의 진가가나타납니다 스페니쉬 기와형 칼라강판 시공 후
+          - paragraph [ref=f19e290]: 전체적으로 시공이 완료되면 이런 모양이 나옵니다
+          - paragraph [ref=f19e291]:
+            - img "35c7218bb621c.jpg" [ref=f19e292] [cursor=pointer]
+          - paragraph [ref=f19e293]
+          - paragraph [ref=f19e294]
+          - paragraph [ref=f19e295]: 스페니쉬 기와라고 하면 보통 고급 주택 등에 시공하는 테릴기와나 토기와 등이 떠오르실 텐데요
+          - paragraph [ref=f19e296]: 색상이나 분위기는 비슷하지만 토기와가 아닌 칼라강판 지붕재로 어떤 환경적 요인에도 긴 수명을 자랑하는
+          - paragraph [ref=f19e297]: 스페니쉬 기와형 칼라강판은 가성비 좋은 자재 중 으뜸이라고 할 수 있습니다
+          - paragraph [ref=f19e298]
+          - paragraph [ref=f19e299]:
+            - img "fadf678862ef2.png" [ref=f19e300] [cursor=pointer]
+          - paragraph [ref=f19e301]
+          - paragraph [ref=f19e302]
+        - generic [ref=f19e303]:
+          - link "대전 지붕공사 제대로 하려면? 아스팔트슁글 재시공 대신 스틸칼라강판이 답입니다" [ref=f19e305] [cursor=pointer]:
+            - /url: /roofing/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=73133488&t=board
+            - generic [aria-hidden] [ref=f19e306]: 
+          - generic [ref=f19e308]:
+            - button "목록" [ref=f19e309] [cursor=pointer]
+            - button "글쓰기" [ref=f19e310] [cursor=pointer]
+  - text:    
+  - main [ref=f19e326]:
+    - separator [ref=f19e333]
+    - generic [ref=f19e334]:
+      - link "문의전화 바로걸기 1588-5922" [ref=f19e348] [cursor=pointer]:
+        - /url: tel:15885922
+        - generic [aria-hidden] [ref=f19e349]: 
+        - text: 문의전화 바로걸기 1588-5922
+      - generic [ref=f19e361]:
+        - separator [ref=f19e362]
+        - separator [ref=f19e363]
+      - link "유반장스틸방수소개" [ref=f19e377] [cursor=pointer]:
+        - /url: /Company-Overview
+        - generic [aria-hidden] [ref=f19e378]: 
+        - text: 유반장스틸방수소개
+    - generic [ref=f19e379]:
+      - link "스틸방수의 장점" [ref=f19e393] [cursor=pointer]:
+        - /url: /20
+        - generic [aria-hidden] [ref=f19e394]: 
+        - text: 스틸방수의 장점
+      - link "스틸방수 시공과정" [ref=f19e408] [cursor=pointer]:
+        - /url: /21
+        - generic [aria-hidden] [ref=f19e409]: 
+        - text: 스틸방수 시공과정
+      - link "외벽 스틸방수" [ref=f19e423] [cursor=pointer]:
+        - /url: /22
+        - generic [aria-hidden] [ref=f19e424]: 
+        - text: 외벽 스틸방수
+      - link "전국시공사례" [ref=f19e438] [cursor=pointer]:
+        - /url: /Careers
+        - generic [aria-hidden] [ref=f19e439]: 
+        - text: 전국시공사례
+      - link "고객지원" [ref=f19e453] [cursor=pointer]:
+        - /url: /Contact
+        - generic [aria-hidden] [ref=f19e454]: 
+        - text: 고객지원
+      - separator [ref=f19e467]
+      - generic [ref=f19e480]:
+        - paragraph [ref=f19e481]: (주)유반장스틸방수
+        - paragraph [ref=f19e482]: 법인등록번호 160111-0071556
+        - paragraph [ref=f19e483]: "대표자 : 이경민 TEL : 1588-5922"
+        - paragraph [ref=f19e484]: "경기 남양주점: 경기도 구리시 갈매중앙로 201-3"
+        - paragraph [ref=f19e485]: "경기지사 : 경기도 평택시 송탄2로 25번길 40"
+        - paragraph [ref=f19e486]: "대전본사 : 대전광역시 서구 둔산북로121아너스빌"
+        - paragraph [ref=f19e487]: "경북지사 : 경북 상주시 동수4길 127"
+        - paragraph [ref=f19e488]: "광양 남부권지사 : 전남 광양시 광양읍 서평4길 45"
+      - generic [ref=f19e501]:
+        - paragraph [ref=f19e502]: "@Copyright 2022. All Right Reserved. Hosted by"
+        - paragraph [ref=f19e503]:
+          - strong [ref=f19e505]: u-banjang steel
+  - contentinfo [ref=f19e512]
+  - iframe [ref=f19e518]
+  - link [ref=f19e519] [cursor=pointer]:
+    - /url: "javascript:Kakao.Channel.chat({channelPublicId: '_Hxixlcxj'});"
+    - img "카카오톡 채널 채팅하기 버튼" [ref=f19e520]

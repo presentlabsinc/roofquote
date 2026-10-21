@@ -1,0 +1,107 @@
+- generic [ref=f134e2]:
+  - banner [ref=f134e3]:
+    - generic [ref=f134e4]:
+      - heading [level=1] [ref=f134e5]:
+        - link [ref=f134e6] [cursor=pointer]:
+          - /url: /kr/main.do
+      - button "전체메뉴 열기" [ref=f134e8] [cursor=pointer]
+      - link "KOR" [ref=f134e15] [cursor=pointer]:
+        - /url: javascript:void(0);
+  - generic [ref=f134e16]:
+    - generic [ref=f134e18]:
+      - list [ref=f134e21]:
+        - listitem [ref=f134e22]: Home
+        - listitem [ref=f134e23]: 사업분야
+        - listitem [ref=f134e24]: 도금강판
+      - generic [ref=f134e25]: 도금강판
+    - main [ref=f134e30]:
+      - generic [ref=f134e32]:
+        - generic [ref=f134e33]:
+          - paragraph [ref=f134e35]: PosMAC1.5
+          - list [ref=f134e37]:
+            - listitem [ref=f134e38]:
+              - generic [ref=f134e39]: 특징
+              - generic [ref=f134e40]: PosMAC1.5는 용융 아연-알루미늄-마그네슘 합금도금강판으로서 ZAM, SuperDyma 제품 대비 Mg의 함량이 낮아 가공성이 우수한 Zn-1.5%Mg-1.5%Al 3원계 고내식 합금 도금 강판입니다.
+            - listitem [ref=f134e41]:
+              - generic [ref=f134e42]: 용도
+              - generic [ref=f134e43]:
+                - definition [ref=f134e44]: "• 건재용: 스틸하우스, 물받이용, 안전발판, 태양광 지지대, 토류벽, 농원용 파이프 등"
+                - definition [ref=f134e45]: "• 자동차 부품: 연료필터 하우징, Motor Case, ACU Cover Unit 등"
+                - definition [ref=f134e46]: • 컬러 원판용 등
+          - generic [ref=f134e47]:
+            - link "브로슈어" [ref=f134e48] [cursor=pointer]:
+              - /url: /common/file/download.do?upload_file_name=20250327_ef7508fc5beb54665d136db970bdeebc.pdf&org_file_name=250226_도금강판 카탈로그.pdf
+            - link "인증현황" [ref=f134e49] [cursor=pointer]:
+              - /url: /kr/cs/certificate_coated.do
+            - link "문의하기" [ref=f134e50] [cursor=pointer]:
+              - /url: /kr/cs/contacts.do?type=coated
+        - generic [ref=f134e53]:
+          - generic [ref=f134e54]:
+            - group "1 / 3" [ref=f134e55]
+            - group "2 / 3"
+            - group "3 / 3"
+          - generic:
+            - generic:
+              - button "Go to slide 1" [ref=f134e57] [cursor=pointer]
+              - button "Go to slide 2" [ref=f134e58] [cursor=pointer]
+              - button "Go to slide 3" [ref=f134e59] [cursor=pointer]
+            - button "Next slide" [ref=f134e60] [cursor=pointer]: Next
+      - generic [ref=f134e62]:
+        - generic [ref=f134e63]:
+          - generic [ref=f134e64]: 제품 제조 가능범위
+          - generic [ref=f134e65]:
+            - text: 제조 가능 범위
+            - generic [ref=f134e66]: 제조가능 범위 외 size는 별도 수주 검토 필요 (문의)
+        - list [ref=f134e67]:
+          - listitem [ref=f134e68]
+          - listitem [ref=f134e70]
+          - listitem [ref=f134e72]
+          - listitem [ref=f134e74]
+          - listitem [ref=f134e76]
+    - generic [ref=f134e78]:
+      - list [ref=f134e79]:
+        - listitem [ref=f134e80]:
+          - link "기술인증서" [ref=f134e81] [cursor=pointer]:
+            - /url: /kr/cs/certificate_coated.do
+        - listitem [ref=f134e83]:
+          - link "e-브로슈어" [ref=f134e84] [cursor=pointer]:
+            - /url: /kr/media/promotion_coated.do
+        - listitem [ref=f134e86]:
+          - link "담당자 연락처" [ref=f134e87] [cursor=pointer]:
+            - /url: /kr/cs/contacts.do?type=coated
+        - listitem [ref=f134e89]:
+          - link "샘플북 신청" [ref=f134e90] [cursor=pointer]:
+            - /url: /kr/media/brochure_apply.do
+        - listitem [ref=f134e92]:
+          - link "e-Sales" [ref=f134e93] [cursor=pointer]:
+            - /url: https://ebiz.poscosteeleon.com/cncweb/index.jsp?type=esales
+        - listitem [ref=f134e95]:
+          - link "e-Procurement" [ref=f134e96] [cursor=pointer]:
+            - /url: https://ebiz.poscosteeleon.com/cncweb/index.jsp?type=epro
+        - listitem [ref=f134e98]:
+          - link "뉴스룸" [ref=f134e99] [cursor=pointer]:
+            - /url: https://www.poscosteeleon.com/kr/media/news.do?PAGE_SEQ=10132
+      - button "Close" [ref=f134e101] [cursor=pointer]
+    - contentinfo [ref=f134e102]:
+      - generic [ref=f134e103]:
+        - list [ref=f134e107]:
+          - listitem [ref=f134e108]:
+            - link "개인정보처리방침" [ref=f134e109] [cursor=pointer]:
+              - /url: /kr/etc/privacy.do
+          - listitem [ref=f134e110]:
+            - link "이메일무단수집거부" [ref=f134e111] [cursor=pointer]:
+              - /url: javascript:void(0);
+          - listitem [ref=f134e112]:
+            - link "원격서비스연결" [ref=f134e113] [cursor=pointer]:
+              - /url: https://988.co.kr/poscosteeleon
+          - listitem [ref=f134e114]:
+            - link "찾아오시는길" [ref=f134e115] [cursor=pointer]:
+              - /url: /kr/about/directions.do
+        - list [ref=f134e117]:
+          - listitem [ref=f134e118]: 경북 포항시 남구 철강로 173 (장흥동)
+          - listitem [ref=f134e119]: T. 054-280-6114
+          - listitem [ref=f134e120]: E. master@poscosteeleon.com
+        - generic [ref=f134e121]: Copyright ⓒ POSCO STEELEON. All Rights Reserved.
+        - link "그룹사 바로가기" [ref=f134e123] [cursor=pointer]:
+          - /url: javascript:void(0);
+        - button "Scroll top"

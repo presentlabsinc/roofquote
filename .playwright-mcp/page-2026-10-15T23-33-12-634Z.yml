@@ -1,0 +1,671 @@
+- generic [active] [ref=f13e1]:
+  - generic:  
+  - text: 
+  - generic:
+    - list [ref=f13e3]:  
+    - button "닫기" [ref=f13e4] [cursor=pointer]:
+      - generic [aria-hidden] [ref=f13e5]: 
+  - banner [ref=f13e7]:
+    - generic [ref=f13e8]:
+      - generic: 
+      - generic [ref=f13e9]:
+        - text: 
+        - generic [ref=f13e10]:
+          - generic [ref=f13e22]:
+            - paragraph [ref=f13e23]:
+              - strong [ref=f13e25]: 조달청· 나라장터
+              - strong [ref=f13e27]
+              - strong [ref=f13e29]: 등록업체!
+              - strong [ref=f13e30]
+            - paragraph [ref=f13e31]:
+              - strong [ref=f13e32]:
+                - generic [ref=f13e33]: 특허기술
+              - strong [ref=f13e35]: 보유!
+              - strong [ref=f13e37]: 여성기업
+              - strong [ref=f13e39]: 인증!
+            - paragraph [ref=f13e40]:
+              - strong [ref=f13e42]: 관공서 · 공공기관
+              - generic [ref=f13e43]:
+                - strong [ref=f13e44]
+                - strong [ref=f13e45]: 수의계약
+                - strong [ref=f13e46]: 가능!
+          - generic [ref=f13e51]:
+            - link "옥상스틸방수·지붕공사|㈜유반장스틸방수 옥상스틸방수·지붕공사|㈜유반장스틸방수 옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f13e58] [cursor=pointer]:
+              - /url: /
+              - generic [ref=f13e59]: 옥상스틸방수·지붕공사|㈜유반장스틸방수
+              - img "옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f13e60]
+              - img "옥상스틸방수·지붕공사|㈜유반장스틸방수" [ref=f13e61]
+            - link "" [ref=f13e67] [cursor=pointer]:
+              - /url: javascript:;
+  - main [ref=f13e72]
+  - main [ref=f13e104]
+  - main [ref=f13e130]:
+    - generic [ref=f13e131]:
+      - separator [ref=f13e144]
+      - generic [ref=f13e160]:
+        - generic:
+          - generic: 50m
+          - link [ref=f13e175] [cursor=pointer]:
+            - /url: https://ssl.pstatic.net/static/maps/mantle/notice/legal.html
+            - img "NAVER" [ref=f13e176]
+        - generic: © NAVER Corp.
+        - generic [ref=f13e178]:
+          - link [ref=f13e179] [cursor=pointer]:
+            - /url: "#"
+            - img "지도 확대" [ref=f13e180]
+          - link [ref=f13e184]:
+            - /url: "#"
+            - img "지도 확대/축소 슬라이더" [ref=f13e185]
+          - link [ref=f13e186] [cursor=pointer]:
+            - /url: "#"
+            - img "지도 축소" [ref=f13e187]
+        - list [ref=f13e189]:
+          - listitem [ref=f13e190]:
+            - link "일반" [ref=f13e191] [cursor=pointer]:
+              - /url: "#"
+          - listitem [ref=f13e192]:
+            - link "위성" [ref=f13e193] [cursor=pointer]:
+              - /url: "#"
+  - main [ref=f13e242]:
+    - generic [ref=f13e243]:
+      - generic [ref=f13e251]:
+        - paragraph [ref=f13e252]
+        - paragraph [ref=f13e253]:
+          - strong [ref=f13e255]: 건설업 2가지 복수면허
+        - paragraph [ref=f13e256]:
+          - strong [ref=f13e258]: •
+        - paragraph [ref=f13e259]:
+          - strong [ref=f13e261]: 복합공정 완벽 대응
+      - generic [ref=f13e268]:
+        - heading [level=2] [ref=f13e275]:
+          - strong [ref=f13e276]: 1. 방수공사업 건설업 면허
+        - generic [ref=f13e282]:
+          - paragraph [ref=f13e283]
+          - paragraph [ref=f13e284]: 전문 방수공사업 면허를 보유한 업체로 옥상·지붕·외벽 등 건축물 방수공사를 법적 자격과 기준에 따라 시공합니다.
+          - paragraph [ref=f13e285]
+          - paragraph [ref=f13e286]:
+            - generic [ref=f13e287]: "등록번호 : 대전서구25-라-6발급기관 : 대전광역시 서구청장"
+      - heading [level=2] [ref=f13e313]:
+        - strong [ref=f13e314]: 2. 지붕판금·건축물조립공사업 면허
+      - generic [ref=f13e321]:
+        - paragraph [ref=f13e322]
+        - paragraph [ref=f13e323]:
+          - generic [ref=f13e324]: 지붕판금 및 건축물 외장 공사를전문적으로 수행할 수 있는 건설업 면허로 금속지붕 및 외장 시스템 시공이 가능합니다.
+        - paragraph [ref=f13e325]
+        - paragraph [ref=f13e326]:
+          - generic [ref=f13e327]: "등록번호 : 대전서구25-다-3발급기관 : 대전광역시 서구청장"
+  - generic:
+    - main
+  - main [ref=f13e337]
+  - main [ref=f13e354]:
+    - generic [ref=f13e355]:
+      - generic [ref=f13e362]:
+        - paragraph [ref=f13e363]:
+          - strong [ref=f13e364]: 공정별 전문기술자 직접시공
+        - heading "국가기술자격을 보유한 전문 기술자가 공정별 시공을 직접 수행하고 품질을 관리합니다." [level=4] [ref=f13e365]
+      - generic [ref=f13e367]:
+        - heading [level=5] [ref=f13e375]:
+          - strong [ref=f13e376]: "[보유기술목록 ]"
+        - table [ref=f13e384]:
+          - rowgroup [ref=f13e385]:
+            - row [ref=f13e386]:
+              - cell [ref=f13e387]:
+                - strong [ref=f13e388]: 자격종목
+              - cell [ref=f13e389]:
+                - strong [ref=f13e390]: 자격번호
+            - row [ref=f13e391]:
+              - cell [ref=f13e392]:
+                - strong [ref=f13e393]: 건축기사
+              - cell "25202160299P" [ref=f13e394]
+            - row [ref=f13e395]:
+              - cell [ref=f13e396]:
+                - strong [ref=f13e397]: 방수산업기사
+              - cell "21213120318Q" [ref=f13e398]
+            - row [ref=f13e399]:
+              - cell [ref=f13e400]:
+                - strong [ref=f13e401]: 배관산업기사
+              - cell "18202160056P" [ref=f13e402]
+            - row [ref=f13e403]:
+              - cell [ref=f13e404]:
+                - strong [ref=f13e405]: 용접산업기사
+              - cell "17202130097I" [ref=f13e406]
+            - row [ref=f13e407]:
+              - cell [ref=f13e408]:
+                - strong [ref=f13e409]: 안전관리자1급
+              - cell "2017-10-21-2-000029" [ref=f13e410]
+  - generic:
+    - main
+  - main [ref=f13e414]:
+    - generic [ref=f13e415]:
+      - generic [aria-hidden] [ref=f13e428]: 
+      - generic [ref=f13e435]:
+        - generic [ref=f13e436]:
+          - generic [ref=f13e437]: 회사 개요
+          - generic [ref=f13e451]:
+            - paragraph [ref=f13e452]
+            - paragraph [ref=f13e453]:
+              - strong [ref=f13e456]: ㈜유반장스틸방수
+              - text: 는 옥상방수·지붕공사·외벽스틸방수 통합 서비스 브랜드로서 전국 지점망을 갖춘 합법적 건설업체입니다.
+        - generic [ref=f13e463]:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - separator
+      - paragraph [ref=f13e471]:
+        - strong [ref=f13e473]: Better Technology For All
+      - generic [ref=f13e486]:
+        - paragraph [ref=f13e487]:
+          - strong [ref=f13e488]: 스틸방수 전문기업
+        - paragraph [ref=f13e489]
+        - paragraph [ref=f13e490]:
+          - generic [ref=f13e491]:
+            - strong [ref=f13e492]:
+              - emphasis [ref=f13e493]: "1."
+            - text: 옥상스틸방수 · 지붕공사 · 외벽스틸방수 전문
+        - paragraph [ref=f13e494]
+        - paragraph [ref=f13e495]:
+          - generic [ref=f13e496]:
+            - strong [ref=f13e497]:
+              - emphasis [ref=f13e498]: "2."
+            - text: 스틸방수 생산 및 시공 전문기업
+        - paragraph [ref=f13e499]
+        - paragraph [ref=f13e500]:
+          - generic [ref=f13e501]:
+            - strong [ref=f13e502]:
+              - emphasis [ref=f13e503]: "3."
+            - text: 다양한 건축물 방수 솔루션 제공
+        - paragraph [ref=f13e504]
+      - separator [ref=f13e511]
+      - generic [ref=f13e524]:
+        - paragraph [ref=f13e525]:
+          - strong [ref=f13e527]: PosMAC스
+          - strong [ref=f13e528]:
+            - generic [ref=f13e529]: 틸방수 공법
+        - paragraph [ref=f13e530]
+        - paragraph [ref=f13e531]:
+          - generic [ref=f13e532]:
+            - strong [ref=f13e533]:
+              - emphasis [ref=f13e534]: "1."
+            - text: POSCO PosMAC 강판 적용
+        - paragraph [ref=f13e535]
+        - paragraph [ref=f13e536]:
+          - generic [ref=f13e537]:
+            - strong [ref=f13e538]:
+              - emphasis [ref=f13e539]: "2."
+            - text: 스틸방수 특허 공법
+        - paragraph [ref=f13e540]
+        - paragraph [ref=f13e541]:
+          - generic [ref=f13e542]:
+            - strong [ref=f13e543]:
+              - emphasis [ref=f13e544]: "3."
+            - text: 기존 도막방수 대비 내구성 향상
+        - paragraph [ref=f13e545]
+      - separator [ref=f13e552]
+      - generic [ref=f13e565]:
+        - paragraph [ref=f13e566]:
+          - strong [ref=f13e568]: 전문건설업 등록 업체
+        - paragraph [ref=f13e569]
+        - paragraph [ref=f13e570]:
+          - generic [ref=f13e571]:
+            - strong [ref=f13e572]:
+              - emphasis [ref=f13e573]: "1."
+            - text: 지붕판금공사업 면허 보유
+        - paragraph [ref=f13e574]
+        - paragraph [ref=f13e575]:
+          - generic [ref=f13e576]:
+            - strong [ref=f13e577]:
+              - emphasis [ref=f13e578]: "2."
+            - text: 옥상방수공사업 면허 보유
+        - paragraph [ref=f13e579]
+        - paragraph [ref=f13e580]:
+          - generic [ref=f13e581]:
+            - strong [ref=f13e582]:
+              - emphasis [ref=f13e583]: "3."
+            - text: 정식 등록 건설업체
+        - paragraph [ref=f13e584]
+        - paragraph [ref=f13e585]:
+          - generic [ref=f13e586]:
+            - strong [ref=f13e587]:
+              - emphasis [ref=f13e588]: "4."
+            - text: 대한전문건설 협외 정회원
+        - paragraph [ref=f13e589]
+        - paragraph [ref=f13e590]:
+          - generic [ref=f13e591]:
+            - strong [ref=f13e592]:
+              - emphasis [ref=f13e593]: "5."
+            - text: 전문건설공제조합 조합원
+        - paragraph [ref=f13e594]
+      - separator [ref=f13e601]
+      - generic [ref=f13e608]:
+        - paragraph [ref=f13e609]
+        - paragraph [ref=f13e610]:
+          - strong [ref=f13e612]: 공공기관 수의계약 가능 업체
+        - paragraph [ref=f13e613]
+        - paragraph [ref=f13e614]:
+          - generic [ref=f13e615]:
+            - strong [ref=f13e616]:
+              - emphasis [ref=f13e617]: "1."
+            - text: 여성기업 인증 업체
+        - paragraph [ref=f13e618]
+        - paragraph [ref=f13e619]:
+          - generic [ref=f13e620]:
+            - strong [ref=f13e621]:
+              - emphasis [ref=f13e622]: "2."
+            - text: 공공기관 수의계약 가능
+        - paragraph [ref=f13e623]
+        - paragraph [ref=f13e624]:
+          - generic [ref=f13e625]:
+            - strong [ref=f13e626]:
+              - emphasis [ref=f13e627]: "3."
+            - text: 5,500만원 이하 간편 발주
+        - paragraph [ref=f13e628]
+      - separator [ref=f13e635]
+      - generic [ref=f13e648]:
+        - paragraph [ref=f13e649]:
+          - strong [ref=f13e651]: 전문 기술진 책임 시공
+        - paragraph [ref=f13e652]
+        - paragraph [ref=f13e653]:
+          - generic [ref=f13e654]:
+            - strong [ref=f13e655]:
+              - emphasis [ref=f13e656]: "1."
+            - text: 건축기사 책임시공
+        - paragraph [ref=f13e657]
+        - paragraph [ref=f13e658]:
+          - generic [ref=f13e659]:
+            - strong [ref=f13e660]:
+              - emphasis [ref=f13e661]: "2."
+            - text: 방수산업기사 기술진 참여
+        - paragraph [ref=f13e662]
+        - paragraph [ref=f13e663]:
+          - generic [ref=f13e664]:
+            - strong [ref=f13e665]:
+              - emphasis [ref=f13e666]: "3."
+            - text: 책임보증 시공 시스템 운영
+        - paragraph [ref=f13e667]
+      - separator [ref=f13e680]
+      - generic [ref=f13e693]:
+        - paragraph [ref=f13e694]:
+          - strong [ref=f13e695]: 전국 시
+          - strong [ref=f13e696]: 공 네트워크
+        - paragraph [ref=f13e697]
+        - paragraph [ref=f13e698]:
+          - generic [ref=f13e699]:
+            - strong [ref=f13e700]:
+              - emphasis [ref=f13e701]: "1."
+            - text: 전국 시공 네트워크 기반 대응
+        - paragraph [ref=f13e702]
+        - paragraph [ref=f13e703]:
+          - generic [ref=f13e704]:
+            - strong [ref=f13e705]:
+              - emphasis [ref=f13e706]: "2."
+            - text: 주거 · 상업 · 공공시설 시공 가능
+        - paragraph [ref=f13e707]
+        - paragraph [ref=f13e708]:
+          - generic [ref=f13e709]:
+            - strong [ref=f13e710]:
+              - emphasis [ref=f13e711]: "3."
+            - text: 옥상방수 및 지붕공사 안정적 수행
+        - paragraph [ref=f13e712]
+  - main [ref=f13e716]:
+    - generic [ref=f13e730]:
+      - heading [level=1] [ref=f13e738]:
+        - strong [ref=f13e739]: 기업 자격 및 등록현황
+      - separator [ref=f13e752]
+      - generic [ref=f13e754]:
+        - heading "1. 건설업 등록증 (2025.07.08, 대전광역시 서구청 등록)" [level=5] [ref=f13e762]
+        - list [ref=f13e776]:
+          - listitem [ref=f13e777]: 지붕판금공사업 (금속구조물·지붕·조립공사업)
+          - listitem [ref=f13e778]: 옥상방수공사업 (도장·습식·방수공사업)
+      - separator [ref=f13e785]
+      - generic [ref=f13e792]:
+        - heading "2. 대한전문건설협회 대전광역시회 등록" [level=5] [ref=f13e793]
+        - heading "(2024년도 시공능력평가 확인, 485,563천원)" [level=5] [ref=f13e794]
+      - separator [ref=f13e801]
+      - heading "3. 전문건설공제조합 조합원증 (2025.07.21 가입)" [level=5] [ref=f13e809]
+      - separator [ref=f13e816]
+      - separator [ref=f13e823]
+      - heading "4. 신용평가등급 확인서 (2025.09.18까지 유효)" [level=5] [ref=f13e837]
+      - separator [ref=f13e844]
+      - heading "5. 국세청 납세증명서 (2025.02.27 발급)" [level=5] [ref=f13e852]
+      - separator [ref=f13e859]
+      - generic [ref=f13e866]:
+        - heading "6. 특허 보유 (등록번호 제10-2447732호)" [level=5] [ref=f13e867]
+        - list [ref=f13e868]:
+          - listitem [ref=f13e869]: "발명명칭: 스틸 방수 시공방법 및 그 방법으로 시공된 방수시스템"
+          - listitem [ref=f13e870]: "특허권자: ㈜유반장스틸방수"
+      - separator [ref=f13e883]
+  - main [ref=f13e892]:
+    - generic [ref=f13e893]:
+      - separator [ref=f13e900]
+      - generic [ref=f13e907]:
+        - paragraph [ref=f13e908]:
+          - strong [ref=f13e910]: 한 눈에 살펴보는 방수 관련 지식&정보
+        - paragraph [ref=f13e911]
+        - paragraph [ref=f13e912]:
+          - strong [ref=f13e914]:
+            - generic [ref=f13e915]: 방수 시공, 유지관리, 자재 특성 등 전문 자료를 체계적으로 정리했습니다. 최신 기술 동향과 현장 적용 정보를 확인하실 수 있습니다.
+        - paragraph [ref=f13e916]
+      - generic [ref=f13e924]:
+        - heading "옥상 우레탄방수 반복 누수, 스틸방수로 바꿔야 하는 시점" [level=1] [ref=f13e926]
+        - generic [ref=f13e930]:
+          - generic [ref=f13e931]: 관리자
+          - link "방수산업컨텐츠" [ref=f13e933] [cursor=pointer]:
+            - /url: /Company-Overview/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9
+        - generic [ref=f13e935]:
+          - paragraph [ref=f13e936]
+          - paragraph [ref=f13e937]: 옥상 누수가 발생하면 가장 먼저 우레탄방수를 떠올리는 경우가 많습니다. 우레탄방수는 비교적 시공이 간편하고 복잡한 옥상에도 적용하기 좋지만, 기존 바탕면의 상태와 배수 조건이 좋지 않으면 균열과 들뜸이 반복될 수 있습니다.
+          - paragraph [ref=f13e938]
+          - paragraph [ref=f13e939]:
+            - text: 우레탄방수를 여러 번 보수했는데도 비가 올 때마다 누수가 재발한다면, 단순히 방수액을 다시 바르는 것보다 옥상 전체의 구조와 배수 상태를 점검해야 합니다.
+            - img "1269307085444.jpg" [ref=f13e940] [cursor=pointer]
+          - paragraph [ref=f13e941]
+          - paragraph [ref=f13e942]:
+            - strong [ref=f13e943]: 우레탄방수를 다시 해도 누수되는 이유
+          - paragraph [ref=f13e944]
+          - paragraph [ref=f13e945]: 우레탄방수는 콘크리트 바탕면에 방수막을 형성하는 도막방수 방식입니다. 방수층이 균일하게 유지되면 효과적이지만, 옥상 바닥의 균열이나 습기, 물고임 등의 영향을 계속 받습니다.
+          - paragraph [ref=f13e946]: 반복 누수의 주요 원인은 다음과 같습니다.
+          - list [ref=f13e947]:
+            - listitem [ref=f13e948]:
+              - paragraph [ref=f13e949]: 콘크리트 바닥의 균열과 구조적인 움직임
+            - listitem [ref=f13e950]:
+              - paragraph [ref=f13e951]: 기존 방수층 내부에 남아 있는 습기
+            - listitem [ref=f13e952]:
+              - paragraph [ref=f13e953]: 방수층의 들뜸과 부풀음
+            - listitem [ref=f13e954]:
+              - paragraph [ref=f13e955]: 배수구 주변의 마감 불량
+            - listitem [ref=f13e956]:
+              - paragraph [ref=f13e957]: 파라펫과 옥탑 접합부 균열
+            - listitem [ref=f13e958]:
+              - paragraph [ref=f13e959]: 실외기·배관·환기구 주변의 누수
+            - listitem [ref=f13e960]:
+              - paragraph [ref=f13e961]: 옥상 물고임과 배수 경사 부족
+            - listitem [ref=f13e962]:
+              - paragraph [ref=f13e963]: 자외선과 온도 변화로 인한 방수층 노후화
+          - paragraph [ref=f13e964]: 누수 원인을 해결하지 않고 기존 방수층 위에 우레탄을 반복해서 덧바르면 처음에는 괜찮아 보여도 같은 부위에서 다시 문제가 발생할 수 있습니다.
+          - paragraph [ref=f13e965]:
+            - img "우레탄 페인트 시공사진" [ref=f13e966] [cursor=pointer]
+          - paragraph [ref=f13e967]:
+            - strong [ref=f13e968]: 우레탄 부분 보수로 해결할 수 있는 경우
+          - paragraph [ref=f13e969]
+          - paragraph [ref=f13e970]: 모든 옥상을 반드시 스틸방수로 바꿔야 하는 것은 아닙니다.
+          - paragraph [ref=f13e971]: 다음과 같은 경우에는 우레탄 부분 보수도 고려할 수 있습니다.
+          - paragraph [ref=f13e972]
+          - list [ref=f13e973]:
+            - listitem [ref=f13e974]:
+              - paragraph [ref=f13e975]: 누수 부위가 한 곳으로 명확한 경우
+            - listitem [ref=f13e976]:
+              - paragraph [ref=f13e977]: 기존 방수층의 들뜸이 심하지 않은 경우
+            - listitem [ref=f13e978]:
+              - paragraph [ref=f13e979]: 옥상 바닥에 물고임이 거의 없는 경우
+            - listitem [ref=f13e980]:
+              - paragraph [ref=f13e981]: 배수구와 파라펫 주변만 보완하면 되는 경우
+            - listitem [ref=f13e982]:
+              - paragraph [ref=f13e983]: 기존 방수층의 전체적인 상태가 양호한 경우
+          - paragraph [ref=f13e984]: 부분 보수를 결정하기 전에는 눈에 보이는 균열뿐만 아니라 바닥 수분, 배수 상태, 벽체 접합부까지 함께 확인해야 합니다.
+          - paragraph [ref=f13e985]
+          - paragraph [ref=f13e986]:
+            - strong [ref=f13e987]: 스틸방수로 바꿔야 하는 시점
+          - paragraph [ref=f13e988]
+          - paragraph [ref=f13e989]: 다음 항목 중 여러 가지가 해당한다면 기존 도막방수를 반복하기보다 스틸방수를 검토하는 것이 좋습니다.
+          - paragraph [ref=f13e990]
+          - paragraph [ref=f13e991]:
+            - strong [ref=f13e992]: 1. 우레탄방수를 여러 번 했는데 누수가 반복되는 경우
+          - paragraph [ref=f13e993]
+          - paragraph [ref=f13e994]: 같은 위치에서 누수가 반복되거나 비가 올 때마다 새로운 누수 부위가 생긴다면 방수층만의 문제가 아닐 수 있습니다. 옥상 구조와 배수 흐름을 함께 점검해야 합니다.
+          - paragraph [ref=f13e995]
+          - paragraph [ref=f13e996]:
+            - strong [ref=f13e997]: 2. 방수층이 넓게 들뜨거나 갈라진 경우
+          - paragraph [ref=f13e998]
+          - paragraph [ref=f13e999]:
+            - text: 우레탄방수층 전체에 균열과 부풀음이 발생했다면 부분 보수만으로 장기간 유지하기 어렵습니다. 특히 기존 방수층 아래에 습기가 남아 있으면 재시공 후에도 들뜸이 반복될 수 있습니다.
+            - img "우레탄 방수 들뜸 현상" [ref=f13e1000] [cursor=pointer]
+          - paragraph [ref=f13e1001]
+          - paragraph [ref=f13e1002]:
+            - strong [ref=f13e1003]: 3. 옥상에 물이 오랫동안 고이는 경우
+          - paragraph [ref=f13e1004]
+          - paragraph [ref=f13e1005]: 배수 경사가 부족한 옥상은 비가 그친 뒤에도 물이 남아 방수층의 노화를 빠르게 만듭니다. 이런 현장은 물의 흐름과 배수 방향을 고려한 스틸방수 구조가 필요할 수 있습니다.
+          - paragraph [ref=f13e1006]
+          - paragraph [ref=f13e1007]:
+            - strong [ref=f13e1008]: 4. 공장·상가·학교·교회처럼 옥상 면적이 넓은 경우
+          - paragraph [ref=f13e1009]
+          - paragraph [ref=f13e1010]: 넓은 옥상은 균열과 이음부가 많고 부분 보수 범위도 계속 늘어날 수 있습니다. 반복적인 보수 비용과 건물 사용 중 발생하는 불편까지 고려해 장기적인 방수공법을 선택해야 합니다.
+          - paragraph [ref=f13e1011]
+          - paragraph [ref=f13e1012]:
+            - strong [ref=f13e1013]: 5. 옥상 누수로 내부 마감재까지 손상되는 경우
+          - paragraph [ref=f13e1014]
+          - paragraph [ref=f13e1015]: 천장, 벽지, 전기시설, 단열재 등이 계속 젖고 있다면 단순한 미관 문제가 아닙니다. 누수로 인한 2차 피해가 커지기 전에 근본적인 방수계획을 세워야 합니다.
+          - paragraph [ref=f13e1016]:
+            - strong
+          - paragraph [ref=f13e1017]:
+            - strong [ref=f13e1019]: 스틸방수는 어떤 방식인가요?
+          - paragraph [ref=f13e1020]
+          - paragraph [ref=f13e1021]: 스틸방수는 기존 옥상 위에 현장 조건에 맞는 하지 구조를 설치하고 금속 강판으로 새로운 방수층을 만드는 공법입니다.
+          - paragraph [ref=f13e1022]: 도막을 바르는 방식과 달리 강판을 이용해 빗물의 이동 경로를 만들고, 현장에 따라 배수 경사와 물받이 구조를 함께 보완할 수 있습니다.
+          - paragraph [ref=f13e1023]: 다만 스틸방수도 강판만 덮는다고 끝나는 공사는 아닙니다. 다음 부분이 정확하게 시공돼야 합니다.
+          - list [ref=f13e1024]:
+            - listitem [ref=f13e1025]:
+              - paragraph [ref=f13e1026]: 기존 옥상의 구조와 누수 원인 확인
+            - listitem [ref=f13e1027]:
+              - paragraph [ref=f13e1028]: 물의 흐름을 고려한 배수 방향 설정
+            - listitem [ref=f13e1029]:
+              - paragraph [ref=f13e1030]: 현장 조건에 맞는 하지 구조 설치
+            - listitem [ref=f13e1031]:
+              - paragraph [ref=f13e1032]: 강판 이음부와 고정부 처리
+            - listitem [ref=f13e1033]:
+              - paragraph [ref=f13e1034]: 파라펫·옥탑·벽체 접합부 후레싱
+            - listitem [ref=f13e1035]:
+              - paragraph [ref=f13e1036]: 환기구·배관·실외기 주변 마감
+            - listitem [ref=f13e1037]:
+              - paragraph [ref=f13e1038]: 물받이와 선홈통 연결
+            - listitem [ref=f13e1039]:
+              - paragraph [ref=f13e1040]: 실리콘과 마감재의 적정 사용
+          - paragraph [ref=f13e1041]:
+            - text: 현장에 맞지 않는 자재와 시공방법을 적용하면 스틸방수도 이음부나 벽체 접합부에서 문제가 발생할 수 있으므로 전문적인 설계와 책임시공이 중요합니다.
+            - img "리얼스틸방수 패널스틸방수 렌더링 사진" [ref=f13e1042] [cursor=pointer]
+          - paragraph [ref=f13e1043]
+          - paragraph [ref=f13e1044]:
+            - strong [ref=f13e1045]: 리얼스틸방수와 패널스틸방수 선택 기준
+          - paragraph [ref=f13e1046]
+          - paragraph [ref=f13e1047]: ㈜유반장스틸방수는 현장 구조와 옥상 면적에 따라 리얼스틸방수와 패널스틸방수를 구분해 적용합니다.
+          - paragraph [ref=f13e1048]: 리얼스틸방수
+          - paragraph [ref=f13e1049]:
+            - text: 넓은 옥상과 공장·학교·상가·교회·아파트 등 비교적 규모가 큰 현장에 적합합니다. 옥상 구조와 배수 방향을 검토해 강판을 설치하고, 현장 여건에 따라 철골 하지와 물받이를 함께 시공합니다.
+            - img "tjb 리얼스틸방수 시공후" [ref=f13e1050] [cursor=pointer]
+          - paragraph [ref=f13e1051]
+          - paragraph [ref=f13e1052]:
+            - strong [ref=f13e1053]: 패널스틸방수
+          - paragraph [ref=f13e1054]
+          - paragraph [ref=f13e1055]: 상대적으로 면적이 작거나 구조물이 많은 옥상, 세밀한 가공과 마감이 필요한 현장에 적용할 수 있습니다.
+          - paragraph [ref=f13e1056]:
+            - text: 같은 면적이라도 옥탑, 태양광 구조물, 실외기, 환기구, 배관의 수량에 따라 적합한 공법과 견적이 달라집니다. 따라서 사진만으로 공법을 확정하기보다 현장 실측을 통해 판단하는 것이 안전합니다.
+            - img "09751e17b0322.jpeg" [ref=f13e1057] [cursor=pointer]
+          - paragraph [ref=f13e1058]
+          - paragraph [ref=f13e1059]:
+            - strong [ref=f13e1060]: 스틸방수 견적을 결정하는 항목
+          - paragraph [ref=f13e1061]
+          - paragraph [ref=f13e1062]: 옥상 스틸방수 가격은 단순히 면적만으로 결정되지 않습니다.
+          - list [ref=f13e1063]:
+            - listitem [ref=f13e1064]:
+              - paragraph [ref=f13e1065]: 전체 시공 면적
+            - listitem [ref=f13e1066]:
+              - paragraph [ref=f13e1067]: 건물의 높이와 장비 진입 조건
+            - listitem [ref=f13e1068]:
+              - paragraph [ref=f13e1069]: 기존 옥상 바닥 상태
+            - listitem [ref=f13e1070]:
+              - paragraph [ref=f13e1071]: 철골 또는 금속 하지의 종류
+            - listitem [ref=f13e1072]:
+              - paragraph [ref=f13e1073]: 사용 강판의 종류와 두께
+            - listitem [ref=f13e1074]:
+              - paragraph [ref=f13e1075]: 파라펫과 옥탑의 구조
+            - listitem [ref=f13e1076]:
+              - paragraph [ref=f13e1077]: 실외기·배관·환기구의 수량
+            - listitem [ref=f13e1078]:
+              - paragraph [ref=f13e1079]: 배수구·물받이·선홈통 보강 여부
+            - listitem [ref=f13e1080]:
+              - paragraph [ref=f13e1081]: 크레인·스카이 등 장비 사용 여부
+            - listitem [ref=f13e1082]:
+              - paragraph [ref=f13e1083]: 폐기물과 기존 시설물 철거 여부
+          - paragraph [ref=f13e1084]: 정확한 견적을 위해서는 전체 옥상 사진, 누수 위치, 건물 주소, 대략적인 면적을 먼저 확인하고 필요한 경우 현장 실측을 진행합니다.
+          - paragraph [ref=f13e1085]
+          - paragraph [ref=f13e1086]:
+            - strong [ref=f13e1087]: 면허와 기술자격을 확인해야 합니다
+          - paragraph [ref=f13e1088]
+          - paragraph [ref=f13e1089]: 옥상 스틸방수는 강판 설치뿐만 아니라 방수, 지붕판금, 철골 하지, 배수와 마감이 함께 이루어지는 공사입니다.
+          - paragraph [ref=f13e1090]: 업체를 선정할 때는 단순히 가격만 비교하기보다 다음 사항을 확인해야 합니다.
+          - list [ref=f13e1091]:
+            - listitem [ref=f13e1092]:
+              - paragraph [ref=f13e1093]: 해당 공사에 필요한 전문건설업 면허 보유 여부
+            - listitem [ref=f13e1094]:
+              - paragraph [ref=f13e1095]: 스틸방수 관련 특허와 시공기술
+            - listitem [ref=f13e1096]:
+              - paragraph [ref=f13e1097]: 건축기사와 방수산업기사 등 기술인력
+            - listitem [ref=f13e1098]:
+              - paragraph [ref=f13e1099]: 전문건설공제조합 가입 여부
+            - listitem [ref=f13e1100]:
+              - paragraph [ref=f13e1101]: 하자보증이행증권 발행 가능 여부
+            - listitem [ref=f13e1102]:
+              - paragraph [ref=f13e1103]: 실제 옥상방수 시공사례
+            - listitem [ref=f13e1104]:
+              - paragraph [ref=f13e1105]: 공사 전후 사진과 영상 제공 여부
+          - paragraph [ref=f13e1106]: ㈜유반장스틸방수는 방수공사업 및 지붕판금건축물조립공사업 면허를 보유한 전문건설업체입니다. 특허 제10-2447732호 스틸방수 시공방법 및 방수시스템을 기반으로 리얼스틸방수와 패널스틸방수를 직접 생산·시공합니다.
+          - table [ref=f13e1107]:
+            - rowgroup [ref=f13e1108]:
+              - row [ref=f13e1109]:
+                - cell [ref=f13e1110]:
+                  - img "8c4c515773fee.png" [ref=f13e1111] [cursor=pointer]
+                - cell [ref=f13e1112]:
+                  - img "8ca1d30ced7d3.jpg" [ref=f13e1113] [cursor=pointer]
+          - paragraph [ref=f13e1114]
+          - paragraph [ref=f13e1115]: 건축기사 책임시공과 방수산업기사 책임보증 체계를 운영하며, 조달청 나라장터 등록, 전문건설공제조합 가입 및 하자보증이행증권 발행이 가능합니다.
+          - table [ref=f13e1116]:
+            - rowgroup [ref=f13e1117]:
+              - row [ref=f13e1118]:
+                - cell [ref=f13e1119]:
+                  - img "a7c745b12fa73.jpg" [ref=f13e1120] [cursor=pointer]
+                - cell [ref=f13e1121]:
+                  - img "fe7f34b4eea52.jpg" [ref=f13e1122] [cursor=pointer]
+                - cell [ref=f13e1123]:
+                  - img "263fcf94cd0ee.jpg" [ref=f13e1124] [cursor=pointer]
+          - paragraph [ref=f13e1125]
+          - paragraph [ref=f13e1126]:
+            - strong [ref=f13e1127]: 반복되는 옥상 누수, 원인부터 확인해야 합니다
+          - paragraph [ref=f13e1128]
+          - paragraph [ref=f13e1129]: 우레탄방수는 현장 조건이 맞고 바탕면 관리가 제대로 이루어진다면 효과적인 방수공법입니다. 하지만 균열, 물고임, 배수 불량, 방수층 들뜸으로 보수를 반복하고 있다면 같은 방식의 재시공만으로는 해결이 어려울 수 있습니다.
+          - paragraph [ref=f13e1130]
+          - paragraph [ref=f13e1131]: 스틸방수로 바꿔야 하는지는 옥상 면적과 누수 횟수만으로 판단하지 않습니다. 건물 구조, 배수 방향, 기존 방수층 상태와 주변 시설물을 종합적으로 확인해야 합니다.
+          - paragraph [ref=f13e1132]
+          - paragraph [ref=f13e1133]: ㈜유반장스틸방수는 현장 여건에 맞춰 우레탄 부분 보수가 가능한지, 리얼스틸방수 또는 패널스틸방수가 필요한지를 검토해 적합한 시공방법을 안내해 드립니다.
+          - paragraph [ref=f13e1134]
+          - paragraph [ref=f13e1135]: 옥상 누수가 반복되고 있다면 현재 상태를 확인할 수 있는 사진과 건물 정보를 보내주세요.
+          - paragraph [ref=f13e1136]
+          - paragraph [ref=f13e1137]:
+            - strong [ref=f13e1138]:
+              - generic [ref=f13e1139]:
+                - text: 옥상방수·지붕공사·외벽스틸방수 시공상담㈜유반장스틸방수대표전화 1588-5922
+                - img "edc0d819f4c58.jpg" [ref=f13e1140] [cursor=pointer]
+        - generic [ref=f13e1141]:
+          - link "알곤용접과 아크용접의 차이점｜공사 현장에 맞는 용접 방법은?" [ref=f13e1143] [cursor=pointer]:
+            - /url: /Company-Overview/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=173789230&t=board
+            - generic [aria-hidden] [ref=f13e1144]: 
+          - generic [ref=f13e1146]:
+            - button "목록" [ref=f13e1147] [cursor=pointer]
+            - button "글쓰기" [ref=f13e1148] [cursor=pointer]
+  - text:    
+  - main [ref=f13e1165]:
+    - separator [ref=f13e1172]
+    - generic [ref=f13e1173]:
+      - link "문의전화 바로걸기 1588-5922" [ref=f13e1187] [cursor=pointer]:
+        - /url: tel:15885922
+        - generic [aria-hidden] [ref=f13e1188]: 
+        - text: 문의전화 바로걸기 1588-5922
+      - generic [ref=f13e1200]:
+        - separator [ref=f13e1201]
+        - separator [ref=f13e1202]
+      - link "유반장스틸방수소개" [ref=f13e1216] [cursor=pointer]:
+        - /url: /Company-Overview
+        - generic [aria-hidden] [ref=f13e1217]: 
+        - text: 유반장스틸방수소개
+    - generic [ref=f13e1218]:
+      - link "스틸방수의 장점" [ref=f13e1232] [cursor=pointer]:
+        - /url: /20
+        - generic [aria-hidden] [ref=f13e1233]: 
+        - text: 스틸방수의 장점
+      - link "스틸방수 시공과정" [ref=f13e1247] [cursor=pointer]:
+        - /url: /21
+        - generic [aria-hidden] [ref=f13e1248]: 
+        - text: 스틸방수 시공과정
+      - link "외벽 스틸방수" [ref=f13e1262] [cursor=pointer]:
+        - /url: /22
+        - generic [aria-hidden] [ref=f13e1263]: 
+        - text: 외벽 스틸방수
+      - link "전국시공사례" [ref=f13e1277] [cursor=pointer]:
+        - /url: /Careers
+        - generic [aria-hidden] [ref=f13e1278]: 
+        - text: 전국시공사례
+      - link "고객지원" [ref=f13e1292] [cursor=pointer]:
+        - /url: /Contact
+        - generic [aria-hidden] [ref=f13e1293]: 
+        - text: 고객지원
+      - separator [ref=f13e1306]
+      - generic [ref=f13e1319]:
+        - paragraph [ref=f13e1320]: (주)유반장스틸방수
+        - paragraph [ref=f13e1321]: 법인등록번호 160111-0071556
+        - paragraph [ref=f13e1322]: "대표자 : 이경민 TEL : 1588-5922"
+        - paragraph [ref=f13e1323]: "경기 남양주점: 경기도 구리시 갈매중앙로 201-3"
+        - paragraph [ref=f13e1324]: "경기지사 : 경기도 평택시 송탄2로 25번길 40"
+        - paragraph [ref=f13e1325]: "대전본사 : 대전광역시 서구 둔산북로121아너스빌"
+        - paragraph [ref=f13e1326]: "경북지사 : 경북 상주시 동수4길 127"
+        - paragraph [ref=f13e1327]: "광양 남부권지사 : 전남 광양시 광양읍 서평4길 45"
+      - generic [ref=f13e1340]:
+        - paragraph [ref=f13e1341]: "@Copyright 2022. All Right Reserved. Hosted by"
+        - paragraph [ref=f13e1342]:
+          - strong [ref=f13e1344]: u-banjang steel
+  - iframe [ref=f13e1351]
+  - link [ref=f13e1352] [cursor=pointer]:
+    - /url: "javascript:Kakao.Channel.chat({channelPublicId: '_Hxixlcxj'});"
+    - img "카카오톡 채널 채팅하기 버튼" [ref=f13e1353]

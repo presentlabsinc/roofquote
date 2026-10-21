@@ -1,0 +1,87 @@
+- generic [ref=f161e2]:
+  - generic:
+    - list:
+      - listitem:
+        - link "본문 바로가기":
+          - /url: "#content"
+      - listitem:
+        - link "주메뉴 바로가기":
+          - /url: "#gnb"
+  - generic [ref=f161e3]:
+    - generic [ref=f161e4]:
+      - heading [level=1] [ref=f161e5]:
+        - link [ref=f161e6] [cursor=pointer]:
+          - /url: javascript:GoMenu('home');
+          - img "한농스틸" [ref=f161e7]
+      - generic [ref=f161e8]:
+        - list:
+          - listitem [ref=f161e9]:
+            - link:
+              - /url: javascript:GoMenu('home');
+          - listitem [ref=f161e10]:
+            - link:
+              - /url: javascript:GoMenu('sitemap');
+          - listitem [ref=f161e11]:
+            - link:
+              - /url: javascript:GoMenu('contact');
+    - list [ref=f161e14]:
+      - listitem [ref=f161e15]:
+        - link "회사소개":
+          - /url: javascript:GoMenu('sub01_01');
+          - img "회사소개" [ref=f161e16] [cursor=pointer]
+      - listitem [ref=f161e17]:
+        - link "제품안내":
+          - /url: javascript:GoMenu('sub02_01');
+          - img "제품안내" [ref=f161e18] [cursor=pointer]
+      - listitem [ref=f161e19]:
+        - link "지붕공사":
+          - /url: javascript:GoMenu('sub03_01');
+          - img "지붕공사" [ref=f161e20] [cursor=pointer]
+      - listitem [ref=f161e21]:
+        - link "바닥시트":
+          - /url: javascript:GoMenu('sub04_04');
+          - img "바닥시트" [ref=f161e22] [cursor=pointer]
+      - listitem [ref=f161e23]:
+        - link "외벽공사":
+          - /url: javascript:GoMenu('sub07_02');
+          - img "외벽공사" [ref=f161e24] [cursor=pointer]
+      - listitem [ref=f161e25]:
+        - link "고객센터":
+          - /url: javascript:GoMenu('sub05_02');
+          - img "고객센터" [ref=f161e26] [cursor=pointer]
+  - generic [ref=f161e29]:
+    - generic [ref=f161e31]:
+      - heading [level=2] [ref=f161e32]:
+        - img "바닥시트" [ref=f161e33]
+      - list [ref=f161e34]:
+        - listitem [ref=f161e35]:
+          - link "바닥 시트형이란?":
+            - /url: javascript:GoMenu('sub04_04');
+            - img "바닥 시트형이란?" [ref=f161e36] [cursor=pointer]
+        - listitem [ref=f161e37]:
+          - link "아파트, 관공서":
+            - /url: javascript:GoMenu('sub04_01');
+            - img "아파트, 관공서" [ref=f161e38] [cursor=pointer]
+        - listitem [ref=f161e39]:
+          - link "빌라, 상가":
+            - /url: javascript:GoMenu('sub04_02');
+            - img "빌라, 상가" [ref=f161e40] [cursor=pointer]
+        - listitem [ref=f161e41]:
+          - link "주택, 소형":
+            - /url: javascript:GoMenu('sub04_03');
+            - img "주택, 소형" [ref=f161e42] [cursor=pointer]
+    - generic [ref=f161e44]:
+      - heading [level=2] [ref=f161e45]:
+        - img "바닥시트란?" [ref=f161e46]
+      - generic [ref=f161e47]: 홈 > 바닥시트 > 바닥시트란?
+  - generic [ref=f161e50]:
+    - img "한농스틸" [ref=f161e52]
+    - generic [ref=f161e53]: "본사: 경기도 수원시 권선구 호매실동 1403-3 서울·경기 010-4739-5900 | 충청·호남 010-7240-3790 | 강원·영남 010-2001-0799 Copyright(c) 2015 한농스틸. All Rights Reserved."
+    - generic [ref=f161e54]:
+      - list:
+        - listitem [ref=f161e55]:
+          - link "개인정보취급방침" [ref=f161e56] [cursor=pointer]:
+            - /url: ../sub/pop_privacy.php
+        - listitem [ref=f161e57]:
+          - link "이메일무단수집거부" [ref=f161e58] [cursor=pointer]:
+            - /url: javascript:popWinCenter('../sub/reject.php',450,250);

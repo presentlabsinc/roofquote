@@ -1,0 +1,5 @@
+[     642ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'battery'. @ :0
+[    1068ms] [WARNING] [GPT] PubAdsService.setCentering is deprecated, use googletag.setConfig({centering: ...}) instead.
+https://goo.gle/gpt-message#170 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202610120101/pubads_impl.js:22
+[    1071ms] [WARNING] [GPT] Slot.setTargeting is deprecated, use Slot.setConfig({targeting: ...}) instead.
+https://goo.gle/gpt-message#171 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202610120101/pubads_impl.js:22

@@ -1,0 +1,4 @@
+[     199ms] [LOG] %c Produced by %coparts%c® Digital Agency.  font-size:11px;font-weight:normal; font-size:18px;font-weight:bold; font-size:11px;font-weight:normal; @ https://www.poscosteeleon.com/assets/js/common.js:1
+[     225ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://cdn.jsdelivr.net/gh/webfontworld/onestore/OneMobileRegular.woff2:0
+[     228ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://cdn.jsdelivr.net/gh/webfontworld/onestore/OneMobileRegular.woff:0
+[     237ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://cdn.jsdelivr.net/gh/webfontworld/onestore/OneMobileRegular.ttf:0

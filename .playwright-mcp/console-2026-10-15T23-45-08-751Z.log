@@ -1,0 +1,3 @@
+[     139ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://www.steel-up.com/css/member.css:0
+[     154ms] [ERROR] Mixed Content: The page at 'https://www.steel-up.com/sub/sub04_04.php' was loaded over HTTPS, but requested an insecure script 'http://dmaps.daum.net/map_js_init/postcode.v2.js'. This request has been blocked; the content must be served over HTTPS. @ https://www.steel-up.com/sub/sub04_04.php:0
+[     476ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://www.steel-up.com/favicon.ico:0

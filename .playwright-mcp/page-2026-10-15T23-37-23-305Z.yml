@@ -1,0 +1,246 @@
+- generic [active] [ref=f65e1]:
+  - generic:
+    - link "본문 바로가기":
+      - /url: "#ct"
+  - generic [ref=f65e2]:
+    - generic [ref=f65e3]:
+      - heading [level=1] [ref=f65e4]:
+        - link "블로그" [ref=f65e5] [cursor=pointer]:
+          - /url: /Recommendation.naver
+      - heading [level=2] [ref=f65e7]:
+        - generic [ref=f65e8]:
+          - link "카테고리 이동" [ref=f65e10] [cursor=pointer]:
+            - /url: "#"
+          - link "한농스틸 공식 블로그" [ref=f65e13] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=hn_steel
+    - generic [ref=f65e15]:
+      - link "검색" [ref=f65e16] [cursor=pointer]:
+        - /url: /PostSearchList.naver?blogId=hn_steel
+      - button "MY메뉴 열기" [ref=f65e18] [cursor=pointer]
+  - main [ref=f65e21]:
+    - generic [ref=f65e24]:
+      - generic [ref=f65e27]:
+        - link "▒ 한농스틸" [ref=f65e29] [cursor=pointer]:
+          - /url: /PostList.naver?blogId=hn_steel&categoryNo=6&logCode=0&categoryName=%E2%96%92+%ED%95%9C%EB%86%8D%EC%8A%A4%ED%8B%B8#postlist_block
+        - paragraph [ref=f65e31]:
+          - generic [ref=f65e32]: 슬라브 지붕공사 새는 옥상 이렇게 잡았습니다
+        - generic [ref=f65e33]:
+          - link [ref=f65e34] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=hn_steel
+            - img "프로필" [ref=f65e36]
+          - generic [ref=f65e37]:
+            - link [ref=f65e39] [cursor=pointer]:
+              - /url: /PostList.naver?blogId=hn_steel
+              - strong [ref=f65e40]: 한농스틸
+            - paragraph [ref=f65e41]: 2026. 8. 10. 8:30
+        - generic [ref=f65e42]:
+          - link "이웃추가" [ref=f65e43] [cursor=pointer]:
+            - /url: "#"
+          - button "본문 기타 기능" [ref=f65e46] [cursor=pointer]
+      - generic [ref=f65e48]:
+        - paragraph [ref=f65e53]
+        - link [ref=f65e58] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e62]:
+          - paragraph [ref=f65e63]: 슬라브 지붕공사로 새는 옥상,
+          - paragraph [ref=f65e64]: 잡는 방법 네 가지를 정리합니다.
+          - paragraph [ref=f65e65]
+          - paragraph [ref=f65e66]: 만 건 넘는 현장을 시공하며
+          - paragraph [ref=f65e67]: 확인한 내용이에요.
+          - paragraph [ref=f65e68]
+          - paragraph [ref=f65e69]: 누수 원인은 대부분 고인 물이죠.
+          - paragraph [ref=f65e70]: 덧바르는 방수로는 못 없앱니다.
+          - paragraph [ref=f65e71]
+          - paragraph [ref=f65e72]
+          - paragraph [ref=f65e73]:
+            - generic [ref=f65e74]: ■ 새는 원인은 고인 물이었습니다
+        - link [ref=f65e79] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e83]:
+          - paragraph [ref=f65e84]: 공사 전 옥상이에요.
+          - paragraph [ref=f65e85]: 바닥이 평평하다 보니 비가 오면
+          - paragraph [ref=f65e86]: 물이 빠지지 않고 머뭅니다.
+          - paragraph [ref=f65e87]
+          - paragraph [ref=f65e88]: 우레탄방수를 새로 해도
+          - paragraph [ref=f65e89]: 고인 자리는 도막이 빨리 삭죠.
+          - paragraph [ref=f65e90]
+          - paragraph [ref=f65e91]: 물이 고이는 조건 그대로면
+          - paragraph [ref=f65e92]: 얼마 못 가 다시 샙니다.
+          - paragraph [ref=f65e93]
+          - paragraph [ref=f65e94]
+          - paragraph [ref=f65e95]:
+            - generic [ref=f65e96]: ■ 첫째, 바닥에 물매를 잡습니다
+        - link [ref=f65e101] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e105]:
+          - paragraph [ref=f65e106]: 목재로 골조를 짜는 단계예요.
+          - paragraph [ref=f65e107]: 물매를 만들고, 물받이를 잡고,
+          - paragraph [ref=f65e108]: 칼라강판까지 받치는 뼈대입니다.
+          - paragraph [ref=f65e109]
+          - paragraph [ref=f65e110]: 기울기는 보통 2도 정도 잡죠.
+          - paragraph [ref=f65e111]: 더 올리면 물은 잘 빠지지만
+          - paragraph [ref=f65e112]: 밟고 다니기 불편해집니다.
+          - paragraph [ref=f65e113]
+          - paragraph [ref=f65e114]
+          - paragraph [ref=f65e115]:
+            - generic [ref=f65e116]: ■ 둘째, 스텐 물받이로 모읍니다
+        - link [ref=f65e121] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e125]:
+          - paragraph [ref=f65e126]: 스테인리스 물받이예요.
+          - paragraph [ref=f65e127]: 경사를 따라 흘러내린 빗물이
+          - paragraph [ref=f65e128]: 이곳으로 모여듭니다.
+          - paragraph [ref=f65e129]
+          - paragraph [ref=f65e130]: 녹슬지 않는 소재라 시간이 지나도
+          - paragraph [ref=f65e131]: 배수 기능은 그대로 유지되죠.
+          - paragraph [ref=f65e132]
+          - paragraph [ref=f65e133]
+          - paragraph [ref=f65e134]:
+            - generic [ref=f65e135]: ■ 셋째, 양쪽 우수관으로 빼냅니다
+        - link [ref=f65e140] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e144]:
+          - paragraph [ref=f65e145]: 물받이와 연결된 100mm 우수관입니다.
+          - paragraph [ref=f65e146]: 이 현장에는 양쪽 끝에 각각 타공했어요.
+          - paragraph [ref=f65e147]
+          - paragraph [ref=f65e148]: 한쪽으로만 빼면 그쪽에 물이 몰리거든요.
+          - paragraph [ref=f65e149]: 배수관이 좁거나 한쪽만 있으면
+          - paragraph [ref=f65e150]: 폭우가 쏟아질 때 역류합니다.
+          - paragraph [ref=f65e151]
+          - paragraph [ref=f65e152]
+        - link [ref=f65e157] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e161]:
+          - paragraph [ref=f65e162]: 콘크리트는 시간이 지나면
+          - paragraph [ref=f65e163]: 잔금이 생기기 마련이죠.
+          - paragraph [ref=f65e164]
+          - paragraph [ref=f65e165]: 여기에 물까지 고여 있으면
+          - paragraph [ref=f65e166]: 그 틈으로 계속 스며듭니다.
+          - paragraph [ref=f65e167]
+          - paragraph [ref=f65e168]
+        - link [ref=f65e173] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e177]:
+          - paragraph [ref=f65e178]: 물받이 자체에도 경사를 잡아요.
+          - paragraph [ref=f65e179]: 목재 골조를 짤 때 물받이
+          - paragraph [ref=f65e180]: 자리까지 미리 계산해둡니다.
+          - paragraph [ref=f65e181]
+          - paragraph [ref=f65e182]: 물받이 안에서도 물이 양쪽으로
+          - paragraph [ref=f65e183]: 흘러나가야 하니까요.
+          - paragraph [ref=f65e184]: 여기가 평평하면 그 안에 물이 고이죠.
+          - paragraph [ref=f65e185]
+          - paragraph [ref=f65e186]
+          - paragraph [ref=f65e187]:
+            - generic [ref=f65e188]: ■ 넷째, 칼라강판으로 마감합니다
+        - link [ref=f65e193] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e197]:
+          - paragraph [ref=f65e198]: 칼라강판을 덮은 단계입니다.
+          - paragraph [ref=f65e199]: 바닥만 덮고 끝내지 않아요.
+          - paragraph [ref=f65e200]
+          - paragraph [ref=f65e201]: 파라펫 내벽과 위쪽 두겁까지
+          - paragraph [ref=f65e202]: 강판으로 이어서 시공하죠.
+          - paragraph [ref=f65e203]
+          - paragraph [ref=f65e204]: 슬라브 지붕공사는 이 마감을
+          - paragraph [ref=f65e205]: 건너뛰면 벽에서 다시 샙니다.
+          - paragraph [ref=f65e206]
+          - paragraph [ref=f65e207]
+          - paragraph [ref=f65e208]:
+            - generic [ref=f65e209]: ■ 완성된 슬라브 지붕공사입니다
+        - link [ref=f65e214] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f65e219] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e223]:
+          - paragraph [ref=f65e224]: 위에서 내려다본 전경이에요.
+          - paragraph [ref=f65e225]: 경사가 한 방향으로 일정하게 잡혀
+          - paragraph [ref=f65e226]: 물이 머무를 자리가 없어졌죠.
+          - paragraph [ref=f65e227]
+          - paragraph [ref=f65e228]
+        - link [ref=f65e233] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f65e238] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e242]:
+          - paragraph [ref=f65e243]: 지붕을 낮게 올리는 방식이라
+          - paragraph [ref=f65e244]: 태풍 영향을 거의 받지 않아요.
+          - paragraph [ref=f65e245]
+          - paragraph [ref=f65e246]: 바람이 타고 넘어갈 뿐,
+          - paragraph [ref=f65e247]: 들어 올릴 면이 없거든요.
+          - paragraph [ref=f65e248]
+          - paragraph [ref=f65e249]: 그래서 고층 건물에도
+          - paragraph [ref=f65e250]: 스틸방수로 시공합니다.
+          - paragraph [ref=f65e251]
+          - paragraph [ref=f65e252]
+        - link [ref=f65e257] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f65e262] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e266]:
+          - paragraph [ref=f65e267]: 높이가 낮으니 인허가도 따로 받지 않죠.
+          - paragraph [ref=f65e268]
+          - paragraph [ref=f65e269]: 건축물대장을 건드리지 않고
+          - paragraph [ref=f65e270]: 바로 진행할 수 있습니다.
+          - paragraph [ref=f65e271]
+          - paragraph [ref=f65e272]: 슬라브 지붕공사를 미루게 되는
+          - paragraph [ref=f65e273]: 절차 문제가 없는 셈이에요.
+          - paragraph [ref=f65e274]
+          - paragraph [ref=f65e275]
+          - paragraph [ref=f65e276]:
+            - generic [ref=f65e277]: ■ 파라펫 외벽은 상태를 봅니다
+        - link [ref=f65e282] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f65e287] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e291]:
+          - paragraph [ref=f65e292]: 파라펫 외벽 전후입니다.
+          - paragraph [ref=f65e293]: 이 시공은 모든 현장에
+          - paragraph [ref=f65e294]: 들어가는 건 아니에요.
+          - paragraph [ref=f65e295]
+          - paragraph [ref=f65e296]: 외벽 상태가 괜찮으면 그대로 두기도 하죠.
+          - paragraph [ref=f65e297]: 다만 바깥 면이 갈라지고 오염이
+          - paragraph [ref=f65e298]: 심하면 덮는 편이 낫습니다.
+          - paragraph [ref=f65e299]
+          - paragraph [ref=f65e300]: 벽이 갈라진 틈으로도
+          - paragraph [ref=f65e301]: 물이 파고들 수 있으니까요.
+          - paragraph [ref=f65e302]
+          - paragraph [ref=f65e303]
+          - paragraph [ref=f65e304]:
+            - generic [ref=f65e305]: ■ 천장 페인트도 함께 잡습니다
+        - link [ref=f65e310] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f65e314]:
+          - paragraph [ref=f65e315]: 입구 쪽 처마 천장이에요.
+          - paragraph [ref=f65e316]: 이렇게 벗겨진 건 대부분 노후화입니다.
+          - paragraph [ref=f65e317]
+          - paragraph [ref=f65e318]: 누수 때문인 경우도 있는데,
+          - paragraph [ref=f65e319]: 그건 옥상을 잡으면 해결되죠.
+          - paragraph [ref=f65e320]
+          - paragraph [ref=f65e321]: 슬라브지붕공사 하실 때 이 부분도
+          - paragraph [ref=f65e322]: 칼라강판으로 마감하면
+          - paragraph [ref=f65e323]: 반영구적으로 쓰실 수 있습니다.
+          - paragraph [ref=f65e324]
+          - paragraph [ref=f65e325]
+          - paragraph [ref=f65e326]:
+            - generic [ref=f65e327]: ■ 정리하면 이렇습니다
+          - paragraph [ref=f65e328]
+          - paragraph [ref=f65e329]: 첫째, 바닥에 물매를 잡습니다.
+          - paragraph [ref=f65e330]: 둘째, 스텐 물받이로 모으죠.
+          - paragraph [ref=f65e331]: 셋째, 양쪽 우수관으로 빼냅니다.
+          - paragraph [ref=f65e332]: 넷째, 칼라강판으로 마감하고요.
+          - paragraph [ref=f65e333]
+          - paragraph [ref=f65e334]: 이 4단계가 스틸방수 공정입니다.
+          - paragraph [ref=f65e335]
+          - paragraph [ref=f65e336]: 덧바르는 방수가 아니라
+          - paragraph [ref=f65e337]: 물길을 새로 내는 공법이죠.
+          - paragraph [ref=f65e338]
+          - paragraph [ref=f65e339]: 2004년에 개발해 2010년에
+          - paragraph [ref=f65e340]: 특허 등록을 마쳤어요.
+          - paragraph [ref=f65e341]
+          - paragraph [ref=f65e342]: 20년 넘게 만 건 현장에서
+          - paragraph [ref=f65e343]: 다듬어온 방식입니다.
+          - paragraph [ref=f65e344]
+          - paragraph [ref=f65e345]
+        - link [ref=f65e350] [cursor=pointer]:
+          - /url: "#"
+        - paragraph [ref=f65e355]

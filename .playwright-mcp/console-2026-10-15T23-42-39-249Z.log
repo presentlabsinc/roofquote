@@ -1,0 +1,6 @@
+[     717ms] [LOG] %c Produced by %coparts%c® Digital Agency.  font-size:11px;font-weight:normal; font-size:18px;font-weight:bold; font-size:11px;font-weight:normal; @ https://www.poscosteeleon.com/assets/js/common.js:1
+[     809ms] [ERROR] fullPage: Fullpage.js requires a `licenseKey` option. Read about it on the following URL: @ https://www.poscosteeleon.com/assets/js/fullpage.min.js:10
+[     809ms] [ERROR] fullPage: https://github.com/alvarotrigo/fullPage.js#options @ https://www.poscosteeleon.com/assets/js/fullpage.min.js:10
+[     942ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://cdn.jsdelivr.net/gh/webfontworld/onestore/OneMobileRegular.woff2:0
+[     968ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://cdn.jsdelivr.net/gh/webfontworld/onestore/OneMobileRegular.woff:0
+[     978ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://cdn.jsdelivr.net/gh/webfontworld/onestore/OneMobileRegular.ttf:0

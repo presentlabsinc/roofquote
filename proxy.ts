@@ -13,7 +13,7 @@ import { createServerClient } from "@supabase/ssr";
  * 토큰 갱신 담당이고, 신원 판단을 하류로 넘기지 않는다. matcher 를 바꿔도 인증이 뚫리지
  * 않게 하려는 이중 방어.
  *
- * Public routes (no auth required): /login, /auth/*, /api/auth/*
+ * Public routes (no auth required): /login, /auth/*, /api/auth/*, /api/cron/* (라우트가 CRON_SECRET 확인)
  */
 export async function proxy(req: NextRequest) {
   const res = NextResponse.next({ request: req });
@@ -47,7 +47,8 @@ export async function proxy(req: NextRequest) {
   const isPublic =
     pathname === "/login" ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/auth/");
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/api/cron/");
 
   if (!signedIn && !isPublic) {
     // API 는 로그인 HTML 로 보내지 않는다 — fetch 가 JSON 파싱에 실패해 영문 오류가 뜨던 문제.

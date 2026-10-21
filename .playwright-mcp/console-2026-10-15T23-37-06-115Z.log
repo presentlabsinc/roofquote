@@ -1,0 +1,10 @@
+[     311ms] [WARNING] MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 visible listeners added. Use emitter.setMaxListeners() to increase limit
+    at h (https://editor-static.pstatic.net/v/basic/1.78.1/se.viewer.js?v=1.78.1-20260807143758:6:27451)
+    at s.on.s.addListener (https://editor-static.pstatic.net/v/basic/1.78.1/se.viewer.js?v=1.78.1-20260807143758:6:30020)
+    at new t (https://editor-static.pstatic.net/v/basic/1.78.1/se.24.c8bb4c18.js:1:2126)
+    at https://editor-static.pstatic.net/v/basic/1.78.1/se.viewer.js?v=1.78.1-20260807143758:12:53761 @ https://feblog.pstatic.net/module/real/postView/postView_3.5.0/js/163.d70e448538cb65944312.js:0
+[     311ms] [WARNING] MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 invisible listeners added. Use emitter.setMaxListeners() to increase limit
+    at h (https://editor-static.pstatic.net/v/basic/1.78.1/se.viewer.js?v=1.78.1-20260807143758:6:27451)
+    at s.on.s.addListener (https://editor-static.pstatic.net/v/basic/1.78.1/se.viewer.js?v=1.78.1-20260807143758:6:30020)
+    at new t (https://editor-static.pstatic.net/v/basic/1.78.1/se.24.c8bb4c18.js:1:2161)
+    at https://editor-static.pstatic.net/v/basic/1.78.1/se.viewer.js?v=1.78.1-20260807143758:12:53761 @ https://feblog.pstatic.net/module/real/postView/postView_3.5.0/js/163.d70e448538cb65944312.js:0

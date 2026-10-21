@@ -1,0 +1,285 @@
+- generic [active] [ref=f158e1]:
+  - generic:
+    - link "본문 바로가기":
+      - /url: "#ct"
+  - generic [ref=f158e2]:
+    - generic [ref=f158e3]:
+      - heading [level=1] [ref=f158e4]:
+        - link "블로그" [ref=f158e5] [cursor=pointer]:
+          - /url: /Recommendation.naver
+      - heading [level=2] [ref=f158e7]:
+        - generic [ref=f158e8]:
+          - link "카테고리 이동" [ref=f158e10] [cursor=pointer]:
+            - /url: "#"
+          - link "한농스틸 공식 블로그" [ref=f158e13] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=hn_steel
+    - generic [ref=f158e15]:
+      - link "검색" [ref=f158e16] [cursor=pointer]:
+        - /url: /PostSearchList.naver?blogId=hn_steel
+      - button "MY메뉴 열기" [ref=f158e18] [cursor=pointer]
+  - main [ref=f158e21]:
+    - generic [ref=f158e24]:
+      - generic [ref=f158e27]:
+        - link "▒ 한농스틸" [ref=f158e29] [cursor=pointer]:
+          - /url: /PostList.naver?blogId=hn_steel&categoryNo=6&logCode=0&categoryName=%E2%96%92+%ED%95%9C%EB%86%8D%EC%8A%A4%ED%8B%B8#postlist_block
+        - paragraph [ref=f158e31]:
+          - generic [ref=f158e32]: 지붕방수시트 하면서 천장공사 같이 하기
+        - generic [ref=f158e33]:
+          - link [ref=f158e34] [cursor=pointer]:
+            - /url: /PostList.naver?blogId=hn_steel
+            - img "프로필" [ref=f158e36]
+          - generic [ref=f158e37]:
+            - link [ref=f158e39] [cursor=pointer]:
+              - /url: /PostList.naver?blogId=hn_steel
+              - strong [ref=f158e40]: 한농스틸
+            - paragraph [ref=f158e41]: 2시간 전
+        - generic [ref=f158e42]:
+          - link "이웃추가" [ref=f158e43] [cursor=pointer]:
+            - /url: "#"
+          - button "본문 기타 기능" [ref=f158e46] [cursor=pointer]
+      - generic [ref=f158e48]:
+        - generic [ref=f158e52]:
+          - paragraph [ref=f158e53]
+          - paragraph [ref=f158e54]: 지붕방수시트를 깔면서
+          - paragraph [ref=f158e55]: 처마 아래 천장공사까지 함께 했어요
+          - paragraph [ref=f158e56]: 위아래를 한 번에 시공했습니다
+          - paragraph [ref=f158e57]
+        - link [ref=f158e62] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e66]:
+          - paragraph [ref=f158e67]
+          - paragraph [ref=f158e68]
+          - paragraph [ref=f158e69]: 바닥에서 시작해 테두리까지 가는 순서
+        - link [ref=f158e74] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e78]:
+          - paragraph [ref=f158e79]: 공사 전 바닥은 회색 도막이었어요
+          - paragraph [ref=f158e80]: 방수칠로 몇 번 손봤던 자리라서
+          - paragraph [ref=f158e81]: 덮는 방식으로 바꾸기로 했습니다
+          - paragraph [ref=f158e82]
+          - paragraph [ref=f158e83]
+        - link [ref=f158e88] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e92]:
+          - paragraph [ref=f158e93]: 기존 바닥 위로 낙엽송 각재를 걸어요
+          - paragraph [ref=f158e94]: 한두 뼘을 띄워 격자로 짜면서
+          - paragraph [ref=f158e95]: 물이 흘러갈 경사를 만듭니다
+          - paragraph [ref=f158e96]
+          - paragraph [ref=f158e97]
+        - link [ref=f158e102] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e106]:
+          - paragraph [ref=f158e107]: 옥상에는 태양광이 올라가 있었어요
+          - paragraph [ref=f158e108]: 기둥은 콘크리트를 뚫어 세우기 때문에
+          - paragraph [ref=f158e109]: 누수가 가장 잦은 자리거든요
+          - paragraph [ref=f158e110]
+          - paragraph [ref=f158e111]
+        - link [ref=f158e116] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e120]:
+          - paragraph [ref=f158e121]: 기둥 둘레는 따로 재단해서 짜고
+          - paragraph [ref=f158e122]: 빗물이 모이는 가운데 자리에
+          - paragraph [ref=f158e123]: 스테인리스 물받이를 함께 넣었어요
+          - paragraph [ref=f158e124]
+          - paragraph [ref=f158e125]
+        - link [ref=f158e130] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e134]:
+          - paragraph [ref=f158e135]: 물받이는 스텐 304로 제작하고
+          - paragraph [ref=f158e136]: 우수관은 직경 100미리로 타공해서
+          - paragraph [ref=f158e137]: 폭우에도 넘치지 않게 잡았습니다
+          - paragraph [ref=f158e138]
+        - blockquote [ref=f158e142]:
+          - generic [ref=f158e143]:
+            - paragraph [ref=f158e144]: 지붕방수시트는 칼라강판으로 깔아요
+            - paragraph [ref=f158e145]: 아연도금 위에 도색과 코팅을 한 철판이라
+            - paragraph [ref=f158e146]: 변색과 부식에 강한 소재예요
+            - paragraph [ref=f158e147]
+            - paragraph [ref=f158e148]: 낙엽송 목재를 띄우는 이유는
+            - paragraph [ref=f158e149]: 물매를 잡기 위해서예요
+            - paragraph [ref=f158e150]: 바닥이 평평하면 물이 고이는데
+            - paragraph [ref=f158e151]: 한두 뼘을 띄워 경사를 주면
+            - paragraph [ref=f158e152]: 빗물이 한 방향으로 흘러가죠.
+            - paragraph [ref=f158e153]
+            - paragraph [ref=f158e154]: 물받이는 그 끝에 놓입니다
+            - paragraph [ref=f158e155]: 스테인리스 304로 만드는 이유는
+            - paragraph [ref=f158e156]: 바닥 아래에 매립되기 때문이고요
+            - paragraph [ref=f158e157]: 부식에 가장 약한 자리라서
+            - paragraph [ref=f158e158]: 소재부터 다르게 씁니다
+        - generic [ref=f158e162]:
+          - paragraph [ref=f158e163]
+          - paragraph [ref=f158e164]: 위를 덮는 김에 아래까지 가는 자리
+        - link [ref=f158e169] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e173]:
+          - paragraph [ref=f158e174]: 처마 아래 천장은 페인트가 되어 있었고
+          - paragraph [ref=f158e175]: 군데군데 갈라지면서 변색되어 있었어요
+          - paragraph [ref=f158e176]: 이곳도 잦은 유지 보수가 필요한 곳이죠
+          - paragraph [ref=f158e177]
+          - paragraph [ref=f158e178]
+        - link [ref=f158e183] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f158e188] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f158e193] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e197]:
+          - paragraph [ref=f158e198]: 천장공사도 같은 칼라강판으로 했어요
+          - paragraph [ref=f158e199]: 페인트처럼 갈라지거나 변하지 않고
+          - paragraph [ref=f158e200]: 재시공이 필요 없게 만들었습니다.
+          - paragraph [ref=f158e201]
+          - paragraph [ref=f158e202]: 색은 외벽 색에 맞춰서 골랐는데
+          - paragraph [ref=f158e203]: 컬러는 다양하기 때문에 취향에 따라
+          - paragraph [ref=f158e204]: 선택하실 수 있게 준비되어 있어요.
+          - paragraph [ref=f158e205]
+        - blockquote [ref=f158e209]:
+          - generic [ref=f158e210]:
+            - paragraph [ref=f158e211]: 천장공사는 누수 때문에
+            - paragraph [ref=f158e212]: 하시는 경우도 간혹 있지만
+            - paragraph [ref=f158e213]: 대부분은 미관 때문에 하거든요
+            - paragraph [ref=f158e214]
+            - paragraph [ref=f158e215]: 따로 맡기면 사다리 차나
+            - paragraph [ref=f158e216]: 비계를 다시 불러야 하는데
+            - paragraph [ref=f158e217]: 같이 하면 그 과정이 한 번으로 줄어들죠
+            - paragraph [ref=f158e218]
+            - paragraph [ref=f158e219]: 합판이나 도장은 수명이 짧아요
+            - paragraph [ref=f158e220]: 몇 년마다 다시 손봐야 하는데
+            - paragraph [ref=f158e221]: 칼라강판은 반영구적이라
+            - paragraph [ref=f158e222]: 그런 걱정이 없습니다
+        - generic [ref=f158e226]:
+          - paragraph [ref=f158e227]
+          - paragraph [ref=f158e228]: 바닥에서 멈추지 않고 사방으로
+        - link [ref=f158e233] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e237]:
+          - paragraph [ref=f158e238]: 바닥과 난간대 외벽, 경사 지붕까지
+          - paragraph [ref=f158e239]: 사방을 칼라강판으로 모두 덮었어요
+          - paragraph [ref=f158e240]: 이 집은 빠진 면이 없습니다
+          - paragraph [ref=f158e241]
+          - paragraph [ref=f158e242]
+        - link [ref=f158e247] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e251]:
+          - paragraph [ref=f158e252]: 난간대 외벽은 상태를 보고 추가해요
+          - paragraph [ref=f158e253]: 금이 가 있거나 도색이 벗겨진 벽이면
+          - paragraph [ref=f158e254]: 바깥 면까지 덮어 문제를 함께 막습니다
+          - paragraph [ref=f158e255]
+          - paragraph [ref=f158e256]
+        - link [ref=f158e261] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e265]:
+          - paragraph [ref=f158e266]: 평수만으로 단가가 정해지지 않아요
+          - paragraph [ref=f158e267]: 구조물이 많으면 자재도 더 들어가고
+          - paragraph [ref=f158e268]: 기간도 늘어나서 난이도를 함께 봅니다
+          - paragraph [ref=f158e269]
+          - paragraph [ref=f158e270]
+        - link [ref=f158e275] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e279]:
+          - paragraph [ref=f158e280]: 뒤쪽 창고도 함께 공사했어요
+          - paragraph [ref=f158e281]: 외벽은 메탈사이딩 타입으로
+          - paragraph [ref=f158e282]: 시공했는데 같은 칼라강판입니다
+          - paragraph [ref=f158e283]
+        - blockquote [ref=f158e287]:
+          - generic [ref=f158e288]:
+            - paragraph [ref=f158e289]: 지붕방수시트 기본 시공은
+            - paragraph [ref=f158e290]: 바닥과 안쪽 벽, 두겁까지예요
+            - paragraph [ref=f158e291]: 바깥으로 5센티를 내려 덮는 것까지
+            - paragraph [ref=f158e292]: 기본에 들어가고요
+            - paragraph [ref=f158e293]: 난간대 외벽은 그다음 단계입니다
+            - paragraph [ref=f158e294]
+            - paragraph [ref=f158e295]: 면적이 늘어난 만큼 비용도 달라져요
+            - paragraph [ref=f158e296]: 그래서 벽 상태를 먼저 보고
+            - paragraph [ref=f158e297]: 넣을지 말지 같이 정하고요
+            - paragraph [ref=f158e298]: 벽이 멀쩡한 집은 기본만 해도 됩니다
+        - generic [ref=f158e302]:
+          - paragraph [ref=f158e303]
+          - paragraph [ref=f158e304]: 뒤쪽 창고 외벽까지
+        - link [ref=f158e309] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f158e314] [cursor=pointer]:
+          - /url: "#"
+        - link [ref=f158e319] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e323]:
+          - paragraph [ref=f158e324]: 세로 골 모양으로 벽에 맞춰 올렸어요
+          - paragraph [ref=f158e325]: 바닥에 쓰는 물결형과는 다른데
+          - paragraph [ref=f158e326]: 벽 전용으로 나오는 형태예요
+          - paragraph [ref=f158e327]
+          - paragraph [ref=f158e328]: 줄무늬가 또렷해서
+          - paragraph [ref=f158e329]: 밋밋하던 외벽에 입체감이 생기고
+          - paragraph [ref=f158e330]: 집이 한 채 새로 지은 듯 보입니다
+          - paragraph [ref=f158e331]
+        - blockquote [ref=f158e335]:
+          - generic [ref=f158e336]:
+            - paragraph [ref=f158e337]: 창고나 옥탑방처럼 따로 쓰는 건물은
+            - paragraph [ref=f158e338]: 지붕과 벽이 각각 있어서
+            - paragraph [ref=f158e339]: 상태를 보고 시공 여부를 정하고요
+            - paragraph [ref=f158e340]: 대부분은 선택이지만
+            - paragraph [ref=f158e341]: 누수가 있으면 필수로 들어가기도 해요
+            - paragraph [ref=f158e342]
+            - paragraph [ref=f158e343]: 자재마다 건물의 분위기가 달라지는데
+            - paragraph [ref=f158e344]: 칼라강판부터 메탈사이딩, 리얼징크
+            - paragraph [ref=f158e345]: 템바징크 등등, 필요에 맞게 시공해요.
+        - generic [ref=f158e349]:
+          - paragraph [ref=f158e350]
+          - paragraph [ref=f158e351]: 한 번에 정할 때 따져볼 것
+        - link [ref=f158e356] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e360]:
+          - paragraph [ref=f158e361]: 바닥과 처마, 창고까지 덮은 지붕은
+          - paragraph [ref=f158e362]: 이제 재시공이 필요 없게 30년이 가고요
+          - paragraph [ref=f158e363]: 필요한 경우에는 부분 교체도 가능해요
+          - paragraph [ref=f158e364]
+          - paragraph [ref=f158e365]
+        - link [ref=f158e370] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e374]:
+          - paragraph [ref=f158e375]: 어디까지 할지는 보고 정하시면 됩니다
+          - paragraph [ref=f158e376]: 바닥만 하셔도 되고
+          - paragraph [ref=f158e377]: 처마나 창고를 더하실 수도 있어요
+          - paragraph [ref=f158e378]
+          - paragraph [ref=f158e379]
+        - link [ref=f158e384] [cursor=pointer]:
+          - /url: "#"
+        - generic [ref=f158e388]:
+          - paragraph [ref=f158e389]: 견적은 상담을 통해 알 수도 있고요.
+          - paragraph [ref=f158e390]: 방문 무료 견적도 가능하기 때문에
+          - paragraph [ref=f158e391]: 필요하신 분들은 언제든지 문의하세요
+          - paragraph [ref=f158e392]
+        - blockquote [ref=f158e396]:
+          - generic [ref=f158e397]:
+            - paragraph [ref=f158e398]: 시공이 들어가는 부위는 모두
+            - paragraph [ref=f158e399]: 무상 3년 보증이 들어가고요
+            - paragraph [ref=f158e400]: 보수가 생기는 경우는 드뭅니다
+            - paragraph [ref=f158e401]: 나오더라도 1~2년 안에 확인돼요
+            - paragraph [ref=f158e402]
+            - paragraph [ref=f158e403]: 한농스틸에서 직접 시공하고
+            - paragraph [ref=f158e404]: 관리하기 때문에 안심하셔도 됩니다
+        - paragraph [ref=f158e409]:
+          - link "https://blog.naver.com/hn_steel/224416210480" [ref=f158e411] [cursor=pointer]:
+            - /url: https://blog.naver.com/hn_steel/224416210480
+        - generic [ref=f158e415] [cursor=pointer]:
+          - link [ref=f158e416]:
+            - /url: https://blog.naver.com/hn_steel/224416210480
+          - link [ref=f158e417]:
+            - /url: https://blog.naver.com/hn_steel/224416210480
+            - generic [ref=f158e418]:
+              - strong [ref=f158e419]: 지붕공사 한농스틸이 옥상을 덮는 방식
+              - paragraph [ref=f158e420]: 지붕공사 한농스틸은 2010년 특허를 받은 공법으로 옥상을 덮습니다. 칼라강판이 바닥부터 두겁까지 올라가...
+              - paragraph [ref=f158e421]: blog.naver.com
+        - generic [ref=f158e425]:
+          - paragraph [ref=f158e426]
+          - paragraph [ref=f158e427]:
+            - link "https://blog.naver.com/hn_steel/224365803132" [ref=f158e429] [cursor=pointer]:
+              - /url: https://blog.naver.com/hn_steel/224365803132
+        - generic [ref=f158e433] [cursor=pointer]:
+          - link [ref=f158e434]:
+            - /url: https://blog.naver.com/hn_steel/224365803132
+          - link [ref=f158e435]:
+            - /url: https://blog.naver.com/hn_steel/224365803132
+            - generic [ref=f158e436]:
+              - strong [ref=f158e437]: 칼라강판 지붕, 형태와 상황별 시공
+              - paragraph [ref=f158e438]: 칼라강판 지붕공사를 알아보면 멀티스톤, 기와형, 슬레이트형 등등 다양한데요. 그러다 보니 우리 건물에는...
+              - paragraph [ref=f158e439]: blog.naver.com
+        - paragraph [ref=f158e444]

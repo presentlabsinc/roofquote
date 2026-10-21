@@ -1,0 +1,20 @@
+- generic "YouTube 동영상 플레이어" [ref=f48e4]:
+  - button "재생" [ref=f48e8] [cursor=pointer]
+  - generic [ref=f48e9]:
+    - generic [ref=f48e10] [cursor=pointer]:
+      - slider "탐색 슬라이더" [ref=f48e11]
+      - generic:
+        - generic:
+          - generic:
+            - slider "세밀한 탐색을 하려면 패널을 클릭하거나 스크롤하세요."
+    - generic [ref=f48e20]:
+      - generic [ref=f48e21]:
+        - button "재생(k)" [ref=f48e22] [cursor=pointer]
+        - generic [ref=f48e23]:
+          - button "음소거(m)" [ref=f48e25] [cursor=pointer]
+          - slider "볼륨":
+            - generic [ref=f48e26] [cursor=pointer]
+        - button "0 분 0 초/2 분 51 초" [ref=f48e29] [cursor=pointer]: 0:00 / 2:51
+      - generic [ref=f48e31]:
+        - button "확장" [ref=f48e32] [cursor=pointer]
+        - button "설정" [ref=f48e33] [cursor=pointer]
