@@ -1,8 +1,0 @@
-[     650ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'battery'. @ :0
-[     817ms] [LOG] JQMIGRATE: Migrate is installed, version 3.4.1 @ https://www.jlconline.com/_static/??-eJzTLy/QzcxLzilNSS3WzwKiwtLUokoopZebmaeXVayjj0+Rbm5melFiSSpUsX2uraG5paGxgamliUUWAK+RIic=:4
-[     906ms] [WARNING] [GPT] PubAdsService.setCentering is deprecated, use googletag.setConfig({centering: ...}) instead.
-https://goo.gle/gpt-message#170 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202610120101/pubads_impl.js:22
-[     908ms] [WARNING] [GPT] Slot.setTargeting is deprecated, use Slot.setConfig({targeting: ...}) instead.
-https://goo.gle/gpt-message#171 @ https://securepubads.g.doubleclick.net/pagead/managed/js/gpt/m202610120101/pubads_impl.js:22
-[    1051ms] [WARNING] [Meta Pixel] - Invalid parameter format for currency. Please refer https://developers.facebook.com/docs/meta-pixel/reference/ for valid parameter specifications. @ https://connect.facebook.net/en_US/fbevents.js:205
-[    1059ms] [WARNING] [Meta Pixel] - Invalid parameter format for currency. Please refer https://developers.facebook.com/docs/meta-pixel/reference/ for valid parameter specifications. @ https://connect.facebook.net/en_US/fbevents.js:205

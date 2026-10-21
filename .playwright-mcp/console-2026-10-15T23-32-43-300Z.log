@@ -1,4 +1,0 @@
-[    1037ms] [LOG] IMWEB_DEPLOY_STRATEGY init event dispatched {accesstype: FO, features: Object, syncPeriod: 60000, syncTime: 1792107164336, instance: DeployStrategy} @ https://static.imweb.me/vendor/js/deploy_strategy.js:34
-[    1196ms] [LOG] {flag: Y, log_use_yn: Y, chat_use_yn: N, chat_service_yn: Y, chat_escape_yn: N} @ https://log1.toup.net/mirae_log_chat_common.js?adkey=sqteh:97
-[    1295ms] [LOG] check etc @ https://log1.toup.net/mirae_log_chat_act.js?t=2026101608:1454
-[    7063ms] [WARNING] The resource https://vendor-cdn.imweb.me/images/site/image-placeholder.svg was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://u-banjang.com/21:0

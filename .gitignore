@@ -44,3 +44,6 @@ next-env.d.ts
 *.db
 *.db-journal
 
+
+# 브라우저 자동화 기록 (로컬 전용 — 공개 저장소에 올리지 않음)
+/.playwright-mcp/

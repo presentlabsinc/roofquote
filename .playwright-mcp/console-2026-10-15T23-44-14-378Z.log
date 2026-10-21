@@ -1,3 +1,0 @@
-[    1046ms] [LOG] IMWEB_DEPLOY_STRATEGY init event dispatched {accesstype: FO, features: Object, syncPeriod: 60000, syncTime: 1792107855423, instance: DeployStrategy} @ https://static.imweb.me/vendor/js/deploy_strategy.js:34
-[    2173ms] [WARNING] The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127 @ :0
-[    2263ms] [WARNING] The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127 @ :0

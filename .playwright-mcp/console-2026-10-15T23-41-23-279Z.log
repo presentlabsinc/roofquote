@@ -1,4 +1,0 @@
-[     218ms] [WARNING] Manifest: property 'migrate_from' ignored, manifest must specify an 'id' property in order to receive a migration. @ https://www.youtube.com/manifest.webmanifest:0
-[    1448ms] [INFO] LegacyDataMixin will be applied to all legacy elements.
-Set `_legacyUndefinedCheck: true` on element class to enable. @ https://www.youtube.com/s/_/ytmainappweb/_/js/k=ytmainappweb.kevlar_base.en_US.6pX0kSFXcGs.es5.O/am=AAAAABAACEBK/d=1/br=1/rs=AGKMywGZqk4DPBfDEioepFSRN1nw9d2pew/m=kevlar_base_module,kevlar_main_module,kevlar_base_sync_mod_chunk:13103
-[    1765ms] [WARNING] The powerPreference option is currently ignored when calling requestAdapter() on Windows. See https://crbug.com/369219127 @ :0
